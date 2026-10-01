@@ -1,0 +1,100 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container mt-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ 'gold_asset.add_title'|trans }}</h2>
+                {% if form.vars.submitted and not form.vars.valid %}
+                    <div class="alert alert-danger mb-3">
+                        {{ 'form.fill_required_fields'|trans }}
+                    </div>
+                {% endif %}
+
+                {% set ouncesHasError = form.ounces.vars.errors|length > 0 %}
+                {{ form_start(form, {attr: {id: 'gold_asset_form'}}) }}
+                <table class="table table-borderless align-middle w-auto">
+                    <tbody>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'gold_asset.shape'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.form) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'gold_asset.ounces'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.ounces, {
+                                attr: {
+                                    class: (form.ounces.vars.attr.class|default('')) ~ (ouncesHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if ouncesHasError %} d-block{% endif %}">
+                                {{ form_errors(form.ounces) }}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'form.description'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.description) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="pt-3">
+                            <button type="submit" class="btn btn-primary">{{ 'common.add'|trans }}</button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                {{ form_end(form) }}
+            </div>
+        </div>
+
+        <div class="card mb-4 shadow-sm mt-4">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ 'gold_asset.list_title'|trans }}</h2>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th class="text-end">#</th>
+                            <th class="left">{{ 'gold_asset.shape'|trans }}</th>
+                            <th class="text-end">{{ 'gold_asset.ounces'|trans }}</th>
+                            <th class="left">{{ 'form.description'|trans }}</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for item in assets %}
+                            <tr>
+                                <td class="text-end">{{ item.id }}</td>
+                                <td class="left">{{ item.form.name }}</td>
+                                <td class="text-end">{{ item.ouncesAsQuantity.format }}</td>
+                                <td class="left text-muted">{{ item.description }}</td>
+                                <td>
+                                    <div class="d-inline-flex align-items-center gap-2">
+                                        <a href="{{ path('gold_assets_edit', {id: item.id}) }}" class="btn btn-link p-0" aria-label="{{ 'operation.edit'|trans }}">
+                                            <img src="{{ asset('images/edit.png') }}" alt="" width="20" height="20">
+                                        </a>
+                                        {{ include('partials/_delete_button.html.twig', {
+                                            deletePath: path('gold_assets_delete', {id: item.id}),
+                                            csrfTokenId: 'gold-asset-delete',
+                                        }) }}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">{{ 'gold_asset.none_found'|trans }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

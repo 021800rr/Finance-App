@@ -1,0 +1,119 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container mt-4">
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ 'rate.chart_title'|trans }}</h2>
+                <div class="chart-container">
+                    <canvas id="ratesChart" data-chart="{{ chartData|json_encode|e('html_attr') }}"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ 'rate.add_title'|trans }}</h2>
+                {% if form.vars.submitted and not form.vars.valid %}
+                    <div class="alert alert-danger mb-3">
+                        {{ 'form.fill_required_fields'|trans }}
+                    </div>
+                {% endif %}
+
+                {% set dateHasError = form.rateDate.vars.errors|length > 0 %}
+                {% set rateHasError = form.rateToPln.vars.errors|length > 0 %}
+                {{ form_start(form, {attr: {id: 'rate_form'}}) }}
+                <table class="table table-borderless align-middle w-auto">
+                    <tbody>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'account.bank'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.bank) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'account.currency'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.currency) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'form.date'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.rateDate, {
+                                attr: {
+                                    class: (form.rateDate.vars.attr.class|default('')) ~ (dateHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if dateHasError %} d-block{% endif %}">
+                                {{ form_errors(form.rateDate) }}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'rate.value'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.rateToPln, {
+                                attr: {
+                                    class: (form.rateToPln.vars.attr.class|default('')) ~ (rateHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if rateHasError %} d-block{% endif %}">
+                                {{ form_errors(form.rateToPln) }}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="pt-3">
+                            <button type="submit" class="btn btn-primary">{{ 'common.add'|trans }}</button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                {{ form_end(form) }}
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ 'rate.list_title'|trans }}</h2>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th class="left">{{ 'account.bank'|trans }}</th>
+                            <th class="left">{{ 'account.currency'|trans }}</th>
+                            <th>{{ 'form.date'|trans }}</th>
+                            <th>{{ 'rate.value'|trans }}</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in rates %}
+                            <tr>
+                                <td class="left">{{ r.bank.name }}</td>
+                                <td class="left">{{ r.currency.code }}</td>
+                                <td>{{ r.rateDate|date('Y-m-d') }}</td>
+                                <td class="text-end">{{ r.rateToPlnAsMoney|money }}</td>
+                                <td>
+                                    {{ include('partials/_delete_button.html.twig', {
+                                        deletePath: path('rate_delete', {id: r.id}),
+                                        csrfTokenId: 'rate-delete',
+                                    }) }}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">{{ 'rate.none_found'|trans }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

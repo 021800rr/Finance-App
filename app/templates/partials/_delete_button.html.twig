@@ -1,0 +1,8 @@
+<form method="post"
+      action="{{ deletePath }}"
+      onsubmit="return confirm('{{ 'operation.confirm_delete'|trans|e('js') }}');" class="d-inline">
+    <input type="hidden" name="_token" value="{{ csrf_token(csrfTokenId) }}">
+    <button type="submit" class="btn btn-link p-0" aria-label="{{ 'operation.delete'|trans }}">
+        <img src="{{ asset('images/delete.png') }}" alt="" width="20" height="20">
+    </button>
+</form>

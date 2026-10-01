@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="{{ app.request.locale }}" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Finance{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <meta name="csrf-token-contractor-create" content="{{ csrf_token('contractor-create') }}">
+    <meta name="csrf-token-operation-toggle-confirmed" content="{{ csrf_token('operation-toggle-confirmed') }}">
+
+    {{ encore_entry_link_tags('app') }}
+</head>
+<body>
+
+{% include 'partials/_navbar.html.twig' %}
+
+<div class="container">
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="alert alert-{{ label == 'warning' ? 'warning' : (label == 'error' ? 'danger' : 'info') }} 
+                        alert-dismissible fade show mt-3" role="alert">
+                {{ message|trans }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endfor %}
+
+    {% block body %}{% endblock %}
+</div>
+
+{{ encore_entry_script_tags('app') }}
+</body>
+</html>

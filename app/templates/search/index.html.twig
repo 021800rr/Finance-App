@@ -1,0 +1,116 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container mt-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ 'search.title'|trans }}</h2>
+
+                {% if query %}
+                    <div class="text-muted small mb-3">
+                        {{ 'search.query_label'|trans }}: <strong>{{ query }}</strong> · {{ 'search.results_label'|trans }}: {{ total }}
+                    </div>
+                {% else %}
+                    <div class="text-muted small mb-3">
+                        {{ 'search.prompt'|trans }}
+                    </div>
+                {% endif %}
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th class="text-end">#</th>
+                            <th class="left">{{ 'search.account_column'|trans }}</th>
+                            <th class="left">{{ 'operation.date'|trans }}</th>
+                            <th class="left">{{ 'operation.contractor'|trans }}</th>
+                            <th class="left">{{ 'operation.description'|trans }}</th>
+                            <th class="text-end">{{ 'operation.amount'|trans }}</th>
+                            <th class="text-center"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for op in operations %}
+                            <tr>
+                                <td class="text-end">{{ op.id }}</td>
+                                <td class="left"><code>{{ op.account.accountNumber }}</code></td>
+                                <td class="left">{{ op.operationDate|date('Y-m-d') }}</td>
+                                <td class="left">{{ op.contractor.name }}</td>
+                                <td class="left text-muted">{{ op.description }}</td>
+                                <td class="text-end fw-semibold {{ op.amount|amountClass }}">{{ op.amountAsMoney|money }}</td>
+                                <td class="text-center">
+                                    <div class="d-inline-flex align-items-center gap-2">
+                                        <button
+                                            type="button"
+                                            class="btn btn-link p-0 op-confirm-toggle {{ op.confirmed ? 'is-confirmed' : 'is-unconfirmed' }}"
+                                            data-operation-id="{{ op.id }}"
+                                            data-operation-confirmed="{{ op.confirmed ? '1' : '0' }}"
+                                            data-toggle-url="{{ path('operation_toggle_confirmed', {id: op.id}) }}"
+                                            data-ok-src="{{ asset('images/ok.png') }}"
+                                            data-question-src="{{ asset('images/question.png') }}"
+                                            aria-label="{{ 'operation.change_confirmation_status'|trans }}"
+                                        >
+                                            <img
+                                                src="{{ op.confirmed ? asset('images/ok.png') : asset('images/question.png') }}"
+                                                alt=""
+                                                width="20"
+                                                height="20"
+                                            >
+                                        </button>
+                                        <a href="{{ path('operation_edit', {id: op.id}) }}" class="btn btn-link p-0" aria-label="{{ 'operation.edit'|trans }}">
+                                            <img src="{{ asset('images/edit.png') }}" alt="" width="20" height="20">
+                                        </a>
+                                        {{ include('partials/_delete_button.html.twig', {
+                                            deletePath: path('operation_delete', {id: op.id}),
+                                            csrfTokenId: 'operation-delete',
+                                        }) }}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">
+                                    {% if query %}
+                                        {{ 'search.none_found_for'|trans({'%query%': query}) }}
+                                    {% else %}
+                                        {{ 'search.none_found'|trans }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if totalPages > 1 %}
+                    <div class="d-flex align-items-center justify-content-between mt-3">
+                        <nav aria-label="{{ 'pagination.label'|trans }}">
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item{% if page <= 1 %} disabled{% endif %}">
+                                    <a class="page-link"
+                                       href="{{ path('global_search', {q: query, page: page - 1}) }}"
+                                       aria-label="{{ 'pagination.previous'|trans }}">
+                                        ‹
+                                    </a>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link">
+                                        {{ page }} / {{ totalPages }}
+                                    </span>
+                                </li>
+                                <li class="page-item{% if page >= totalPages %} disabled{% endif %}">
+                                    <a class="page-link"
+                                       href="{{ path('global_search', {q: query, page: page + 1}) }}"
+                                       aria-label="{{ 'pagination.next'|trans }}">
+                                        ›
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                        <div class="small text-muted">{{ 'pagination.page_of'|trans({'%page%': page, '%totalPages%': totalPages}) }}</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

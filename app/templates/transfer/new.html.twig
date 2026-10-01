@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container mt-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+
+                <h1 class="h5 mb-3">{{ 'transfer.title'|trans }}</h1>
+
+                {{ form_start(form, {attr: {id: 'transfer_form'}}) }}
+                {% if form.vars.errors|length > 0 %}
+                    <div class="alert alert-danger">
+                        {{ form_errors(form) }}
+                    </div>
+                {% endif %}
+                <table class="table table-borderless align-middle w-auto">
+                    <tbody>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'transfer.from_account'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.fromAccount) }}
+                        </td>
+                        <th class="pe-3 text-end">{{ 'transfer.to_account'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.toAccount) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'transfer.debit'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.amountFrom) }}
+                        </td>
+                        <th class="pe-3 text-end">{{ 'transfer.credit'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.amountTo) }}
+                            <div class="invalid-feedback{% if form.amountTo.vars.errors|length > 0 %} d-block{% endif %}">
+                                {{ form_errors(form.amountTo) }}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'form.date'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.date) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'form.description'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.description) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="pt-3">
+                            <button type="submit" class="btn btn-primary me-2">{{ 'form.save'|trans }}</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="window.history.back()">{{ 'form.cancel'|trans }}</button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                {{ form_row(form.contractor, { row_attr: { class: 'd-none' } }) }}
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

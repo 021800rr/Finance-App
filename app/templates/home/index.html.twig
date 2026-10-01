@@ -1,0 +1,139 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="mb-3">
+        {% if showHidden %}
+            <a href="{{ path('home', {show_hidden: 0}) }}" class="btn btn-secondary">{{ 'home.hide_hidden'|trans }}</a>
+        {% else %}
+            <a href="{{ path('home', {show_hidden: 1}) }}" class="btn btn-outline-secondary">{{ 'home.show_hidden'|trans }}</a>
+        {% endif %}
+    </div>
+
+    <div class="card mb-3 shadow-sm">
+        <div class="card-body">
+            <table class="table table-striped table-hover align-middle" data-sortable="accounts">
+                <thead class="table-dark">
+                <tr>
+                    <th data-sort-key="text">{{ 'account.bank'|trans }}</th>
+                    <th data-sort-key="text">{{ 'account.type'|trans }}</th>
+                    <th data-sort-key="text">{{ 'account.number'|trans }}</th>
+                    <th class="text-end" data-sort-key="text">{{ 'home.rate'|trans }}</th>
+                    <th class="text-end" data-sort-key="number">{{ 'account.balance'|trans }}</th>
+                    <th data-sort-key="text">{{ 'account.currency'|trans }}</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for account in accounts %}
+                    <tr>
+                        <td>{{ account.bank }}</td>
+                        <td>{{ account.type }}</td>
+
+                        <td><code>{{ account.account_number }}</code></td>
+                        <td class="text-end fw-bold">
+                            {% if account.missing_rate %}
+                                <span class="badge bg-danger">{{ 'home.missing_rate'|trans }}</span>
+                            {% else %}
+                                {% set rate = ratesByBank[account.bank][account.currency] ?? null %}
+                                {% if rate %}
+                                    <div class="small text-muted">{{ rate|money }}</div>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td class="text-end fw-bold">
+                            {{ account.saldo|money }}
+                        </td>
+                        <td>{{ account.currency }}</td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end align-items-center">
+                                {% if mainAccountId == account.id %}
+                                    <span class="me-2" title="{{ 'home.main_account'|trans }}">★</span>
+                                {% else %}
+                                    <form action="{{ path('account_set_main', {id: account.id, show_hidden: showHidden ? 1 : 0}) }}" method="post" class="d-inline me-2">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('account-set-main') }}">
+                                        <button type="submit" class="btn btn-link p-0 text-muted text-decoration-none" title="{{ 'home.set_main'|trans }}">☆</button>
+                                    </form>
+                                {% endif %}
+                                <a href="{{ path('account_operations', {id: account.id}) }}" class="btn btn-link p-0 me-2" aria-label="{{ 'home.history'|trans }}">
+                                    <img src="{{ asset('images/log.png') }}" alt="" width="20" height="20">
+                                </a>
+                                <form action="{{ path('account_toggle_hidden', {id: account.id, show_hidden: showHidden ? 1 : 0}) }}" method="post" class="d-inline">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('account-toggle-hidden') }}">
+                                    <button type="submit" class="btn btn-link p-0" title="{{ (account.hidden ? 'home.show' : 'home.hide')|trans }}">
+                                        {% if account.hidden %}
+                                            <img src="{{ asset('images/show.png') }}" alt="{{ 'home.show'|trans }}" width="20" height="20">
+                                        {% else %}
+                                            <img src="{{ asset('images/hide.png') }}" alt="{{ 'home.hide'|trans }}" width="20" height="20">
+                                        {% endif %}
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-striped table-hover align-middle w-auto">
+                <thead class="table-dark">
+                <tr>
+                    <th>{{ 'account.type'|trans }}</th>
+                    <th class="text-end">{{ 'home.currency_pln'|trans }}</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>{{ 'home.category_ror'|trans }}</td>
+                    <td class="text-end fw-bold">
+                        {% if byType[rorTypeName] is defined %}
+                            {{ byType[rorTypeName].pln|money }}
+                        {% else %}
+                            <span class="text-danger">{{ 'home.category_not_found'|trans }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>{{ 'home.category_wakacje'|trans }}</td>
+                    <td class="text-end fw-bold">
+                        {% if byType[wakacjeTypeName] is defined %}
+                            {{ byType[wakacjeTypeName].pln|money }}
+                        {% else %}
+                            <span class="text-danger">{{ 'home.category_not_found'|trans }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-muted">{{ 'home.category_kasa'|trans }}</td>
+                    <td class="text-end text-muted">
+                        {{ retirementBalance|money }}
+                    </td>
+                </tr>
+                <tr>
+                    <td class="text-muted">{{ 'home.category_gold'|trans }}</td>
+                    <td class="text-end text-muted">
+                        {{ gold|money }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>{{ 'home.category_backup'|trans }}</td>
+                    <td class="text-end fw-bold">
+                        {{ retirementBalanceWithGold|money }}
+                    </td>
+                </tr>
+                {% for householdName, amount in byHousehold %}
+                    <tr {% if householdName == ownFundsHouseholdName %}class="table-secondary"{% endif %}>
+                        <td>{{ householdName }}</td>
+                        <td class="text-end fw-bold">
+                            {{ amount|money }}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

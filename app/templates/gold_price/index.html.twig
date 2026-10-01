@@ -1,0 +1,113 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container mt-4">
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ 'gold_price.chart_title'|trans }}</h2>
+                <div class="chart-container">
+                    <canvas id="goldPricesChart" data-chart="{{ chartData|json_encode|e('html_attr') }}"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ 'gold_price.add_title'|trans }}</h2>
+                {% if form.vars.submitted and not form.vars.valid %}
+                    <div class="alert alert-danger mb-3">
+                        {{ 'form.fill_required_fields'|trans }}
+                    </div>
+                {% endif %}
+
+                {% set dateHasError = form.priceDate.vars.errors|length > 0 %}
+                {% set priceHasError = form.pricePln.vars.errors|length > 0 %}
+                {{ form_start(form, {attr: {id: 'gold_price_form'}}) }}
+                <table class="table table-borderless align-middle w-auto">
+                    <tbody>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'gold_price.asset'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.goldAsset) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'form.date'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.priceDate, {
+                                attr: {
+                                    class: (form.priceDate.vars.attr.class|default('')) ~ (dateHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if dateHasError %} d-block{% endif %}">
+                                {{ form_errors(form.priceDate) }}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'gold_price.price_pln'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.pricePln, {
+                                attr: {
+                                    class: (form.pricePln.vars.attr.class|default('')) ~ (priceHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if priceHasError %} d-block{% endif %}">
+                                {{ form_errors(form.pricePln) }}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="pt-3">
+                            <button type="submit" class="btn btn-primary">{{ 'common.add'|trans }}</button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                {{ form_end(form) }}
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ 'gold_price.list_title'|trans }}</h2>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle mb-0">
+                        <thead class="table-dark">
+                        <tr>
+                            <th class="text-end">#</th>
+                            <th class="left">{{ 'gold_price.asset'|trans }}</th>
+                            <th>{{ 'form.date'|trans }}</th>
+                            <th>{{ 'gold_price.price_pln'|trans }}</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for p in prices %}
+                            <tr>
+                                <td class="text-end">{{ p.id }}</td>
+                                <td class="left">{{ p.goldAsset.description }}</td>
+                                <td>{{ p.priceDate|date('Y-m-d') }}</td>
+                                <td class="text-end">{{ p.pricePlnAsMoney|money }}</td>
+                                <td>
+                                    {{ include('partials/_delete_button.html.twig', {
+                                        deletePath: path('gold_prices_delete', {id: p.id}),
+                                        csrfTokenId: 'gold-price-delete',
+                                    }) }}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">{{ 'gold_price.none_found'|trans }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

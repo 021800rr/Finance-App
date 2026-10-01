@@ -1,0 +1,139 @@
+account:
+    add_operation: 'Dodaj operację'
+    balance: 'Saldo'
+    balance_today: 'Saldo na dziś'
+    bank: 'Bank'
+    currency: 'Waluta'
+    history: 'Historia konta'
+    not_found: 'Nie znaleziono konta. Wybierz konto z listy.'
+    number: 'Numer'
+    type: 'Typ'
+
+common:
+    add: 'Dodaj'
+
+contractor:
+    invalid_id: 'Nieprawidłowy identyfikator kontrahenta.'
+    not_found: 'Wybrany kontrahent nie istnieje.'
+    required: 'Wybierz kontrahenta z listy.'
+
+fixed_expense:
+    add: 'Dodaj'
+    add_title: 'Dodaj opłatę stałą'
+    confirm_plan: 'Zaplanować wydatki na kolejny miesiąc?'
+    day: 'Dzień'
+    edit_title: 'Edycja opłaty stałej'
+    list_title: 'Lista opłat stałych'
+    none_found: 'Brak opłat stałych'
+    plan_button: 'Zaplanuj wydatki'
+
+form:
+    account: 'Konto'
+    amount: 'Kwota'
+    cancel: 'Anuluj'
+    confirmed: 'Potwierdzone'
+    contractor: 'Kontrahent'
+    contractor_placeholder: 'Wpisz nazwę kontrahenta...'
+    date: 'Data'
+    day: 'Dzień'
+    description: 'Opis'
+    fill_required_fields: 'Uzupełnij wymagane pola. Zaznaczone na czerwono.'
+    save: 'Zapisz'
+
+gold_asset:
+    add_title: 'Dodaj aktywo złota'
+    edit_title: 'Edycja złota'
+    list_title: 'Lista aktywów'
+    none_found: 'Brak aktywów'
+    ounces: 'Uncje'
+    shape: 'Forma'
+
+gold_price:
+    add_title: 'Dodaj cenę złota'
+    asset: 'Aktywo'
+    chart_title: 'Wykres cen złota'
+    list_title: 'Lista zmian cen'
+    none_found: 'Brak cen'
+    price_pln: 'Cena (PLN)'
+
+home:
+    category_backup: 'Backup'
+    category_gold: 'Złoto'
+    category_kasa: 'Kasa'
+    category_not_found: 'Brak danych — sprawdź konfigurację'
+    category_ror: 'ROR'
+    category_total: 'Suma'
+    category_wakacje: 'Wakacje'
+    currency_pln: 'PLN'
+    hide: 'Ukryj'
+    hide_hidden: 'Ukryj ukryte'
+    history: 'Historia'
+    main_account: 'Konto główne'
+    missing_rate: 'Brak kursu wymiany dla tego konta.'
+    rate: 'Kurs'
+    set_main: 'Ustaw jako konto główne'
+    show: 'Pokaż'
+    show_hidden: 'Pokaż ukryte'
+
+login:
+    email: 'Adres e-mail'
+    invalid_credentials: 'Nieprawidłowy e-mail lub hasło.'
+    password: 'Hasło'
+    submit: 'Zaloguj się'
+    title: 'Logowanie'
+
+nav:
+    fixed_expenses: 'Opłaty stałe'
+    gold_assets: 'Złoto – aktywa'
+    gold_prices: 'Złoto – ceny'
+    logout: 'Wyloguj'
+    new_operation: 'Nowa operacja'
+    rates: 'Kursy'
+    search: 'Szukaj'
+    search_placeholder: 'Szukaj operacji...'
+    transfer: 'Przelew / Wymiana'
+
+operation:
+    amount: 'Kwota'
+    change_confirmation_status: 'Zmień status potwierdzenia'
+    confirm_delete: 'Usunąć?'
+    contractor: 'Kontrahent'
+    date: 'Data'
+    delete: 'Usuń'
+    description: 'Opis'
+    edit: 'Edytuj'
+    edit_title: 'Edycja operacji'
+    id: '#'
+    new_title: 'Nowa operacja'
+    none_found: 'Brak operacji'
+    related_not_found: 'Nie znaleziono powiązanej operacji.'
+    show_other_side: 'Pokaż drugą stronę transakcji'
+
+pagination:
+    label: 'Paginacja'
+    next: 'Następna'
+    page_of: 'Strona %page% z %totalPages%'
+    previous: 'Poprzednia'
+
+rate:
+    add_title: 'Dodaj kurs'
+    chart_title: 'Wykres kursów'
+    list_title: 'Lista kursów'
+    none_found: 'Brak kursów'
+    value: 'Kurs → PLN'
+
+search:
+    account_column: 'Rach'
+    none_found: 'Brak wyników'
+    none_found_for: 'Brak wyników dla "%query%"'
+    prompt: 'Wpisz frazę w górnym pasku i zatwierdź Enterem.'
+    query_label: 'Zapytanie'
+    results_label: 'Wyników'
+    title: 'Wyniki wyszukiwania'
+
+transfer:
+    credit: 'Uznanie'
+    debit: 'Obciążenie'
+    from_account: 'Z konta'
+    title: 'Przelew / Wymiana'
+    to_account: 'Na konto'

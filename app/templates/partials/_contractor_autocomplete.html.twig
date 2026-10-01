@@ -1,0 +1,41 @@
+<div
+    data-controller="contractor-autocomplete"
+    data-search-url="{{ path('contractor_search') }}"
+    data-create-url="{{ path('contractor_create') }}"
+    class="position-relative"
+>
+    <input
+        id="contractor_input"
+        name="contractor_input"
+        type="text"
+        placeholder="{{ 'form.contractor_placeholder'|trans }}"
+        data-contractor-autocomplete-target="input"
+        autocomplete="off"
+        class="form-control{% if contractorHasError %} is-invalid{% endif %}"
+        value="{{ contractorName|default('') }}"
+    >
+    {{ form_widget(contractorField, {
+        attr: {
+            'data-contractor-autocomplete-target': 'hidden',
+            'id': 'contractor_id'
+        },
+        value: contractorId|default('')
+    }) }}
+    <div id="contractor_error" class="invalid-feedback{% if contractorHasError or contractorErrorMessage %} d-block{% endif %}">
+        {% if contractorErrorMessage %}
+            {{ contractorErrorMessage|trans }}
+        {% elseif contractorHasError %}
+            {{ form_errors(contractorField) }}
+        {% else %}
+            {{ 'contractor.required'|trans }}
+        {% endif %}
+    </div>
+    <div
+        data-contractor-autocomplete-target="results"
+        class="autocomplete-results mt-2"
+    ></div>
+    <div
+        data-contractor-autocomplete-target="message"
+        class="small mt-1"
+    ></div>
+</div>

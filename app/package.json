@@ -1,0 +1,35 @@
+{
+    "name": "finance-front",
+    "private": true,
+    "scripts": {
+        "dev": "encore dev",
+        "watch": "encore dev --watch",
+        "build": "encore production"
+    },
+    "dependencies": {
+        "@hotwired/stimulus": "^3.2.0",
+        "bootstrap": "^5.3.8",
+        "chart.js": "^4.5.1",
+        "chartjs-adapter-date-fns": "^3.0.0",
+        "date-fns": "^4.1.0"
+    },
+    "devDependencies": {
+        "@symfony/stimulus-bridge": "^3.2.0 || ^4.0.0",
+        "@symfony/webpack-encore": "^2.1.0",
+        "core-js": "^3.38.0",
+        "regenerator-runtime": "^0.13.11",
+        "sass": "^1.97.2",
+        "sass-loader": "^12.6.0",
+        "webpack": "^5.88.2",
+        "webpack-cli": "^5.1.4"
+    },
+    "version": "1.0.0",
+    "main": "webpack.config.js",
+    "directories": {
+        "test": "tests"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "description": ""
+}

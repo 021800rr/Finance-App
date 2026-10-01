@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container mt-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h5 mb-3">{{ 'operation.new_title'|trans }}</h1>
+                {% if form.vars.submitted and not form.vars.valid %}
+                    <div class="alert alert-danger mb-3">
+                        {{ 'form.fill_required_fields'|trans }}
+                    </div>
+                {% endif %}
+
+                {% set contractorHasError = form.contractor.vars.errors|length > 0 %}
+                {% set amountHasError = form.amount.vars.errors|length > 0 %}
+                {{ form_start(form, {attr: {id: 'operation_form'}}) }}
+                <table class="table table-borderless align-middle w-auto">
+                    <tbody>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'form.account'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.account) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end form-label-wide">{{ 'form.contractor'|trans }}</th>
+                        <td class="form-value-wide">
+                            {{ include('partials/_contractor_autocomplete.html.twig', {
+                                contractorField: form.contractor,
+                                contractorHasError: contractorHasError,
+                                contractorErrorMessage: contractorErrorMessage|default(null),
+                                contractorName: contractorName|default(null),
+                                contractorId: contractorId|default(null),
+                            }) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'form.date'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.operationDate) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'form.amount'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.amount, {
+                                attr: {
+                                    class: (form.amount.vars.attr.class|default('')) ~ (amountHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if amountHasError %} d-block{% endif %}">
+                                {{ form_errors(form.amount) }}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'form.description'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.description) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'form.confirmed'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.confirmed) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="pt-3">
+                            <button type="submit" class="btn btn-primary me-2">{{ 'form.save'|trans }}</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="window.history.back()">{{ 'form.cancel'|trans }}</button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

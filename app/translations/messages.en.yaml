@@ -1,0 +1,130 @@
+account:
+    add_operation: 'Add operation'
+    balance: 'Balance'
+    balance_today: 'Balance today'
+    bank: 'Bank'
+    currency: 'Currency'
+    history: 'Account history'
+    not_found: 'Account not found. Please select an account from the list.'
+    number: 'Number'
+    type: 'Type'
+
+common:
+    add: 'Add'
+
+contractor:
+    invalid_id: 'Invalid contractor identifier.'
+    not_found: 'The selected contractor does not exist.'
+    required: 'Please select a contractor from the list.'
+
+fixed_expense:
+    add: 'Add'
+    add_title: 'Add fixed expense'
+    confirm_plan: 'Plan expenses for next month?'
+    day: 'Day'
+    edit_title: 'Edit fixed expense'
+    list_title: 'Fixed expenses list'
+    none_found: 'No fixed expenses found'
+    plan_button: 'Plan expenses'
+
+form:
+    account: 'Account'
+    amount: 'Amount'
+    cancel: 'Cancel'
+    confirmed: 'Confirmed'
+    contractor: 'Contractor'
+    contractor_placeholder: 'Type contractor name...'
+    date: 'Date'
+    day: 'Day'
+    description: 'Description'
+    fill_required_fields: 'Please fill in the required fields, highlighted in red.'
+    save: 'Save'
+
+gold_asset:
+    add_title: 'Add gold asset'
+    edit_title: 'Edit gold asset'
+    list_title: 'Assets list'
+    none_found: 'No assets found'
+    ounces: 'Ounces'
+    shape: 'Shape'
+
+gold_price:
+    add_title: 'Add gold price'
+    asset: 'Asset'
+    chart_title: 'Gold price chart'
+    list_title: 'Price history'
+    none_found: 'No prices found'
+    price_pln: 'Price (PLN)'
+
+home:
+    category_backup: 'Backup'
+    category_gold: 'Gold'
+    category_kasa: 'Cash'
+    category_not_found: 'No data — check configuration'
+    category_ror: 'Checking'
+    category_total: 'Total'
+    category_wakacje: 'Savings'
+    currency_pln: 'PLN'
+    hide: 'Hide'
+    hide_hidden: 'Hide hidden'
+    history: 'History'
+    main_account: 'Main account'
+    rate: 'Rate'
+    set_main: 'Set as main account'
+    show: 'Show'
+    show_hidden: 'Show hidden'
+
+nav:
+    fixed_expenses: 'Fixed expenses'
+    gold_assets: 'Gold - assets'
+    gold_prices: 'Gold - prices'
+    new_operation: 'New operation'
+    rates: 'Rates'
+    search: 'Search'
+    search_placeholder: 'Search operations...'
+    transfer: 'Transfer / Exchange'
+
+operation:
+    amount: 'Amount'
+    change_confirmation_status: 'Change confirmation status'
+    confirm_delete: 'Delete this?'
+    contractor: 'Contractor'
+    date: 'Date'
+    delete: 'Delete'
+    description: 'Description'
+    edit: 'Edit'
+    edit_title: 'Edit operation'
+    id: '#'
+    new_title: 'New operation'
+    none_found: 'No operations found'
+    related_not_found: 'Related operation not found.'
+    show_other_side: 'Show other side of transaction'
+
+pagination:
+    label: 'Pagination'
+    next: 'Next'
+    page_of: 'Page %page% of %totalPages%'
+    previous: 'Previous'
+
+rate:
+    add_title: 'Add rate'
+    chart_title: 'Rates chart'
+    list_title: 'Rates list'
+    none_found: 'No rates found'
+    value: 'Rate to PLN'
+
+search:
+    account_column: 'Acc.'
+    none_found: 'No results found'
+    none_found_for: 'No results found for "%query%"'
+    prompt: 'Type a phrase in the top bar and press Enter.'
+    query_label: 'Query'
+    results_label: 'Results'
+    title: 'Search results'
+
+transfer:
+    credit: 'Credit'
+    debit: 'Debit'
+    from_account: 'From account'
+    title: 'Transfer / Exchange'
+    to_account: 'To account'

@@ -1,0 +1,56 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container mt-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5 mb-3">{{ title|trans }}</h2>
+                {% if form.vars.submitted and not form.vars.valid %}
+                    <div class="alert alert-danger mb-3">
+                        {{ 'form.fill_required_fields'|trans }}
+                    </div>
+                {% endif %}
+
+                {% set ouncesHasError = form.ounces.vars.errors|length > 0 %}
+                {{ form_start(form, {attr: {id: 'gold_asset_form'}}) }}
+                <table class="table table-borderless align-middle w-auto">
+                    <tbody>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'gold_asset.shape'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.form) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'gold_asset.ounces'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.ounces, {
+                                attr: {
+                                    class: (form.ounces.vars.attr.class|default('')) ~ (ouncesHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if ouncesHasError %} d-block{% endif %}">
+                                {{ form_errors(form.ounces) }}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="pe-3 text-end">{{ 'form.description'|trans }}</th>
+                        <td>
+                            {{ form_widget(form.description) }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="pt-3">
+                            <button type="submit" class="btn btn-primary me-2">{{ 'form.save'|trans }}</button>
+                            <a href="{{ path('gold_assets') }}" class="btn btn-outline-secondary">{{ 'form.cancel'|trans }}</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                {{ form_end(form) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

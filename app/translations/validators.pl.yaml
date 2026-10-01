@@ -1,0 +1,22 @@
+common:
+    amount_not_blank: 'Podaj kwotę.'
+    date_not_blank: 'Podaj datę.'
+    numeric_invalid: 'Podaj poprawną liczbę.'
+
+contractor:
+    required: 'Wybierz kontrahenta z listy.'
+
+fixed_expense:
+    day_out_of_range: 'Dzień musi być z zakresu 1-28.'
+
+gold_asset:
+    description_not_blank: 'Podaj opis.'
+    form_not_null: 'Wybierz formę.'
+    ounces_must_be_positive: 'Ilość uncji musi być większa od zera.'
+
+gold_price:
+    asset_not_null: 'Wybierz aktywo.'
+    price_not_blank: 'Podaj cenę.'
+
+rate:
+    value_not_blank: 'Podaj kurs.'

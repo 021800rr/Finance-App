@@ -1,0 +1,22 @@
+common:
+    amount_not_blank: 'Please enter an amount.'
+    date_not_blank: 'Please enter a date.'
+    numeric_invalid: 'Please enter a valid number.'
+
+contractor:
+    required: 'Please select a contractor from the list.'
+
+fixed_expense:
+    day_out_of_range: 'Day must be between 1 and 28.'
+
+gold_asset:
+    description_not_blank: 'Please enter a description.'
+    form_not_null: 'Please select a form.'
+    ounces_must_be_positive: 'The number of ounces must be greater than zero.'
+
+gold_price:
+    asset_not_null: 'Please select an asset.'
+    price_not_blank: 'Please enter a price.'
+
+rate:
+    value_not_blank: 'Please enter a rate.'

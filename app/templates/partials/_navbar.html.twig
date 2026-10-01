@@ -1,0 +1,55 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ path('home') }}">Finance</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        {% if app.user %}
+        <div class="collapse navbar-collapse" id="mainNavbar">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ path('operation_new') }}">{{ 'nav.new_operation'|trans }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ path('transfer_new') }}">{{ 'nav.transfer'|trans }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ path('rate') }}">{{ 'nav.rates'|trans }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ path('fixed_expense') }}">{{ 'nav.fixed_expenses'|trans }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ path('gold_assets') }}">{{ 'nav.gold_assets'|trans }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ path('gold_prices') }}">{{ 'nav.gold_prices'|trans }}</a>
+                </li>
+            </ul>
+            <form class="d-flex" role="search" method="get" action="{{ path('global_search') }}">
+                <input
+                    class="form-control form-control-sm me-2"
+                    type="search"
+                    name="q"
+                    placeholder="{{ 'nav.search_placeholder'|trans }}"
+                    aria-label="{{ 'nav.search'|trans }}"
+                    value="{{ app.request.query.get('q') }}"
+                >
+                <button class="btn btn-outline-light btn-sm" type="submit">{{ 'nav.search'|trans }}</button>
+            </form>
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {{ app.user.userIdentifier }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark">
+                        <li><a class="dropdown-item" href="/logout">{{ 'nav.logout'|trans }}</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</nav>
