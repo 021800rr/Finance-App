@@ -5,22 +5,22 @@ export const app = startStimulusApp();
 const controllersContext = require.context('./controllers', true, /_controller\.js$/);
 
 controllersContext.keys().forEach((filePath) => {
-    // filePath przykładowo: './contractor_autocomplete_controller.js' lub './nested/foo_controller.js'
+    // filePath example: './contractor_autocomplete_controller.js' or './nested/foo_controller.js'
     const module = controllersContext(filePath);
     const controller = module.default;
 
     if (!controller) {
-        // Pomijamy pliki bez eksportu default
+        // Skip files without a default export
         return;
     }
 
-    // Wyciągamy nazwę pliku bez katalogu i rozszerzenia
+    // Extract file name without directory and extension
     let fileName = filePath.replace(/^\.\//, '').replace(/\.js$/, ''); // e.g. 'contractor_autocomplete_controller'
-    // Usuń końcówkę _controller jeśli występuje
+    // Strip the '_controller' suffix if present
     fileName = fileName.replace(/_controller$/, '');
-    // Zamień '/' na '-' (jeśli masz podfoldery) oraz '_' na '-'
+    // Replace '/' with '-' (for subfolders) and '_' with '-'
     const controllerName = fileName.replace(/\//g, '-').replace(/_/g, '-');
 
-    // Rejestrujemy pod nazwą np. 'contractor-autocomplete'
+    // Register under name e.g. 'contractor-autocomplete'
     app.register(controllerName, controller);
 });

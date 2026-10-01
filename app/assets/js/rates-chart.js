@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const datasets = banks.map((bank, index) => {
         const color = colors[index % colors.length];
-        // Przekształcamy dane na format {x: data, y: kurs}
+        // Convert data to format {x: date, y: rate}
         const dataPoints = Object.entries(chartData[bank]).map(([date, rate]) => ({
             x: date,
             y: rate
