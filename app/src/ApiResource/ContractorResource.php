@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\QueryParameter;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\Contractor;
 use App\State\ContractorProcessor;
@@ -21,8 +22,14 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Lists all contractors, ordered by name.',
+            description: 'Lists contractors, optionally filtered by a partial name match.',
             provider: ContractorProvider::class,
+            parameters: [
+                'name' => new QueryParameter(
+                    description: 'Partial, case-insensitive name match (e.g. "Ża" matches "Żabka"). Min 2 chars.',
+                    constraints: [new Assert\Length(min: 2)],
+                ),
+            ],
         ),
         new Get(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
@@ -52,6 +59,18 @@ final class ContractorResource
         $resource = new self();
         $resource->id = $contractor->getId();
         $resource->name = $contractor->getName();
+
+        return $resource;
+    }
+
+    /**
+     * @param array{id: int, name: string} $row
+     */
+    public static function fromArray(array $row): self
+    {
+        $resource = new self();
+        $resource->id = $row['id'];
+        $resource->name = $row['name'];
 
         return $resource;
     }

@@ -77,4 +77,26 @@ final class ContractorProviderTest extends KernelTestCase
 
         return $contractor;
     }
+
+    public function testProvideFiltersByPartialNameWhenNameFilterGiven(): void
+    {
+        $this->createContractor('Żabka '.uniqid());
+        $this->createContractor('Biedronka '.uniqid());
+
+        /** @var list<ContractorResource> $result */
+        $result = $this->provider->provide(new GetCollection(), [], ['filters' => ['name' => 'Ża']]);
+
+        self::assertNotNull($result[0]->name);
+        self::assertStringStartsWith('Żabka', $result[0]->name);
+    }
+
+    public function testProvideReturnsAllContractorsWhenNoNameFilterGiven(): void
+    {
+        $this->createContractor('Alpha '.uniqid());
+
+        /** @var list<ContractorResource> $result */
+        $result = $this->provider->provide(new GetCollection(), [], []);
+
+        self::assertNotEmpty($result);
+    }
 }
