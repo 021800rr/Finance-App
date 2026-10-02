@@ -34,7 +34,7 @@ final readonly class CurrencyExchangeRateProvider implements ProviderInterface
             return $rate ? CurrencyExchangeRateResource::fromEntity($rate) : null;
         }
 
-        $rates = $this->currencyExchangeRateRepository->findLatestOrderedForApi(self::LATEST_LIMIT);
+        $rates = $this->currencyExchangeRateRepository->findLatestOrdered(self::LATEST_LIMIT);
 
         return array_values(array_map(CurrencyExchangeRateResource::fromEntity(...), $rates));
     }

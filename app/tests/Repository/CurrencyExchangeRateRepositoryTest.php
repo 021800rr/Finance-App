@@ -9,6 +9,7 @@ use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\Repository\CurrencyExchangeRateRepository;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\Util\QueryCounter;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -62,7 +63,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         self::assertSame(455, $result[$testBankName]['CHF']);
     }
 
-    public function testFindAllOrderedForListReturnsResultsOrderedByDateDescending(): void
+    public function testFindLatestOrderedReturnsResultsOrderedByIdDescending(): void
     {
         $bank = $this->createBank();
         $currency = $this->findOrCreateCurrency('CHF');
@@ -70,12 +71,12 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         $older = $this->createRate($bank, $currency, new DateTimeImmutable('-5 days'), 400);
         $newer = $this->createRate($bank, $currency, new DateTimeImmutable('-1 day'), 450);
 
-        $result = $this->repository->findAllOrderedForList();
+        $result = $this->repository->findLatestOrdered();
 
         self::assertSame($newer->getId(), $result[0]->getId());
     }
 
-    public function testFindAllOrderedForListRespectsMaxResultsLimit(): void
+    public function testFindLatestOrderedRespectsDefaultLimit(): void
     {
         $bank = $this->createBank();
         $currency = $this->findOrCreateCurrency('CHF');
@@ -84,9 +85,51 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
             $this->createRate($bank, $currency, new DateTimeImmutable("-{$i} days"), 400 + $i);
         }
 
-        $result = $this->repository->findAllOrderedForList();
+        $result = $this->repository->findLatestOrdered();
 
         self::assertCount(20, $result);
+    }
+
+    public function testFindLatestOrderedRespectsExplicitLimit(): void
+    {
+        $bank = $this->createBank();
+        $currency = $this->findOrCreateCurrency('CHF');
+
+        for ($i = 0; $i < 15; ++$i) {
+            $this->createRate($bank, $currency, new DateTimeImmutable("-{$i} days"), 400 + $i);
+        }
+
+        $result = $this->repository->findLatestOrdered(10);
+
+        self::assertCount(10, $result);
+    }
+
+    public function testFindLatestOrderedEagerLoadsBankAndCurrencyWithoutExtraQueries(): void
+    {
+        // Regression guard: findLatestOrdered() must addSelect('b', 'c'), not just join() them —
+        // without addSelect, reading bank.name / currency.code (as the Twig list does) would trigger
+        // one lazy-load query per distinct bank/currency instead of zero.
+        for ($i = 0; $i < 3; ++$i) {
+            $this->createRate(
+                $this->createBank(),
+                $this->findOrCreateCurrency('CHF'),
+                new DateTimeImmutable("-{$i} days"),
+                rateToPln: 400 + $i);
+        }
+        $this->em()->clear();
+
+        /** @var QueryCounter $queryCounter */
+        $queryCounter = self::getContainer()->get(QueryCounter::class);
+        $queryCounter->reset();
+
+        $result = $this->repository->findLatestOrdered();
+        foreach ($result as $rate) {
+            // Simulates exactly what templates/rate/index.html.twig reads: r.bank.name, r.currency.code.
+            $rate->getBank()->getName();
+            $rate->getCurrency()->getCode();
+        }
+
+        self::assertSame(1, $queryCounter->count, 'Expected exactly one query; bank/currency access triggered extra lazy-load queries.');
     }
 
     public function testFindHistoricalRatesForChartReturnsOnlyChfRates(): void

@@ -35,7 +35,7 @@ class CurrencyExchangeRateController extends AbstractController
             return $this->redirectToRoute('rate');
         }
 
-        $rates = $currencyExchangeRateRepository->findAllOrderedForList();
+        $rates = $currencyExchangeRateRepository->findLatestOrdered();
         $chartData = $currencyExchangeRateRepository->findHistoricalRatesForChart();
 
         return $this->render('rate/index.html.twig', [

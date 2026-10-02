@@ -63,32 +63,20 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return CurrencyExchangeRate[]
-     */
-    public function findAllOrderedForList(): array
-    {
-        /** @var CurrencyExchangeRate[] $result */
-        $result = $this->createQueryBuilder('r')
-            ->join('r.bank', 'b')
-            ->join('r.currency', 'c')
-            ->orderBy('r.id', 'DESC')
-            ->setMaxResults(20)
-            ->getQuery()
-            ->getResult();
-
-        return $result;
-    }
-
-    /**
-     * Latest rates for the API's GetCollection (fixed limit, no pagination).
-     * Ordered by id DESC: the most recently added rate wins, regardless of rate date.
+     * Most recent rates, newest-added first (ordered by id DESC, so the most recently added rate
+     * wins regardless of rate date). Shared by the web list (default limit) and the API's
+     * GetCollection (fixed limit, no pagination) — both read bank.name/currency.code, not just
+     * identifiers, so bank/currency are eagerly selected (addSelect) to avoid N+1 lazy-loading one
+     * query per distinct bank. Contrast with findAllOrderedForChart(), which only reads identifiers
+     * and therefore needs no join/select at all.
      *
      * @return CurrencyExchangeRate[]
      */
-    public function findLatestOrderedForApi(int $limit = 10): array
+    public function findLatestOrdered(int $limit = 20): array
     {
         /** @var CurrencyExchangeRate[] $result */
         $result = $this->createQueryBuilder('r')
+            ->addSelect('b', 'c')
             ->join('r.bank', 'b')
             ->join('r.currency', 'c')
             ->orderBy('r.id', 'DESC')
