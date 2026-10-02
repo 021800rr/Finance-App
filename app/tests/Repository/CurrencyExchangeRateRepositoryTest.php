@@ -132,7 +132,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         self::assertSame(1, $queryCounter->count, 'Expected exactly one query; bank/currency access triggered extra lazy-load queries.');
     }
 
-    public function testFindHistoricalRatesForChartReturnsOnlyChfRates(): void
+    public function testFindChartRatesGroupedReturnsOnlyChfRates(): void
     {
         $bank = $this->createBank();
         $chf = $this->findOrCreateCurrency('CHF');
@@ -140,12 +140,12 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
 
         $this->createRate($bank, $chf, new DateTimeImmutable('-1 day'), 45500);
 
-        $result = $this->repository->findHistoricalRatesForChart();
+        $result = $this->repository->findChartRatesGrouped();
 
         self::assertArrayHasKey($bank->getName(), $result);
     }
 
-    public function testFindHistoricalRatesForChartConvertsMinorUnitsToDecimal(): void
+    public function testFindChartRatesGroupedConvertsMinorUnitsToDecimal(): void
     {
         $bank = $this->createBank();
         $currency = $this->findOrCreateCurrency('CHF');
@@ -153,12 +153,12 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
 
         $this->createRate($bank, $currency, $date, 45500);
 
-        $result = $this->repository->findHistoricalRatesForChart();
+        $result = $this->repository->findChartRatesGrouped();
 
         self::assertSame(4.55, $result[$bank->getName()][$date->format('Y-m-d')]);
     }
 
-    public function testFindHistoricalRatesForChartExecutesExactlyOneQuery(): void
+    public function testFindChartRatesGroupedExecutesExactlyOneQuery(): void
     {
         // Regression guard: the method selects scalar columns (b.name, r.rateDate, r.rateToPln)
         // instead of hydrating entities, so there's no proxy to lazily initialize later. Guards
@@ -176,7 +176,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         $queryCounter = self::getContainer()->get(QueryCounter::class);
         $queryCounter->reset();
 
-        $this->repository->findHistoricalRatesForChart();
+        $this->repository->findChartRatesGrouped();
 
         self::assertSame(1, $queryCounter->count, 'Expected exactly one query.');
     }

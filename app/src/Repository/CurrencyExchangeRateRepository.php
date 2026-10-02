@@ -69,7 +69,7 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
      * both are the same "page 1" view, no page 2 ever requested, so neither bothers with pagination
      * — and both read bank.name/currency.code, not just identifiers, so bank/currency are eagerly
      * selected (addSelect) to avoid N+1 lazy-loading one query per distinct bank. Contrast with
-     * findAllOrderedForChart(), which only reads identifiers and therefore needs no join/select at all.
+     * findChartRates(), which only reads identifiers and therefore needs no join/select at all.
      *
      * @return CurrencyExchangeRate[]
      */
@@ -89,9 +89,10 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
     }
 
     /**
-     * Full historical rates for the tracked foreign currency, for the API's chart/history endpoint.
-     * Unlike findHistoricalRatesForChart(), returns raw entities (no grouping/dedup) so the API stays
-     * a normalized, flat resource; grouping by bank/date is left to the consumer.
+     * Full historical rates for the tracked foreign currency, as flat, ungrouped entities.
+     * Unlike findChartRatesGrouped(), does not group/dedup by bank/date, so the caller stays free
+     * to shape the data however it needs (used by the API's chart/history endpoint, which returns
+     * a normalized, flat resource and leaves grouping to the client).
      *
      * Filtered to Currencies::TRACKED_FOREIGN_CURRENCY_CODE via IDENTITY(r.currency) on the owning
      * side's FK column — no join needed, since bank_id/currency_code already live on this table and
@@ -99,7 +100,7 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
      *
      * @return CurrencyExchangeRate[]
      */
-    public function findAllOrderedForChart(): array
+    public function findChartRates(): array
     {
         /** @var CurrencyExchangeRate[] $result */
         $result = $this->createQueryBuilder('r')
@@ -114,9 +115,12 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
     }
 
     /**
+     * Full historical rates for the tracked foreign currency, grouped and deduped by bank/date —
+     * ready to plot directly (contrast with findChartRates(), which returns flat, ungrouped entities).
+     *
      * @return array<string, array<string, float>> Bank name => [date => rate]
      */
-    public function findHistoricalRatesForChart(): array
+    public function findChartRatesGrouped(): array
     {
         /** @var list<array{bankName: string, rateDate: \DateTimeImmutable, rateToPln: string}> $rates */
         $rates = $this->createQueryBuilder('r')

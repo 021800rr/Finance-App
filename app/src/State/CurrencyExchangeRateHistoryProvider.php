@@ -26,7 +26,7 @@ final readonly class CurrencyExchangeRateHistoryProvider implements ProviderInte
      */
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array
     {
-        $rates = $this->currencyExchangeRateRepository->findAllOrderedForChart();
+        $rates = $this->currencyExchangeRateRepository->findChartRates();
 
         return array_values(array_map(CurrencyExchangeRateResource::fromEntity(...), $rates));
     }

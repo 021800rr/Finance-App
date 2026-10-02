@@ -36,7 +36,7 @@ class CurrencyExchangeRateController extends AbstractController
         }
 
         $rates = $currencyExchangeRateRepository->findLatestOrdered();
-        $chartData = $currencyExchangeRateRepository->findHistoricalRatesForChart();
+        $chartData = $currencyExchangeRateRepository->findChartRatesGrouped();
 
         return $this->render('rate/index.html.twig', [
             'form' => $form->createView(),
