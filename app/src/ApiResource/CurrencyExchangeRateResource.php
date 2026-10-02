@@ -12,6 +12,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\CurrencyExchangeRate;
+use App\State\CurrencyExchangeRateHistoryProvider;
 use App\State\CurrencyExchangeRateProcessor;
 use App\State\CurrencyExchangeRateProvider;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -25,6 +26,13 @@ use Symfony\Component\Validator\Constraints as Assert;
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Lists the most recent exchange rates (fixed limit, no pagination), like the web list.',
             provider: CurrencyExchangeRateProvider::class,
+        ),
+        new GetCollection(
+            uriTemplate: '/currency_exchange_rates/history',
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
+            description: 'Full historical rates for the tracked currency, all banks and dates, no limit or '
+            .'pagination. Intended for charting; the client groups/dedups as needed.',
+            provider: CurrencyExchangeRateHistoryProvider::class,
         ),
         new Get(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),

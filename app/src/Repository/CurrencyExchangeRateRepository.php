@@ -100,6 +100,31 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
     }
 
     /**
+     * Full historical rates for the tracked foreign currency, for the API's chart/history endpoint.
+     * Unlike findHistoricalRatesForChart(), returns raw entities (no grouping/dedup) so the API stays
+     * a normalized, flat resource; grouping by bank/date is left to the consumer.
+     *
+     * Filtered to Currencies::TRACKED_FOREIGN_CURRENCY_CODE via IDENTITY(r.currency) on the owning
+     * side's FK column — no join needed, since bank_id/currency_code already live on this table and
+     * fromEntity() only ever reads identifiers (see CurrencyExchangeRateResource).
+     *
+     * @return CurrencyExchangeRate[]
+     */
+    public function findAllOrderedForChart(): array
+    {
+        /** @var CurrencyExchangeRate[] $result */
+        $result = $this->createQueryBuilder('r')
+            ->where('IDENTITY(r.currency) = :currency')
+            ->setParameter('currency', Currencies::TRACKED_FOREIGN_CURRENCY_CODE)
+            ->orderBy('r.rateDate', 'ASC')
+            ->addOrderBy('r.id', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $result;
+    }
+
+    /**
      * @return array<string, array<string, float>> Bank name => [date => rate]
      */
     public function findHistoricalRatesForChart(): array
