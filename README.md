@@ -11,7 +11,7 @@ Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazj�
 - **~550 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
 - **PHP CS Fixer** wymuszający spójny styl kodu.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
-- Kod (nazwy, komentarze, docbloki, komunikaty wyjątków) konsekwentnie po angielsku — polski tylko w warstwie tłumaczeń/UI.
+- Kod (nazwy, komentarze, docbloki, komunikaty wyjątków) — polski tylko w warstwie tłumaczeń/UI.
 
 ## Stack
 
