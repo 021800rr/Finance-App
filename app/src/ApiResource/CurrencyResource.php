@@ -17,14 +17,14 @@ use App\State\CurrencyProvider;
     description: 'An ISO 4217 currency code known to the application.',
     operations: [
         new GetCollection(
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Lists all currencies, ordered by code.',
             provider: CurrencyProvider::class,
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
         ),
         new Get(
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Retrieves a single currency by its code.',
             provider: CurrencyProvider::class,
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
         ),
     ],
     security: "is_granted('ROLE_USER')",
