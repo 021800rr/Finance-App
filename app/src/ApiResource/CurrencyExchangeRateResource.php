@@ -22,26 +22,26 @@ use Symfony\Component\Validator\Constraints as Assert;
     .'"Dodaj kurs" form.',
     operations: [
         new GetCollection(
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Lists the most recent exchange rates (fixed limit, no pagination), like the web list.',
             provider: CurrencyExchangeRateProvider::class,
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
         ),
         new Get(
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Retrieves a single exchange rate by id.',
             provider: CurrencyExchangeRateProvider::class,
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
         ),
         new Post(
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Adds a new exchange rate. Multiple rates for the same bank, currency and date are '
             .'allowed; the most recently added one (highest id) is treated as the current rate.',
             processor: CurrencyExchangeRateProcessor::class,
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
         ),
         new Delete(
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Deletes an exchange rate entry.',
             provider: CurrencyExchangeRateProvider::class,
             processor: CurrencyExchangeRateProcessor::class,
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
         ),
     ],
     security: "is_granted('ROLE_USER')",
