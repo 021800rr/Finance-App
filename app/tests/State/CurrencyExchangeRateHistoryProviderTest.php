@@ -11,6 +11,7 @@ use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\State\CurrencyExchangeRateHistoryProvider;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\Util\QueryCounter;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
@@ -81,6 +82,26 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
         $ids = array_map(static fn (CurrencyExchangeRateResource $r): ?int => $r->id, $result);
         self::assertContains($tracked->getId(), $ids);
         self::assertNotContains($untracked->getId(), $ids);
+    }
+
+    public function testProvideDoesNotTriggerExtraQueriesForBankAndCurrencyIdentifiers(): void
+    {
+        // Regression guard: fromEntity() must only read identifiers (getBank()->getId(),
+        // getCurrency()->getCode()), which Doctrine resolves from the owning-side FK columns without
+        // initializing the proxy. Reading a non-identifier field (e.g. getBank()->getName()) would
+        // trigger one lazy-load query per distinct bank instead of zero.
+        for ($i = 0; $i < 3; ++$i) {
+            $this->createRate(new \DateTimeImmutable("2026-01-{$this->twoDigit($i + 1)}"));
+        }
+        $this->em()->clear();
+
+        /** @var QueryCounter $queryCounter */
+        $queryCounter = self::getContainer()->get(QueryCounter::class);
+        $queryCounter->reset();
+
+        $this->provider->provide(new GetCollection());
+
+        self::assertSame(1, $queryCounter->count, 'Expected exactly one query; bank/currency access triggered extra lazy-load queries.');
     }
 
     private function createRate(\DateTimeImmutable $date, string $currencyCode = 'CHF'): CurrencyExchangeRate

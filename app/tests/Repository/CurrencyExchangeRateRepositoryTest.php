@@ -158,6 +158,29 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         self::assertSame(4.55, $result[$bank->getName()][$date->format('Y-m-d')]);
     }
 
+    public function testFindHistoricalRatesForChartExecutesExactlyOneQuery(): void
+    {
+        // Regression guard: the method selects scalar columns (b.name, r.rateDate, r.rateToPln)
+        // instead of hydrating entities, so there's no proxy to lazily initialize later. Guards
+        // against a future refactor (e.g. selecting entities instead of scalars) reintroducing N+1.
+        for ($i = 0; $i < 3; ++$i) {
+            $this->createRate(
+                $this->createBank(),
+                $this->findOrCreateCurrency('CHF'),
+                new DateTimeImmutable("-{$i} days"),
+                rateToPln: 400 + $i);
+        }
+        $this->em()->clear();
+
+        /** @var QueryCounter $queryCounter */
+        $queryCounter = self::getContainer()->get(QueryCounter::class);
+        $queryCounter->reset();
+
+        $this->repository->findHistoricalRatesForChart();
+
+        self::assertSame(1, $queryCounter->count, 'Expected exactly one query.');
+    }
+
     private function createBank(): Bank
     {
         $bank = new Bank('Test Bank ' . uniqid());

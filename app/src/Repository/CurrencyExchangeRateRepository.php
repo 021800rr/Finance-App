@@ -121,7 +121,7 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
         $rates = $this->createQueryBuilder('r')
             ->select('b.name as bankName, r.rateDate, r.rateToPln')
             ->join('r.bank', 'b')
-            ->join('r.currency', 'c', 'WITH', 'c.code = :currency')
+            ->where('IDENTITY(r.currency) = :currency')
             ->setParameter('currency', Currencies::TRACKED_FOREIGN_CURRENCY_CODE)
             ->orderBy('r.rateDate', 'ASC')
             ->addOrderBy('r.id', 'ASC')
