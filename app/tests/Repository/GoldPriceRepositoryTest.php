@@ -10,6 +10,7 @@ use App\Entity\GoldForm;
 use App\Entity\GoldPrice;
 use App\Repository\GoldPriceRepository;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\Util\QueryCounter;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -69,17 +70,66 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         self::assertSame(0, $total);
     }
 
-    public function testFindAllOrderedSortsByDateDescending(): void
+    public function testFindLatestOrderedSortsByDateDescending(): void
     {
         $asset = $this->createGoldAsset();
 
         $older = $this->createGoldPrice($asset, new DateTimeImmutable('-5 days'), 800000);
         $newer = $this->createGoldPrice($asset, new DateTimeImmutable('-1 day'), 850000);
 
-        $result = $this->repository->findAllOrdered();
+        $result = $this->repository->findLatestOrdered();
 
         self::assertSame($newer->getId(), $result[0]->getId());
         self::assertSame($older->getId(), $result[1]->getId());
+    }
+
+    public function testFindLatestOrderedRespectsDefaultLimit(): void
+    {
+        $asset = $this->createGoldAsset();
+
+        for ($i = 0; $i < 25; ++$i) {
+            $this->createGoldPrice($asset, new DateTimeImmutable("-{$i} days"), 800000 + $i);
+        }
+
+        $result = $this->repository->findLatestOrdered();
+
+        self::assertCount(20, $result);
+    }
+
+    public function testFindLatestOrderedRespectsExplicitLimit(): void
+    {
+        $asset = $this->createGoldAsset();
+
+        for ($i = 0; $i < 15; ++$i) {
+            $this->createGoldPrice($asset, new DateTimeImmutable("-{$i} days"), 800000 + $i);
+        }
+
+        $result = $this->repository->findLatestOrdered(10);
+
+        self::assertCount(10, $result);
+    }
+
+    public function testFindLatestOrderedEagerLoadsGoldAssetWithoutExtraQueries(): void
+    {
+        // Regression guard: findLatestOrdered() must addSelect('ga'), not just join() it — without
+        // addSelect, reading goldAsset.description (as the Twig list does) would trigger one
+        // lazy-load query per distinct asset instead of zero.
+        for ($i = 0; $i < 3; ++$i) {
+            $this->createGoldPrice($this->createGoldAsset(), new DateTimeImmutable("-{$i} days"), 800000 + $i);
+        }
+        $this->em()->clear();
+
+        /** @var QueryCounter $queryCounter */
+        $queryCounter = self::getContainer()->get(QueryCounter::class);
+        $queryCounter->reset();
+
+        $result = $this->repository->findLatestOrdered();
+        foreach ($result as $price) {
+            // Simulates exactly what templates/gold_price/index.html.twig reads: p.goldAsset.description.
+            $price->getGoldAsset()->getDescription();
+        }
+
+        self::assertSame(1, $queryCounter->count, 'Expected exactly one query; goldAsset access triggered extra lazy-load queries.');
     }
 
     public function testFindHistoricalPricesForChartConvertsMinorUnitsToDecimal(): void

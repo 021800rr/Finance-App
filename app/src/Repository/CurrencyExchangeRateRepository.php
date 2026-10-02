@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Constant\Currencies;
 use App\Entity\CurrencyExchangeRate;
+use App\Service\Paginator;
 use App\ValueObject\Money;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Exception;
@@ -64,15 +65,15 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
 
     /**
      * Most recent rates, newest-added first (ordered by id DESC, so the most recently added rate
-     * wins regardless of rate date). Shared by the web list (default limit) and the API's
-     * GetCollection (fixed limit, no pagination) — both read bank.name/currency.code, not just
-     * identifiers, so bank/currency are eagerly selected (addSelect) to avoid N+1 lazy-loading one
-     * query per distinct bank. Contrast with findAllOrderedForChart(), which only reads identifiers
-     * and therefore needs no join/select at all.
+     * wins regardless of rate date). Shared verbatim by the web list and the API's GetCollection —
+     * both are the same "page 1" view, no page 2 ever requested, so neither bothers with pagination
+     * — and both read bank.name/currency.code, not just identifiers, so bank/currency are eagerly
+     * selected (addSelect) to avoid N+1 lazy-loading one query per distinct bank. Contrast with
+     * findAllOrderedForChart(), which only reads identifiers and therefore needs no join/select at all.
      *
      * @return CurrencyExchangeRate[]
      */
-    public function findLatestOrdered(int $limit = 20): array
+    public function findLatestOrdered(int $limit = Paginator::DEFAULT_PER_PAGE): array
     {
         /** @var CurrencyExchangeRate[] $result */
         $result = $this->createQueryBuilder('r')

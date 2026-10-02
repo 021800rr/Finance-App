@@ -39,9 +39,9 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
     public function testProvideReturnsAllRatesWithoutLimit(): void
     {
         $ids = [];
-        // One more than CurrencyExchangeRateProvider's internal LATEST_LIMIT of 10, to prove
-        // this provider is not bound by that limit.
-        for ($i = 0; $i < 11; ++$i) {
+        // One more than findLatestOrdered()'s default limit (Paginator::DEFAULT_PER_PAGE, 20),
+        // to prove this provider is not bound by that limit.
+        for ($i = 0; $i < 21; ++$i) {
             $ids[] = $this->createRate(new \DateTimeImmutable("2026-01-{$this->twoDigit($i + 1)}"))->getId();
         }
 

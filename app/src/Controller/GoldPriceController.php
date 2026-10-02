@@ -35,7 +35,7 @@ class GoldPriceController extends AbstractController
             return $this->redirectToRoute('gold_prices');
         }
 
-        $prices = $goldPriceRepository->findAllOrdered();
+        $prices = $goldPriceRepository->findLatestOrdered();
         $chartData = $goldPriceRepository->findHistoricalPricesForChart();
 
         return $this->render('gold_price/index.html.twig', [

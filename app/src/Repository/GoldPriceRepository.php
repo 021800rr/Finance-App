@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Constant\Currencies;
 use App\Entity\GoldPrice;
+use App\Service\Paginator;
 use App\ValueObject\Money;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Exception;
@@ -47,18 +48,26 @@ final class GoldPriceRepository extends ServiceEntityRepository
     }
 
     /**
+     * Most recent prices, newest first. Shared verbatim by the web list and the API's
+     * GetCollection — both are the same "page 1" view, no page 2 ever requested, so neither
+     * bothers with pagination. The web list reads goldAsset.description (not just the
+     * identifier), so goldAsset is eagerly selected (addSelect) to avoid N+1 lazy-loading one
+     * query per distinct asset. The join to goldAsset.form is kept (needed for the ORDER BY
+     * tie-breaker) but its columns are not selected, since nothing reads form fields here —
+     * contrast with findHistoricalPricesForChart(), which does read the form name.
+     *
      * @return GoldPrice[]
      */
-    public function findAllOrdered(): array
+    public function findLatestOrdered(int $limit = Paginator::DEFAULT_PER_PAGE): array
     {
         /** @var GoldPrice[] $result */
         $result = $this->createQueryBuilder('gp')
+            ->addSelect('ga')
             ->join('gp.goldAsset', 'ga')
             ->join('ga.form', 'gf')
-            ->addSelect('ga')
-            ->addSelect('gf')
             ->orderBy('gp.priceDate', 'DESC')
             ->addOrderBy('gf.name', 'ASC')
+            ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
 

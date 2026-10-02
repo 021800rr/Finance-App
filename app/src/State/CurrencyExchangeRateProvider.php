@@ -14,8 +14,6 @@ use App\Repository\CurrencyExchangeRateRepository;
  */
 final readonly class CurrencyExchangeRateProvider implements ProviderInterface
 {
-    private const int LATEST_LIMIT = 10;
-
     public function __construct(private CurrencyExchangeRateRepository $currencyExchangeRateRepository)
     {
     }
@@ -34,7 +32,7 @@ final readonly class CurrencyExchangeRateProvider implements ProviderInterface
             return $rate ? CurrencyExchangeRateResource::fromEntity($rate) : null;
         }
 
-        $rates = $this->currencyExchangeRateRepository->findLatestOrdered(self::LATEST_LIMIT);
+        $rates = $this->currencyExchangeRateRepository->findLatestOrdered();
 
         return array_values(array_map(CurrencyExchangeRateResource::fromEntity(...), $rates));
     }

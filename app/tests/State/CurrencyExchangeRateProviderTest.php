@@ -76,16 +76,16 @@ final class CurrencyExchangeRateProviderTest extends KernelTestCase
     public function testProvideCollectionRespectsTheLatestLimit(): void
     {
         $ids = [];
-        // One more than the provider's internal LATEST_LIMIT of 10.
-        for ($i = 0; $i < 11; ++$i) {
+        // One more than findLatestOrdered()'s default limit (Paginator::DEFAULT_PER_PAGE, 20).
+        for ($i = 0; $i < 21; ++$i) {
             $ids[] = $this->createRate()->getId();
         }
 
         /** @var list<CurrencyExchangeRateResource> $result */
         $result = $this->provider->provide(new GetCollection());
 
-        self::assertCount(10, $result);
-        // The oldest of the 11 created rates must have been dropped.
+        self::assertCount(20, $result);
+        // The oldest of the 21 created rates must have been dropped.
         $returnedIds = array_map(static fn (CurrencyExchangeRateResource $r): ?int => $r->id, $result);
         self::assertNotContains($ids[0], $returnedIds);
         self::assertContains($ids[count($ids) - 1], $returnedIds);
