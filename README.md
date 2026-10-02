@@ -54,12 +54,6 @@ curl -X POST http://localhost:8081/api/login_check \
 -d '{"email": "twoj@email.pl", "password": "haslo123"}'
 ```
 
-
-
-### Przykładowy klient API
-
-W `/admin` znajduje się mały React admin (`@api-platform/admin`), postawiony na tym samym API — pokazuje, że API rzeczywiście jest samowystarczalne (auto-generowany CRUD z dokumentacji Hydra + JWT). To nie jest docelowy interfejs appki, tylko demo tego, że API da się skonsumować niezależnie od Twiga: http://localhost:5173
-
 ## Zasady wprowadzania danych
 
 Nowe operacje na koncie dodajemy bez znaku, jeśli to **przychód** na koncie: "309 zł refundacja /zwrot"
