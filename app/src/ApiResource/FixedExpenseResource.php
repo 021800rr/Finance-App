@@ -22,33 +22,33 @@ use Symfony\Component\Validator\Constraints as Assert;
     description: 'A recurring monthly expense (always a negative amount, in PLN). Mirrors the "Opłaty stałe" form.',
     operations: [
         new GetCollection(
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Lists all fixed expenses, ordered by day then by id descending (same order as the web list).',
             provider: FixedExpenseProvider::class,
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
         ),
         new Get(
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Retrieves a single fixed expense by id.',
             provider: FixedExpenseProvider::class,
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
         ),
         new Post(
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Creates a new fixed expense. Either contractorId or contractorName must be given; '
             .'if contractorName does not match an existing contractor, one is created automatically. '
             .'Amount must be negative and is always in PLN.',
             processor: FixedExpenseProcessor::class,
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
         ),
         new Patch(
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Updates an existing fixed expense. Same rules as POST for contractorId/contractorName.',
             provider: FixedExpenseProvider::class,
             processor: FixedExpenseProcessor::class,
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
         ),
         new Delete(
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Deletes a fixed expense.',
             provider: FixedExpenseProvider::class,
             processor: FixedExpenseProcessor::class,
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
         ),
     ],
     security: "is_granted('ROLE_USER')",
