@@ -41,7 +41,7 @@ class GoldAssetType extends AbstractType
                     new Range(
                         notInRangeMessage: 'gold_asset.ounces_out_of_range',
                         min: 0.0001,
-                        max: 1000,
+                        max: 999.9999,
                     ),
                 ],
                 'data' => $existingAsset ? $this->ouncesDecimal($existingAsset) : null,

@@ -13,6 +13,7 @@ gold_asset:
     description_not_blank: 'Please enter a description.'
     form_not_null: 'Please select a form.'
     ounces_must_be_positive: 'The number of ounces must be greater than zero.'
+    ounces_out_of_range: 'The number of ounces must be between 0.0001 and 999.9999.'
 
 gold_price:
     asset_not_null: 'Please select an asset.'

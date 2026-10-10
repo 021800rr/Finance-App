@@ -13,6 +13,7 @@ gold_asset:
     description_not_blank: 'Podaj opis.'
     form_not_null: 'Wybierz formę.'
     ounces_must_be_positive: 'Ilość uncji musi być większa od zera.'
+    ounces_out_of_range: 'Ilość uncji musi być z zakresu 0,0001-999,9999.'
 
 gold_price:
     asset_not_null: 'Wybierz aktywo.'
