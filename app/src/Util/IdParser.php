@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Validator;
+namespace App\Util;
 
 use App\Constant\DatabaseLimits;
 
-final class IdValidator
+final class IdParser
 {
     private function __construct()
     {

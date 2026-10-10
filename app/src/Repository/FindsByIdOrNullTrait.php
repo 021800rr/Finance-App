@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Validator\IdValidator;
+use App\Util\IdParser;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 
 /**
@@ -25,7 +25,7 @@ trait FindsByIdOrNullTrait
      */
     public function findByIdOrNull(mixed $rawId): ?object
     {
-        $id = IdValidator::tryParse($rawId);
+        $id = IdParser::tryParse($rawId);
 
         return null === $id ? null : $this->find($id);
     }

@@ -6,7 +6,7 @@ namespace App\Service;
 
 use App\Dto\ContractorResolution;
 use App\Repository\ContractorRepository;
-use App\Validator\IdValidator;
+use App\Util\IdParser;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,7 +28,7 @@ final readonly class ContractorFormHandler
         if (!$contractorId) {
             $errorMessage = 'contractor.required';
             $contractorField->addError(new FormError($errorMessage));
-        } elseif (null === IdValidator::tryParse($contractorId)) {
+        } elseif (null === IdParser::tryParse($contractorId)) {
             $errorMessage = 'contractor.invalid_id';
             $contractorField->addError(new FormError($errorMessage));
         } else {
