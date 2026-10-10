@@ -198,6 +198,97 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         self::assertSame(1, $this->repository->countByQuery('countable'));
     }
 
+    public function testSearchByQueryPagedAndCountByQueryCanBeRestrictedToOneAccount(): void
+    {
+        $marker = uniqid();
+        $accountA = $this->createAccount();
+        $accountB = $this->createAccount();
+        $inA = $this->createOperation($accountA, 1000, new DateTimeImmutable(), "Scoped {$marker}");
+        $this->createOperation($accountB, 1000, new DateTimeImmutable(), "Scoped {$marker}");
+
+        $scoped = $this->repository->searchByQueryPaged($marker, 10, 0, $accountA);
+
+        self::assertCount(1, $scoped);
+        self::assertSame($inA->getId(), $scoped[0]->getId());
+        self::assertSame(1, $this->repository->countByQuery($marker, $accountA));
+        self::assertSame(2, $this->repository->countByQuery($marker));
+    }
+
+    public function testSearchByQueryPagedScopedToAccountStillMatchesByExactAmount(): void
+    {
+        $accountA = $this->createAccount();
+        $accountB = $this->createAccount();
+        $inA = $this->createOperation($accountA, 123456, new DateTimeImmutable(), 'amount scoped A');
+        $this->createOperation($accountB, 123456, new DateTimeImmutable(), 'amount scoped B');
+
+        $ids = array_map(
+            static fn (AccountOperation $o): int => $o->getId(),
+            $this->repository->searchByQueryPaged('1234.56', 100, 0, $accountA),
+        );
+
+        self::assertSame([$inA->getId()], $ids);
+    }
+
+    public function testSearchByQueryPagedTreatsPercentAsLiteral(): void
+    {
+        $marker = uniqid();
+        $account = $this->createAccount();
+        $withPercent = $this->createOperation($account, 1000, new DateTimeImmutable(), "Discount 100% {$marker}");
+        $plain = $this->createOperation($account, 1000, new DateTimeImmutable(), "Discount 1000 {$marker}");
+
+        $ids = $this->idsOf($this->repository->searchByQueryPaged('100%', 100, 0));
+
+        self::assertContains($withPercent->getId(), $ids);
+        self::assertNotContains($plain->getId(), $ids);
+    }
+
+    public function testSearchByQueryPagedTreatsUnderscoreAsLiteral(): void
+    {
+        $marker = uniqid();
+        $account = $this->createAccount();
+        $withUnderscore = $this->createOperation($account, 1000, new DateTimeImmutable(), "snake_case {$marker}");
+        $plain = $this->createOperation($account, 1000, new DateTimeImmutable(), "snakeXcase {$marker}");
+
+        $ids = $this->idsOf($this->repository->searchByQueryPaged("snake_case {$marker}", 100, 0));
+
+        self::assertContains($withUnderscore->getId(), $ids);
+        self::assertNotContains($plain->getId(), $ids);
+    }
+
+    public function testSearchByQueryPagedTreatsBackslashAsLiteral(): void
+    {
+        $marker = uniqid();
+        $account = $this->createAccount();
+        $withBackslash = $this->createOperation($account, 1000, new DateTimeImmutable(), 'Path a\\b '.$marker);
+        $plain = $this->createOperation($account, 1000, new DateTimeImmutable(), 'Path ab '.$marker);
+
+        $ids = $this->idsOf($this->repository->searchByQueryPaged('a\\b '.$marker, 100, 0));
+
+        self::assertContains($withBackslash->getId(), $ids);
+        self::assertNotContains($plain->getId(), $ids);
+    }
+
+    public function testSearchByQueryPagedFindsDescriptionEndingWithBackslash(): void
+    {
+        $marker = uniqid();
+        $account = $this->createAccount();
+        $operation = $this->createOperation($account, 1000, new DateTimeImmutable(), "Dir {$marker}\\");
+
+        $ids = $this->idsOf($this->repository->searchByQueryPaged("{$marker}\\", 100, 0));
+
+        self::assertContains($operation->getId(), $ids);
+    }
+
+    public function testCountByQueryTreatsPercentAsLiteral(): void
+    {
+        $marker = uniqid();
+        $account = $this->createAccount();
+        $this->createOperation($account, 1000, new DateTimeImmutable(), "Rate 5% {$marker}");
+        $this->createOperation($account, 1000, new DateTimeImmutable(), "Rate 50 {$marker}");
+
+        self::assertSame(1, $this->repository->countByQuery("5% {$marker}"));
+    }
+
     public function testFindOtherSideReturnsNullWhenNoTransactionUuid(): void
     {
         $account = $this->createAccount();
@@ -251,6 +342,16 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $this->em()->flush();
 
         return $account;
+    }
+
+    /**
+     * @param AccountOperation[] $operations
+     *
+     * @return list<int>
+     */
+    private function idsOf(array $operations): array
+    {
+        return array_values(array_map(static fn (AccountOperation $o): int => $o->getId(), $operations));
     }
 
     private function createContractorWithName(string $name): Contractor

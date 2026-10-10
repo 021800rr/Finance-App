@@ -11,7 +11,9 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\QueryParameter;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use App\Constant\DatabaseLimits;
 use App\Entity\AccountOperation;
 use App\State\AccountOperationProcessor;
 use App\State\AccountOperationProvider;
@@ -23,8 +25,19 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Lists operations. Supports ?accountId=<id> to filter by account and ?page=<n> for pagination.',
+            description: 'Lists operations, newest first, 30 per page. accountId and q can be combined.',
             provider: AccountOperationProvider::class,
+            parameters: [
+                'accountId' => new QueryParameter(
+                    schema: ['type' => 'integer', 'minimum' => 1, 'maximum' => DatabaseLimits::POSTGRES_INT4_MAX],
+                    description: 'Only operations of this account.',
+                ),
+                'q' => new QueryParameter(
+                    description: 'Search in the description and the contractor name (case-insensitive, partial match) '
+                    .'or by exact amount (e.g. 150.50). Min 2 chars.',
+                    constraints: [new Assert\Length(min: 2)],
+                ),
+            ],
         ),
         new Get(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),

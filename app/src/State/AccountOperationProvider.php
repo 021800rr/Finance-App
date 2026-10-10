@@ -10,6 +10,7 @@ use App\ApiResource\AccountOperationResource;
 use App\Repository\AccountOperationRepository;
 use App\Repository\AccountRepository;
 use App\State\Pagination\OffsetPaginator;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
@@ -18,6 +19,9 @@ use Symfony\Component\HttpFoundation\RequestStack;
 final readonly class AccountOperationProvider implements ProviderInterface
 {
     private const int ITEMS_PER_PAGE = 30;
+
+    // Pages beyond this are simply empty; the cap keeps the offset calculation far away from integer overflow.
+    private const int MAX_PAGE = 1_000_000;
 
     public function __construct(
         private AccountOperationRepository $accountOperationRepository,
@@ -44,21 +48,36 @@ final readonly class AccountOperationProvider implements ProviderInterface
     }
 
     /**
+     * Supported query parameters: accountId (only that account), q (text/amount search, see
+     * AccountOperationRepository) and page. accountId and q can be combined.
+     *
      * @return OffsetPaginator<AccountOperationResource>
      */
     private function provideCollection(): OffsetPaginator
     {
         $request = $this->requestStack->getCurrentRequest();
-        $page = max(1, (int) $request?->query->get('page', 1));
-        $rawAccountId = $request?->query->get('accountId');
+        $page = $this->requestedPage($request);
         $offset = ($page - 1) * self::ITEMS_PER_PAGE;
+        $rawAccountId = $request?->query->get('accountId');
+        $rawQuery = $request?->query->get('q');
+        $query = is_string($rawQuery) ? trim($rawQuery) : null;
 
+        $account = null;
         if (null !== $rawAccountId) {
             $account = $this->accountRepository->findByIdOrNull($rawAccountId);
             if (!$account) {
-                return new OffsetPaginator([], $page, self::ITEMS_PER_PAGE, 0);
+                return $this->emptyPage($page);
+            }
+        }
+
+        if (null !== $query) {
+            if ('' === $query) {
+                return $this->emptyPage($page);
             }
 
+            $items = $this->accountOperationRepository->searchByQueryPaged($query, self::ITEMS_PER_PAGE, $offset, $account);
+            $total = $this->accountOperationRepository->countByQuery($query, $account);
+        } elseif (null !== $account) {
             $items = $this->accountOperationRepository->findByAccountOrderedPaged($account, self::ITEMS_PER_PAGE, $offset);
             $total = $this->accountOperationRepository->countByAccount($account);
         } else {
@@ -72,5 +91,31 @@ final readonly class AccountOperationProvider implements ProviderInterface
             self::ITEMS_PER_PAGE,
             $total,
         );
+    }
+
+    /**
+     * The page number from ?page=, forced into the range 1..MAX_PAGE ("abc", 0 and -5 become 1).
+     */
+    private function requestedPage(?Request $request): int
+    {
+        $page = (int) $request?->query->get('page', 1);
+
+        if ($page < 1) {
+            return 1;
+        }
+
+        if ($page > self::MAX_PAGE) {
+            return self::MAX_PAGE;
+        }
+
+        return $page;
+    }
+
+    /**
+     * @return OffsetPaginator<AccountOperationResource>
+     */
+    private function emptyPage(int $page): OffsetPaginator
+    {
+        return new OffsetPaginator([], $page, self::ITEMS_PER_PAGE, 0);
     }
 }

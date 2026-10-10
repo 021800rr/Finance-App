@@ -108,10 +108,10 @@ final class AccountOperationRepository extends ServiceEntityRepository
     /**
      * @return AccountOperation[]
      */
-    public function searchByQueryPaged(string $query, int $limit, int $offset): array
+    public function searchByQueryPaged(string $query, int $limit, int $offset, ?Account $account = null): array
     {
         /** @var AccountOperation[] $result */
-        $result = $this->buildSearchQuery($query)
+        $result = $this->buildSearchQuery($query, $account)
             ->addSelect('c', 'a')
             ->orderBy('o.operationDate', 'DESC')
             ->addOrderBy('o.id', 'DESC')
@@ -123,9 +123,9 @@ final class AccountOperationRepository extends ServiceEntityRepository
         return $result;
     }
 
-    public function countByQuery(string $query): int
+    public function countByQuery(string $query, ?Account $account = null): int
     {
-        return (int) $this->buildSearchQuery($query)
+        return (int) $this->buildSearchQuery($query, $account)
             ->select('COUNT(o.id)')
             ->getQuery()
             ->getSingleScalarResult();
@@ -173,18 +173,30 @@ final class AccountOperationRepository extends ServiceEntityRepository
         return ((int) $count) > 0;
     }
 
-    private function buildSearchQuery(string $query): QueryBuilder
+    /**
+     * Matches the text in the description or the contractor name (case-insensitive substring) or, when the
+     * text parses as an amount, the exact amount. LIKE wildcards in the input are escaped, so "%", "_" and
+     * "\\" only ever match themselves. Optionally restricted to one account.
+     */
+    private function buildSearchQuery(string $query, ?Account $account = null): QueryBuilder
     {
+        $query = trim($query);
+
         $qb = $this->createQueryBuilder('o')
             ->join('o.contractor', 'c')
             ->join('o.account', 'a')
             ->where('LOWER(o.description) LIKE LOWER(:q) OR LOWER(c.name) LIKE LOWER(:q)')
-            ->setParameter('q', '%'.$query.'%');
+            ->setParameter('q', '%'.addcslashes($query, '\\%_').'%');
 
         $exactAmount = $this->tryParseAmountQuery($query);
         if (null !== $exactAmount) {
             $qb->orWhere('o.amount = :exact_q')
                 ->setParameter('exact_q', $exactAmount);
+        }
+
+        if (null !== $account) {
+            $qb->andWhere('o.account = :account')
+                ->setParameter('account', $account);
         }
 
         return $qb;
