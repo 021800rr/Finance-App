@@ -6,10 +6,11 @@ namespace App\Entity;
 
 use App\Entity\Trait\BlankStringGuardTrait;
 use App\Entity\Trait\TimestampTrait;
+use App\Repository\GoldFormRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: GoldFormRepository::class)]
 #[ORM\Table(name: 'gold_form')]
 #[ORM\UniqueConstraint(name: 'uniq_gold_form_name', columns: ['name'])]
 class GoldForm

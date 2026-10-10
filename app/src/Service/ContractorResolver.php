@@ -22,7 +22,7 @@ final readonly class ContractorResolver
     public function resolve(?int $contractorId, ?string $contractorName): Contractor
     {
         if (null !== $contractorId) {
-            $contractor = $this->contractorRepository->find($contractorId);
+            $contractor = $this->contractorRepository->findByIdOrNull($contractorId);
             if (!$contractor) {
                 throw new NotFoundHttpException('Contractor not found.');
             }

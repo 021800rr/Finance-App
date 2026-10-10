@@ -69,8 +69,7 @@ final readonly class GoldPriceProcessor implements ProcessorInterface
      */
     private function loadExisting(array $uriVariables): GoldPrice
     {
-        $id = $uriVariables['id'] ?? null;
-        $goldPrice = is_numeric($id) ? $this->goldPriceRepository->find((int) $id) : null;
+        $goldPrice = $this->goldPriceRepository->findByIdOrNull($uriVariables['id'] ?? null);
 
         if (!$goldPrice) {
             throw new NotFoundHttpException('Gold price entry not found.');
@@ -85,7 +84,7 @@ final readonly class GoldPriceProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException('goldAssetId is required.');
         }
 
-        $goldAsset = $this->goldAssetRepository->find($goldAssetId);
+        $goldAsset = $this->goldAssetRepository->findByIdOrNull($goldAssetId);
         if (!$goldAsset) {
             throw new NotFoundHttpException('Gold asset not found.');
         }

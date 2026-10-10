@@ -13,6 +13,8 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 final class GoldAssetRepository extends ServiceEntityRepository
 {
+    /** @use FindsByIdOrNullTrait<GoldAsset> */
+    use FindsByIdOrNullTrait;
     use SaveRemoveTrait;
 
     public function __construct(ManagerRegistry $registry)

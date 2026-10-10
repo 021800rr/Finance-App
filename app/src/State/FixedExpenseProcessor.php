@@ -78,8 +78,7 @@ final readonly class FixedExpenseProcessor implements ProcessorInterface
      */
     private function loadExisting(array $uriVariables): FixedExpense
     {
-        $id = $uriVariables['id'] ?? null;
-        $fixedExpense = is_numeric($id) ? $this->fixedExpenseRepository->find((int) $id) : null;
+        $fixedExpense = $this->fixedExpenseRepository->findByIdOrNull($uriVariables['id'] ?? null);
 
         if (!$fixedExpense) {
             throw new NotFoundHttpException('Fixed expense not found.');

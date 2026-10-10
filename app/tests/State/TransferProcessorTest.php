@@ -184,6 +184,32 @@ final class TransferProcessorTest extends KernelTestCase
         $this->processor->process($resource, new Post());
     }
 
+    public function testProcessThrowsNotFoundWhenFromAccountIdAboveInt4Max(): void
+    {
+        $this->ensureFixedContractor();
+        $to = $this->createAccount('PLN');
+
+        $resource = $this->buildResource(fromAccountId: PHP_INT_MAX, toAccountId: $to->getId(), amountFrom: '10.00');
+
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('fromAccountId');
+
+        $this->processor->process($resource, new Post());
+    }
+
+    public function testProcessThrowsNotFoundWhenToAccountIdAboveInt4Max(): void
+    {
+        $this->ensureFixedContractor();
+        $from = $this->createAccount('PLN');
+
+        $resource = $this->buildResource(fromAccountId: $from->getId(), toAccountId: PHP_INT_MAX, amountFrom: '10.00');
+
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('toAccountId');
+
+        $this->processor->process($resource, new Post());
+    }
+
     public function testProcessThrowsUnprocessableWhenOperationDateMissing(): void
     {
         $this->ensureFixedContractor();

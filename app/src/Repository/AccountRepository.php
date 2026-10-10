@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Account;
-use App\Validator\IdValidator;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
@@ -15,22 +14,13 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 final class AccountRepository extends ServiceEntityRepository
 {
+    /** @use FindsByIdOrNullTrait<Account> */
+    use FindsByIdOrNullTrait;
     use SaveRemoveTrait;
 
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Account::class);
-    }
-
-    public function findByIdOrNull(mixed $rawId): ?Account
-    {
-        $id = IdValidator::tryParse($rawId);
-
-        if (null === $id) {
-            return null;
-        }
-
-        return $this->find($id);
     }
 
     public function createOrderedForSelectQueryBuilder(): QueryBuilder

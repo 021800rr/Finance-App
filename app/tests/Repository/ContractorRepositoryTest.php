@@ -50,20 +50,20 @@ final class ContractorRepositoryTest extends KernelTestCase
 
     public function testSearchByNameFindsPartialMatch(): void
     {
-        $this->createContractor('Żabka Unique ' . uniqid());
+        $contractor = $this->createContractor('Żabka Unique ' . uniqid());
 
-        $result = $this->repository->searchByName('Żabka');
+        $ids = array_column($this->repository->searchByName('Żabka', 1000), 'id');
 
-        self::assertNotEmpty($result);
+        self::assertContains($contractor->getId(), $ids);
     }
 
     public function testSearchByNameIsCaseInsensitive(): void
     {
-        $this->createContractor('CaseTest Unique ' . uniqid());
+        $contractor = $this->createContractor('CaseTest Unique ' . uniqid());
 
-        $result = $this->repository->searchByName('casetest');
+        $ids = array_column($this->repository->searchByName('casetest', 1000), 'id');
 
-        self::assertNotEmpty($result);
+        self::assertContains($contractor->getId(), $ids);
     }
 
     public function testSearchByNameReturnsEmptyForBlankQuery(): void
@@ -82,6 +82,52 @@ final class ContractorRepositoryTest extends KernelTestCase
         $result = $this->repository->searchByName('   ');
 
         self::assertSame([], $result);
+    }
+
+    public function testSearchByNameTreatsUnderscoreAsLiteral(): void
+    {
+        $marker = uniqid();
+        $withUnderscore = $this->createContractor("snake_case {$marker}");
+        $plain = $this->createContractor("snakeXcase {$marker}");
+
+        $ids = array_column($this->repository->searchByName("snake_case {$marker}", 100), 'id');
+
+        self::assertContains($withUnderscore->getId(), $ids);
+        self::assertNotContains($plain->getId(), $ids);
+    }
+
+    public function testSearchByNameTreatsPercentAsLiteral(): void
+    {
+        $marker = uniqid();
+        $withPercent = $this->createContractor("Discount 100% {$marker}");
+        $plain = $this->createContractor("Discount 1000 {$marker}");
+
+        $ids = array_column($this->repository->searchByName('100%', 100), 'id');
+
+        self::assertContains($withPercent->getId(), $ids);
+        self::assertNotContains($plain->getId(), $ids);
+    }
+
+    public function testSearchByNameTreatsBackslashAsLiteral(): void
+    {
+        $marker = uniqid();
+        $withBackslash = $this->createContractor('Path a\\b '.$marker);
+        $plain = $this->createContractor('Path ab '.$marker);
+
+        $ids = array_column($this->repository->searchByName('a\\b '.$marker, 100), 'id');
+
+        self::assertContains($withBackslash->getId(), $ids);
+        self::assertNotContains($plain->getId(), $ids);
+    }
+
+    public function testSearchByNameFindsNameEndingWithBackslash(): void
+    {
+        $marker = uniqid();
+        $contractor = $this->createContractor("Dir {$marker}\\");
+
+        $ids = array_column($this->repository->searchByName("{$marker}\\", 100), 'id');
+
+        self::assertContains($contractor->getId(), $ids);
     }
 
     public function testSearchByNameReturnsEmptyForNonMatchingQuery(): void
@@ -125,7 +171,7 @@ final class ContractorRepositoryTest extends KernelTestCase
         $this->createContractor("ABC Zdrowie-{$marker}");
         $this->createContractor("Aaa-Zdrowie-{$marker}");
 
-        $result = $this->repository->searchByName('ab');
+        $result = $this->repository->searchByName('ab', 1000);
 
         $names = array_column($result, 'name');
 

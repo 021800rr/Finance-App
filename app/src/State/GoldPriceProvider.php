@@ -27,7 +27,7 @@ final readonly class GoldPriceProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): GoldPriceResource|array|null
     {
         if (isset($uriVariables['id'])) {
-            $goldPrice = $this->goldPriceRepository->find($uriVariables['id']);
+            $goldPrice = $this->goldPriceRepository->findByIdOrNull($uriVariables['id']);
 
             return $goldPrice ? GoldPriceResource::fromEntity($goldPrice) : null;
         }

@@ -27,7 +27,7 @@ final readonly class FixedExpenseProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): FixedExpenseResource|array|null
     {
         if (isset($uriVariables['id'])) {
-            $fixedExpense = $this->fixedExpenseRepository->find($uriVariables['id']);
+            $fixedExpense = $this->fixedExpenseRepository->findByIdOrNull($uriVariables['id']);
 
             return $fixedExpense ? FixedExpenseResource::fromEntity($fixedExpense) : null;
         }

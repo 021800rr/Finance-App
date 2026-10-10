@@ -11,8 +11,8 @@ use App\ApiResource\GoldAssetResource;
 use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\Repository\GoldAssetRepository;
+use App\Repository\GoldFormRepository;
 use App\ValueObject\Quantity;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
@@ -23,7 +23,7 @@ final readonly class GoldAssetProcessor implements ProcessorInterface
 {
     public function __construct(
         private GoldAssetRepository $goldAssetRepository,
-        private EntityManagerInterface $em,
+        private GoldFormRepository $goldFormRepository,
     ) {
     }
 
@@ -62,8 +62,7 @@ final readonly class GoldAssetProcessor implements ProcessorInterface
      */
     private function loadExisting(array $uriVariables): GoldAsset
     {
-        $id = $uriVariables['id'] ?? null;
-        $goldAsset = is_numeric($id) ? $this->goldAssetRepository->find((int) $id) : null;
+        $goldAsset = $this->goldAssetRepository->findByIdOrNull($uriVariables['id'] ?? null);
 
         if (!$goldAsset) {
             throw new NotFoundHttpException('Gold asset not found.');
@@ -78,7 +77,7 @@ final readonly class GoldAssetProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException('formId is required.');
         }
 
-        $form = $this->em->getRepository(GoldForm::class)->find($formId);
+        $form = $this->goldFormRepository->findByIdOrNull($formId);
         if (!$form) {
             throw new NotFoundHttpException('Gold form not found.');
         }

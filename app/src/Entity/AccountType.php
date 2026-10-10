@@ -6,10 +6,11 @@ namespace App\Entity;
 
 use App\Entity\Trait\BlankStringGuardTrait;
 use App\Entity\Trait\TimestampTrait;
+use App\Repository\AccountTypeRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity]
+#[ORM\Entity(repositoryClass: AccountTypeRepository::class)]
 #[ORM\Table(name: 'account_type')]
 #[ORM\UniqueConstraint(name: 'uniq_account_type_name', columns: ['name'])]
 class AccountType

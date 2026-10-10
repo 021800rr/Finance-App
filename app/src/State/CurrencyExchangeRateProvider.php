@@ -27,7 +27,7 @@ final readonly class CurrencyExchangeRateProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): CurrencyExchangeRateResource|array|null
     {
         if (isset($uriVariables['id'])) {
-            $rate = $this->currencyExchangeRateRepository->find($uriVariables['id']);
+            $rate = $this->currencyExchangeRateRepository->findByIdOrNull($uriVariables['id']);
 
             return $rate ? CurrencyExchangeRateResource::fromEntity($rate) : null;
         }

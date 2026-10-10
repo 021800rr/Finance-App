@@ -27,7 +27,7 @@ final readonly class HouseholdProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): HouseholdResource|array|null
     {
         if (isset($uriVariables['id'])) {
-            $household = $this->householdRepository->find($uriVariables['id']);
+            $household = $this->householdRepository->findByIdOrNull($uriVariables['id']);
 
             return $household ? HouseholdResource::fromEntity($household) : null;
         }

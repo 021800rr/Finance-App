@@ -7,15 +7,14 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\AccountTypeResource;
-use App\Entity\AccountType;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\AccountTypeRepository;
 
 /**
  * @implements ProviderInterface<AccountTypeResource>
  */
 final readonly class AccountTypeProvider implements ProviderInterface
 {
-    public function __construct(private EntityManagerInterface $em)
+    public function __construct(private AccountTypeRepository $accountTypeRepository)
     {
     }
 
@@ -27,15 +26,13 @@ final readonly class AccountTypeProvider implements ProviderInterface
      */
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): AccountTypeResource|array|null
     {
-        $repository = $this->em->getRepository(AccountType::class);
-
         if (isset($uriVariables['id'])) {
-            $accountType = $repository->find($uriVariables['id']);
+            $accountType = $this->accountTypeRepository->findByIdOrNull($uriVariables['id']);
 
             return $accountType ? AccountTypeResource::fromEntity($accountType) : null;
         }
 
-        $accountTypes = $repository->findBy([], ['name' => 'ASC']);
+        $accountTypes = $this->accountTypeRepository->findBy([], ['name' => 'ASC']);
 
         return array_map(AccountTypeResource::fromEntity(...), $accountTypes);
     }

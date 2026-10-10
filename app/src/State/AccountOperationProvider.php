@@ -35,7 +35,7 @@ final readonly class AccountOperationProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): AccountOperationResource|OffsetPaginator|null
     {
         if (isset($uriVariables['id'])) {
-            $accountOperation = $this->accountOperationRepository->find($uriVariables['id']);
+            $accountOperation = $this->accountOperationRepository->findByIdOrNull($uriVariables['id']);
 
             return $accountOperation ? AccountOperationResource::fromEntity($accountOperation) : null;
         }

@@ -17,6 +17,8 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 final class AccountOperationRepository extends ServiceEntityRepository
 {
+    /** @use FindsByIdOrNullTrait<AccountOperation> */
+    use FindsByIdOrNullTrait;
     use SaveRemoveTrait;
 
     private const string NO_CURRENCY_CODE = 'XXX';

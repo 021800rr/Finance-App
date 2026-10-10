@@ -76,8 +76,7 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
      */
     private function loadExisting(array $uriVariables): AccountOperation
     {
-        $id = $uriVariables['id'] ?? null;
-        $accountOperation = is_numeric($id) ? $this->accountOperationRepository->find((int) $id) : null;
+        $accountOperation = $this->accountOperationRepository->findByIdOrNull($uriVariables['id'] ?? null);
 
         if (!$accountOperation) {
             throw new NotFoundHttpException('Account operation not found.');
@@ -92,7 +91,7 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException('Account is required.');
         }
 
-        $account = $this->accountRepository->find($accountId);
+        $account = $this->accountRepository->findByIdOrNull($accountId);
         if (!$account) {
             throw new NotFoundHttpException('Account not found.');
         }

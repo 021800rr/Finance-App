@@ -27,7 +27,7 @@ final readonly class ContractorProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): ContractorResource|array|null
     {
         if (isset($uriVariables['id'])) {
-            $contractor = $this->contractorRepository->find($uriVariables['id']);
+            $contractor = $this->contractorRepository->findByIdOrNull($uriVariables['id']);
 
             return $contractor ? ContractorResource::fromEntity($contractor) : null;
         }
@@ -38,7 +38,7 @@ final readonly class ContractorProvider implements ProviderInterface
         if (null !== $name) {
             return array_values(array_map(
                 static fn (array $row): ContractorResource => ContractorResource::fromArray($row),
-                $this->contractorRepository->searchByName($name),
+                $this->contractorRepository->searchByName($name, limit: null),
             ));
         }
 

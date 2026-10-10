@@ -12,6 +12,7 @@ use App\Constant\Currencies;
 use App\Entity\Bank;
 use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
+use App\Repository\BankRepository;
 use App\Repository\CurrencyExchangeRateRepository;
 use App\ValueObject\Money;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,6 +25,7 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 final readonly class CurrencyExchangeRateProcessor implements ProcessorInterface
 {
     public function __construct(
+        private BankRepository $bankRepository,
         private CurrencyExchangeRateRepository $currencyExchangeRateRepository,
         private EntityManagerInterface $em,
     ) {
@@ -68,8 +70,7 @@ final readonly class CurrencyExchangeRateProcessor implements ProcessorInterface
      */
     private function loadExisting(array $uriVariables): CurrencyExchangeRate
     {
-        $id = $uriVariables['id'] ?? null;
-        $rate = is_numeric($id) ? $this->currencyExchangeRateRepository->find((int) $id) : null;
+        $rate = $this->currencyExchangeRateRepository->findByIdOrNull($uriVariables['id'] ?? null);
 
         if (!$rate) {
             throw new NotFoundHttpException('Exchange rate not found.');
@@ -84,7 +85,7 @@ final readonly class CurrencyExchangeRateProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException('bankId is required.');
         }
 
-        $bank = $this->em->getRepository(Bank::class)->find($bankId);
+        $bank = $this->bankRepository->findByIdOrNull($bankId);
         if (!$bank) {
             throw new NotFoundHttpException('Bank not found.');
         }

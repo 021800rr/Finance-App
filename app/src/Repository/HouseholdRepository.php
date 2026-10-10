@@ -15,6 +15,9 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 final class HouseholdRepository extends ServiceEntityRepository
 {
+    /** @use FindsByIdOrNullTrait<Household> */
+    use FindsByIdOrNullTrait;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Household::class);

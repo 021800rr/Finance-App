@@ -7,15 +7,14 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\GoldFormResource;
-use App\Entity\GoldForm;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\GoldFormRepository;
 
 /**
  * @implements ProviderInterface<GoldFormResource>
  */
 final readonly class GoldFormProvider implements ProviderInterface
 {
-    public function __construct(private EntityManagerInterface $em)
+    public function __construct(private GoldFormRepository $goldFormRepository)
     {
     }
 
@@ -27,15 +26,13 @@ final readonly class GoldFormProvider implements ProviderInterface
      */
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): GoldFormResource|array|null
     {
-        $repository = $this->em->getRepository(GoldForm::class);
-
         if (isset($uriVariables['id'])) {
-            $goldForm = $repository->find($uriVariables['id']);
+            $goldForm = $this->goldFormRepository->findByIdOrNull($uriVariables['id']);
 
             return $goldForm ? GoldFormResource::fromEntity($goldForm) : null;
         }
 
-        $goldForms = $repository->findBy([], ['name' => 'ASC']);
+        $goldForms = $this->goldFormRepository->findBy([], ['name' => 'ASC']);
 
         return array_map(GoldFormResource::fromEntity(...), $goldForms);
     }

@@ -7,15 +7,14 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\BankResource;
-use App\Entity\Bank;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Repository\BankRepository;
 
 /**
  * @implements ProviderInterface<BankResource>
  */
 final readonly class BankProvider implements ProviderInterface
 {
-    public function __construct(private EntityManagerInterface $em)
+    public function __construct(private BankRepository $bankRepository)
     {
     }
 
@@ -27,15 +26,13 @@ final readonly class BankProvider implements ProviderInterface
      */
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): BankResource|array|null
     {
-        $repository = $this->em->getRepository(Bank::class);
-
         if (isset($uriVariables['id'])) {
-            $bank = $repository->find($uriVariables['id']);
+            $bank = $this->bankRepository->findByIdOrNull($uriVariables['id']);
 
             return $bank ? BankResource::fromEntity($bank) : null;
         }
 
-        $banks = $repository->findBy([], ['name' => 'ASC']);
+        $banks = $this->bankRepository->findBy([], ['name' => 'ASC']);
 
         return array_map(BankResource::fromEntity(...), $banks);
     }

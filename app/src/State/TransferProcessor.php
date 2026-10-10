@@ -82,7 +82,7 @@ final readonly class TransferProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException(sprintf('%s is required.', $field));
         }
 
-        $account = $this->accountRepository->find($accountId);
+        $account = $this->accountRepository->findByIdOrNull($accountId);
         if (!$account) {
             throw new NotFoundHttpException(sprintf('Account referenced by %s not found.', $field));
         }

@@ -17,6 +17,8 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 final class CurrencyExchangeRateRepository extends ServiceEntityRepository
 {
+    /** @use FindsByIdOrNullTrait<CurrencyExchangeRate> */
+    use FindsByIdOrNullTrait;
     use SaveRemoveTrait;
 
     public function __construct(ManagerRegistry $registry)

@@ -61,8 +61,7 @@ final readonly class AccountProcessor implements ProcessorInterface
      */
     private function loadExisting(array $uriVariables): Account
     {
-        $id = $uriVariables['id'] ?? null;
-        $account = is_numeric($id) ? $this->accountRepository->find((int) $id) : null;
+        $account = $this->accountRepository->findByIdOrNull($uriVariables['id'] ?? null);
 
         if (!$account) {
             throw new NotFoundHttpException('Account not found.');

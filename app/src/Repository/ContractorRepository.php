@@ -13,6 +13,8 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 final class ContractorRepository extends ServiceEntityRepository
 {
+    /** @use FindsByIdOrNullTrait<Contractor> */
+    use FindsByIdOrNullTrait;
     use SaveRemoveTrait;
 
     public function __construct(ManagerRegistry $registry)
@@ -46,9 +48,11 @@ final class ContractorRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param int|null $limit maximum number of rows; null returns all matches
+     *
      * @return array<int, array{id: int, name: string}>
      */
-    public function searchByName(string $query, int $limit = 10): array
+    public function searchByName(string $query, ?int $limit = 10): array
     {
         $trimmedQuery = trim($query);
         if ('' === $trimmedQuery) {
@@ -59,7 +63,7 @@ final class ContractorRepository extends ServiceEntityRepository
         $result = $this->createQueryBuilder('c')
             ->select('c.id, c.name')
             ->where('LOWER(c.name) LIKE LOWER(:q)')
-            ->setParameter('q', '%'.$trimmedQuery.'%')
+            ->setParameter('q', '%'.addcslashes($trimmedQuery, '\\%_').'%')
             ->orderBy('c.name', 'ASC')
             ->setMaxResults($limit)
             ->getQuery()

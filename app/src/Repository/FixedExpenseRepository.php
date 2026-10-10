@@ -13,6 +13,8 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 final class FixedExpenseRepository extends ServiceEntityRepository
 {
+    /** @use FindsByIdOrNullTrait<FixedExpense> */
+    use FindsByIdOrNullTrait;
     use SaveRemoveTrait;
 
     public function __construct(ManagerRegistry $registry)
