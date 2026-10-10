@@ -15,11 +15,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 trait FindsByIdOrNullTrait
 {
     /**
-     * Finds an entity by a raw, untrusted id (URL segment, request body, query string, ...).
-     *
-     * Ids are PostgreSQL "integer" (int4) columns, while PHP ints are 64-bit: handing find() an id above
-     * int4 max makes the database raise "value out of range" (a 500) instead of finding no row. Anything
-     * that is not a valid id (non-numeric, zero, negative, above int4 max) is therefore simply "not found".
+     * @param mixed $rawId untrusted input of any type; anything that is not a valid id yields null
      *
      * @return TEntity|null
      */
