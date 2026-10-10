@@ -11,6 +11,7 @@ use App\ApiResource\GoldAssetResource;
 use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\Repository\GoldAssetRepository;
+use App\ValueObject\Quantity;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -33,9 +34,7 @@ final readonly class GoldAssetProcessor implements ProcessorInterface
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): ?GoldAssetResource
     {
         if ($operation instanceof Delete) {
-            // No 409 handling needed here: gold_price.gold_asset_id is ON DELETE CASCADE,
-            // so deleting a gold asset also deletes its price history at the DB level,
-            // and nothing else references gold_asset via a restricting foreign key.
+            // No 409 needed: the only FK to gold_asset (gold_price) is ON DELETE CASCADE.
             $this->goldAssetRepository->remove($this->loadExisting($uriVariables), flush: true);
 
             return null;
@@ -48,7 +47,7 @@ final readonly class GoldAssetProcessor implements ProcessorInterface
         $form = $this->resolveGoldForm($data->formId);
 
         try {
-            $goldAsset = new GoldAsset($form, (int) $data->ounces, (string) $data->description);
+            $goldAsset = new GoldAsset($form, $this->parseOunces($data->ounces), (string) $data->description);
         } catch (\InvalidArgumentException $exception) {
             throw new UnprocessableEntityHttpException($exception->getMessage(), $exception);
         }
@@ -85,5 +84,19 @@ final readonly class GoldAssetProcessor implements ProcessorInterface
         }
 
         return $form;
+    }
+
+    private function parseOunces(?string $ounces): int
+    {
+        $trimmed = trim((string) $ounces);
+        if ('' === $trimmed) {
+            throw new UnprocessableEntityHttpException('Ounces is required.');
+        }
+
+        try {
+            return Quantity::fromDecimalString($trimmed)->getMinorUnits();
+        } catch (\InvalidArgumentException $exception) {
+            throw new UnprocessableEntityHttpException($exception->getMessage(), $exception);
+        }
     }
 }

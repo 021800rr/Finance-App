@@ -18,7 +18,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     shortName: 'GoldAsset',
-    description: 'A physical gold holding (a form/ounces/description triple priced by GoldPrice entries).',
+    description: 'A physical gold holding (form, ounces, description). Its value over time is tracked by GoldPrice entries.',
     operations: [
         new GetCollection(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
@@ -60,10 +60,12 @@ final class GoldAssetResource
     #[Assert\NotBlank(message: 'gold_asset.description_not_blank')]
     public ?string $description = null;
 
-    #[ApiProperty(description: 'Weight in ounces. Required, 1-9999999.', example: 1)]
-    #[Assert\NotNull(message: 'gold_asset.ounces_must_be_positive')]
-    #[Assert\Positive(message: 'gold_asset.ounces_must_be_positive')]
-    public ?int $ounces = null;
+    #[ApiProperty(
+        description: 'Weight in ounces as a decimal string, up to 4 decimal places, e.g. "1.5000". Required, 0.0001-999.9999.',
+        example: '1.0000',
+    )]
+    #[Assert\NotBlank(message: 'gold_asset.ounces_must_be_positive')]
+    public ?string $ounces = null;
 
     public static function fromEntity(GoldAsset $goldAsset): self
     {
@@ -72,7 +74,7 @@ final class GoldAssetResource
         $resource->formId = $goldAsset->getForm()->getId();
         $resource->formName = $goldAsset->getForm()->getName();
         $resource->description = $goldAsset->getDescription();
-        $resource->ounces = $goldAsset->getOunces();
+        $resource->ounces = $goldAsset->getOuncesAsQuantity()->toDecimalString();
 
         return $resource;
     }

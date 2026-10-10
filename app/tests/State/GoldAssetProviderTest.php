@@ -47,6 +47,20 @@ final class GoldAssetProviderTest extends KernelTestCase
         self::assertSame($goldAsset->getForm()->getName(), $result->formName);
     }
 
+    public function testProvideReturnsOuncesAsDecimalString(): void
+    {
+        $form = new GoldForm('Test Form '.uniqid());
+        $this->em()->persist($form);
+        $goldAsset = new GoldAsset($form, 15000, 'Asset '.uniqid());
+        $this->em()->persist($goldAsset);
+        $this->em()->flush();
+
+        $result = $this->provider->provide(new Get(), ['id' => $goldAsset->getId()]);
+
+        self::assertInstanceOf(GoldAssetResource::class, $result);
+        self::assertSame('1.5000', $result->ounces);
+    }
+
     public function testProvideReturnsNullForNonExistentId(): void
     {
         $result = $this->provider->provide(new Get(), ['id' => 999999999]);
