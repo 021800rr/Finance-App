@@ -34,17 +34,15 @@ final readonly class AccountOperationFactory
         $currency = $account->getCurrency();
         $money = $this->extractMoney($form, $currency->getCode());
 
-        $operation = new AccountOperation(
+        return new AccountOperation(
             $account,
             $contractor,
             $this->extractOperationDate($form),
             $money->getMinorUnits(),
             $currency,
+            description: $this->extractDescription($form),
+            confirmed: $this->extractConfirmed($form),
         );
-        $operation->setDescription($this->extractDescription($form));
-        $operation->setConfirmed($this->extractConfirmed($form));
-
-        return $operation;
     }
 
     private function updateFromForm(AccountOperation $operation, FormInterface $form, Contractor $contractor): AccountOperation

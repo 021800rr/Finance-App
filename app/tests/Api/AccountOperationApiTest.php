@@ -302,8 +302,14 @@ final class AccountOperationApiTest extends WebTestCase
         $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
-        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable(), 1000, $account->getCurrency());
-        $operation->setDescription($description);
+        $operation = new AccountOperation(
+            $account,
+            $contractor,
+            new \DateTimeImmutable(),
+            1000,
+            $account->getCurrency(),
+            description: $description
+        );
         $this->em()->persist($operation);
         $this->em()->flush();
 

@@ -64,6 +64,9 @@ class AccountOperation
         \DateTimeImmutable $operationDate,
         int $amount,
         Currency $currency,
+        ?string $description = null,
+        bool $confirmed = false,
+        ?Uuid $transactionUuid = null,
     ) {
         self::assertSameCurrency($currency, $account);
         $this->account = $account;
@@ -71,6 +74,9 @@ class AccountOperation
         $this->operationDate = $operationDate;
         $this->setAmount($amount);
         $this->currency = $currency;
+        $this->description = $description;
+        $this->confirmed = $confirmed;
+        $this->transactionUuid = $transactionUuid;
     }
 
     public function getId(): int
@@ -126,11 +132,6 @@ class AccountOperation
     public function getTransactionUuid(): ?Uuid
     {
         return $this->transactionUuid;
-    }
-
-    public function setTransactionUuid(?Uuid $transactionUuid): void
-    {
-        $this->transactionUuid = $transactionUuid;
     }
 
     public function getAmount(): int

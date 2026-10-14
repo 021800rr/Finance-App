@@ -13,6 +13,7 @@ use App\Entity\Currency;
 use App\Entity\Household;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Uid\Uuid;
 
 final class AccountOperationTest extends TestCase
 {
@@ -78,6 +79,35 @@ final class AccountOperationTest extends TestCase
         self::assertSame($date, $operation->getOperationDate());
         self::assertSame(-15000, $operation->getAmount());
         self::assertSame($currency, $operation->getCurrency());
+    }
+
+    public function testConstructorDefaultsToNoDescriptionUnconfirmedAndNoTransaction(): void
+    {
+        $operation = $this->createOperation();
+
+        self::assertNull($operation->getDescription());
+        self::assertFalse($operation->isConfirmed());
+        self::assertNull($operation->getTransactionUuid());
+    }
+
+    public function testConstructorTakesDescriptionConfirmationAndTransactionUuid(): void
+    {
+        $uuid = Uuid::v7();
+
+        $operation = new AccountOperation(
+            $this->createAccount(),
+            new Contractor('Test Contractor'),
+            new \DateTimeImmutable(),
+            -1000,
+            new Currency('PLN'),
+            description: 'Rent',
+            confirmed: true,
+            transactionUuid: $uuid,
+        );
+
+        self::assertSame('Rent', $operation->getDescription());
+        self::assertTrue($operation->isConfirmed());
+        self::assertSame($uuid, $operation->getTransactionUuid());
     }
 
     public function testConstructorRejectsCurrencyOtherThanTheAccountCurrency(): void

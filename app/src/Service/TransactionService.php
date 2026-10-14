@@ -64,17 +64,27 @@ final readonly class TransactionService
         ): array {
             $transactionUuid = Uuid::v7();
 
-            $opOut = new AccountOperation($from, $contractor, $date, $debitMoney->negate()->getMinorUnits(), $from->getCurrency());
-            $opOut->setDescription($description);
-            $opOut->setConfirmed(false);
-            $opOut->setTransactionUuid($transactionUuid);
+            $opOut = new AccountOperation(
+                $from,
+                $contractor,
+                $date,
+                $debitMoney->negate()->getMinorUnits(),
+                $from->getCurrency(),
+                description: $description,
+                transactionUuid: $transactionUuid,
+            );
 
             $this->em->persist($opOut);
 
-            $opIn = new AccountOperation($to, $contractor, $date, $creditMoney->getMinorUnits(), $to->getCurrency());
-            $opIn->setDescription($description);
-            $opIn->setConfirmed(false);
-            $opIn->setTransactionUuid($transactionUuid);
+            $opIn = new AccountOperation(
+                $to,
+                $contractor,
+                $date,
+                $creditMoney->getMinorUnits(),
+                $to->getCurrency(),
+                description: $description,
+                transactionUuid: $transactionUuid,
+            );
 
             $this->em->persist($opIn);
 

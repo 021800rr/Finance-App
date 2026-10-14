@@ -206,12 +206,16 @@ final class AccountViewApiTest extends WebTestCase
         for ($i = 0; $i < self::OPERATIONS; ++$i) {
             // The two newest operations are dated in the future ("saldo na dziś" must differ from "saldo").
             $date = new \DateTimeImmutable(sprintf('%+d days', 2 - $i));
-            $operation = new AccountOperation($account, $contractor, $date, 100000 + $i * 111 - ($i % 3) * 250000, $currency);
-            $operation->setDescription(0 === $i % 4 ? null : "Operation {$i}");
-            $operation->setConfirmed(0 === $i % 2);
-            if (0 === $i % 5) {
-                $operation->setTransactionUuid(Uuid::v4());
-            }
+            $operation = new AccountOperation(
+                $account,
+                $contractor,
+                $date,
+                100000 + $i * 111 - ($i % 3) * 250000,
+                $currency,
+                description: 0 === $i % 4 ? null : "Operation {$i}",
+                confirmed: 0 === $i % 2,
+                transactionUuid: 0 === $i % 5 ? Uuid::v4() : null,
+            );
             $this->em()->persist($operation);
         }
         $this->em()->flush();

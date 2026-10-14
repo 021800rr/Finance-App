@@ -64,8 +64,14 @@ final readonly class FixedExpensePlannerService
         }
 
         foreach ($operationsToCreate as [$expense, $date]) {
-            $operation = new AccountOperation($account, $expense->getContractor(), $date, $expense->getAmount(), $account->getCurrency());
-            $operation->setDescription($expense->getDescription());
+            $operation = new AccountOperation(
+                $account,
+                $expense->getContractor(),
+                $date,
+                $expense->getAmount(),
+                $account->getCurrency(),
+                description: $expense->getDescription(),
+            );
 
             $this->accountOperationRepository->save($operation);
         }

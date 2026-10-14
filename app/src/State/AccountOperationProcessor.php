@@ -66,16 +66,17 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
                 $contractor,
                 $operationDate,
                 $amountMinorUnits,
-                $account->getCurrency()
+                $account->getCurrency(),
+                description: $data->description,
+                confirmed: $data->confirmed,
             );
         } else {
             $accountOperation->setContractor($contractor);
             $accountOperation->setOperationDate($operationDate);
             $accountOperation->setAmount($amountMinorUnits);
+            $accountOperation->setDescription($data->description);
+            $accountOperation->setConfirmed($data->confirmed);
         }
-
-        $accountOperation->setDescription($data->description);
-        $accountOperation->setConfirmed($data->confirmed);
 
         $this->accountOperationRepository->save($accountOperation, flush: true);
 

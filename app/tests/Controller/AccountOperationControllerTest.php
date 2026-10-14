@@ -309,12 +309,10 @@ final class AccountOperationControllerTest extends WebTestCase
         $pln = $this->em()->getRepository(Currency::class)->find(Currencies::SETTLEMENT_CURRENCY_CODE);
         self::assertNotNull($pln, 'PLN currency must exist in fixtures.');
 
-        $opOut = new AccountOperation($account, $contractor, new DateTimeImmutable(), -10000, $pln);
-        $opOut->setTransactionUuid($transactionUuid);
+        $opOut = new AccountOperation($account, $contractor, new DateTimeImmutable(), -10000, $pln, transactionUuid: $transactionUuid);
         $this->em()->persist($opOut);
 
-        $opIn = new AccountOperation($account, $contractor, new DateTimeImmutable(), 10000, $pln);
-        $opIn->setTransactionUuid($transactionUuid);
+        $opIn = new AccountOperation($account, $contractor, new DateTimeImmutable(), 10000, $pln, transactionUuid: $transactionUuid);
         $this->em()->persist($opIn);
 
         $this->em()->flush();

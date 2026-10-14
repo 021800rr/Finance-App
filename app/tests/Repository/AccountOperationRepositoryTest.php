@@ -272,13 +272,8 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $accountB = $this->createAccount();
         $uuid = Uuid::v7();
 
-        $opOut = $this->createOperation($accountA, -10000, new DateTimeImmutable(), 'out');
-        $opOut->setTransactionUuid($uuid);
-
-        $opIn = $this->createOperation($accountB, 10000, new DateTimeImmutable(), 'in');
-        $opIn->setTransactionUuid($uuid);
-
-        $this->em()->flush();
+        $opOut = $this->createOperation($accountA, -10000, new DateTimeImmutable(), 'out', $uuid);
+        $opIn = $this->createOperation($accountB, 10000, new DateTimeImmutable(), 'in', $uuid);
 
         $result = $this->repository->findOtherSide($opOut);
 
@@ -332,12 +327,17 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         return $contractor;
     }
 
-    private function createOperation(Account $account, int $amount, DateTimeImmutable $date, string $description): AccountOperation
-    {
+    private function createOperation(
+        Account $account,
+        int $amount,
+        DateTimeImmutable $date,
+        string $description,
+        ?Uuid $transactionUuid = null,
+    ): AccountOperation {
         $contractor = new Contractor('Test Contractor ' . uniqid());
         $this->em()->persist($contractor);
 
-        return $this->createOperationWithContractor($account, $amount, $date, $contractor, $description);
+        return $this->createOperationWithContractor($account, $amount, $date, $contractor, $description, $transactionUuid);
     }
 
     private function createOperationWithContractor(
@@ -346,9 +346,17 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         DateTimeImmutable $date,
         Contractor $contractor,
         string $description = 'test',
+        ?Uuid $transactionUuid = null,
     ): AccountOperation {
-        $operation = new AccountOperation($account, $contractor, $date, $amount, $account->getCurrency());
-        $operation->setDescription($description);
+        $operation = new AccountOperation(
+            $account,
+            $contractor,
+            $date,
+            $amount,
+            $account->getCurrency(),
+            description: $description,
+            transactionUuid: $transactionUuid,
+        );
         $this->em()->persist($operation);
         $this->em()->flush();
 

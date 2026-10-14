@@ -181,9 +181,15 @@ class OperationFixtures extends Fixture implements DependentFixtureInterface
         int $amount,
         string $description,
     ): void {
-        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable($date), $amount, $account->getCurrency());
-        $operation->setDescription($description);
-        $operation->setConfirmed(true);
+        $operation = new AccountOperation(
+            $account,
+            $contractor,
+            new \DateTimeImmutable($date),
+            $amount,
+            $account->getCurrency(),
+            description: $description,
+            confirmed: true,
+        );
         $manager->persist($operation);
     }
 

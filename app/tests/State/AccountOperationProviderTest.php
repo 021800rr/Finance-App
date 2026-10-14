@@ -293,7 +293,12 @@ final class AccountOperationProviderTest extends KernelTestCase
         return $account;
     }
 
-    private function createOperation(Account $account, string $amount, ?\DateTimeImmutable $date = null, ?string $description = null): AccountOperation
+    private function createOperation(
+        Account $account,
+        string $amount,
+        ?\DateTimeImmutable $date = null,
+        ?string $description = null
+    ): AccountOperation
     {
         $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
@@ -304,11 +309,9 @@ final class AccountOperationProviderTest extends KernelTestCase
             $date ?? new \DateTimeImmutable(),
             Money::fromDecimalString($amount, $account->getCurrencyCode())->getMinorUnits(),
             $this->em()->getRepository(Currency::class)->find($account->getCurrencyCode()) ??
-                throw new \RuntimeException('Missing currency.'),
+            throw new \RuntimeException('Missing currency.'),
+            description: $description,
         );
-        if (null !== $description) {
-            $operation->setDescription($description);
-        }
         $this->em()->persist($operation);
         $this->em()->flush();
 
