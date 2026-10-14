@@ -197,6 +197,16 @@ final readonly class Money
     }
 
     /**
+     * The shape in which the API exposes an amount: the decimal string plus its currency code.
+     *
+     * @return array{amount: string, currency: string}
+     */
+    public function toArray(): array
+    {
+        return ['amount' => $this->toDecimalString(), 'currency' => $this->currencyCode];
+    }
+
+    /**
      * Guards against an arithmetic operation on two amounts in different currencies
      * (e.g. trying to add PLN to CHF).
      */

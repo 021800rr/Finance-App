@@ -14,6 +14,7 @@ use App\Entity\Bank;
 use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
+use App\Service\Paginator;
 use App\State\AccountOperationProvider;
 use App\State\Pagination\OffsetPaginator;
 use App\Tests\DatabaseTestTrait;
@@ -21,6 +22,7 @@ use App\ValueObject\Money;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class AccountOperationProviderTest extends KernelTestCase
 {
@@ -71,49 +73,103 @@ final class AccountOperationProviderTest extends KernelTestCase
         self::assertNull($result);
     }
 
-    public function testProvideCollectionReturnsPaginatorOrderedByDateDescending(): void
+    public function testAccountHistoryIsOrderedByDateDescending(): void
     {
         $account = $this->createAccount();
         $older = $this->createOperation($account, '10.00', new \DateTimeImmutable('2026-01-01'));
         $newer = $this->createOperation($account, '20.00', new \DateTimeImmutable('2026-06-01'));
 
         $this->pushRequest([]);
-        $result = $this->provider->provide(new GetCollection());
+        $result = $this->provider->provide(new GetCollection(), ['accountId' => $account->getId()]);
 
         self::assertInstanceOf(OffsetPaginator::class, $result);
-        $items = iterator_to_array($result);
-        self::assertGreaterThanOrEqual(2, count($items));
-        self::assertSame($newer->getId(), $items[0]->id);
-        self::assertContains($older->getId(), array_map(static fn (AccountOperationResource $r): ?int => $r->id, $items));
+        self::assertSame([$newer->getId(), $older->getId()], $this->ids($result));
     }
 
-    public function testProvideCollectionFiltersByAccountId(): void
+    public function testAccountHistoryContainsOnlyThatAccountsOperations(): void
     {
         $accountOne = $this->createAccount();
         $accountTwo = $this->createAccount();
         $operationOne = $this->createOperation($accountOne, '10.00');
         $this->createOperation($accountTwo, '20.00');
 
-        $this->pushRequest(['accountId' => (string) $accountOne->getId()]);
-        $result = $this->provider->provide(new GetCollection());
+        $this->pushRequest([]);
+        $result = $this->provider->provide(new GetCollection(), ['accountId' => $accountOne->getId()]);
 
         self::assertInstanceOf(OffsetPaginator::class, $result);
-        $items = iterator_to_array($result);
-        self::assertCount(1, $items);
-        self::assertSame($operationOne->getId(), $items[0]->id);
+        self::assertSame([$operationOne->getId()], $this->ids($result));
+        self::assertSame(1.0, $result->getTotalItems());
     }
 
-    public function testProvideCollectionReturnsEmptyWhenAccountIdDoesNotExist(): void
+    public function testAccountHistoryUsesTheSamePageSizeAsTheWebPage(): void
     {
-        $this->pushRequest(['accountId' => '999999999']);
+        $account = $this->createAccount();
+        for ($i = 0; $i < Paginator::DEFAULT_PER_PAGE + 1; ++$i) {
+            $this->createOperation($account, '10.00');
+        }
 
-        $result = $this->provider->provide(new GetCollection());
+        $this->pushRequest([]);
+        $result = $this->provider->provide(new GetCollection(), ['accountId' => $account->getId()]);
+
+        self::assertInstanceOf(OffsetPaginator::class, $result);
+        self::assertSame((float) Paginator::DEFAULT_PER_PAGE, $result->getItemsPerPage());
+        self::assertCount(Paginator::DEFAULT_PER_PAGE, iterator_to_array($result));
+        self::assertSame((float) (Paginator::DEFAULT_PER_PAGE + 1), $result->getTotalItems());
+    }
+
+    public function testAccountHistoryIgnoresTheQueryParameter(): void
+    {
+        $account = $this->createAccount();
+        $this->createOperation($account, '10.00', null, 'Alpha');
+        $this->createOperation($account, '10.00', null, 'Beta');
+
+        $this->pushRequest(['q' => 'Alpha']);
+        $result = $this->provider->provide(new GetCollection(), ['accountId' => $account->getId()]);
+
+        self::assertInstanceOf(OffsetPaginator::class, $result);
+        self::assertSame(2.0, $result->getTotalItems());
+    }
+
+    public function testAccountHistoryThrowsNotFoundWhenAccountDoesNotExist(): void
+    {
+        $this->pushRequest([]);
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->provider->provide(new GetCollection(), ['accountId' => '999999999']);
+    }
+
+    public function testAccountHistoryThrowsNotFoundWhenAccountIdIsAboveInt4Max(): void
+    {
+        $this->pushRequest([]);
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->provider->provide(new GetCollection(), ['accountId' => (string) PHP_INT_MAX]);
+    }
+
+    public function testAccountHistoryThrowsNotFoundWhenAccountIdIsNotNumeric(): void
+    {
+        $this->pushRequest([]);
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->provider->provide(new GetCollection(), ['accountId' => 'abc']);
+    }
+
+    public function testAccountHistoryToleratesAbsurdPageNumber(): void
+    {
+        $account = $this->createAccount();
+        $this->createOperation($account, '10.00');
+
+        $this->pushRequest(['page' => (string) PHP_INT_MAX]);
+        $result = $this->provider->provide(new GetCollection(), ['accountId' => $account->getId()]);
 
         self::assertInstanceOf(OffsetPaginator::class, $result);
         self::assertCount(0, iterator_to_array($result));
     }
 
-    public function testProvideCollectionFiltersByQuery(): void
+    public function testSearchFindsMatchingOperations(): void
     {
         $marker = uniqid();
         $account = $this->createAccount();
@@ -124,33 +180,40 @@ final class AccountOperationProviderTest extends KernelTestCase
         $result = $this->provider->provide(new GetCollection());
 
         self::assertInstanceOf(OffsetPaginator::class, $result);
-        $items = iterator_to_array($result);
-        self::assertCount(1, $items);
-        self::assertSame($match->getId(), $items[0]->id);
+        self::assertSame([$match->getId()], $this->ids($result));
         self::assertSame(1.0, $result->getTotalItems());
     }
 
-    public function testProvideCollectionCombinesQueryWithAccountId(): void
+    public function testSearchSpansAllAccounts(): void
+    {
+        $marker = uniqid();
+        $inA = $this->createOperation($this->createAccount(), '10.00', null, "Shared {$marker}");
+        $inB = $this->createOperation($this->createAccount(), '10.00', null, "Shared {$marker}");
+
+        $this->pushRequest(['q' => $marker]);
+        $result = $this->provider->provide(new GetCollection());
+
+        self::assertInstanceOf(OffsetPaginator::class, $result);
+        self::assertEqualsCanonicalizing([$inA->getId(), $inB->getId()], $this->ids($result));
+    }
+
+    public function testSearchIgnoresTheAccountIdQueryParameter(): void
     {
         $marker = uniqid();
         $accountA = $this->createAccount();
-        $accountB = $this->createAccount();
-        $inA = $this->createOperation($accountA, '10.00', null, "Shared {$marker}");
-        $this->createOperation($accountB, '10.00', null, "Shared {$marker}");
+        $this->createOperation($accountA, '10.00', null, "Shared {$marker}");
+        $this->createOperation($this->createAccount(), '10.00', null, "Shared {$marker}");
 
         $this->pushRequest(['q' => $marker, 'accountId' => (string) $accountA->getId()]);
         $result = $this->provider->provide(new GetCollection());
 
         self::assertInstanceOf(OffsetPaginator::class, $result);
-        $items = iterator_to_array($result);
-        self::assertCount(1, $items);
-        self::assertSame($inA->getId(), $items[0]->id);
+        self::assertSame(2.0, $result->getTotalItems());
     }
 
-    public function testProvideCollectionReturnsEmptyForWhitespaceOnlyQuery(): void
+    public function testSearchWithWhitespaceOnlyQueryFindsNothing(): void
     {
-        $account = $this->createAccount();
-        $this->createOperation($account, '10.00');
+        $this->createOperation($this->createAccount(), '10.00');
 
         $this->pushRequest(['q' => '   ']);
         $result = $this->provider->provide(new GetCollection());
@@ -160,29 +223,41 @@ final class AccountOperationProviderTest extends KernelTestCase
         self::assertSame(0.0, $result->getTotalItems());
     }
 
-    public function testProvideCollectionReturnsEmptyForQueryWithUnknownAccountId(): void
+    public function testSearchWithoutQueryFindsNothing(): void
     {
-        $marker = uniqid();
-        $account = $this->createAccount();
-        $this->createOperation($account, '10.00', null, "Orphan {$marker}");
+        $this->createOperation($this->createAccount(), '10.00');
 
-        $this->pushRequest(['q' => $marker, 'accountId' => '999999999']);
+        $this->pushRequest([]);
+        $result = $this->provider->provide(new GetCollection());
+
+        self::assertInstanceOf(OffsetPaginator::class, $result);
+        self::assertSame(0.0, $result->getTotalItems());
+    }
+
+    public function testSearchToleratesAbsurdPageNumber(): void
+    {
+        $this->createOperation($this->createAccount(), '10.00', null, 'Absurd page');
+
+        $this->pushRequest(['q' => 'Absurd page', 'page' => (string) PHP_INT_MAX]);
         $result = $this->provider->provide(new GetCollection());
 
         self::assertInstanceOf(OffsetPaginator::class, $result);
         self::assertCount(0, iterator_to_array($result));
     }
 
-    public function testProvideCollectionToleratesAbsurdPageNumber(): void
+    /**
+     * @param OffsetPaginator<AccountOperationResource> $paginator
+     *
+     * @return list<int|null>
+     */
+    private function ids(OffsetPaginator $paginator): array
     {
-        $this->pushRequest(['page' => (string) PHP_INT_MAX]);
-
-        $result = $this->provider->provide(new GetCollection());
-
-        self::assertInstanceOf(OffsetPaginator::class, $result);
-        self::assertCount(0, iterator_to_array($result));
+        return $paginator
+                |> iterator_to_array(...)
+                |> (fn($x) => array_map(static fn(AccountOperationResource $r): ?int => $r->id, $x))
+                |> array_values(...);
     }
-
+// return array_values(array_map(static fn (AccountOperationResource $r): ?int => $r->id, iterator_to_array($paginator)));
     /**
      * @param array<string, string> $query
      */
@@ -228,7 +303,8 @@ final class AccountOperationProviderTest extends KernelTestCase
             $contractor,
             $date ?? new \DateTimeImmutable(),
             Money::fromDecimalString($amount, $account->getCurrencyCode())->getMinorUnits(),
-            $this->em()->getRepository(Currency::class)->find($account->getCurrencyCode()) ?? throw new \RuntimeException('Missing currency.'),
+            $this->em()->getRepository(Currency::class)->find($account->getCurrencyCode()) ??
+                throw new \RuntimeException('Missing currency.'),
         );
         if (null !== $description) {
             $operation->setDescription($description);

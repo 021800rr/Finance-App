@@ -1,6 +1,7 @@
 api_platform:
     title: Finance App API
     version: 1.0.0
+    description: 'Personal finance API. Properties whose value is null are omitted from responses, so treat a missing property as null.'
     defaults:
         stateless: false
         cache_headers:

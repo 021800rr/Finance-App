@@ -23,15 +23,6 @@ class AccountOperation
     use TimestampTrait;
     use NumericGuardTrait;
 
-    public function __construct(Account $account, Contractor $contractor, \DateTimeImmutable $operationDate, int $amount, Currency $currency)
-    {
-        $this->account = $account;
-        $this->contractor = $contractor;
-        $this->operationDate = $operationDate;
-        $this->currency = $currency;
-        $this->setAmount($amount);
-    }
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -67,6 +58,21 @@ class AccountOperation
     #[ORM\JoinColumn(name: 'currency_code', referencedColumnName: 'code', nullable: false, onDelete: 'RESTRICT')]
     private Currency $currency;
 
+    public function __construct(
+        Account $account,
+        Contractor $contractor,
+        \DateTimeImmutable $operationDate,
+        int $amount,
+        Currency $currency,
+    ) {
+        self::assertSameCurrency($currency, $account);
+        $this->account = $account;
+        $this->contractor = $contractor;
+        $this->operationDate = $operationDate;
+        $this->setAmount($amount);
+        $this->currency = $currency;
+    }
+
     public function getId(): int
     {
         return $this->id;
@@ -75,11 +81,6 @@ class AccountOperation
     public function getAccount(): Account
     {
         return $this->account;
-    }
-
-    public function setAccount(Account $account): void
-    {
-        $this->account = $account;
     }
 
     public function getContractor(): Contractor
@@ -149,13 +150,18 @@ class AccountOperation
         return $this->currency;
     }
 
-    public function setCurrency(Currency $currency): void
-    {
-        $this->currency = $currency;
-    }
-
     public function getAmountAsMoney(): Money
     {
         return Money::fromMinorUnits($this->amount, $this->currency->getCode());
+    }
+
+    /**
+     * An operation is always in the currency of its account; anything else would make every balance wrong.
+     */
+    private static function assertSameCurrency(Currency $currency, Account $account): void
+    {
+        if ($currency->getCode() !== $account->getCurrencyCode()) {
+            throw new \InvalidArgumentException("Operation currency ({$currency->getCode()}) must match the account currency ({$account->getCurrencyCode()}).");
+        }
     }
 }

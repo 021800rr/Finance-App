@@ -4,22 +4,24 @@ declare(strict_types=1);
 
 namespace App\State;
 
+use ApiPlatform\Metadata\CollectionOperationInterface;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\AccountOperationResource;
+use App\Entity\AccountOperation;
 use App\Repository\AccountOperationRepository;
 use App\Repository\AccountRepository;
+use App\Service\Paginator;
 use App\State\Pagination\OffsetPaginator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<AccountOperationResource|OffsetPaginator<AccountOperationResource>>
  */
 final readonly class AccountOperationProvider implements ProviderInterface
 {
-    private const int ITEMS_PER_PAGE = 30;
-
     // Pages beyond this are simply empty; the cap keeps the offset calculation far away from integer overflow.
     private const int MAX_PAGE = 1_000_000;
 
@@ -36,59 +38,82 @@ final readonly class AccountOperationProvider implements ProviderInterface
      *
      * @return AccountOperationResource|OffsetPaginator<AccountOperationResource>|null
      */
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): AccountOperationResource|OffsetPaginator|null
-    {
-        if (isset($uriVariables['id'])) {
-            $accountOperation = $this->accountOperationRepository->findByIdOrNull($uriVariables['id']);
-
-            return $accountOperation ? AccountOperationResource::fromEntity($accountOperation) : null;
+    public function provide(
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): AccountOperationResource|OffsetPaginator|null {
+        if ($operation instanceof CollectionOperationInterface) {
+            return isset($uriVariables['accountId'])
+                ? $this->provideAccountHistory($uriVariables['accountId'])
+                : $this->provideSearch();
         }
 
-        return $this->provideCollection();
+        $accountOperation = $this->accountOperationRepository->findByIdOrNull($uriVariables['id'] ?? null);
+
+        return $accountOperation ? AccountOperationResource::fromEntity($accountOperation) : null;
     }
 
     /**
-     * Supported query parameters: accountId (only that account), q (text/amount search, see
-     * AccountOperationRepository) and page. accountId and q can be combined.
+     * /accounts/{accountId}/operations: the whole history of one account, newest first, as on the web
+     * account history page.
      *
      * @return OffsetPaginator<AccountOperationResource>
      */
-    private function provideCollection(): OffsetPaginator
+    private function provideAccountHistory(mixed $rawAccountId): OffsetPaginator
+    {
+        $account = $this->accountRepository->findByIdOrNull($rawAccountId);
+        if (null === $account) {
+            throw new NotFoundHttpException('Account not found.');
+        }
+
+        $page = $this->requestedPage($this->requestStack->getCurrentRequest());
+        $items = $this->accountOperationRepository->findByAccountOrderedPaged(
+            $account,
+            Paginator::DEFAULT_PER_PAGE,
+            ($page - 1) * Paginator::DEFAULT_PER_PAGE
+        );
+
+        return $this->paginate($items, $page, $this->accountOperationRepository->countByAccount($account));
+    }
+
+    /**
+     * /account_operations?q=...: search over all accounts (the "q" parameter is required, see
+     * AccountOperationResource), as on the web search page. A blank query finds nothing.
+     *
+     * @return OffsetPaginator<AccountOperationResource>
+     */
+    private function provideSearch(): OffsetPaginator
     {
         $request = $this->requestStack->getCurrentRequest();
         $page = $this->requestedPage($request);
-        $offset = ($page - 1) * self::ITEMS_PER_PAGE;
-        $rawAccountId = $request?->query->get('accountId');
         $rawQuery = $request?->query->get('q');
-        $query = is_string($rawQuery) ? trim($rawQuery) : null;
+        $query = is_string($rawQuery) ? trim($rawQuery) : '';
 
-        $account = null;
-        if (null !== $rawAccountId) {
-            $account = $this->accountRepository->findByIdOrNull($rawAccountId);
-            if (!$account) {
-                return $this->emptyPage($page);
-            }
+        if ('' === $query) {
+            return $this->paginate([], $page, 0);
         }
 
-        if (null !== $query) {
-            if ('' === $query) {
-                return $this->emptyPage($page);
-            }
+        $items = $this->accountOperationRepository->searchByQueryPaged(
+            $query,
+            Paginator::DEFAULT_PER_PAGE,
+            ($page - 1) * Paginator::DEFAULT_PER_PAGE
+        );
 
-            $items = $this->accountOperationRepository->searchByQueryPaged($query, self::ITEMS_PER_PAGE, $offset, $account);
-            $total = $this->accountOperationRepository->countByQuery($query, $account);
-        } elseif (null !== $account) {
-            $items = $this->accountOperationRepository->findByAccountOrderedPaged($account, self::ITEMS_PER_PAGE, $offset);
-            $total = $this->accountOperationRepository->countByAccount($account);
-        } else {
-            $items = $this->accountOperationRepository->findAllOrderedPaged(self::ITEMS_PER_PAGE, $offset);
-            $total = $this->accountOperationRepository->countAll();
-        }
+        return $this->paginate($items, $page, $this->accountOperationRepository->countByQuery($query));
+    }
 
+    /**
+     * @param AccountOperation[] $items
+     *
+     * @return OffsetPaginator<AccountOperationResource>
+     */
+    private function paginate(array $items, int $page, int $total): OffsetPaginator
+    {
         return new OffsetPaginator(
             array_values(array_map(AccountOperationResource::fromEntity(...), $items)),
             $page,
-            self::ITEMS_PER_PAGE,
+            Paginator::DEFAULT_PER_PAGE,
             $total,
         );
     }
@@ -109,13 +134,5 @@ final readonly class AccountOperationProvider implements ProviderInterface
         }
 
         return $page;
-    }
-
-    /**
-     * @return OffsetPaginator<AccountOperationResource>
-     */
-    private function emptyPage(int $page): OffsetPaginator
-    {
-        return new OffsetPaginator([], $page, self::ITEMS_PER_PAGE, 0);
     }
 }

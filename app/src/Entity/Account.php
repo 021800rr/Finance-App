@@ -74,7 +74,8 @@ class Account
         $this->currency = $currency;
         $this->type = $type;
         $this->household = $household;
-        $this->setAccountNumber($accountNumber);
+        self::assertNotBlank($accountNumber, 'Account number');
+        $this->accountNumber = $accountNumber;
         $this->operations = new ArrayCollection();
     }
 
@@ -88,11 +89,6 @@ class Account
         return $this->bank;
     }
 
-    public function setBank(Bank $bank): void
-    {
-        $this->bank = $bank;
-    }
-
     public function getBankName(): string
     {
         return $this->bank->getName();
@@ -101,11 +97,6 @@ class Account
     public function getCurrency(): Currency
     {
         return $this->currency;
-    }
-
-    public function setCurrency(Currency $currency): void
-    {
-        $this->currency = $currency;
     }
 
     public function getCurrencyCode(): string
@@ -118,11 +109,6 @@ class Account
         return $this->type;
     }
 
-    public function setType(AccountType $type): void
-    {
-        $this->type = $type;
-    }
-
     public function getTypeName(): string
     {
         return $this->type->getName();
@@ -131,12 +117,6 @@ class Account
     public function getAccountNumber(): string
     {
         return $this->accountNumber;
-    }
-
-    public function setAccountNumber(string $accountNumber): void
-    {
-        self::assertNotBlank($accountNumber, 'Account number');
-        $this->accountNumber = $accountNumber;
     }
 
     public function getDisplayLabel(): string
@@ -177,11 +157,6 @@ class Account
         return $this->household;
     }
 
-    public function setHousehold(Household $household): void
-    {
-        $this->household = $household;
-    }
-
     public function getHouseholdName(): string
     {
         return $this->household->getName();
@@ -191,18 +166,5 @@ class Account
     public function getOperations(): Collection
     {
         return $this->operations;
-    }
-
-    public function addOperation(AccountOperation $operation): void
-    {
-        if (!$this->operations->contains($operation)) {
-            $this->operations->add($operation);
-            $operation->setAccount($this);
-        }
-    }
-
-    public function removeOperation(AccountOperation $operation): void
-    {
-        $this->operations->removeElement($operation);
     }
 }

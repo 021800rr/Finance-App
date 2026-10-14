@@ -34,8 +34,12 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      */
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): ?AccountOperationResource
-    {
+    public function process(
+        mixed $data,
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): ?AccountOperationResource {
         if ($operation instanceof Delete) {
             $this->accountOperationRepository->remove($this->loadExisting($uriVariables), flush: true);
 
@@ -48,19 +52,26 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
 
         $accountOperation = $operation instanceof Patch ? $this->loadExisting($uriVariables) : null;
 
-        $account = $this->resolveAccount($data->accountId);
+        $account = null === $accountOperation
+            ? $this->resolveAccount($data->accountId)
+            : $this->accountOfExisting($accountOperation, $data->accountId);
         $contractor = $this->contractorResolver->resolve($data->contractorId, $data->contractorName);
         $operationDate = $this->parseOperationDate($data->operationDate);
-        $amountMinorUnits = Money::fromDecimalString((string) $data->amount, $account->getCurrency()->getCode())->getMinorUnits();
+        $amountMinorUnits = Money::fromDecimalString((string) $data->amount, $account->getCurrency()->getCode())
+            ->getMinorUnits();
 
         if (null === $accountOperation) {
-            $accountOperation = new AccountOperation($account, $contractor, $operationDate, $amountMinorUnits, $account->getCurrency());
+            $accountOperation = new AccountOperation(
+                $account,
+                $contractor,
+                $operationDate,
+                $amountMinorUnits,
+                $account->getCurrency()
+            );
         } else {
-            $accountOperation->setAccount($account);
             $accountOperation->setContractor($contractor);
             $accountOperation->setOperationDate($operationDate);
             $accountOperation->setAmount($amountMinorUnits);
-            $accountOperation->setCurrency($account->getCurrency());
         }
 
         $accountOperation->setDescription($data->description);
@@ -83,6 +94,19 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
         }
 
         return $accountOperation;
+    }
+
+    /**
+     * An operation stays on the account it was created on; sending the same account id again is harmless.
+     */
+    private function accountOfExisting(AccountOperation $accountOperation, ?int $requestedAccountId): Account
+    {
+        $account = $accountOperation->getAccount();
+        if (null !== $requestedAccountId && $requestedAccountId !== $account->getId()) {
+            throw new UnprocessableEntityHttpException('The account of an operation cannot be changed.');
+        }
+
+        return $account;
     }
 
     private function resolveAccount(?int $accountId): Account

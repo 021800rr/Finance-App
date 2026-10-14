@@ -35,6 +35,8 @@ class AccountOperationType extends AbstractType
                 'choice_label' => 'displayLabel',
                 'query_builder' => static fn (AccountRepository $accountRepository) => $accountRepository->createOrderedForSelectQueryBuilder(),
                 'data' => $preselectedAccount ?? $existingOperation?->getAccount(),
+                // An operation belongs to its account for good: the account is chosen only when it is created.
+                'disabled' => null !== $existingOperation,
             ])
             ->add('contractor', HiddenType::class, [
                 'mapped' => false,

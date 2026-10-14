@@ -9,6 +9,7 @@ use App\Entity\AccountOperation;
 use App\Entity\Contractor;
 use App\ValueObject\Money;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -29,22 +30,27 @@ final class AccountOperationRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return AccountOperation[]
+     * Sums the account's operations in a single query: all of them and those dated up to and including $today.
+     * The amounts are in the account's currency (an operation cannot be in any other, see AccountOperation).
+     *
+     * @return array{total: int, upToToday: int}
      */
-    public function findByAccountOrdered(Account $account): array
+    public function sumBalancesForAccount(Account $account, \DateTimeImmutable $today): array
     {
-        /** @var AccountOperation[] $result */
-        $result = $this->createQueryBuilder('o')
-            ->join('o.contractor', 'c')
-            ->addSelect('c')
+        /** @var array{total: string|null, upToToday: string|null} $row */
+        $row = $this->createQueryBuilder('o')
+            ->select('SUM(o.amount) AS total')
+            ->addSelect('SUM(CASE WHEN o.operationDate <= :today THEN o.amount ELSE 0 END) AS upToToday')
             ->where('o.account = :account')
             ->setParameter('account', $account)
-            ->orderBy('o.operationDate', 'DESC')
-            ->addOrderBy('o.id', 'DESC')
+            ->setParameter('today', $today, Types::DATE_IMMUTABLE)
             ->getQuery()
-            ->getResult();
+            ->getSingleResult();
 
-        return $result;
+        return [
+            'total' => (int) $row['total'],
+            'upToToday' => (int) $row['upToToday'],
+        ];
     }
 
     /**
@@ -81,37 +87,10 @@ final class AccountOperationRepository extends ServiceEntityRepository
     /**
      * @return AccountOperation[]
      */
-    public function findAllOrderedPaged(int $limit, int $offset): array
+    public function searchByQueryPaged(string $query, int $limit, int $offset): array
     {
         /** @var AccountOperation[] $result */
-        $result = $this->createQueryBuilder('o')
-            ->join('o.contractor', 'c')
-            ->addSelect('c')
-            ->orderBy('o.operationDate', 'DESC')
-            ->addOrderBy('o.id', 'DESC')
-            ->setMaxResults($limit)
-            ->setFirstResult($offset)
-            ->getQuery()
-            ->getResult();
-
-        return $result;
-    }
-
-    public function countAll(): int
-    {
-        return (int) $this->createQueryBuilder('o')
-            ->select('COUNT(o.id)')
-            ->getQuery()
-            ->getSingleScalarResult();
-    }
-
-    /**
-     * @return AccountOperation[]
-     */
-    public function searchByQueryPaged(string $query, int $limit, int $offset, ?Account $account = null): array
-    {
-        /** @var AccountOperation[] $result */
-        $result = $this->buildSearchQuery($query, $account)
+        $result = $this->buildSearchQuery($query)
             ->addSelect('c', 'a')
             ->orderBy('o.operationDate', 'DESC')
             ->addOrderBy('o.id', 'DESC')
@@ -123,9 +102,9 @@ final class AccountOperationRepository extends ServiceEntityRepository
         return $result;
     }
 
-    public function countByQuery(string $query, ?Account $account = null): int
+    public function countByQuery(string $query): int
     {
-        return (int) $this->buildSearchQuery($query, $account)
+        return (int) $this->buildSearchQuery($query)
             ->select('COUNT(o.id)')
             ->getQuery()
             ->getSingleScalarResult();
@@ -176,9 +155,9 @@ final class AccountOperationRepository extends ServiceEntityRepository
     /**
      * Matches the text in the description or the contractor name (case-insensitive substring) or, when the
      * text parses as an amount, the exact amount. LIKE wildcards in the input are escaped, so "%", "_" and
-     * "\\" only ever match themselves. Optionally restricted to one account.
+     * "\\" only ever match themselves.
      */
-    private function buildSearchQuery(string $query, ?Account $account = null): QueryBuilder
+    private function buildSearchQuery(string $query): QueryBuilder
     {
         $query = trim($query);
 
@@ -192,11 +171,6 @@ final class AccountOperationRepository extends ServiceEntityRepository
         if (null !== $exactAmount) {
             $qb->orWhere('o.amount = :exact_q')
                 ->setParameter('exact_q', $exactAmount);
-        }
-
-        if (null !== $account) {
-            $qb->andWhere('o.account = :account')
-                ->setParameter('account', $account);
         }
 
         return $qb;

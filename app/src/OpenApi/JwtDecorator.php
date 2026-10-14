@@ -22,9 +22,9 @@ final readonly class JwtDecorator implements OpenApiFactoryInterface
         'AccountOperation',
         'Contractor',
         'Transfer',
+        'FixedExpense',
         'CurrencyExchangeRate',
         'Currency',
-        'FixedExpense',
         'GoldAsset',
         'GoldPrice',
         // reszta alfabetycznie (dopisywana automatycznie poniżej)

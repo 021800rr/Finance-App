@@ -13,8 +13,9 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\QueryParameter;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
-use App\Constant\DatabaseLimits;
+use ApiPlatform\OpenApi\Model\Response as OpenApiResponse;
 use App\Entity\AccountOperation;
+use App\Service\Paginator;
 use App\State\AccountOperationProcessor;
 use App\State\AccountOperationProvider;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -25,19 +26,30 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Lists operations, newest first, 30 per page. accountId and q can be combined.',
+            description: 'Searches the operations of all accounts, newest first, '.Paginator::DEFAULT_PER_PAGE.' per page. '
+            .'The search text q is required. To list the operations of one account use /accounts/{accountId}/operations.',
             provider: AccountOperationProvider::class,
-            parameters: [
-                'accountId' => new QueryParameter(
-                    schema: ['type' => 'integer', 'minimum' => 1, 'maximum' => DatabaseLimits::POSTGRES_INT4_MAX],
-                    description: 'Only operations of this account.',
-                ),
-                'q' => new QueryParameter(
-                    description: 'Search in the description and the contractor name (case-insensitive, partial match) '
-                    .'or by exact amount (e.g. 150.50). Min 2 chars.',
-                    constraints: [new Assert\Length(min: 2)],
-                ),
-            ],
+            parameters: ['q' => new QueryParameter(
+                property: 'description',
+                description: 'Search in the description and the contractor name (case-insensitive, partial match) '
+                .'or by exact amount (e.g. 150.50). Min 2 chars.',
+                required: true,
+                constraints: [
+                    new Assert\NotBlank(normalizer: 'trim'),
+                    new Assert\Length(min: 2),
+                ]
+            )],
+        ),
+        new GetCollection(
+            uriTemplate: '/accounts/{accountId}/operations',
+            uriVariables: ['accountId'],
+            openapi: new OpenApiOperation(
+                responses: ['404' => new OpenApiResponse(description: 'The account does not exist.')],
+                security: [['JWT' => []]],
+            ),
+            description: 'Lists the operations of one account, newest first, '.Paginator::DEFAULT_PER_PAGE.' per page. '
+            .'Responds with 404 when the account does not exist.',
+            provider: AccountOperationProvider::class,
         ),
         new Get(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
@@ -70,7 +82,11 @@ final class AccountOperationResource
     #[ApiProperty(description: 'Operation id. Read-only, ignored on write.', writable: false, example: 1)]
     public ?int $id = null;
 
-    #[ApiProperty(description: 'Id of the account this operation belongs to. Required.', example: 1)]
+    #[ApiProperty(
+        description: 'Id of the account this operation belongs to. Required on create; '
+        .'it cannot be changed afterwards.',
+        example: 1
+    )]
     #[Assert\NotNull(message: 'operation.account_required')]
     public ?int $accountId = null;
 

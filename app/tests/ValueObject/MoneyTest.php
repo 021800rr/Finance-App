@@ -139,6 +139,13 @@ final class MoneyTest extends TestCase
         self::assertSame('-150.00', Money::fromMinorUnits(-15000, 'PLN')->toDecimalString());
     }
 
+    public function testToArrayExposesTheDecimalAmountAndTheCurrencyCode(): void
+    {
+        self::assertSame(['amount' => '150.00', 'currency' => 'PLN'], Money::fromMinorUnits(15000, 'PLN')->toArray());
+        self::assertSame(['amount' => '-0.05', 'currency' => 'CHF'], Money::fromMinorUnits(-5, 'chf')->toArray());
+        self::assertSame(['amount' => '4.1234', 'currency' => 'PLN'], Money::fromMinorUnits(41234, 'PLN', 4)->toArray());
+    }
+
     public function testConvertToPlnRoundsDownWhenRemainderIsBelowHalf(): void
     {
         $money = Money::fromMinorUnits(1, 'CHF'); // 0.01 CHF

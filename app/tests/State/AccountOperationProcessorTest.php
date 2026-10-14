@@ -205,6 +205,27 @@ final class AccountOperationProcessorTest extends KernelTestCase
         self::assertSame('updated', $result->description);
     }
 
+    public function testPatchRefusesToChangeTheAccountOfTheOperation(): void
+    {
+        $plnAccount = $this->createAccount();
+        $chfAccount = $this->createAccount('CHF');
+        $contractor = $this->createContractor('Mover');
+        $created = $this->processor->process(
+            $this->buildResource(accountId: $plnAccount->getId(), contractorId: $contractor->getId(), amount: '10.00'),
+            new Post(),
+        );
+        self::assertInstanceOf(AccountOperationResource::class, $created);
+
+        $this->expectException(UnprocessableEntityHttpException::class);
+        $this->expectExceptionMessage('The account of an operation cannot be changed.');
+
+        $this->processor->process(
+            $this->buildResource(accountId: $chfAccount->getId(), contractorId: $contractor->getId(), amount: '25.50'),
+            new Patch(),
+            ['id' => $created->id],
+        );
+    }
+
     public function testProcessThrowsNotFoundOnPatchWhenOperationMissing(): void
     {
         $account = $this->createAccount();
@@ -273,15 +294,15 @@ final class AccountOperationProcessorTest extends KernelTestCase
         return $resource;
     }
 
-    private function createAccount(): Account
+    private function createAccount(string $currencyCode = 'PLN'): Account
     {
         $bank = new Bank('Test Bank ' . uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find('PLN');
+        $currency = $currencyRepository->find($currencyCode);
         if (null === $currency) {
-            $currency = new Currency('PLN');
+            $currency = new Currency($currencyCode);
             $this->em()->persist($currency);
         }
 

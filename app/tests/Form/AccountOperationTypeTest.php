@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Tests\Form;
 
 use App\Entity\Account;
+use App\Entity\AccountOperation;
 use App\Entity\AccountType;
 use App\Entity\Bank;
+use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
 use App\Form\AccountOperationType;
@@ -68,6 +70,32 @@ final class AccountOperationTypeTest extends KernelTestCase
         ]);
 
         self::assertTrue($form->get('amount')->isValid());
+    }
+
+    public function testAccountCanBeChosenWhenCreatingAnOperation(): void
+    {
+        self::assertFalse($this->createOperationForm()->get('account')->isDisabled());
+    }
+
+    public function testAccountIsDisabledWhenEditingAnExistingOperation(): void
+    {
+        $account = $this->createAccount();
+        $other = $this->createAccount();
+        $operation = new AccountOperation(
+            $account,
+            new Contractor('Edited Contractor'),
+            new \DateTimeImmutable(),
+            -1000,
+            $account->getCurrency()
+        );
+
+        /** @var FormFactoryInterface $formFactory */
+        $formFactory = static::getContainer()->get('form.factory');
+        $form = $formFactory->create(AccountOperationType::class, options: ['existingOperation' => $operation]);
+        $form->submit(['account' => (string) $other->getId(), 'amount' => '10.00']);
+
+        self::assertTrue($form->get('account')->isDisabled());
+        self::assertSame($account, $form->get('account')->getData());
     }
 
     private function createOperationForm(): FormInterface

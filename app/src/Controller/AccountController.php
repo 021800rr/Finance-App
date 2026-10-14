@@ -84,7 +84,7 @@ class AccountController extends AbstractController
         AccountOperationRepository $accountOperationRepository,
         AccountOperationSummaryService $accountOperationSummaryService,
     ): Response {
-        $summary = $accountOperationSummaryService->getForAccount($account);
+        $summary = $accountOperationSummaryService->getBalances($account);
 
         $total = $accountOperationRepository->countByAccount($account);
         $paginator = Paginator::create((int) $request->query->get('page', 1), $total, Paginator::DEFAULT_PER_PAGE);

@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use App\ApiResource\AccountResource;
 use App\Entity\Account;
+use App\Entity\AccountOperation;
 use App\Entity\AccountType;
 use App\Entity\Bank;
+use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
 use App\State\AccountProvider;
@@ -63,50 +65,31 @@ final class AccountProviderTest extends KernelTestCase
         self::assertNull($result);
     }
 
-    public function testProvideCollectionReturnsAllAccountsAsResources(): void
+    public function testProvideForGetIncludesBalances(): void
     {
-        $first = $this->createAccount('ZZZ-'.uniqid());
-        $second = $this->createAccount('AAA-'.uniqid());
+        $account = $this->createAccount('BAL-'.uniqid());
+        $this->createOperation($account, 10000, new \DateTimeImmutable('-1 day'));
+        $this->createOperation($account, 2500, new \DateTimeImmutable('+3 days'));
 
-        $result = $this->provider->provide(new GetCollection());
+        $result = $this->provider->provide(new Get(), ['id' => $account->getId()]);
 
-        self::assertIsArray($result);
-        $ids = array_map(static fn (AccountResource $resource): ?int => $resource->id, $result);
-        self::assertContains($first->getId(), $ids);
-        self::assertContains($second->getId(), $ids);
-        foreach ($result as $resource) {
-            self::assertInstanceOf(AccountResource::class, $resource);
-        }
+        self::assertInstanceOf(AccountResource::class, $result);
+        self::assertSame(['amount' => '125.00', 'currency' => 'PLN'], $result->saldo);
+        self::assertSame(['amount' => '100.00', 'currency' => 'PLN'], $result->saldoToday);
+        self::assertTrue($result->hasFutureOperations);
     }
 
-    public function testProvideCollectionOrdersByBankThenTypeThenCurrencyThenAccountNumber(): void
+    public function testProvideForPatchSkipsBalances(): void
     {
-        $bankA = new Bank('AAA Bank '.uniqid());
-        $bankB = new Bank('ZZZ Bank '.uniqid());
-        $this->em()->persist($bankA);
-        $this->em()->persist($bankB);
+        $account = $this->createAccount('BAL-'.uniqid());
+        $this->createOperation($account, 10000, new \DateTimeImmutable('-1 day'));
 
-        $currency = $this->ensurePlnCurrency();
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
+        $result = $this->provider->provide(new Patch(), ['id' => $account->getId()]);
 
-        $household = $this->ownFundsHousehold();
-
-        $accountInBankB = new Account($bankB, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $accountInBankA = new Account($bankA, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($accountInBankB);
-        $this->em()->persist($accountInBankA);
-        $this->em()->flush();
-
-        /** @var list<AccountResource> $result */
-        $result = $this->provider->provide(new GetCollection());
-
-        $positionOfA = array_search($accountInBankA->getId(), array_map(static fn (AccountResource $r): ?int => $r->id, $result), true);
-        $positionOfB = array_search($accountInBankB->getId(), array_map(static fn (AccountResource $r): ?int => $r->id, $result), true);
-
-        self::assertIsInt($positionOfA);
-        self::assertIsInt($positionOfB);
-        self::assertLessThan($positionOfB, $positionOfA, 'Account in "AAA Bank" should sort before account in "ZZZ Bank".');
+        self::assertInstanceOf(AccountResource::class, $result);
+        self::assertNull($result->saldo);
+        self::assertNull($result->saldoToday);
+        self::assertNull($result->hasFutureOperations);
     }
 
     private function createAccount(string $accountNumber): Account
@@ -149,5 +132,13 @@ final class AccountProviderTest extends KernelTestCase
         }
 
         return $household;
+    }
+
+    private function createOperation(Account $account, int $amount, \DateTimeImmutable $date): void
+    {
+        $contractor = new Contractor('Test Contractor '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->persist(new AccountOperation($account, $contractor, $date, $amount, $account->getCurrency()));
+        $this->em()->flush();
     }
 }

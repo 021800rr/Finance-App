@@ -31,14 +31,15 @@ final readonly class AccountOperationFactory
     private function createFromForm(FormInterface $form, Contractor $contractor): AccountOperation
     {
         $account = $this->extractAccount($form);
-        $money = $this->extractMoney($form, $account);
+        $currency = $account->getCurrency();
+        $money = $this->extractMoney($form, $currency->getCode());
 
         $operation = new AccountOperation(
             $account,
             $contractor,
             $this->extractOperationDate($form),
             $money->getMinorUnits(),
-            $account->getCurrency(),
+            $currency,
         );
         $operation->setDescription($this->extractDescription($form));
         $operation->setConfirmed($this->extractConfirmed($form));
@@ -56,11 +57,8 @@ final readonly class AccountOperationFactory
 
     private function applyFormData(AccountOperation $operation, FormInterface $form): void
     {
-        $account = $this->extractAccount($form);
-        $money = $this->extractMoney($form, $account);
+        $money = $this->extractMoney($form, $operation->getCurrency()->getCode());
 
-        $operation->setAccount($account);
-        $operation->setCurrency($account->getCurrency());
         $operation->setOperationDate($this->extractOperationDate($form));
         $operation->setAmount($money->getMinorUnits());
         $operation->setDescription($this->extractDescription($form));
@@ -87,14 +85,14 @@ final readonly class AccountOperationFactory
         return $operationDate;
     }
 
-    private function extractMoney(FormInterface $form, Account $account): Money
+    private function extractMoney(FormInterface $form, string $currencyCode): Money
     {
         $rawAmount = $form->get('amount')->getData();
         if (!is_string($rawAmount)) {
             throw new \InvalidArgumentException('Amount must be a numeric value.');
         }
 
-        return Money::fromDecimalString($rawAmount, $account->getCurrency()->getCode());
+        return Money::fromDecimalString($rawAmount, $currencyCode);
     }
 
     private function extractDescription(FormInterface $form): ?string

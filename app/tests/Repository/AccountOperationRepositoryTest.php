@@ -39,7 +39,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $this->closeEntityManager();
     }
 
-    public function testFindByAccountOrderedReturnsOnlyOperationsForGivenAccount(): void
+    public function testFindByAccountOrderedPagedReturnsOnlyOperationsForGivenAccount(): void
     {
         $accountA = $this->createAccount();
         $accountB = $this->createAccount();
@@ -47,20 +47,20 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $this->createOperation($accountA, 10000, new DateTimeImmutable('-1 day'), 'A1');
         $this->createOperation($accountB, 20000, new DateTimeImmutable(), 'B1');
 
-        $result = $this->repository->findByAccountOrdered($accountA);
+        $result = $this->repository->findByAccountOrderedPaged($accountA, 20, 0);
 
         self::assertCount(1, $result);
         self::assertSame('A1', $result[0]->getDescription());
     }
 
-    public function testFindByAccountOrderedSortsByDateDescending(): void
+    public function testFindByAccountOrderedPagedSortsByDateDescending(): void
     {
         $account = $this->createAccount();
 
         $this->createOperation($account, 1000, new DateTimeImmutable('-3 days'), 'oldest');
         $this->createOperation($account, 2000, new DateTimeImmutable('-1 day'), 'newest');
 
-        $result = $this->repository->findByAccountOrdered($account);
+        $result = $this->repository->findByAccountOrderedPaged($account, 20, 0);
 
         self::assertSame('newest', $result[0]->getDescription());
         self::assertSame('oldest', $result[1]->getDescription());
@@ -196,37 +196,6 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $this->createOperation($account, 1000, new DateTimeImmutable(), 'countable match');
 
         self::assertSame(1, $this->repository->countByQuery('countable'));
-    }
-
-    public function testSearchByQueryPagedAndCountByQueryCanBeRestrictedToOneAccount(): void
-    {
-        $marker = uniqid();
-        $accountA = $this->createAccount();
-        $accountB = $this->createAccount();
-        $inA = $this->createOperation($accountA, 1000, new DateTimeImmutable(), "Scoped {$marker}");
-        $this->createOperation($accountB, 1000, new DateTimeImmutable(), "Scoped {$marker}");
-
-        $scoped = $this->repository->searchByQueryPaged($marker, 10, 0, $accountA);
-
-        self::assertCount(1, $scoped);
-        self::assertSame($inA->getId(), $scoped[0]->getId());
-        self::assertSame(1, $this->repository->countByQuery($marker, $accountA));
-        self::assertSame(2, $this->repository->countByQuery($marker));
-    }
-
-    public function testSearchByQueryPagedScopedToAccountStillMatchesByExactAmount(): void
-    {
-        $accountA = $this->createAccount();
-        $accountB = $this->createAccount();
-        $inA = $this->createOperation($accountA, 123456, new DateTimeImmutable(), 'amount scoped A');
-        $this->createOperation($accountB, 123456, new DateTimeImmutable(), 'amount scoped B');
-
-        $ids = array_map(
-            static fn (AccountOperation $o): int => $o->getId(),
-            $this->repository->searchByQueryPaged('1234.56', 100, 0, $accountA),
-        );
-
-        self::assertSame([$inA->getId()], $ids);
     }
 
     public function testSearchByQueryPagedTreatsPercentAsLiteral(): void
@@ -460,5 +429,37 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $result = $this->repository->existsForContractorAndDate($account, $contractor, new DateTimeImmutable(), 15050);
 
         self::assertFalse($result);
+    }
+
+    public function testSumBalancesForAccountSplitsTotalAndUpToToday(): void
+    {
+        $account = $this->createAccount();
+        $this->createOperation($account, 100000, new DateTimeImmutable('-5 days'), 'past');
+        $this->createOperation($account, -20050, new DateTimeImmutable('today'), 'today');
+        $this->createOperation($account, 30000, new DateTimeImmutable('+5 days'), 'future');
+
+        $sums = $this->repository->sumBalancesForAccount($account, new DateTimeImmutable('today'));
+
+        self::assertSame(109950, $sums['total']);
+        self::assertSame(79950, $sums['upToToday']);
+    }
+
+    public function testSumBalancesForAccountIsZeroWithoutOperations(): void
+    {
+        $sums = $this->repository->sumBalancesForAccount($this->createAccount(), new DateTimeImmutable('today'));
+
+        self::assertSame(['total' => 0, 'upToToday' => 0], $sums);
+    }
+
+    public function testSumBalancesForAccountIgnoresOtherAccounts(): void
+    {
+        $accountA = $this->createAccount();
+        $accountB = $this->createAccount();
+        $this->createOperation($accountA, 10000, new DateTimeImmutable('today'), 'A');
+        $this->createOperation($accountB, 999900, new DateTimeImmutable('today'), 'B');
+
+        $sums = $this->repository->sumBalancesForAccount($accountA, new DateTimeImmutable('today'));
+
+        self::assertSame(10000, $sums['total']);
     }
 }

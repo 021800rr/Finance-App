@@ -89,26 +89,26 @@ class OperationFixtures extends Fixture implements DependentFixtureInterface
         $inheritance = $this->contractor($manager, 'Spadek');
 
         /* ACCOUNT OPERATIONS — three months of a typical household, amounts in minor units (grosze) */
-        $this->operation($manager, $accountRorPln, $employer, '2026-07-10', 500000, $pln, 'Wypłata');
-        $this->operation($manager, $accountRorPln, $shop, '2026-07-12', -15000, $pln, 'Zakupy spożywcze');
-        $this->operation($manager, $accountRorPln, $fuel, '2026-07-20', -25000, $pln, 'Paliwo');
+        $this->operation($manager, $accountRorPln, $employer, '2026-07-10', 500000, 'Wypłata');
+        $this->operation($manager, $accountRorPln, $shop, '2026-07-12', -15000, 'Zakupy spożywcze');
+        $this->operation($manager, $accountRorPln, $fuel, '2026-07-20', -25000, 'Paliwo');
 
-        $this->operation($manager, $accountRorPln, $employer, '2026-08-10', 500000, $pln, 'Wypłata');
-        $this->operation($manager, $accountRorPln, $shop, '2026-08-14', -18000, $pln, 'Zakupy spożywcze');
-        $this->operation($manager, $accountRorPln, $netflix, '2026-08-22', -5500, $pln, 'Subskrypcja');
+        $this->operation($manager, $accountRorPln, $employer, '2026-08-10', 500000, 'Wypłata');
+        $this->operation($manager, $accountRorPln, $shop, '2026-08-14', -18000, 'Zakupy spożywcze');
+        $this->operation($manager, $accountRorPln, $netflix, '2026-08-22', -5500, 'Subskrypcja');
 
-        $this->operation($manager, $accountRorPln, $employer, '2026-09-10', 510000, $pln, 'Wypłata');
-        $this->operation($manager, $accountRorPln, $shop, '2026-09-12', -16500, $pln, 'Zakupy spożywcze');
-        $this->operation($manager, $accountRorPln, $fuel, '2026-09-18', -27000, $pln, 'Paliwo');
+        $this->operation($manager, $accountRorPln, $employer, '2026-09-10', 510000, 'Wypłata');
+        $this->operation($manager, $accountRorPln, $shop, '2026-09-12', -16500, 'Zakupy spożywcze');
+        $this->operation($manager, $accountRorPln, $fuel, '2026-09-18', -27000, 'Paliwo');
 
         /* MATKA — najem mieszkania (Bank2) + drugie konto (Bank3) */
-        $this->operation($manager, $accountBank3Matka, $inheritance, '2026-06-01', 500000, $pln, 'Spadek');
-        $this->operation($manager, $accountBank2MatkaRor, $tenant, '2026-07-05', 180000, $pln, 'Czynsz najmu');
-        $this->operation($manager, $accountBank2MatkaRor, $tenant, '2026-08-05', 180000, $pln, 'Czynsz najmu');
-        $this->operation($manager, $accountBank2MatkaRor, $tenant, '2026-09-05', 180000, $pln, 'Czynsz najmu');
-        $this->operation($manager, $accountBank3Matka, $housingCommunity, '2026-07-10', -45000, $pln, 'Czynsz administracyjny');
-        $this->operation($manager, $accountBank3Matka, $housingCommunity, '2026-08-10', -45000, $pln, 'Czynsz administracyjny');
-        $this->operation($manager, $accountBank3Matka, $housingCommunity, '2026-09-10', -45000, $pln, 'Czynsz administracyjny');
+        $this->operation($manager, $accountBank3Matka, $inheritance, '2026-06-01', 500000, 'Spadek');
+        $this->operation($manager, $accountBank2MatkaRor, $tenant, '2026-07-05', 180000, 'Czynsz najmu');
+        $this->operation($manager, $accountBank2MatkaRor, $tenant, '2026-08-05', 180000, 'Czynsz najmu');
+        $this->operation($manager, $accountBank2MatkaRor, $tenant, '2026-09-05', 180000, 'Czynsz najmu');
+        $this->operation($manager, $accountBank3Matka, $housingCommunity, '2026-07-10', -45000, 'Czynsz administracyjny');
+        $this->operation($manager, $accountBank3Matka, $housingCommunity, '2026-08-10', -45000, 'Czynsz administracyjny');
+        $this->operation($manager, $accountBank3Matka, $housingCommunity, '2026-09-10', -45000, 'Czynsz administracyjny');
 
         $manager->flush();
 
@@ -179,10 +179,9 @@ class OperationFixtures extends Fixture implements DependentFixtureInterface
         Contractor $contractor,
         string $date,
         int $amount,
-        Currency $currency,
         string $description,
     ): void {
-        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable($date), $amount, $currency);
+        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable($date), $amount, $account->getCurrency());
         $operation->setDescription($description);
         $operation->setConfirmed(true);
         $manager->persist($operation);

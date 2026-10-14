@@ -80,6 +80,21 @@ final class AccountOperationFactoryTest extends KernelTestCase
         self::assertSame($newContractor->getId(), $updated->getContractor()->getId());
     }
 
+    public function testCreateOrUpdateAndPersistKeepsTheAccountOfTheExistingOperation(): void
+    {
+        $plnAccount = $this->createAccount();
+        $chfAccount = $this->createAccount('CHF');
+        $contractor = $this->createContractor();
+        $existing = $this->createExistingOperation($plnAccount, $contractor, 10000);
+
+        $form = $this->buildSubmittedForm($chfAccount, 20.00);
+        $updated = $this->factory->createOrUpdateAndPersist($existing, $form, $contractor, $this->repository);
+
+        self::assertSame($plnAccount->getId(), $updated->getAccount()->getId());
+        self::assertSame('PLN', $updated->getCurrency()->getCode());
+        self::assertSame(2000, $updated->getAmount());
+    }
+
     public function testCreateOrUpdateAndPersistThrowsWhenAccountIsMissing(): void
     {
         $contractor = $this->createContractor();
@@ -182,15 +197,15 @@ final class AccountOperationFactoryTest extends KernelTestCase
         return $operation;
     }
 
-    private function createAccount(): Account
+    private function createAccount(string $currencyCode = 'PLN'): Account
     {
         $bank = new Bank('Test Bank ' . uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->findOneBy(['code' => 'PLN']);
+        $currency = $currencyRepository->findOneBy(['code' => $currencyCode]);
         if (null === $currency) {
-            $currency = new Currency('PLN');
+            $currency = new Currency($currencyCode);
             $this->em()->persist($currency);
         }
 

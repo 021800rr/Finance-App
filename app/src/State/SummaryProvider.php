@@ -39,32 +39,30 @@ final readonly class SummaryProvider implements ProviderInterface
         $resource->accounts = array_map(
             static fn (array $account) => [
                 ...$account,
-                'saldo' => self::money($account['saldo']),
+                'saldo' => $account['saldo']->toArray(),
             ],
             $summary['accounts']
         );
         $resource->byType = array_map(
             static fn (array $entry) => [
-                'raw' => array_map(self::money(...), $entry['raw']),
-                'pln' => self::money($entry['pln']),
+                'raw' => array_map(
+                    static fn (Money $money): array => $money->toArray(),
+                    $entry['raw']
+                ),
+                'pln' => $entry['pln']->toArray(),
             ],
             $summary['byType']
         );
-        $resource->byHousehold = array_map(self::money(...), $summary['byHousehold']);
+        $resource->byHousehold = array_map(
+            static fn (Money $money): array => $money->toArray(),
+            $summary['byHousehold']
+        );
         $resource->ownFundsHouseholdName = $summary['ownFundsHouseholdName'];
-        $resource->gold = self::money($summary['gold']);
-        $resource->retirementBalance = self::money($summary['retirementBalance']);
-        $resource->retirementBalanceWithGold = self::money($summary['retirementBalanceWithGold']);
+        $resource->gold = $summary['gold']->toArray();
+        $resource->retirementBalance = $summary['retirementBalance']->toArray();
+        $resource->retirementBalanceWithGold = $summary['retirementBalanceWithGold']->toArray();
         $resource->accountsMissingRate = $summary['accountsMissingRate'];
 
         return $resource;
-    }
-
-    /**
-     * @return array{amount: string, currency: string}
-     */
-    private static function money(Money $money): array
-    {
-        return ['amount' => $money->toDecimalString(), 'currency' => $money->getCurrencyCode()];
     }
 }

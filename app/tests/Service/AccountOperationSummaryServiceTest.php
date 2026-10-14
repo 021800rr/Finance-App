@@ -89,7 +89,7 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
 
         $this->em()->flush();
 
-        $summary = $this->summaryService->getForAccount($account);
+        $summary = $this->summaryService->getBalances($account);
 
         self::assertTrue(Money::fromDecimalString('1099.50', 'PLN')->equals($summary['saldoAll']));
     }
@@ -104,7 +104,7 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
 
         $this->em()->flush();
 
-        $summary = $this->summaryService->getForAccount($account);
+        $summary = $this->summaryService->getBalances($account);
 
         self::assertTrue(Money::fromDecimalString('799.50', 'PLN')->equals($summary['saldoToday']));
     }
@@ -118,7 +118,7 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
 
         $this->em()->flush();
 
-        $summary = $this->summaryService->getForAccount($account);
+        $summary = $this->summaryService->getBalances($account);
 
         self::assertTrue($summary['saldoAll']->equals($summary['saldoToday']));
         self::assertFalse($summary['showSaldoToday']);
@@ -133,37 +133,17 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
 
         $this->em()->flush();
 
-        $summary = $this->summaryService->getForAccount($account);
+        $summary = $this->summaryService->getBalances($account);
 
         self::assertTrue($summary['showSaldoToday']);
-    }
-
-    public function testOperationsAreOrderedByDateDescending(): void
-    {
-        $account = $this->createAccount();
-
-        $oldest = $this->createOperation($account, 1000, new DateTimeImmutable('-3 days'));
-        $newest = $this->createOperation($account, 2000, new DateTimeImmutable('-1 day'));
-        $middle = $this->createOperation($account, 3000, new DateTimeImmutable('-2 days'));
-
-        $this->em()->flush();
-
-        $summary = $this->summaryService->getForAccount($account);
-        $operations = $summary['operations'];
-
-        self::assertCount(3, $operations);
-        self::assertSame($newest->getId(), $operations[0]->getId());
-        self::assertSame($middle->getId(), $operations[1]->getId());
-        self::assertSame($oldest->getId(), $operations[2]->getId());
     }
 
     public function testReturnsEmptyResultForAccountWithNoOperations(): void
     {
         $account = $this->createAccount();
 
-        $summary = $this->summaryService->getForAccount($account);
+        $summary = $this->summaryService->getBalances($account);
 
-        self::assertSame([], $summary['operations']);
         self::assertTrue(Money::zero('PLN')->equals($summary['saldoAll']));
         self::assertTrue(Money::zero('PLN')->equals($summary['saldoToday']));
         self::assertFalse($summary['showSaldoToday']);
@@ -179,32 +159,9 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
 
         $this->em()->flush();
 
-        $summary = $this->summaryService->getForAccount($accountA);
+        $summary = $this->summaryService->getBalances($accountA);
 
-        self::assertCount(1, $summary['operations']);
         self::assertTrue(Money::fromDecimalString('100.00', 'PLN')->equals($summary['saldoAll']));
-    }
-
-    public function testGetForAccountThrowsWhenOperationCurrencyDoesNotMatchAccountCurrency(): void
-    {
-        $account = $this->createAccount();
-        $chf = $this->em()->getRepository(Currency::class)->find('CHF');
-        if (null === $chf) {
-            $chf = new Currency('CHF');
-            $this->em()->persist($chf);
-            $this->em()->flush();
-        }
-
-        $contractor = new Contractor('Test Contractor ' . uniqid());
-        $this->em()->persist($contractor);
-
-        $operation = new AccountOperation($account, $contractor, new DateTimeImmutable(), 10000, $chf);
-        $this->em()->persist($operation);
-        $this->em()->flush();
-
-        $this->expectException(\RuntimeException::class);
-
-        $this->summaryService->getForAccount($account);
     }
 
     public function testSaldoAllUsesAccountCurrencyForChfAccount(): void
@@ -219,7 +176,7 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
         $account = $this->createAccount(currencyCode: 'CHF');
         $this->createOperation($account, 100000, new DateTimeImmutable('today'));
 
-        $summary = $this->summaryService->getForAccount($account);
+        $summary = $this->summaryService->getBalances($account);
 
         self::assertTrue(Money::fromDecimalString('1000.00', 'CHF')->equals($summary['saldoAll']));
     }

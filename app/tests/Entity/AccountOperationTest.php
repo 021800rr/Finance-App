@@ -7,6 +7,7 @@ namespace App\Tests\Entity;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\AccountType;
+use App\Entity\Bank;
 use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
@@ -47,9 +48,14 @@ final class AccountOperationTest extends TestCase
 
     public function testGetAmountAsMoneyUsesOwnCurrency(): void
     {
-        $operation = $this->createOperation();
+        $operation = new AccountOperation(
+            $this->createAccount('CHF'),
+            new Contractor('Test Contractor'),
+            new \DateTimeImmutable(),
+            -1000,
+            new Currency('CHF')
+        );
         $operation->setAmount(-15000);
-        $operation->setCurrency(new Currency('CHF'));
 
         $money = $operation->getAmountAsMoney();
 
@@ -74,13 +80,39 @@ final class AccountOperationTest extends TestCase
         self::assertSame($currency, $operation->getCurrency());
     }
 
-    private function createOperation(): AccountOperation
+    public function testConstructorRejectsCurrencyOtherThanTheAccountCurrency(): void
     {
-        return new AccountOperation($this->createAccount(), new Contractor('Test Contractor'), new \DateTimeImmutable(), -1000, new Currency('PLN'));
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Operation currency (CHF) must match the account currency (PLN).');
+
+        new AccountOperation(
+            $this->createAccount('PLN'),
+            new Contractor('Test Contractor'),
+            new \DateTimeImmutable(),
+            -1000,
+            new Currency('CHF')
+        );
     }
 
-    private function createAccount(): Account
+    private function createOperation(): AccountOperation
     {
-        return new Account(new \App\Entity\Bank('Test Bank'), new Currency('PLN'), new AccountType('Test Type'), 'ACC-TEST-' . uniqid(), new Household('Test Household'));
+        return new AccountOperation(
+            $this->createAccount(),
+            new Contractor('Test Contractor'),
+            new \DateTimeImmutable(),
+            -1000,
+            new Currency('PLN')
+        );
+    }
+
+    private function createAccount(string $currencyCode = 'PLN'): Account
+    {
+        return new Account(
+            new Bank('Test Bank'),
+            new Currency($currencyCode),
+            new AccountType('Test Type'),
+            'ACC-TEST-' . uniqid(),
+            new Household('Test Household')
+        );
     }
 }

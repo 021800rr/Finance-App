@@ -11,6 +11,7 @@ use App\Entity\Bank;
 use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
+use App\Service\Paginator;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -18,6 +19,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 final class AccountOperationApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
+    use ReadsJsonTrait;
 
     private KernelBrowser $client;
 
@@ -58,22 +60,7 @@ final class AccountOperationApiTest extends WebTestCase
         self::assertNotContains("Discount 1000 {$marker}", $descriptions);
     }
 
-    public function testQueryParameterCombinesWithAccountId(): void
-    {
-        $marker = uniqid();
-        $accountA = $this->createAccount();
-        $accountB = $this->createAccount();
-        $this->createOperation($accountA, "Shared {$marker} A");
-        $this->createOperation($accountB, "Shared {$marker} B");
-
-        $descriptions = $this->collectionDescriptions(
-            '/api/account_operations?accountId='.$accountA->getId().'&q='.rawurlencode("Shared {$marker}"),
-        );
-
-        self::assertSame(["Shared {$marker} A"], $descriptions);
-    }
-
-    public function testAccountIdParameterRestrictsTheCollectionToThatAccount(): void
+    public function testAccountOperationsRouteListsOnlyThatAccountsOperations(): void
     {
         $marker = uniqid();
         $accountA = $this->createAccount();
@@ -81,9 +68,87 @@ final class AccountOperationApiTest extends WebTestCase
         $this->createOperation($accountA, "In A {$marker}");
         $this->createOperation($accountB, "In B {$marker}");
 
-        $descriptions = $this->collectionDescriptions('/api/account_operations?accountId='.$accountA->getId());
+        $descriptions = $this->collectionDescriptions('/api/accounts/'.$accountA->getId().'/operations');
 
         self::assertSame(["In A {$marker}"], $descriptions);
+    }
+
+    public function testAccountOperationsRoutePaginatesWithTotalItemsOfThatAccount(): void
+    {
+        $account = $this->createAccount();
+        $other = $this->createAccount();
+        for ($i = 0; $i < Paginator::DEFAULT_PER_PAGE + 2; ++$i) {
+            $this->createOperation($account, "Paged {$i}");
+        }
+        $this->createOperation($other, 'Not counted');
+
+        $data = $this->collection('/api/accounts/'.$account->getId().'/operations?page=2');
+
+        self::assertSame(Paginator::DEFAULT_PER_PAGE + 2, $data['totalItems']);
+        self::assertCount(2, self::rowsAt($data, 'member'));
+        self::assertStringEndsWith('/operations?page=1', self::stringAt($data, 'view', 'previous'));
+    }
+
+    public function testSearchCollectionDescribesTheQueryParameterInTheHydraSearchTemplate(): void
+    {
+        $data = $this->collection('/api/account_operations?q=anything');
+
+        self::assertStringEndsWith('{?q}', self::stringAt($data, 'search', 'template'));
+    }
+
+    public function testAccountOperationsRouteOfUnknownAccountReturns404(): void
+    {
+        $this->client->request('GET', '/api/accounts/2147483647/operations', server: $this->authHeaders());
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testAccountOperationsRouteWithNonNumericAccountIdReturns404(): void
+    {
+        $this->client->request('GET', '/api/accounts/abc/operations', server: $this->authHeaders());
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testAccountOperationsRouteWithAccountIdAboveInt4MaxReturns404(): void
+    {
+        $this->client->request('GET', '/api/accounts/'.PHP_INT_MAX.'/operations', server: $this->authHeaders());
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
+    public function testAccountOperationsRouteRequiresAuthentication(): void
+    {
+        $account = $this->createAccount();
+
+        $this->client->request('GET', '/api/accounts/'.$account->getId().'/operations');
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function testSearchWithoutQueryParameterIsRejected(): void
+    {
+        $this->client->request('GET', '/api/account_operations', server: $this->authHeaders());
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    public function testSearchWithBlankQueryParameterIsRejected(): void
+    {
+        $this->client->request('GET', '/api/account_operations?q=%20%20%20', server: $this->authHeaders());
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    public function testSearchSpansAllAccounts(): void
+    {
+        $marker = uniqid();
+        $this->createOperation($this->createAccount(), "In A {$marker}");
+        $this->createOperation($this->createAccount(), "In B {$marker}");
+
+        $descriptions = $this->collectionDescriptions('/api/account_operations?q='.rawurlencode($marker));
+
+        self::assertEqualsCanonicalizing(["In A {$marker}", "In B {$marker}"], $descriptions);
     }
 
     public function testQueryParameterShorterThanTwoCharactersIsRejected(): void
@@ -93,25 +158,77 @@ final class AccountOperationApiTest extends WebTestCase
         self::assertResponseStatusCodeSame(422);
     }
 
-    public function testNonNumericAccountIdIsRejected(): void
+    public function testOpenApiDocumentsTheAccountOperationsRoute(): void
     {
-        $this->client->request('GET', '/api/account_operations?accountId=abc', server: $this->authHeaders());
+        $this->client->request('GET', '/api/docs.jsonopenapi');
+        self::assertResponseIsSuccessful();
 
-        self::assertResponseStatusCodeSame(422);
-    }
+        $docs = self::decodeObject((string) $this->client->getResponse()->getContent());
+        $operation = self::objectAt($docs, 'paths', '/api/accounts/{accountId}/operations', 'get');
+        $parameters = array_column(self::rowsAt($operation, 'parameters'), 'in', 'name');
 
-    public function testAccountIdAboveInt4MaxIsRejected(): void
-    {
-        $this->client->request('GET', '/api/account_operations?accountId='.PHP_INT_MAX, server: $this->authHeaders());
-
-        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['accountId' => 'path', 'page' => 'query'], $parameters);
+        self::assertArrayHasKey('404', self::objectAt($operation, 'responses'));
     }
 
     public function testAbsurdPageNumberReturnsAnEmptyPageInsteadOfFailing(): void
     {
-        $descriptions = $this->collectionDescriptions('/api/account_operations?page='.PHP_INT_MAX);
+        $descriptions = $this->collectionDescriptions('/api/account_operations?q=anything&page='.PHP_INT_MAX);
 
         self::assertSame([], $descriptions);
+    }
+
+    public function testPatchCannotMoveAnOperationToAnotherAccount(): void
+    {
+        $account = $this->createAccount();
+        $other = $this->createAccount();
+        $operation = $this->createOperation($account, 'Stays put '.uniqid());
+
+        $this->client->request(
+            'PATCH',
+            '/api/account_operations/'.$operation->getId(),
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/merge-patch+json'],
+            content: json_encode(['accountId' => $other->getId()], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseStatusCodeSame(422);
+        $this->em()->clear();
+        $reloaded = $this->em()->find(AccountOperation::class, $operation->getId());
+        self::assertNotNull($reloaded);
+        self::assertSame($account->getId(), $reloaded->getAccount()->getId());
+    }
+
+    public function testPatchWithTheSameAccountIdUpdatesTheOperation(): void
+    {
+        $account = $this->createAccount();
+        $operation = $this->createOperation($account, 'Before '.uniqid());
+
+        $this->client->request(
+            'PATCH',
+            '/api/account_operations/'.$operation->getId(),
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/merge-patch+json'],
+            content: json_encode(['accountId' => $account->getId(), 'description' => 'After'], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseIsSuccessful();
+        $this->em()->clear();
+        $reloaded = $this->em()->find(AccountOperation::class, $operation->getId());
+        self::assertSame('After', $reloaded?->getDescription());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function collection(string $uri): array
+    {
+        $this->client->request('GET', $uri, server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json']);
+        self::assertResponseIsSuccessful();
+
+        $data = self::decodeObject((string) $this->client->getResponse()->getContent());
+        $data['member'] ??= $data['hydra:member'] ?? null;
+        $data['view'] ??= $data['hydra:view'] ?? null;
+
+        return $data;
     }
 
     /**
@@ -119,18 +236,9 @@ final class AccountOperationApiTest extends WebTestCase
      */
     private function collectionDescriptions(string $uri): array
     {
-        $this->client->request('GET', $uri, server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json']);
-        self::assertResponseIsSuccessful();
-
-        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-        $members = is_array($data) ? ($data['hydra:member'] ?? $data['member'] ?? null) : null;
-        if (!is_array($members)) {
-            throw new \RuntimeException('Expected a JSON-LD collection with a member list.');
-        }
-
         $descriptions = [];
-        foreach ($members as $row) {
-            if (is_array($row) && is_string($row['description'] ?? null)) {
+        foreach (self::rowsAt($this->collection($uri), 'member') as $row) {
+            if (is_string($row['description'] ?? null)) {
                 $descriptions[] = $row['description'];
             }
         }
