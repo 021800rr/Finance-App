@@ -207,7 +207,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         self::assertSame('updated', $result->description);
     }
 
-    public function testPatchRefusesToChangeTheAccountOfTheOperation(): void
+    public function testPatchKeepsTheAccountOfTheOperationWhateverAccountIdTheDataCarries(): void
     {
         $plnAccount = $this->createAccount();
         $chfAccount = $this->createAccount('CHF');
@@ -218,14 +218,16 @@ final class AccountOperationProcessorTest extends KernelTestCase
         );
         self::assertInstanceOf(AccountOperationResource::class, $created);
 
-        $this->expectException(UnprocessableEntityHttpException::class);
-        $this->expectExceptionMessage('The account of an operation cannot be changed.');
-
-        $this->processor->process(
+        $result = $this->processor->process(
             $this->buildResource(accountId: $chfAccount->getId(), contractorId: $contractor->getId(), amount: '25.50'),
             new Patch(),
             ['id' => $created->id],
         );
+
+        self::assertInstanceOf(AccountOperationResource::class, $result);
+        self::assertSame($plnAccount->getId(), $result->accountId);
+        self::assertSame('PLN', $result->currencyCode);
+        self::assertSame('25.50', $result->amount);
     }
 
     /**

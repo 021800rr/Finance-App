@@ -18,6 +18,7 @@ use App\Entity\AccountOperation;
 use App\Service\Paginator;
 use App\State\AccountOperationProcessor;
 use App\State\AccountOperationProvider;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -60,11 +61,14 @@ use Symfony\Component\Validator\Constraints as Assert;
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Creates a new operation. Either contractorId or contractorName must be given; '
             .'if contractorName does not match an existing contractor, one is created automatically.',
+            denormalizationContext: ['groups' => ['operation:create', 'operation:write']],
             processor: AccountOperationProcessor::class,
         ),
         new Patch(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Updates an existing operation. Same rules as POST for contractorId/contractorName.',
+            description: 'Updates an existing operation. Same rules as POST for contractorId/contractorName. '
+            .'The account of an operation is fixed at creation and cannot be changed.',
+            denormalizationContext: ['groups' => ['operation:write']],
             provider: AccountOperationProvider::class,
             processor: AccountOperationProcessor::class,
         ),
@@ -84,10 +88,11 @@ final class AccountOperationResource
 
     #[ApiProperty(
         description: 'Id of the account this operation belongs to. Required on create; '
-        .'it cannot be changed afterwards.',
+        .'it cannot be changed afterwards, so it is not part of the update request.',
         example: 1
     )]
     #[Assert\NotNull(message: 'operation.account_required')]
+    #[Groups(['operation:create'])]
     public ?int $accountId = null;
 
     #[ApiProperty(
@@ -95,6 +100,7 @@ final class AccountOperationResource
         .'(leave this null when using contractorName).',
         example: null,
     )]
+    #[Groups(['operation:write'])]
     public ?int $contractorId = null;
 
     #[ApiProperty(
@@ -102,10 +108,12 @@ final class AccountOperationResource
         .'if none matches. Ignored if contractorId is set.',
         example: 'ACME Sp. z o.o.',
     )]
+    #[Groups(['operation:write'])]
     public ?string $contractorName = null;
 
     #[ApiProperty(description: 'Operation date, format YYYY-MM-DD. Required.', example: '2026-09-29')]
     #[Assert\NotBlank(message: 'operation.date_not_blank')]
+    #[Groups(['operation:write'])]
     public ?string $operationDate = null;
 
     #[ApiProperty(
@@ -114,6 +122,7 @@ final class AccountOperationResource
         example: '50.00',
     )]
     #[Assert\NotBlank(message: 'operation.amount_not_blank')]
+    #[Groups(['operation:write'])]
     public ?string $amount = null;
 
     #[ApiProperty(
@@ -124,9 +133,11 @@ final class AccountOperationResource
     public ?string $currencyCode = null;
 
     #[ApiProperty(description: 'Free-text note. Optional.', example: 'Rent for September')]
+    #[Groups(['operation:write'])]
     public ?string $description = null;
 
     #[ApiProperty(description: 'Whether the operation is confirmed. Defaults to false.', example: false)]
+    #[Groups(['operation:write'])]
     public bool $confirmed = false;
 
     #[ApiProperty(description: 'Transaction UUID. Read-only, ignored on write.', writable: false, example: null)]

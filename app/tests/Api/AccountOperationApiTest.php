@@ -179,7 +179,7 @@ final class AccountOperationApiTest extends WebTestCase
         self::assertSame([], $descriptions);
     }
 
-    public function testPatchCannotMoveAnOperationToAnotherAccount(): void
+    public function testPatchIgnoresAnAccountIdAndKeepsTheOperationOnItsAccount(): void
     {
         $account = $this->createAccount();
         $other = $this->createAccount();
@@ -189,14 +189,29 @@ final class AccountOperationApiTest extends WebTestCase
             'PATCH',
             '/api/account_operations/'.$operation->getId(),
             server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/merge-patch+json'],
-            content: json_encode(['accountId' => $other->getId()], JSON_THROW_ON_ERROR),
+            content: json_encode(['accountId' => $other->getId(), 'description' => 'Edited'], JSON_THROW_ON_ERROR),
         );
 
-        self::assertResponseStatusCodeSame(422);
+        self::assertResponseIsSuccessful();
         $this->em()->clear();
         $reloaded = $this->em()->find(AccountOperation::class, $operation->getId());
         self::assertNotNull($reloaded);
         self::assertSame($account->getId(), $reloaded->getAccount()->getId());
+        self::assertSame('Edited', $reloaded->getDescription());
+    }
+
+    public function testOpenApiOffersTheAccountIdOnCreateButNotOnUpdate(): void
+    {
+        $this->client->request('GET', '/api/docs.jsonopenapi');
+        self::assertResponseIsSuccessful();
+        $docs = self::decodeObject((string) $this->client->getResponse()->getContent());
+
+        $createProperties = $this->requestSchemaProperties($docs, '/api/account_operations', 'post');
+        $updateProperties = $this->requestSchemaProperties($docs, '/api/account_operations/{id}', 'patch');
+
+        self::assertArrayHasKey('accountId', $createProperties);
+        self::assertArrayNotHasKey('accountId', $updateProperties);
+        self::assertArrayHasKey('amount', $updateProperties);
     }
 
     public function testPatchWithTheSameAccountIdUpdatesTheOperation(): void
@@ -264,6 +279,22 @@ final class AccountOperationApiTest extends WebTestCase
         $this->em()->clear();
         $reloaded = $this->em()->find(AccountOperation::class, $operation->getId());
         self::assertSame(1000, $reloaded?->getAmount());
+    }
+
+    /**
+     * @param array<string, mixed> $docs
+     *
+     * @return array<string, mixed>
+     */
+    private function requestSchemaProperties(array $docs, string $path, string $method): array
+    {
+        $content = self::objectAt($docs, 'paths', $path, $method, 'requestBody', 'content');
+        $media = array_values($content)[0] ?? null;
+        self::assertIsArray($media);
+        $ref = self::stringAt(self::stringKeyed($media), 'schema', '$ref');
+        $schema = self::objectAt($docs, 'components', 'schemas', basename($ref));
+
+        return self::objectAt($schema, 'properties');
     }
 
     /**

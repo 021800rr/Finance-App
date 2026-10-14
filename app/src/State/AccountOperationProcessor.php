@@ -81,8 +81,6 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
 
     private function update(AccountOperation $accountOperation, AccountOperationResource $data): AccountOperation
     {
-        $this->assertAccountUnchanged($accountOperation, $data->accountId);
-
         $contractor = $this->contractorResolver->resolve($data->contractorId, $data->contractorName);
         $operationDate = $this->parseOperationDate($data->operationDate);
         $amount = $this->parseAmount($data->amount, $accountOperation->getCurrency()->getCode());
@@ -110,16 +108,6 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
         }
 
         return $accountOperation;
-    }
-
-    /**
-     * An operation stays on the account it was created on; sending the same account id again is harmless.
-     */
-    private function assertAccountUnchanged(AccountOperation $accountOperation, ?int $requestedAccountId): void
-    {
-        if (null !== $requestedAccountId && $requestedAccountId !== $accountOperation->getAccount()->getId()) {
-            throw new UnprocessableEntityHttpException('The account of an operation cannot be changed.');
-        }
     }
 
     private function resolveAccount(?int $accountId): Account
