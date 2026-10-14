@@ -7,8 +7,6 @@ namespace App\Entity;
 use App\Entity\Trait\BlankStringGuardTrait;
 use App\Entity\Trait\TimestampTrait;
 use App\Repository\HouseholdRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -31,16 +29,12 @@ class Household
     private string $name;
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
-    private bool $isOwnFunds = true;
-
-    /** @var Collection<int, Account> */
-    #[ORM\OneToMany(targetEntity: Account::class, mappedBy: 'household')]
-    private Collection $accounts;
+    private bool $isOwnFunds;
 
     public function __construct(string $name, bool $isOwnFunds = true)
     {
-        $this->accounts = new ArrayCollection();
-        $this->setName($name);
+        self::assertNotBlank($name, 'Household name');
+        $this->name = $name;
         $this->isOwnFunds = $isOwnFunds;
     }
 
@@ -52,12 +46,6 @@ class Household
     public function getName(): string
     {
         return $this->name;
-    }
-
-    public function setName(string $name): void
-    {
-        self::assertNotBlank($name, 'Household name');
-        $this->name = $name;
     }
 
     public function isOwnFunds(): bool

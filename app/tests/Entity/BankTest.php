@@ -10,16 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 final class BankTest extends TestCase
 {
-    public function testSetNameRejectsBlankValue(): void
-    {
-        $bank = new Bank('Valid Name');
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Bank name cannot be blank.');
-
-        $bank->setName('   ');
-    }
-
     public function testConstructorSetsName(): void
     {
         $bank = new Bank('Test Bank');

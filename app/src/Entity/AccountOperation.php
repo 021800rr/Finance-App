@@ -28,7 +28,7 @@ class AccountOperation
     #[ORM\Column(type: 'integer')]
     private int $id;
 
-    #[ORM\ManyToOne(inversedBy: 'operations')]
+    #[ORM\ManyToOne]
     #[ORM\JoinColumn(name: 'account_id', nullable: false, onDelete: 'RESTRICT')]
     private Account $account;
 

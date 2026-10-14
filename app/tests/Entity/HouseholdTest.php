@@ -10,16 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 final class HouseholdTest extends TestCase
 {
-    public function testSetNameRejectsBlankValue(): void
-    {
-        $household = new Household('Valid Name');
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Household name cannot be blank.');
-
-        $household->setName('   ');
-    }
-
     public function testConstructorSetsNameAndDefaultsIsOwnFundsToTrue(): void
     {
         $household = new Household('Test Household');

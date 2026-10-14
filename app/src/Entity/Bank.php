@@ -30,14 +30,19 @@ class Bank
     #[Assert\Length(min: 2, max: 100, minMessage: 'bank.name_min_length', maxMessage: 'bank.name_max_length')]
     private string $name;
 
-    /** @var Collection<int, Account> */
+    /**
+     * Never read in PHP, but queried: CurrencyExchangeRateType joins "b.accounts" to offer only banks that have accounts.
+     *
+     * @var Collection<int, Account>
+     */
     #[ORM\OneToMany(targetEntity: Account::class, mappedBy: 'bank')]
     private Collection $accounts;
 
     public function __construct(string $name)
     {
+        self::assertNotBlank($name, 'Bank name');
         $this->accounts = new ArrayCollection();
-        $this->setName($name);
+        $this->name = $name;
     }
 
     public function getId(): int
@@ -48,11 +53,5 @@ class Bank
     public function getName(): string
     {
         return $this->name;
-    }
-
-    public function setName(string $name): void
-    {
-        self::assertNotBlank($name, 'Bank name');
-        $this->name = $name;
     }
 }

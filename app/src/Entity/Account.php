@@ -7,8 +7,6 @@ namespace App\Entity;
 use App\Entity\Trait\BlankStringGuardTrait;
 use App\Entity\Trait\TimestampTrait;
 use App\Repository\AccountRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -21,6 +19,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\UniqueConstraint(
     name: 'uniq_bank_account_number',
     columns: ['bank_id', 'account_number']
+)]
+#[ORM\UniqueConstraint(
+    name: 'uniq_account_is_main',
+    columns: ['is_main'],
+    options: ['where' => '(is_main = true)']
 )]
 class Account
 {
@@ -55,18 +58,9 @@ class Account
     #[ORM\Column(name: 'is_main', type: 'boolean', options: ['default' => false])]
     private bool $isMain = false;
 
-    #[ORM\ManyToOne(inversedBy: 'accounts')]
+    #[ORM\ManyToOne]
     #[ORM\JoinColumn(name: 'household_id', nullable: false, onDelete: 'RESTRICT')]
     private Household $household;
-
-    /** @var Collection<int, AccountOperation> */
-    #[ORM\OneToMany(
-        targetEntity: AccountOperation::class,
-        mappedBy: 'account',
-        cascade: ['persist', 'remove'],
-        orphanRemoval: true
-    )]
-    private Collection $operations;
 
     public function __construct(Bank $bank, Currency $currency, AccountType $type, string $accountNumber, Household $household)
     {
@@ -76,7 +70,6 @@ class Account
         $this->household = $household;
         self::assertNotBlank($accountNumber, 'Account number');
         $this->accountNumber = $accountNumber;
-        $this->operations = new ArrayCollection();
     }
 
     public function getId(): int
@@ -160,11 +153,5 @@ class Account
     public function getHouseholdName(): string
     {
         return $this->household->getName();
-    }
-
-    /** @return Collection<int, AccountOperation> */
-    public function getOperations(): Collection
-    {
-        return $this->operations;
     }
 }

@@ -34,7 +34,7 @@ class AccountType
     private string $name;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
-    private bool $isRetirement = false;
+    private bool $isRetirement;
 
     public function __construct(string $name, bool $isRetirement = false)
     {
