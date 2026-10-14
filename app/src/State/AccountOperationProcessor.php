@@ -50,37 +50,52 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
             throw new \InvalidArgumentException('Expected instance of AccountOperationResource.');
         }
 
-        $accountOperation = $operation instanceof Patch ? $this->loadExisting($uriVariables) : null;
-
-        $account = null === $accountOperation
-            ? $this->resolveAccount($data->accountId)
-            : $this->accountOfExisting($accountOperation, $data->accountId);
-        $contractor = $this->contractorResolver->resolve($data->contractorId, $data->contractorName);
-        $operationDate = $this->parseOperationDate($data->operationDate);
-        $amountMinorUnits = Money::fromDecimalString((string) $data->amount, $account->getCurrency()->getCode())
-            ->getMinorUnits();
-
-        if (null === $accountOperation) {
-            $accountOperation = new AccountOperation(
-                $account,
-                $contractor,
-                $operationDate,
-                $amountMinorUnits,
-                $account->getCurrency(),
-                description: $data->description,
-                confirmed: $data->confirmed,
-            );
-        } else {
-            $accountOperation->setContractor($contractor);
-            $accountOperation->setOperationDate($operationDate);
-            $accountOperation->setAmount($amountMinorUnits);
-            $accountOperation->setDescription($data->description);
-            $accountOperation->setConfirmed($data->confirmed);
+        try {
+            $accountOperation = $operation instanceof Patch
+                ? $this->update($this->loadExisting($uriVariables), $data)
+                : $this->create($data);
+        } catch (\InvalidArgumentException $exception) {
+            throw new UnprocessableEntityHttpException($exception->getMessage(), $exception);
         }
 
         $this->accountOperationRepository->save($accountOperation, flush: true);
 
         return AccountOperationResource::fromEntity($accountOperation);
+    }
+
+    private function create(AccountOperationResource $data): AccountOperation
+    {
+        $account = $this->resolveAccount($data->accountId);
+        $currency = $account->getCurrency();
+
+        return new AccountOperation(
+            $account,
+            $this->contractorResolver->resolve($data->contractorId, $data->contractorName),
+            $this->parseOperationDate($data->operationDate),
+            $this->parseAmount($data->amount, $currency->getCode()),
+            $currency,
+            description: $data->description,
+            confirmed: $data->confirmed,
+        );
+    }
+
+    private function update(AccountOperation $accountOperation, AccountOperationResource $data): AccountOperation
+    {
+        $this->assertAccountUnchanged($accountOperation, $data->accountId);
+
+        $contractor = $this->contractorResolver->resolve($data->contractorId, $data->contractorName);
+        $operationDate = $this->parseOperationDate($data->operationDate);
+        $amount = $this->parseAmount($data->amount, $accountOperation->getCurrency()->getCode());
+
+        // setAmount() is the only setter that can refuse a value, so it goes first: a rejected amount
+        // must leave the operation untouched.
+        $accountOperation->setAmount($amount);
+        $accountOperation->setContractor($contractor);
+        $accountOperation->setOperationDate($operationDate);
+        $accountOperation->setDescription($data->description);
+        $accountOperation->setConfirmed($data->confirmed);
+
+        return $accountOperation;
     }
 
     /**
@@ -100,14 +115,11 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
     /**
      * An operation stays on the account it was created on; sending the same account id again is harmless.
      */
-    private function accountOfExisting(AccountOperation $accountOperation, ?int $requestedAccountId): Account
+    private function assertAccountUnchanged(AccountOperation $accountOperation, ?int $requestedAccountId): void
     {
-        $account = $accountOperation->getAccount();
-        if (null !== $requestedAccountId && $requestedAccountId !== $account->getId()) {
+        if (null !== $requestedAccountId && $requestedAccountId !== $accountOperation->getAccount()->getId()) {
             throw new UnprocessableEntityHttpException('The account of an operation cannot be changed.');
         }
-
-        return $account;
     }
 
     private function resolveAccount(?int $accountId): Account
@@ -122,6 +134,15 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
         }
 
         return $account;
+    }
+
+    private function parseAmount(?string $amount, string $currencyCode): int
+    {
+        if (null === $amount) {
+            throw new UnprocessableEntityHttpException('Amount is required.');
+        }
+
+        return Money::fromDecimalString($amount, $currencyCode)->getMinorUnits();
     }
 
     private function parseOperationDate(?string $operationDate): \DateTimeImmutable

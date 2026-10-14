@@ -13,6 +13,7 @@ use App\Entity\Currency;
 use App\Entity\Household;
 use App\Service\Paginator;
 use App\Tests\DatabaseTestTrait;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -214,6 +215,55 @@ final class AccountOperationApiTest extends WebTestCase
         $this->em()->clear();
         $reloaded = $this->em()->find(AccountOperation::class, $operation->getId());
         self::assertSame('After', $reloaded?->getDescription());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function invalidAmounts(): iterable
+    {
+        yield 'zero' => ['0'];
+        yield 'not a number' => ['abc'];
+        yield 'above the upper bound' => ['1000000.00'];
+        yield 'far above the upper bound' => ['9999999999'];
+    }
+
+    #[DataProvider('invalidAmounts')]
+    public function testPostWithAnInvalidAmountIsUnprocessable(string $amount): void
+    {
+        $account = $this->createAccount();
+
+        $this->client->request(
+            'POST',
+            '/api/account_operations',
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/ld+json'],
+            content: json_encode([
+                'accountId' => $account->getId(),
+                'contractorName' => 'Some Contractor',
+                'operationDate' => '2026-01-15',
+                'amount' => $amount,
+            ], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
+    #[DataProvider('invalidAmounts')]
+    public function testPatchWithAnInvalidAmountIsUnprocessable(string $amount): void
+    {
+        $operation = $this->createOperation($this->createAccount(), 'Keeps its amount');
+
+        $this->client->request(
+            'PATCH',
+            '/api/account_operations/'.$operation->getId(),
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/merge-patch+json'],
+            content: json_encode(['amount' => $amount], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseStatusCodeSame(422);
+        $this->em()->clear();
+        $reloaded = $this->em()->find(AccountOperation::class, $operation->getId());
+        self::assertSame(1000, $reloaded?->getAmount());
     }
 
     /**

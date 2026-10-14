@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\AccountOperationResource;
 use App\Entity\Account;
+use App\Entity\AccountOperation;
 use App\Entity\AccountType;
 use App\Entity\Bank;
 use App\Entity\Contractor;
@@ -18,6 +19,7 @@ use App\Repository\ContractorRepository;
 use App\State\AccountOperationProcessor;
 use App\Tests\DatabaseTestTrait;
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -224,6 +226,79 @@ final class AccountOperationProcessorTest extends KernelTestCase
             new Patch(),
             ['id' => $created->id],
         );
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function invalidAmounts(): iterable
+    {
+        yield 'zero' => ['0'];
+        yield 'negative zero' => ['-0.00'];
+        yield 'not a number' => ['abc'];
+        yield 'above the upper bound' => ['1000000.00'];
+        yield 'far above the upper bound' => ['9999999999'];
+    }
+
+    #[DataProvider('invalidAmounts')]
+    public function testCreateRejectsAnInvalidAmountAsUnprocessable(string $amount): void
+    {
+        $account = $this->createAccount();
+        $contractor = $this->createContractor('Contractor');
+
+        $this->expectException(UnprocessableEntityHttpException::class);
+
+        $this->processor->process(
+            $this->buildResource(accountId: $account->getId(), contractorId: $contractor->getId(), amount: $amount),
+            new Post(),
+        );
+    }
+
+    public function testCreateRejectsAMissingAmountAsUnprocessable(): void
+    {
+        $account = $this->createAccount();
+        $contractor = $this->createContractor('Contractor');
+
+        $this->expectException(UnprocessableEntityHttpException::class);
+        $this->expectExceptionMessage('Amount is required.');
+
+        $this->processor->process(
+            $this->buildResource(accountId: $account->getId(), contractorId: $contractor->getId(), amount: null),
+            new Post(),
+        );
+    }
+
+    #[DataProvider('invalidAmounts')]
+    public function testPatchRejectsAnInvalidAmountAndLeavesTheOperationUntouched(string $amount): void
+    {
+        $account = $this->createAccount();
+        $contractor = $this->createContractor('Original Contractor');
+        $created = $this->processor->process(
+            $this->buildResource(accountId: $account->getId(), contractorId: $contractor->getId(), amount: '10.00'),
+            new Post(),
+        );
+        self::assertInstanceOf(AccountOperationResource::class, $created);
+        $otherContractor = $this->createContractor('Other Contractor');
+
+        try {
+            $this->processor->process(
+                $this->buildResource(
+                    accountId: $account->getId(),
+                    contractorId: $otherContractor->getId(),
+                    amount: $amount,
+                    description: 'must not be applied',
+                ),
+                new Patch(),
+                ['id' => $created->id],
+            );
+            self::fail('An invalid amount must be rejected.');
+        } catch (UnprocessableEntityHttpException) {
+            $stored = $this->em()->find(AccountOperation::class, $created->id);
+            self::assertNotNull($stored);
+            self::assertSame($contractor->getId(), $stored->getContractor()->getId());
+            self::assertSame(1000, $stored->getAmount());
+            self::assertNull($stored->getDescription());
+        }
     }
 
     public function testProcessThrowsNotFoundOnPatchWhenOperationMissing(): void
