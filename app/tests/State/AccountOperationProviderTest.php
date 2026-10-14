@@ -257,7 +257,7 @@ final class AccountOperationProviderTest extends KernelTestCase
                 |> (fn($x) => array_map(static fn(AccountOperationResource $r): ?int => $r->id, $x))
                 |> array_values(...);
     }
-// return array_values(array_map(static fn (AccountOperationResource $r): ?int => $r->id, iterator_to_array($paginator)));
+
     /**
      * @param array<string, string> $query
      */
