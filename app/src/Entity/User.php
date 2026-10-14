@@ -47,11 +47,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->id;
     }
 
-    public function getEmail(): string
-    {
-        return $this->email;
-    }
-
     public function setEmail(string $email): void
     {
         self::assertNotBlank($email, 'Email');
@@ -79,14 +74,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $roles[] = 'ROLE_USER';
 
         return array_values(array_unique($roles));
-    }
-
-    /**
-     * @param list<string> $roles
-     */
-    public function setRoles(array $roles): void
-    {
-        $this->roles = $roles;
     }
 
     public function getPassword(): string

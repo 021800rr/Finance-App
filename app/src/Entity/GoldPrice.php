@@ -71,20 +71,9 @@ class GoldPrice
         return $this->priceDate;
     }
 
-    public function setPriceDate(\DateTimeImmutable $priceDate): void
-    {
-        $this->priceDate = $priceDate;
-    }
-
     public function getPricePln(): int
     {
         return $this->pricePln;
-    }
-
-    public function setPricePln(int $pricePln): void
-    {
-        self::assertInRange($pricePln, 1, 99999999, 'Price');
-        $this->pricePln = $pricePln;
     }
 
     public function getCurrency(): Currency

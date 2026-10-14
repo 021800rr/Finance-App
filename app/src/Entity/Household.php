@@ -64,15 +64,4 @@ class Household
     {
         return $this->isOwnFunds;
     }
-
-    public function setIsOwnFunds(bool $isOwnFunds): void
-    {
-        $this->isOwnFunds = $isOwnFunds;
-    }
-
-    /** @return Collection<int, Account> */
-    public function getAccounts(): Collection
-    {
-        return $this->accounts;
-    }
 }

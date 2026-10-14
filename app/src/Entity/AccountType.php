@@ -62,9 +62,4 @@ class AccountType
     {
         return $this->isRetirement;
     }
-
-    public function setIsRetirement(bool $isRetirement): void
-    {
-        $this->isRetirement = $isRetirement;
-    }
 }

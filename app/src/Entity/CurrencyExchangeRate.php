@@ -60,29 +60,14 @@ class CurrencyExchangeRate
         return $this->bank;
     }
 
-    public function setBank(Bank $bank): void
-    {
-        $this->bank = $bank;
-    }
-
     public function getCurrency(): Currency
     {
         return $this->currency;
     }
 
-    public function setCurrency(Currency $currency): void
-    {
-        $this->currency = $currency;
-    }
-
     public function getRateDate(): \DateTimeImmutable
     {
         return $this->rateDate;
-    }
-
-    public function setRateDate(\DateTimeImmutable $rateDate): void
-    {
-        $this->rateDate = $rateDate;
     }
 
     public function getRateToPln(): int

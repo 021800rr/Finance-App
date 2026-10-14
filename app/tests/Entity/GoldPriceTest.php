@@ -36,18 +36,6 @@ final class GoldPriceTest extends TestCase
         new GoldPrice($asset, new DateTimeImmutable(), 100000000, $currency);
     }
 
-    public function testSetPricePlnRejectsZero(): void
-    {
-        $asset = $this->createGoldAsset();
-        $currency = new Currency('PLN');
-        $price = new GoldPrice($asset, new DateTimeImmutable(), 10000, $currency);
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Price must be between 1 and 99999999.');
-
-        $price->setPricePln(0);
-    }
-
     public function testGetPricePlnAsMoneyUsesOwnCurrency(): void
     {
         $goldPrice = new GoldPrice($this->createGoldAsset(), new DateTimeImmutable(), 500000, new Currency('PLN'));

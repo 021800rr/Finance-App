@@ -55,10 +55,4 @@ class Bank
         self::assertNotBlank($name, 'Bank name');
         $this->name = $name;
     }
-
-    /** @return Collection<int, Account> */
-    public function getAccounts(): Collection
-    {
-        return $this->accounts;
-    }
 }
