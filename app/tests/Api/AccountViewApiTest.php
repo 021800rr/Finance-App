@@ -204,7 +204,7 @@ final class AccountViewApiTest extends WebTestCase
         $contractor = new Contractor('View Contractor '.uniqid());
         $this->em()->persist($contractor);
         for ($i = 0; $i < self::OPERATIONS; ++$i) {
-            // The two newest operations are dated in the future ("saldo na dziś" must differ from "saldo").
+            // The two newest operations are dated in the future ("balance today" must differ from "balance").
             $date = new \DateTimeImmutable(sprintf('%+d days', 2 - $i));
             $operation = new AccountOperation(
                 $account,

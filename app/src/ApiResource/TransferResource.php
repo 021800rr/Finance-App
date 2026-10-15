@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     shortName: 'Transfer',
     description: 'Transfer/exchange between two of the user\'s own accounts. Creates two linked '
     .'AccountOperation records (debit + credit) sharing the same transactionUuid, exactly like '
-    .'the "Przelew / Wymiana" form. The contractor is always the fixed "Przelew własny" contractor.',
+    .'the "Transfer / Exchange" form. The contractor is always the fixed "Przelew własny" contractor.',
     operations: [
         new Post(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),

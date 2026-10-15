@@ -80,14 +80,14 @@ final class ContractorProviderTest extends KernelTestCase
 
     public function testProvideFiltersByPartialNameWhenNameFilterGiven(): void
     {
-        $this->createContractor('Żabka '.uniqid());
-        $this->createContractor('Biedronka '.uniqid());
+        $this->createContractor('Écolier '.uniqid());
+        $this->createContractor('Supermarket '.uniqid());
 
         /** @var list<ContractorResource> $result */
-        $result = $this->provider->provide(new GetCollection(), [], ['filters' => ['name' => 'Ża']]);
+        $result = $this->provider->provide(new GetCollection(), [], ['filters' => ['name' => 'Éc']]);
 
         self::assertNotNull($result[0]->name);
-        self::assertStringStartsWith('Żabka', $result[0]->name);
+        self::assertStringStartsWith('Écolier', $result[0]->name);
     }
 
     public function testProvideReturnsAllContractorsWhenNoNameFilterGiven(): void

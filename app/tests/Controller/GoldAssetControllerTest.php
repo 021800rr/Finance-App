@@ -42,7 +42,7 @@ final class GoldAssetControllerTest extends WebTestCase
         $goldForm = $this->getOrCreateGoldForm('sztabka');
 
         $crawler = $this->client->request('GET', '/gold-assets');
-        $form = $crawler->selectButton('Dodaj')->form();
+        $form = $crawler->selectButton('Add')->form();
 
         $this->client->submit($form, [
             'gold_asset[form]' => (string) $goldForm->getId(),

@@ -104,11 +104,11 @@ final class ContractorFormHandlerTest extends KernelTestCase
         $field = $this->buildContractorField();
         $field->submit('');
 
-        $request = new Request(request: ['contractor_input' => 'Wpisany ręcznie']);
+        $request = new Request(request: ['contractor_input' => 'Typed manually']);
 
         $resolution = $this->handler->resolve($field, $request);
 
-        self::assertSame('Wpisany ręcznie', $resolution->contractorName);
+        self::assertSame('Typed manually', $resolution->contractorName);
     }
 
     public function testResolveReturnsErrorWhenContractorIdIsNotNumeric(): void
@@ -146,7 +146,7 @@ final class ContractorFormHandlerTest extends KernelTestCase
         $field = $this->buildContractorField();
         $field->submit((string) $contractor->getId());
 
-        $request = new Request(request: ['contractor_input' => 'Inny tekst wpisany przez usera']);
+        $request = new Request(request: ['contractor_input' => 'Other text typed by the user']);
 
         $resolution = $this->handler->resolve($field, $request);
 

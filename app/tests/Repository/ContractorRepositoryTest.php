@@ -50,9 +50,9 @@ final class ContractorRepositoryTest extends KernelTestCase
 
     public function testSearchByNameFindsPartialMatch(): void
     {
-        $contractor = $this->createContractor('Żabka Unique ' . uniqid());
+        $contractor = $this->createContractor('Écolier Unique ' . uniqid());
 
-        $ids = array_column($this->repository->searchByName('Żabka', 1000), 'id');
+        $ids = array_column($this->repository->searchByName('Écolier', 1000), 'id');
 
         self::assertContains($contractor->getId(), $ids);
     }

@@ -17,6 +17,17 @@ contractor:
     not_found: 'Wybrany kontrahent nie istnieje.'
     required: 'Wybierz kontrahenta z listy.'
 
+contractor_autocomplete:
+    confirm_create: 'Dodać nowego kontrahenta „%name%”?'
+    create_failed: 'Błąd przy tworzeniu kontrahenta.'
+    created: 'Dodano kontrahenta: %name%'
+    created_without_id: 'Dodano kontrahenta, ale serwer nie zwrócił ID.'
+    empty_name: 'Nazwa jest pusta.'
+    missing_create_url: 'Brak adresu tworzenia kontrahenta.'
+    network_error: 'Błąd sieci przy tworzeniu kontrahenta.'
+    no_name: '(brak nazwy)'
+    selected: 'Wybrano kontrahenta: %name%'
+
 fixed_expense:
     add: 'Dodaj'
     add_title: 'Dodaj opłatę stałą'
@@ -118,6 +129,7 @@ pagination:
 rate:
     add_title: 'Dodaj kurs'
     chart_title: 'Wykres kursów'
+    chart_y_axis: 'Kurs CHF (sprzedaż)'
     list_title: 'Lista kursów'
     none_found: 'Brak kursów'
     value: 'Kurs → PLN'

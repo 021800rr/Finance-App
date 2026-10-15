@@ -47,7 +47,7 @@ final class LoginControllerTest extends WebTestCase
         $this->submitLoginForm(self::VALID_EMAIL, 'wrongpassword');
         $crawler = $this->client->followRedirect();
 
-        self::assertStringContainsString('Nieprawidłowe dane', $crawler->filter('.alert-danger')->text());
+        self::assertStringContainsString('Invalid credentials', $crawler->filter('.alert-danger')->text());
     }
 
     public function testLoginWithValidCredentialsRedirectsToHome(): void
@@ -66,7 +66,7 @@ final class LoginControllerTest extends WebTestCase
         $this->submitLoginForm(self::VALID_EMAIL, 'wrongpassword');
         $crawler = $this->client->followRedirect();
 
-        self::assertStringContainsString('Zbyt wiele nieudanych prób logowania', $crawler->filter('.alert-danger')->text());
+        self::assertStringContainsString('Too many failed login attempts', $crawler->filter('.alert-danger')->text());
     }
 
     public function testLoginThrottlingBlocksEvenValidCredentials(): void
@@ -78,7 +78,7 @@ final class LoginControllerTest extends WebTestCase
         $this->submitLoginForm(self::VALID_EMAIL, self::VALID_PASSWORD);
         $crawler = $this->client->followRedirect();
 
-        self::assertStringContainsString('Zbyt wiele nieudanych prób logowania', $crawler->filter('.alert-danger')->text());
+        self::assertStringContainsString('Too many failed login attempts', $crawler->filter('.alert-danger')->text());
     }
 
     private function submitLoginForm(string $email, string $password): void

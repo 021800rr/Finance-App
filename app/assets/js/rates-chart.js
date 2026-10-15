@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: false,
                     title: {
                         display: true,
-                        text: 'Kurs CHF (sprzedaż)'
+                        text: chartContainer.dataset.yAxisTitle ?? ''
                     }
                 },
                 x: {

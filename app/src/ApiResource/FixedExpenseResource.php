@@ -19,7 +19,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     shortName: 'FixedExpense',
-    description: 'A recurring monthly expense (always a negative amount, in PLN). Mirrors the "Opłaty stałe" form.',
+    description: 'A recurring monthly expense (always a negative amount, in PLN). Mirrors the "Fixed expenses" form.',
     operations: [
         new GetCollection(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
@@ -68,7 +68,7 @@ final class FixedExpenseResource
     #[ApiProperty(
         description: 'Contractor name. Used to find an existing contractor by name, or create a new one '
         .'if none matches. Ignored if contractorId is set.',
-        example: 'Czynsz',
+        example: 'Rent',
     )]
     public ?string $contractorName = null;
 

@@ -24,8 +24,8 @@ class AllRoutesSmokeTest extends WebTestCase
                 continue;
             }
 
-            // Pomijamy trasy z parametrami w URL (np. /account/{id}) — na razie
-            // testujemy tylko te "płaskie", bez wymaganych argumentów
+            // Skip routes with URL parameters (e.g. /account/{id}) — for now
+            // only the "flat" ones without required arguments are tested
             if (str_contains($route->getPath(), '{')) {
                 continue;
             }
@@ -36,7 +36,7 @@ class AllRoutesSmokeTest extends WebTestCase
             self::assertLessThan(
                 500,
                 $status,
-                sprintf('Trasa "%s" (%s) zwróciła błąd serwera: %d', $name, $route->getPath(), $status)
+                sprintf('Route "%s" (%s) returned a server error: %d', $name, $route->getPath(), $status)
             );
         }
     }

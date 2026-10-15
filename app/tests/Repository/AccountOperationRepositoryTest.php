@@ -102,10 +102,10 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testSearchByQueryPagedFindsMatchByContractorName(): void
     {
         $account = $this->createAccount();
-        $contractor = $this->createContractorWithName('Żabka Unique');
+        $contractor = $this->createContractorWithName('Écolier Unique');
         $this->createOperationWithContractor($account, 1000, new DateTimeImmutable(), $contractor);
 
-        $result = $this->repository->searchByQueryPaged('Żabka', 10, 0);
+        $result = $this->repository->searchByQueryPaged('Écolier', 10, 0);
 
         self::assertCount(1, $result);
     }
@@ -366,10 +366,10 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testExistsForContractorAndDateReturnsTrueForExactMatch(): void
     {
         $account = $this->createAccount();
-        $contractor = $this->createContractorWithName('Czynsz');
+        $contractor = $this->createContractorWithName('Rent');
         $date = new DateTimeImmutable('2026-03-15');
 
-        $this->createOperationWithContractor($account, 15050, $date, $contractor, 'Czynsz');
+        $this->createOperationWithContractor($account, 15050, $date, $contractor, 'Rent');
 
         $result = $this->repository->existsForContractorAndDate($account, $contractor, $date, 15050);
 
@@ -379,10 +379,10 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testExistsForContractorAndDateReturnsFalseForDifferentAmount(): void
     {
         $account = $this->createAccount();
-        $contractor = $this->createContractorWithName('Czynsz');
+        $contractor = $this->createContractorWithName('Rent');
         $date = new DateTimeImmutable('2026-03-15');
 
-        $this->createOperationWithContractor($account, 15050, $date, $contractor, 'Czynsz');
+        $this->createOperationWithContractor($account, 15050, $date, $contractor, 'Rent');
 
         $result = $this->repository->existsForContractorAndDate($account, $contractor, $date, 20000);
 
@@ -392,9 +392,9 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testExistsForContractorAndDateReturnsFalseForDifferentDate(): void
     {
         $account = $this->createAccount();
-        $contractor = $this->createContractorWithName('Czynsz');
+        $contractor = $this->createContractorWithName('Rent');
 
-        $this->createOperationWithContractor($account, 15050, new DateTimeImmutable('2026-03-15'), $contractor, 'Czynsz');
+        $this->createOperationWithContractor($account, 15050, new DateTimeImmutable('2026-03-15'), $contractor, 'Rent');
 
         $result = $this->repository->existsForContractorAndDate($account, $contractor, new DateTimeImmutable('2026-03-16'), 15050);
 
@@ -404,11 +404,11 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testExistsForContractorAndDateReturnsFalseForDifferentContractor(): void
     {
         $account = $this->createAccount();
-        $contractor = $this->createContractorWithName('Czynsz');
-        $otherContractor = $this->createContractorWithName('Prąd');
+        $contractor = $this->createContractorWithName('Rent');
+        $otherContractor = $this->createContractorWithName('Electricity');
         $date = new DateTimeImmutable('2026-03-15');
 
-        $this->createOperationWithContractor($account, 15050, $date, $contractor, 'Czynsz');
+        $this->createOperationWithContractor($account, 15050, $date, $contractor, 'Rent');
 
         $result = $this->repository->existsForContractorAndDate($account, $otherContractor, $date, 15050);
 
@@ -419,10 +419,10 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     {
         $account = $this->createAccount();
         $otherAccount = $this->createAccount();
-        $contractor = $this->createContractorWithName('Czynsz');
+        $contractor = $this->createContractorWithName('Rent');
         $date = new DateTimeImmutable('2026-03-15');
 
-        $this->createOperationWithContractor($account, 15050, $date, $contractor, 'Czynsz');
+        $this->createOperationWithContractor($account, 15050, $date, $contractor, 'Rent');
 
         $result = $this->repository->existsForContractorAndDate($otherAccount, $contractor, $date, 15050);
 
@@ -432,7 +432,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testExistsForContractorAndDateReturnsFalseWhenNoOperationsExist(): void
     {
         $account = $this->createAccount();
-        $contractor = $this->createContractorWithName('Czynsz');
+        $contractor = $this->createContractorWithName('Rent');
 
         $result = $this->repository->existsForContractorAndDate($account, $contractor, new DateTimeImmutable(), 15050);
 

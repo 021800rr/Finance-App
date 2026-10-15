@@ -87,7 +87,7 @@ final class AccountApiTest extends WebTestCase
         $account = $this->em()->getRepository(Account::class)->findOneBy([]);
 
         if (null === $account) {
-            throw new RuntimeException('Fixtures muszą dostarczyć co najmniej jedno konto.');
+            throw new RuntimeException('Fixtures must provide at least one account.');
         }
 
         return $account;

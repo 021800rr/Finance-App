@@ -6,7 +6,7 @@
             <div class="card-body">
                 <h2 class="h5 mb-3">{{ 'rate.chart_title'|trans }}</h2>
                 <div class="chart-container">
-                    <canvas id="ratesChart" data-chart="{{ chartData|json_encode|e('html_attr') }}"></canvas>
+                    <canvas id="ratesChart" data-y-axis-title="{{ 'rate.chart_y_axis'|trans }}" data-chart="{{ chartData|json_encode|e('html_attr') }}"></canvas>
                 </div>
             </div>
         </div>

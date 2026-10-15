@@ -17,7 +17,7 @@ use App\State\SummaryProvider;
             uriTemplate: '/summary',
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Financial summary across all accounts. By default hidden accounts are excluded '
-            .'from both the accounts list and all totals, mirroring the web app\'s "Pokaż ukryte" toggle. '
+            .'from both the accounts list and all totals, mirroring the web app\'s "Show hidden" toggle. '
             .'Pass ?showHidden=true to include them.',
             provider: SummaryProvider::class,
             parameters: [

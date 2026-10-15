@@ -53,16 +53,16 @@ final class SummaryServiceTest extends KernelTestCase
         $currency = $this->findOrCreateCurrency('PLN');
         $contractor = $this->createContractor();
 
-        // Bank A: trzyma zarówno nasze, jak i matki pieniądze na osobnych kontach
+        // Bank A: holds both our money and the mother's on separate accounts
         $bankA = $this->createBank();
         $ourAccountInBankA = $this->createAccount($bankA, $currency, $this->createAccountType(), $ownHousehold, 'OUR-A-' . uniqid());
         $motherAccountInBankA = $this->createAccount($bankA, $currency, $this->createAccountType(), $excludedHousehold, 'MOTHER-A-' . uniqid());
 
-        // Bank B: tylko nasze pieniądze
+        // Bank B: only our money
         $bankB = $this->createBank();
         $ourAccountInBankB = $this->createAccount($bankB, $currency, $this->createAccountType(), $ownHousehold, 'OUR-B-' . uniqid());
 
-        // Bank C: tylko pieniądze matki
+        // Bank C: only the mother's money
         $bankC = $this->createBank();
         $motherAccountInBankC = $this->createAccount($bankC, $currency, $this->createAccountType(), $excludedHousehold, 'MOTHER-C-' . uniqid());
 

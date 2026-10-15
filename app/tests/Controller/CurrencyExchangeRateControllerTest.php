@@ -71,7 +71,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
         $chf = $this->getOrCreateCurrency('CHF');
 
         $crawler = $this->client->request('GET', '/rate');
-        $form = $crawler->selectButton('Dodaj')->form();
+        $form = $crawler->selectButton('Add')->form();
 
         $this->client->submit($form, [
             'currency_exchange_rate[bank]' => (string) $bank->getId(),

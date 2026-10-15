@@ -48,13 +48,13 @@ final class FixedExpenseFactoryTest extends KernelTestCase
 
     public function testCreateFromFormBuildsFixedExpenseWithCorrectAmount(): void
     {
-        $form = $this->buildForm(day: 15, amount: -150.50, description: 'Czynsz');
+        $form = $this->buildForm(day: 15, amount: -150.50, description: 'Rent');
 
         $fixedExpense = $this->factory->createFromForm($form, $this->createContractor());
 
         self::assertSame(15, $fixedExpense->getDay());
         self::assertSame(-15050, $fixedExpense->getAmount());
-        self::assertSame('Czynsz', $fixedExpense->getDescription());
+        self::assertSame('Rent', $fixedExpense->getDescription());
         self::assertSame('PLN', $fixedExpense->getCurrency()->getCode());
     }
 

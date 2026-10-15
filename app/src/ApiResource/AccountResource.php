@@ -25,7 +25,7 @@ use App\State\AccountProvider;
         ),
         new Patch(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Updates an account. "hidden" mirrors the web app\'s "Ukryj"/"Pokaż" toggle. '
+            description: 'Updates an account. "hidden" mirrors the web app\'s "Hide"/"Show" toggle. '
             .'"isMain" mirrors the ☆ toggle: setting it to true makes this the main account and unsets '
             .'the previous one; setting it to false just unsets this account. No other edits are supported.',
             provider: AccountProvider::class,

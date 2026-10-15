@@ -20,20 +20,20 @@ final class ContractorFactoryTest extends TestCase
 
     public function testCreateFromJsonRequestCreatesContractorWithGivenName(): void
     {
-        $request = Request::create('/contractor/create', 'POST', content: (string) json_encode(['name' => 'Żabka']));
+        $request = Request::create('/contractor/create', 'POST', content: (string) json_encode(['name' => 'Écolier']));
 
         $contractor = $this->factory->createFromJsonRequest($request);
 
-        self::assertSame('Żabka', $contractor->getName());
+        self::assertSame('Écolier', $contractor->getName());
     }
 
     public function testCreateFromJsonRequestTrimsWhitespaceFromName(): void
     {
-        $request = Request::create('/contractor/create', 'POST', content: (string) json_encode(['name' => '  Żabka  ']));
+        $request = Request::create('/contractor/create', 'POST', content: (string) json_encode(['name' => '  Écolier  ']));
 
         $contractor = $this->factory->createFromJsonRequest($request);
 
-        self::assertSame('Żabka', $contractor->getName());
+        self::assertSame('Écolier', $contractor->getName());
     }
 
     public function testCreateFromJsonRequestThrowsForInvalidJson(): void

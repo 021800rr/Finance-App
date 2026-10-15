@@ -294,7 +294,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
         self::assertResponseRedirects();
         $this->client->followRedirect();
-        self::assertSelectorTextContains('body', 'Nie znaleziono powiązanej operacji.');
+        self::assertSelectorTextContains('body', 'Related operation not found.');
     }
 
     public function testGoToOtherSideRedirectsToRelatedOperationAccount(): void

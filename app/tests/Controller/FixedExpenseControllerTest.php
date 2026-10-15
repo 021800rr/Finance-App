@@ -44,7 +44,7 @@ final class FixedExpenseControllerTest extends WebTestCase
     public function testSubmittingWithoutContractorShowsError(): void
     {
         $crawler = $this->client->request('GET', '/fixed-expense');
-        $form = $crawler->selectButton('Dodaj')->form();
+        $form = $crawler->selectButton('Add')->form();
 
         $this->client->submit($form, [
             'fixed_expense[day]' => '15',
@@ -53,7 +53,7 @@ final class FixedExpenseControllerTest extends WebTestCase
         ]);
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('body', 'Wybierz kontrahenta z listy.');
+        self::assertSelectorTextContains('body', 'Please select a contractor from the list.');
     }
 
     public function testSubmittingWithValidContractorCreatesFixedExpenseAndRedirects(): void
@@ -63,7 +63,7 @@ final class FixedExpenseControllerTest extends WebTestCase
         $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/fixed-expense');
-        $form = $crawler->selectButton('Dodaj')->form();
+        $form = $crawler->selectButton('Add')->form();
 
         $this->client->submit($form, [
             'fixed_expense[day]' => '10',

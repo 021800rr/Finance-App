@@ -79,36 +79,36 @@ class OperationFixtures extends Fixture implements DependentFixtureInterface
         $selfTransfer = $this->getReference(AppFixtures::REF_CONTRACTOR_SELF_TRANSFER, Contractor::class);
 
         /* CONTRACTORS */
-        $employer = $this->contractor($manager, 'Pracodawca');
-        $shop = $this->contractor($manager, 'Biedronka');
-        $fuel = $this->contractor($manager, 'Orlen');
+        $employer = $this->contractor($manager, 'Employer');
+        $shop = $this->contractor($manager, 'Supermarket');
+        $fuel = $this->contractor($manager, 'Gas station');
         $netflix = $this->contractor($manager, 'Netflix');
-        $landlord = $this->contractor($manager, 'Właściciel');
-        $tenant = $this->contractor($manager, 'Najemca');
-        $housingCommunity = $this->contractor($manager, 'Wspólnota mieszkaniowa');
-        $inheritance = $this->contractor($manager, 'Spadek');
+        $landlord = $this->contractor($manager, 'Landlord');
+        $tenant = $this->contractor($manager, 'Tenant');
+        $housingCommunity = $this->contractor($manager, 'Homeowners association');
+        $inheritance = $this->contractor($manager, 'Inheritance');
 
         /* ACCOUNT OPERATIONS — three months of a typical household, amounts in minor units (grosze) */
-        $this->operation($manager, $accountRorPln, $employer, '2026-07-10', 500000, 'Wypłata');
-        $this->operation($manager, $accountRorPln, $shop, '2026-07-12', -15000, 'Zakupy spożywcze');
-        $this->operation($manager, $accountRorPln, $fuel, '2026-07-20', -25000, 'Paliwo');
+        $this->operation($manager, $accountRorPln, $employer, '2026-07-10', 500000, 'Salary');
+        $this->operation($manager, $accountRorPln, $shop, '2026-07-12', -15000, 'Groceries');
+        $this->operation($manager, $accountRorPln, $fuel, '2026-07-20', -25000, 'Fuel');
 
-        $this->operation($manager, $accountRorPln, $employer, '2026-08-10', 500000, 'Wypłata');
-        $this->operation($manager, $accountRorPln, $shop, '2026-08-14', -18000, 'Zakupy spożywcze');
-        $this->operation($manager, $accountRorPln, $netflix, '2026-08-22', -5500, 'Subskrypcja');
+        $this->operation($manager, $accountRorPln, $employer, '2026-08-10', 500000, 'Salary');
+        $this->operation($manager, $accountRorPln, $shop, '2026-08-14', -18000, 'Groceries');
+        $this->operation($manager, $accountRorPln, $netflix, '2026-08-22', -5500, 'Subscription');
 
-        $this->operation($manager, $accountRorPln, $employer, '2026-09-10', 510000, 'Wypłata');
-        $this->operation($manager, $accountRorPln, $shop, '2026-09-12', -16500, 'Zakupy spożywcze');
-        $this->operation($manager, $accountRorPln, $fuel, '2026-09-18', -27000, 'Paliwo');
+        $this->operation($manager, $accountRorPln, $employer, '2026-09-10', 510000, 'Salary');
+        $this->operation($manager, $accountRorPln, $shop, '2026-09-12', -16500, 'Groceries');
+        $this->operation($manager, $accountRorPln, $fuel, '2026-09-18', -27000, 'Fuel');
 
-        /* MATKA — najem mieszkania (Bank2) + drugie konto (Bank3) */
-        $this->operation($manager, $accountBank3Matka, $inheritance, '2026-06-01', 500000, 'Spadek');
-        $this->operation($manager, $accountBank2MatkaRor, $tenant, '2026-07-05', 180000, 'Czynsz najmu');
-        $this->operation($manager, $accountBank2MatkaRor, $tenant, '2026-08-05', 180000, 'Czynsz najmu');
-        $this->operation($manager, $accountBank2MatkaRor, $tenant, '2026-09-05', 180000, 'Czynsz najmu');
-        $this->operation($manager, $accountBank3Matka, $housingCommunity, '2026-07-10', -45000, 'Czynsz administracyjny');
-        $this->operation($manager, $accountBank3Matka, $housingCommunity, '2026-08-10', -45000, 'Czynsz administracyjny');
-        $this->operation($manager, $accountBank3Matka, $housingCommunity, '2026-09-10', -45000, 'Czynsz administracyjny');
+        /* MOTHER — flat rental (Bank2) + second account (Bank3) */
+        $this->operation($manager, $accountBank3Matka, $inheritance, '2026-06-01', 500000, 'Inheritance');
+        $this->operation($manager, $accountBank2MatkaRor, $tenant, '2026-07-05', 180000, 'Rental income');
+        $this->operation($manager, $accountBank2MatkaRor, $tenant, '2026-08-05', 180000, 'Rental income');
+        $this->operation($manager, $accountBank2MatkaRor, $tenant, '2026-09-05', 180000, 'Rental income');
+        $this->operation($manager, $accountBank3Matka, $housingCommunity, '2026-07-10', -45000, 'Building fees');
+        $this->operation($manager, $accountBank3Matka, $housingCommunity, '2026-08-10', -45000, 'Building fees');
+        $this->operation($manager, $accountBank3Matka, $housingCommunity, '2026-09-10', -45000, 'Building fees');
 
         $manager->flush();
 
@@ -116,30 +116,30 @@ class OperationFixtures extends Fixture implements DependentFixtureInterface
         // rules: amounts given explicitly on both sides, no +/- signs.
 
         // Wakacje PLN — same-currency transfer, amountTo not needed.
-        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountWakPln, $selfTransfer, new \DateTimeImmutable('2026-07-01'), '300.00', null, 'Przelew oszczędności na wakacje (PLN)');
-        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountWakPln, $selfTransfer, new \DateTimeImmutable('2026-08-01'), '300.00', null, 'Przelew oszczędności na wakacje (PLN)');
-        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountWakPln, $selfTransfer, new \DateTimeImmutable('2026-09-01'), '300.00', null, 'Przelew oszczędności na wakacje (PLN)');
+        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountWakPln, $selfTransfer, new \DateTimeImmutable('2026-07-01'), '300.00', null, 'Holiday savings transfer (PLN)');
+        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountWakPln, $selfTransfer, new \DateTimeImmutable('2026-08-01'), '300.00', null, 'Holiday savings transfer (PLN)');
+        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountWakPln, $selfTransfer, new \DateTimeImmutable('2026-09-01'), '300.00', null, 'Holiday savings transfer (PLN)');
 
         // Wakacje CHF — different-currency transfer, amounts on both sides, roughly at the CHF rate of the month.
-        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountWakChf, $selfTransfer, new \DateTimeImmutable('2026-07-01'), '2225.00', '500.00', 'Przelew oszczędności na wakacje');
-        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountWakChf, $selfTransfer, new \DateTimeImmutable('2026-08-01'), '2260.00', '500.00', 'Przelew oszczędności na wakacje');
-        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountWakChf, $selfTransfer, new \DateTimeImmutable('2026-09-01'), '2250.00', '500.00', 'Przelew oszczędności na wakacje');
+        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountWakChf, $selfTransfer, new \DateTimeImmutable('2026-07-01'), '2225.00', '500.00', 'Holiday savings transfer');
+        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountWakChf, $selfTransfer, new \DateTimeImmutable('2026-08-01'), '2260.00', '500.00', 'Holiday savings transfer');
+        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountWakChf, $selfTransfer, new \DateTimeImmutable('2026-09-01'), '2250.00', '500.00', 'Holiday savings transfer');
 
-        // Emerytura — składka miesięczna z konta głównego (PLN, ta sama waluta).
-        // Wyższa niż kwota wymieniana na CHF poniżej, żeby konto nigdy nie zszedło pod zero.
-        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountBank4RorPln, $selfTransfer, new \DateTimeImmutable('2026-07-01'), '500.00', null, 'Składka emerytalna');
-        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountBank4RorPln, $selfTransfer, new \DateTimeImmutable('2026-08-01'), '500.00', null, 'Składka emerytalna');
-        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountBank4RorPln, $selfTransfer, new \DateTimeImmutable('2026-09-01'), '500.00', null, 'Składka emerytalna');
+        // Retirement — monthly contribution from the main account (PLN, same currency).
+        // Higher than the amount exchanged to CHF below, so the account never drops below zero.
+        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountBank4RorPln, $selfTransfer, new \DateTimeImmutable('2026-07-01'), '500.00', null, 'Pension contribution');
+        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountBank4RorPln, $selfTransfer, new \DateTimeImmutable('2026-08-01'), '500.00', null, 'Pension contribution');
+        $this->transactionService->transferBetweenAccounts($accountRorPln, $accountBank4RorPln, $selfTransfer, new \DateTimeImmutable('2026-09-01'), '500.00', null, 'Pension contribution');
 
-        // Emerytura — część składki wymieniana na CHF (Bank4-ROR-PLN -> Bank4-EME-CHF).
-        $this->transactionService->transferBetweenAccounts($accountBank4RorPln, $accountBank4EmeChf, $selfTransfer, new \DateTimeImmutable('2026-07-15'), '445.00', '100.00', 'Zakup CHF na emeryturę');
-        $this->transactionService->transferBetweenAccounts($accountBank4RorPln, $accountBank4EmeChf, $selfTransfer, new \DateTimeImmutable('2026-08-15'), '452.00', '100.00', 'Zakup CHF na emeryturę');
-        $this->transactionService->transferBetweenAccounts($accountBank4RorPln, $accountBank4EmeChf, $selfTransfer, new \DateTimeImmutable('2026-09-15'), '450.00', '100.00', 'Zakup CHF na emeryturę');
+        // Retirement — part of the contribution exchanged to CHF (Bank4-ROR-PLN -> Bank4-EME-CHF).
+        $this->transactionService->transferBetweenAccounts($accountBank4RorPln, $accountBank4EmeChf, $selfTransfer, new \DateTimeImmutable('2026-07-15'), '445.00', '100.00', 'CHF purchase for retirement');
+        $this->transactionService->transferBetweenAccounts($accountBank4RorPln, $accountBank4EmeChf, $selfTransfer, new \DateTimeImmutable('2026-08-15'), '452.00', '100.00', 'CHF purchase for retirement');
+        $this->transactionService->transferBetweenAccounts($accountBank4RorPln, $accountBank4EmeChf, $selfTransfer, new \DateTimeImmutable('2026-09-15'), '450.00', '100.00', 'CHF purchase for retirement');
 
-        // Matka — miesięczny transfer nadwyżki z najmu na oszczędności (Bank2, ta sama waluta).
-        $this->transactionService->transferBetweenAccounts($accountBank2MatkaRor, $accountBank2MatkaOszczednosci, $selfTransfer, new \DateTimeImmutable('2026-07-06'), '500.00', null, 'Przelew nadwyżki z najmu');
-        $this->transactionService->transferBetweenAccounts($accountBank2MatkaRor, $accountBank2MatkaOszczednosci, $selfTransfer, new \DateTimeImmutable('2026-08-06'), '500.00', null, 'Przelew nadwyżki z najmu');
-        $this->transactionService->transferBetweenAccounts($accountBank2MatkaRor, $accountBank2MatkaOszczednosci, $selfTransfer, new \DateTimeImmutable('2026-09-06'), '500.00', null, 'Przelew nadwyżki z najmu');
+        // Mother — monthly transfer of the rental surplus to savings (Bank2, same currency).
+        $this->transactionService->transferBetweenAccounts($accountBank2MatkaRor, $accountBank2MatkaOszczednosci, $selfTransfer, new \DateTimeImmutable('2026-07-06'), '500.00', null, 'Rental surplus transfer');
+        $this->transactionService->transferBetweenAccounts($accountBank2MatkaRor, $accountBank2MatkaOszczednosci, $selfTransfer, new \DateTimeImmutable('2026-08-06'), '500.00', null, 'Rental surplus transfer');
+        $this->transactionService->transferBetweenAccounts($accountBank2MatkaRor, $accountBank2MatkaOszczednosci, $selfTransfer, new \DateTimeImmutable('2026-09-06'), '500.00', null, 'Rental surplus transfer');
 
         /* CURRENCY EXCHANGE RATE HISTORY (rate to PLN, scale 4) */
         $this->exchangeRate($manager, $bank1, $chf, '2026-07-01', 44500);
@@ -151,7 +151,7 @@ class OperationFixtures extends Fixture implements DependentFixtureInterface
         $this->exchangeRate($manager, $bank4, $chf, '2026-09-15', 45000);
 
         /* GOLD ASSET + PRICE HISTORY (ounces scale 4 -> 1.0000 oz, price scale 2) */
-        $goldAsset = new GoldAsset($goldFormSztabka, 10000, 'Sztabka 1oz');
+        $goldAsset = new GoldAsset($goldFormSztabka, 10000, 'Bar 1oz');
         $manager->persist($goldAsset);
 
         $this->goldPrice($manager, $goldAsset, '2026-07-01', 800000, $pln);
@@ -159,7 +159,7 @@ class OperationFixtures extends Fixture implements DependentFixtureInterface
         $this->goldPrice($manager, $goldAsset, '2026-09-15', 850000, $pln);
 
         /* FIXED EXPENSES (amounts always negative, minor units) */
-        $this->fixedExpense($manager, $landlord, 10, -320000, $pln, 'Czynsz');
+        $this->fixedExpense($manager, $landlord, 10, -320000, $pln, 'Rent');
         $this->fixedExpense($manager, $netflix, 5, -5500, $pln, 'Netflix');
 
         $manager->flush();

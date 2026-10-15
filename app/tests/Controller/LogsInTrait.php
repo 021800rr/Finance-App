@@ -8,8 +8,8 @@ use App\Entity\User;
 use LogicException;
 
 /**
- * Loguje testowego użytkownika z fixtures, żeby żądania przechodziły przez firewall Security.
- * Wymaga, aby klasa używająca traitu ma właściwość KernelBrowser $client oraz DatabaseTestTrait (metoda em()).
+ * Logs in the test user from the fixtures, so requests pass through the Security firewall.
+ * Requires the using class to have a KernelBrowser $client property and DatabaseTestTrait (the em() method).
  */
 trait LogsInTrait
 {
@@ -17,7 +17,7 @@ trait LogsInTrait
     {
         $user = $this->em()->getRepository(User::class)->findOneBy(['email' => 'test@example.com']);
         if (null === $user) {
-            throw new LogicException('Testowy użytkownik "test@example.com" nie istnieje — sprawdź AppFixtures.');
+            throw new LogicException('The test user "test@example.com" does not exist — check AppFixtures.');
         }
 
         $this->client->loginUser($user);

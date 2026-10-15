@@ -6,34 +6,34 @@ DB_NAME=finance
 DB_USER=finance
 
 ## ========================
-## 🆘 Pomoc
+## 🆘 Help
 ## ========================
 help:
 	@echo ""
-	@echo "Dostępne komendy:"
+	@echo "Available commands:"
 	@echo ""
-	@echo "  make build           - zbuduj i uruchom kontenery (up -d --build)"
-	@echo "  make up              - uruchom kontenery (up -d)"
-	@echo "  make down            - zatrzymaj kontenery"
-	@echo "  make restart         - restart kontenerów (down && build)"
+	@echo "  make build           - build and start the containers (up -d --build)"
+	@echo "  make up              - start the containers (up -d)"
+	@echo "  make down            - stop the containers"
+	@echo "  make restart         - restart the containers (down && build)"
 	@echo ""
-	@echo "  make logs            - logi nginx + php"
-	@echo "  make shell           - shell w kontenerze PHP"
+	@echo "  make logs            - nginx + php logs"
+	@echo "  make shell           - shell in the PHP container"
 	@echo ""
 	@echo "  make install         - composer install"
-	@echo "  make cache-clear     - wyczyść cache Symfony"
+	@echo "  make cache-clear     - clear the Symfony cache"
 	@echo ""
-	@echo "  make diff-dry        - SQL niezbędny do zsynchronizowania bazy danych z encjami (dry run)"
-	@echo "  make diff            - wygeneruj migrację Doctrine"
-	@echo "  make migrate         - uruchom migracje"
+	@echo "  make diff-dry        - SQL needed to sync the database with the entities (dry run)"
+	@echo "  make diff            - generate a Doctrine migration"
+	@echo "  make migrate         - run the migrations"
 	@echo "  make db-reset        - drop + create + migrate"
 	@echo ""
-	@echo "  make fixtures        - załaduj fixtures"
+	@echo "  make fixtures        - load the fixtures"
 	@echo ""
-	@echo "  make db-dump         - dump bazy do pliku"
-	@echo "  make db-restore      - restore bazy z dumpa"
+	@echo "  make db-dump         - dump the database to a file"
+	@echo "  make db-restore      - restore the database from the dump"
 	@echo ""
-	@echo "  make test            - komplet testów (lint:twig, phpunit, phpstan, php-cs-fixer) na czystej bazie"
+	@echo "  make test            - full test suite (lint:twig, phpunit, phpstan, php-cs-fixer) on a clean database"
 	@echo ""
 	@echo "  phpstan              - phpstan"
 	@echo ""
@@ -96,7 +96,7 @@ fixtures:
 	docker compose exec $(APP_CONTAINER) php bin/console doctrine:fixtures:load --no-interaction
 
 ## ========================
-## 💾 Backup bazy
+## 💾 Database backup
 ## ========================
 db-dump:
 	docker compose exec $(DB_CONTAINER) \
@@ -107,7 +107,7 @@ db-restore:
 		psql -U $(DB_USER) $(DB_NAME) < docker/postgres/backup.sql
 
 ## ========================
-## testy
+## tests
 ## ========================
 
 TEST_PATH ?=

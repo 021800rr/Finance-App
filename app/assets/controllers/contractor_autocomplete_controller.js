@@ -12,7 +12,7 @@ export default class extends Controller {
 
     connect() {
         if (!this.hasInputTarget) {
-            console.warn('Brak input target w contractor-autocomplete controller');
+            console.warn('Missing input target in the contractor-autocomplete controller');
             return;
         }
         this.onInput = this.onInput.bind(this);
@@ -108,7 +108,7 @@ export default class extends Controller {
                 li.style.padding = '8px';
                 li.style.cursor = 'pointer';
                 li.dataset.id = i.id ?? '';
-                li.textContent = i.name ?? '(brak nazwy)';
+                li.textContent = i.name ?? this.message('msgNoName');
                 li.addEventListener('click', () => this.onPick(li));
                 ul.appendChild(li);
             });
@@ -135,7 +135,7 @@ export default class extends Controller {
             if (this.hasHiddenTarget) this.hiddenTarget.value = id;
             this.inputTarget.value = name;
             this.clearResults();
-            this.showMessage('success', `Wybrano kontrahenta: ${name}`);
+            this.showMessage('success', this.message('msgSelected', name));
             this.inputTarget.classList.remove('is-invalid');
             return;
         }
@@ -146,6 +146,15 @@ export default class extends Controller {
         if (!this.hasResultsTarget) return;
         this.resultsTarget.innerHTML = '';
         this.resultsTarget.style.display = 'none';
+    }
+
+    /**
+     * Returns a translated UI message rendered by Twig into a data-msg-* attribute of the controller element;
+     * "{name}" in the message is replaced with the given name.
+     */
+    message(key, name = '') {
+        // A replacer function, so "$" sequences in a contractor name are not treated as replacement patterns.
+        return (this.element.dataset[key] ?? '').replace('{name}', () => name);
     }
 
     escapeHtml(str) {
@@ -163,7 +172,7 @@ export default class extends Controller {
 
     confirmAndCreate(name) {
         if (!name) return;
-        if (!window.confirm(`Dodać nowego kontrahenta „${name}”?`)) {
+        if (!window.confirm(this.message('msgConfirmCreate', name))) {
             return;
         }
         this.createContractor(name);
@@ -184,12 +193,12 @@ export default class extends Controller {
 
     async createContractor(name) {
         if (!name) {
-            this.showMessage('error', 'Nazwa jest pusta.');
+            this.showMessage('error', this.message('msgEmptyName'));
             return;
         }
         const createUrl = this.element.dataset.createUrl;
         if (!createUrl) {
-            this.showMessage('error', 'Brak adresu tworzenia kontrahenta.');
+            this.showMessage('error', this.message('msgMissingCreateUrl'));
             return;
         }
 
@@ -210,7 +219,7 @@ export default class extends Controller {
             if (!res.ok) {
                 const text = await res.text().catch(() => `${res.status}`);
                 console.warn('createContractor failed', res.status, text);
-                this.showMessage('error', 'Błąd przy tworzeniu kontrahenta.');
+                this.showMessage('error', this.message('msgCreateFailed'));
                 return;
             }
 
@@ -219,15 +228,15 @@ export default class extends Controller {
                 if (this.hasHiddenTarget) this.hiddenTarget.value = data.id;
                 this.inputTarget.value = data.name || name;
                 this.inputTarget.classList.remove('is-invalid');
-                this.showMessage('success', `Dodano kontrahenta: ${data.name || name}`);
+                this.showMessage('success', this.message('msgCreated', data.name || name));
                 this.clearResults();
                 return;
             }
 
-            this.showMessage('success', 'Dodano kontrahenta, ale serwer nie zwrócił ID.');
+            this.showMessage('success', this.message('msgCreatedWithoutId'));
         } catch (err) {
             console.error(err);
-            this.showMessage('error', 'Błąd sieci przy tworzeniu kontrahenta.');
+            this.showMessage('error', this.message('msgNetworkError'));
         }
     }
 }

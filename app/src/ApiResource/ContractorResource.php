@@ -26,7 +26,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             provider: ContractorProvider::class,
             parameters: [
                 'name' => new QueryParameter(
-                    description: 'Partial, case-insensitive name match (e.g. "Ża" matches "Żabka"). Min 2 chars.',
+                    description: 'Partial, case-insensitive name match (e.g. "Éc" matches "Écolier"). Min 2 chars.',
                     constraints: [new Assert\Length(min: 2)],
                 ),
             ],

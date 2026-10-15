@@ -17,6 +17,17 @@ contractor:
     not_found: 'The selected contractor does not exist.'
     required: 'Please select a contractor from the list.'
 
+contractor_autocomplete:
+    confirm_create: 'Add the new contractor "%name%"?'
+    create_failed: 'Failed to create the contractor.'
+    created: 'Contractor added: %name%'
+    created_without_id: 'Contractor added, but the server did not return an ID.'
+    empty_name: 'The name is empty.'
+    missing_create_url: 'The contractor creation URL is missing.'
+    network_error: 'Network error while creating the contractor.'
+    no_name: '(no name)'
+    selected: 'Contractor selected: %name%'
+
 fixed_expense:
     add: 'Add'
     add_title: 'Add fixed expense'
@@ -69,15 +80,24 @@ home:
     hide_hidden: 'Hide hidden'
     history: 'History'
     main_account: 'Main account'
+    missing_rate: 'No exchange rate for this account.'
     rate: 'Rate'
     set_main: 'Set as main account'
     show: 'Show'
     show_hidden: 'Show hidden'
 
+login:
+    email: 'E-mail address'
+    invalid_credentials: 'Invalid e-mail or password.'
+    password: 'Password'
+    submit: 'Log in'
+    title: 'Log in'
+
 nav:
     fixed_expenses: 'Fixed expenses'
     gold_assets: 'Gold - assets'
     gold_prices: 'Gold - prices'
+    logout: 'Log out'
     new_operation: 'New operation'
     rates: 'Rates'
     search: 'Search'
@@ -109,6 +129,7 @@ pagination:
 rate:
     add_title: 'Add rate'
     chart_title: 'Rates chart'
+    chart_y_axis: 'CHF rate (sell)'
     list_title: 'Rates list'
     none_found: 'No rates found'
     value: 'Rate to PLN'
