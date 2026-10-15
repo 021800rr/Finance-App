@@ -36,10 +36,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string')]
     private string $password;
 
-    public function __construct(string $email, string $password)
+    /**
+     * @param string $hashedPassword an already hashed password, never plaintext (see UserFactory)
+     */
+    public function __construct(string $email, string $hashedPassword)
     {
-        $this->setEmail($email);
-        $this->password = $password;
+        $this->email = self::normalizeEmail($email);
+        $this->password = $hashedPassword;
+    }
+
+    /**
+     * The single place that defines what a stored login looks like: trimmed, lower case, a valid address.
+     */
+    public static function normalizeEmail(string $email): string
+    {
+        $normalized = mb_strtolower(trim($email));
+        self::assertNotBlank($normalized, 'Email');
+        if (false === filter_var($normalized, FILTER_VALIDATE_EMAIL)) {
+            throw new \InvalidArgumentException(sprintf('Email "%s" is not a valid address.', $normalized));
+        }
+
+        return $normalized;
     }
 
     public function getId(): int
@@ -47,10 +64,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->id;
     }
 
-    public function setEmail(string $email): void
+    public function getEmail(): string
     {
-        self::assertNotBlank($email, 'Email');
-        $this->email = $email;
+        return $this->email;
     }
 
     /**
@@ -79,11 +95,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getPassword(): string
     {
         return $this->password;
-    }
-
-    public function setPassword(string $password): void
-    {
-        $this->password = $password;
     }
 
     /**

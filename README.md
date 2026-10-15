@@ -11,13 +11,14 @@ Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazj�
 - **~650 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
 - **PHP CS Fixer** wymuszający spójny styl kodu.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
+- **Świadomy model bezpieczeństwa** — hasła hashowane, throttling logowania, jawnie opisane granice (patrz sekcja [Bezpieczeństwo](#bezpieczeństwo)).
 - Kod (nazwy, komentarze, docbloki, komunikaty wyjątków) — polski tylko w warstwie tłumaczeń/UI.
 
 ## Stack
 
 - Symfony 8.1 / PHP 8.5, Doctrine ORM, API Platform
 - PostgreSQL
-- Symfony Security (form login) + JWT (LexikJWTAuthenticationBundle) dla API
+- Symfony Security (form login do widoku Twig) + JWT (LexikJWTAuthenticationBundle) dla API
 - PHPUnit, PHPStan (poziom 9), PHP CS Fixer
 - Bootstrap 5, Stimulus (klasyczny widok Twig)
 
@@ -54,6 +55,25 @@ curl -X POST http://localhost:8081/api/login_check \
 -d '{"email": "twoj@email.pl", "password": "haslo123"}'
 ```
 
+## Bezpieczeństwo
+
+Appka jest jednoosobowa, więc model bezpieczeństwa jest celowo prosty.
+
+**Co jest zrobione:**
+
+- **Konta zakłada się z CLI**, nie ma publicznej rejestracji: `php bin/console app:create-user <email> <hasło>`.
+
+- **E-mail jest normalizowany** (trim + małe litery) przy zapisie i przy logowaniu, więc `Jan@Example.com` i `jan@example.com` to ten sam użytkownik.
+- **Throttling logowania** (`login_throttling`) na formularzu **i** na `POST /api/login_check`: 5 nieudanych prób na parę login + IP oraz 25 na sam IP w oknie 15 minut. Po przekroczeniu limitu logowanie jest odrzucane (API: `401`), nawet z poprawnym hasłem. Stan limitera leży w pamięci podręcznej (`cache.rate_limiter`), więc przeżywa restart PHP-FPM.
+- **JWT żyje 8 godzin** (`token_ttl: 28800`).
+
+**Świadome ograniczenia:**
+
+- Tokeny JWT **nie są odwoływalne** — wylogowanie nie unieważnia tokena, wygasa on dopiero po TTL. Przy jednym użytkowniku to akceptowalne; przy wielu trzeba by dodać refresh tokeny i blacklistę.
+- Brak resetu hasła, zmiany hasła, 2FA i blokady konta.
+- `/api/docs` jest publiczne.
+- **Brak izolacji danych per użytkownik** — appka jest jednoosobowa.
+
 ## Zasady wprowadzania danych
 
 Nowe operacje na koncie dodajemy bez znaku, jeśli to **przychód** na koncie: "309 zł refundacja /zwrot"
@@ -77,6 +97,6 @@ Konto główne oznacza się gwiazdką (☆) na liście kont — klik ustawia je 
 - **Matka** — gospodarstwo matki, którym się opiekuję
 
 Appka jest **tylko dla mnie** (ewentualnie partnerki) — jeden zalogowany user widzi i edytuje wszystko,
-bez podziału po properties/owner. To świadoma decyzja, nie dziura do załatania: nikogo trzeciego tu nie
+bez podziału po właścicielu. To świadoma decyzja, nie dziura do załatania: nikogo trzeciego tu nie
 wpuszczam i nie planuję. Gdyby to się kiedyś zmieniło, `household` w obecnej postaci nic by nie chronił —
-trzeba by dopiero dobudować izolację per-użytkownik. Na razie to i tak się nie zmieni YAGNI.
+trzeba by dopiero dobudować izolację per-użytkownik (patrz [Bezpieczeństwo](#bezpieczeństwo)). Na razie to i tak się nie zmieni — YAGNI.

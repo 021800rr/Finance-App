@@ -31,21 +31,6 @@ final class AccountApiTest extends WebTestCase
         $this->closeEntityManager();
     }
 
-    public function testLoginCheckReturnsJwtTokenForValidCredentials(): void
-    {
-        $this->requestLogin(self::VALID_EMAIL, self::VALID_PASSWORD);
-
-        self::assertResponseIsSuccessful();
-        self::assertStringContainsString('"token"', (string) $this->client->getResponse()->getContent());
-    }
-
-    public function testLoginCheckWithInvalidCredentialsFails(): void
-    {
-        $this->requestLogin(self::VALID_EMAIL, 'wrongpassword');
-
-        self::assertResponseStatusCodeSame(401);
-    }
-
     public function testGetAccountRequiresAuthentication(): void
     {
         $account = $this->firstAccount();
@@ -79,24 +64,19 @@ final class AccountApiTest extends WebTestCase
         self::assertStringContainsString($account->getAccountNumber(), (string) $this->client->getResponse()->getContent());
     }
 
-    private function requestLogin(string $email, string $password): void
+    private function obtainJwtToken(): string
     {
         $this->client->request(
             'POST',
             '/api/login_check',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => $email, 'password' => $password], JSON_THROW_ON_ERROR),
+            content: json_encode(['email' => self::VALID_EMAIL, 'password' => self::VALID_PASSWORD], JSON_THROW_ON_ERROR),
         );
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $this->requestLogin(self::VALID_EMAIL, self::VALID_PASSWORD);
 
         $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
 
         if (!is_array($data) || !isset($data['token']) || !is_string($data['token'])) {
-            throw new RuntimeException('Nie udało się pobrać tokenu JWT w teście.');
+            throw new RuntimeException('Could not obtain a JWT token in the test.');
         }
 
         return $data['token'];

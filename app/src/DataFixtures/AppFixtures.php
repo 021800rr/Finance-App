@@ -15,9 +15,9 @@ use App\Entity\Currency;
 use App\Entity\GoldForm;
 use App\Entity\Household;
 use App\Entity\User;
+use App\Service\UserFactory;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AppFixtures extends Fixture
 {
@@ -37,9 +37,8 @@ class AppFixtures extends Fixture
     public const string REF_ACCOUNT_BANK4_EME_CHF = 'account-bank4-eme-chf';
     public const string REF_GOLD_FORM_SZTABKA = 'gold-form-sztabka';
 
-    public function __construct(
-        private readonly UserPasswordHasherInterface $passwordHasher,
-    ) {
+    public function __construct(private readonly UserFactory $userFactory)
+    {
     }
 
     public function load(ObjectManager $manager): void
@@ -107,8 +106,7 @@ class AppFixtures extends Fixture
 
     private function user(ObjectManager $manager, string $email, string $plainPassword): User
     {
-        $user = new User($email, 'temporary');
-        $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
+        $user = $this->userFactory->create($email, $plainPassword);
         $manager->persist($user);
 
         return $user;

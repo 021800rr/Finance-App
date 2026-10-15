@@ -27,7 +27,7 @@ final readonly class JwtDecorator implements OpenApiFactoryInterface
         'Currency',
         'GoldAsset',
         'GoldPrice',
-        // reszta alfabetycznie (dopisywana automatycznie poniżej)
+        // the rest alphabetically (appended automatically below)
     ];
 
     public function __construct(private OpenApiFactoryInterface $decorated)

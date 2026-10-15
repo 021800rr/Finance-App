@@ -7,14 +7,13 @@ namespace App\Repository;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
-use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
-use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
+use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @extends ServiceEntityRepository<User>
  */
-final class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
+final class UserRepository extends ServiceEntityRepository implements UserLoaderInterface
 {
     use SaveRemoveTrait;
 
@@ -23,22 +22,26 @@ final class UserRepository extends ServiceEntityRepository implements PasswordUp
         parent::__construct($registry, User::class);
     }
 
+    /**
+     * Looks the user up by the normalized form of the address, so "Ryszard@Example.com " finds "ryszard@example.com".
+     * An address that can never be stored (blank, malformed) simply finds nobody.
+     */
     public function findOneByEmail(string $email): ?User
     {
-        return $this->findOneBy(['email' => $email]);
+        try {
+            $normalized = User::normalizeEmail($email);
+        } catch (\InvalidArgumentException) {
+            return null;
+        }
+
+        return $this->findOneBy(['email' => $normalized]);
     }
 
     /**
-     * Called by Symfony Security when the configured hasher's algorithm/cost has changed,
-     * so an existing user's hash is upgraded transparently on their next successful login.
+     * Used by the security user provider for every login attempt.
      */
-    public function upgradePassword(PasswordAuthenticatedUserInterface $user, string $newHashedPassword): void
+    public function loadUserByIdentifier(string $identifier): ?UserInterface
     {
-        if (!$user instanceof User) {
-            throw new UnsupportedUserException(sprintf('Instances of "%s" are not supported.', $user::class));
-        }
-
-        $user->setPassword($newHashedPassword);
-        $this->save($user, flush: true);
+        return $this->findOneByEmail($identifier);
     }
 }

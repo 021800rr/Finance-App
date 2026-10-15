@@ -116,7 +116,7 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
         $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
 
         if (!is_array($data) || !isset($data['token']) || !is_string($data['token'])) {
-            throw new RuntimeException('Nie udało się pobrać tokenu JWT w teście.');
+            throw new RuntimeException('Could not obtain a JWT token in the test.');
         }
 
         return $data['token'];
