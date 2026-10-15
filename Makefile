@@ -23,6 +23,7 @@ help:
 	@echo "  make install         - composer install"
 	@echo "  make cache-clear     - wyczyść cache Symfony"
 	@echo ""
+	@echo "  make diff-dry        - SQL niezbędny do zsynchronizowania bazy danych z encjami (dry run)"
 	@echo "  make diff            - wygeneruj migrację Doctrine"
 	@echo "  make migrate         - uruchom migracje"
 	@echo "  make db-reset        - drop + create + migrate"
@@ -77,6 +78,9 @@ cache-clear:
 ## ========================
 ## 🗄️ Doctrine
 ## ========================
+diff-dry:
+	docker compose exec $(APP_CONTAINER) php bin/console doctrine:schema:update --dump-sql
+
 diff:
 	docker compose exec $(APP_CONTAINER) php bin/console doctrine:migrations:diff
 
