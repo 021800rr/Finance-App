@@ -6,6 +6,7 @@ namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\TransferResource;
+use App\Constant\Contractors;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\AccountType;
@@ -24,8 +25,6 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 final class TransferProcessorTest extends KernelTestCase
 {
     use DatabaseTestTrait;
-
-    private const string FIXED_CONTRACTOR_NAME = 'Przelew własny';
 
     private TransferProcessor $processor;
     private ContractorRepository $contractorRepository;
@@ -74,7 +73,7 @@ final class TransferProcessorTest extends KernelTestCase
 
         $outOperation = $this->em()->getRepository(AccountOperation::class)->find($result->outOperationId);
         self::assertInstanceOf(AccountOperation::class, $outOperation);
-        self::assertSame(self::FIXED_CONTRACTOR_NAME, $outOperation->getContractor()->getName());
+        self::assertSame(Contractors::SELF_TRANSFER_NAME, $outOperation->getContractor()->getName());
     }
 
     public function testProcessCreatesTransferBetweenDifferentCurrenciesWithAmountTo(): void
@@ -295,12 +294,12 @@ final class TransferProcessorTest extends KernelTestCase
 
     private function ensureFixedContractor(): Contractor
     {
-        $contractor = $this->contractorRepository->findOneByName(self::FIXED_CONTRACTOR_NAME);
+        $contractor = $this->contractorRepository->findOneByName(Contractors::SELF_TRANSFER_NAME);
         if ($contractor) {
             return $contractor;
         }
 
-        $contractor = new Contractor(self::FIXED_CONTRACTOR_NAME);
+        $contractor = new Contractor(Contractors::SELF_TRANSFER_NAME);
         $this->em()->persist($contractor);
         $this->em()->flush();
 

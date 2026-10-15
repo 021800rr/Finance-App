@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Form;
 
+use App\Constant\Contractors;
 use App\Entity\Account;
 use App\Entity\AccountType;
 use App\Entity\Bank;
@@ -92,8 +93,8 @@ final class TransferTypeTest extends KernelTestCase
         /** @var ContractorRepository $contractorRepository */
         $contractorRepository = static::getContainer()->get(ContractorRepository::class);
 
-        if (null === $contractorRepository->findOneByName('Przelew własny')) {
-            $fixed = new Contractor('Przelew własny');
+        if (null === $contractorRepository->findOneByName(Contractors::SELF_TRANSFER_NAME)) {
+            $fixed = new Contractor(Contractors::SELF_TRANSFER_NAME);
             $this->em()->persist($fixed);
             $this->em()->flush();
         }
