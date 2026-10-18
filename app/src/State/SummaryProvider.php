@@ -36,10 +36,13 @@ final readonly class SummaryProvider implements ProviderInterface
         $summary = $this->summaryService->getSummary($showHidden);
 
         $resource = new SummaryResource();
+        $ratesByBank = $summary['ratesByBank'];
         $resource->accounts = array_map(
             static fn (array $account) => [
                 ...$account,
                 'saldo' => $account['saldo']->toArray(),
+                // The bank's latest rate to PLN (the web app's "Rate" column); null for PLN accounts and when no rate is stored.
+                'rate' => ($ratesByBank[$account['bank']][$account['currency']] ?? null)?->toArray(),
             ],
             $summary['accounts']
         );

@@ -10,6 +10,7 @@ use App\Entity\Account;
 use App\Entity\AccountType;
 use App\Entity\Bank;
 use App\Entity\Currency;
+use App\Entity\CurrencyExchangeRate;
 use App\Entity\Household;
 use App\State\SummaryProvider;
 use App\Tests\DatabaseTestTrait;
@@ -94,6 +95,57 @@ final class SummaryProviderTest extends KernelTestCase
         self::assertNull($this->findAccountRow($result, $hiddenNumber));
     }
 
+    public function testProvideReturnsTheLatestRateOfTheBankForForeignCurrencyAccounts(): void
+    {
+        $bank = $this->createBank();
+        $accountNumber = 'CHF-' . uniqid();
+        $this->createAccount($accountNumber, hidden: false, bank: $bank, currencyCode: 'CHF');
+        $this->createRate($bank, 'CHF', new \DateTimeImmutable('-10 days'), 40000);
+        $this->createRate($bank, 'CHF', new \DateTimeImmutable('-1 day'), 41234);
+
+        $this->pushRequest([]);
+
+        $result = $this->provider->provide(new Get());
+
+        self::assertInstanceOf(SummaryResource::class, $result);
+        $row = $this->findAccountRow($result, $accountNumber);
+        self::assertNotNull($row);
+        self::assertSame(['amount' => '4.1234', 'currency' => 'PLN'], $row['rate']);
+        self::assertFalse($row['missing_rate']);
+    }
+
+    public function testProvideReturnsNoRateForPlnAccounts(): void
+    {
+        $accountNumber = 'PLN-' . uniqid();
+        $this->createAccount($accountNumber, hidden: false);
+
+        $this->pushRequest([]);
+
+        $result = $this->provider->provide(new Get());
+
+        self::assertInstanceOf(SummaryResource::class, $result);
+        $row = $this->findAccountRow($result, $accountNumber);
+        self::assertNotNull($row);
+        self::assertNull($row['rate']);
+        self::assertFalse($row['missing_rate']);
+    }
+
+    public function testProvideReturnsNoRateAndFlagsMissingRateWhenTheBankHasNone(): void
+    {
+        $accountNumber = 'CHF-' . uniqid();
+        $this->createAccount($accountNumber, hidden: false, currencyCode: 'CHF');
+
+        $this->pushRequest([]);
+
+        $result = $this->provider->provide(new Get());
+
+        self::assertInstanceOf(SummaryResource::class, $result);
+        $row = $this->findAccountRow($result, $accountNumber);
+        self::assertNotNull($row);
+        self::assertNull($row['rate']);
+        self::assertTrue($row['missing_rate']);
+    }
+
     /**
      * @param array<string, mixed> $query
      */
@@ -114,6 +166,7 @@ final class SummaryProviderTest extends KernelTestCase
      *     is_own_funds: bool,
      *     is_retirement: bool,
      *     saldo: mixed,
+     *     rate: mixed,
      *     missing_rate: bool
      * }|null
      */
@@ -132,6 +185,7 @@ final class SummaryProviderTest extends KernelTestCase
                  *     is_own_funds: bool,
                  *     is_retirement: bool,
                  *     saldo: mixed,
+                 *     rate: mixed,
                  *     missing_rate: bool
                  * } $account
                  */
@@ -142,17 +196,38 @@ final class SummaryProviderTest extends KernelTestCase
         return null;
     }
 
-    private function createAccount(string $accountNumber, bool $hidden): Account
+    private function createBank(): Bank
     {
         $bank = new Bank('Test Bank ' . uniqid());
         $this->em()->persist($bank);
+        $this->em()->flush();
 
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find('PLN');
+        return $bank;
+    }
+
+    private function findOrCreateCurrency(string $code): Currency
+    {
+        $currency = $this->em()->getRepository(Currency::class)->find($code);
         if (null === $currency) {
-            $currency = new Currency('PLN');
+            $currency = new Currency($code);
             $this->em()->persist($currency);
         }
+
+        return $currency;
+    }
+
+    private function createRate(Bank $bank, string $currencyCode, \DateTimeImmutable $date, int $rate): void
+    {
+        $this->em()->persist(new CurrencyExchangeRate($bank, $this->findOrCreateCurrency($currencyCode), $date, $rate));
+        $this->em()->flush();
+    }
+
+    private function createAccount(string $accountNumber, bool $hidden, ?Bank $bank = null, string $currencyCode = 'PLN'): Account
+    {
+        $bank ??= new Bank('Test Bank ' . uniqid());
+        $this->em()->persist($bank);
+
+        $currency = $this->findOrCreateCurrency($currencyCode);
 
         $accountType = new AccountType('Test Type ' . uniqid());
         $this->em()->persist($accountType);

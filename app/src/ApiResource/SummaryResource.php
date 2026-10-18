@@ -18,7 +18,8 @@ use App\State\SummaryProvider;
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Financial summary across all accounts. By default hidden accounts are excluded '
             .'from both the accounts list and all totals, mirroring the web app\'s "Show hidden" toggle. '
-            .'Pass ?showHidden=true to include them.',
+            .'Pass ?showHidden=true to include them. Each account row carries "rate": the bank\'s latest stored rate to PLN '
+            .'for accounts in another currency, or null for PLN accounts and when no rate is stored (see "missing_rate").',
             provider: SummaryProvider::class,
             parameters: [
                 'showHidden' => new QueryParameter(
