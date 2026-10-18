@@ -7,6 +7,7 @@ namespace App\ApiResource;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\Account;
@@ -17,6 +18,11 @@ use App\State\AccountProvider;
     shortName: 'Account',
     description: 'A bank account. Write access is limited to toggling "hidden" and "isMain", mirroring the web app.',
     operations: [
+        new GetCollection(
+            openapi: new OpenApiOperation(security: [['JWT' => []]]),
+            description: 'Lists all accounts, ordered by bank, type, currency and account number.',
+            provider: AccountProvider::class,
+        ),
         new Get(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Retrieves a single account by id, including its balance ("saldo") and the balance as of '

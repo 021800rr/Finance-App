@@ -40,7 +40,14 @@ final class AccountApiTest extends WebTestCase
         self::assertResponseStatusCodeSame(401);
     }
 
-    public function testAccountsCollectionIsNotExposed(): void
+    public function testGetAccountsCollectionRequiresAuthentication(): void
+    {
+        $this->client->request('GET', '/api/accounts');
+
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function testGetAccountsCollectionWithValidTokenReturnsAllAccounts(): void
     {
         $token = $this->obtainJwtToken();
 
@@ -48,7 +55,11 @@ final class AccountApiTest extends WebTestCase
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
         ]);
 
-        self::assertResponseStatusCodeSame(404);
+        self::assertResponseIsSuccessful();
+        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($data);
+        self::assertSame($this->em()->getRepository(Account::class)->count([]), $data['totalItems']);
+        self::assertStringContainsString($this->firstAccount()->getAccountNumber(), (string) $this->client->getResponse()->getContent());
     }
 
     public function testGetSingleAccountWithValidTokenReturnsAccount(): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use App\ApiResource\AccountResource;
 use App\Entity\Account;
@@ -49,6 +50,17 @@ final class AccountProviderTest extends KernelTestCase
         self::assertInstanceOf(AccountResource::class, $result);
         self::assertSame($account->getId(), $result->id);
         self::assertSame($account->getAccountNumber(), $result->accountNumber);
+    }
+
+    public function testProvideForCollectionReturnsAllAccounts(): void
+    {
+        $account = $this->createAccount('COL-'.uniqid());
+
+        $result = $this->provider->provide(new GetCollection());
+
+        self::assertIsArray($result);
+        self::assertCount($this->em()->getRepository(Account::class)->count([]), $result);
+        self::assertContains($account->getId(), array_map(static fn (AccountResource $resource): ?int => $resource->id, $result));
     }
 
     public function testProvideReturnsNullForNonExistentId(): void
