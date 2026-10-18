@@ -5,6 +5,11 @@ DB_CONTAINER=postgres
 DB_NAME=finance
 DB_USER=finance
 
+APP_HOST=localhost
+APP_PORT=8081
+APP_USER_EMAIL=twoj@email.pl
+APP_USER_PASSWORD=haslo123
+
 ## ========================
 ## 🆘 Help
 ## ========================
@@ -17,27 +22,28 @@ help:
 	@echo "  make down            - stop the containers"
 	@echo "  make restart         - restart the containers (down && build)"
 	@echo ""
-	@echo "  make logs            - nginx + php logs"
-	@echo "  make shell           - shell in the PHP container"
-	@echo ""
 	@echo "  make install         - composer install"
 	@echo "  make cache-clear     - clear the Symfony cache"
 	@echo ""
-	@echo "  make diff-dry        - SQL needed to sync the database with the entities (dry run)"
-	@echo "  make diff            - generate a Doctrine migration"
 	@echo "  make migrate         - run the migrations"
 	@echo "  make db-reset        - drop + create + migrate"
-	@echo ""
 	@echo "  make fixtures        - load the fixtures"
+	@echo ""
+	@echo "  make user            - create default user $(APP_USER_EMAIL)/$(APP_USER_PASSWORD)"
+	@echo "  make token           - generate a JWT for the API for default user $(APP_USER_EMAIL)/$(APP_USER_PASSWORD)"
+	@echo ""
+	@echo "  make test            - full test suite (lint:twig, phpunit, phpstan, php-cs-fixer) on a clean database"
+	@echo "  make phpstan         - phpstan"
+	@echo "  make php-cs-fixer    - php-cs-fixer"
+	@echo ""
+	@echo "  make diff-dry        - SQL needed to sync the database with the entities (dry run)"
+	@echo "  make diff            - generate a Doctrine migration"
+	@echo ""
+	@echo "  make logs            - nginx + php logs"
+	@echo "  make shell           - shell in the PHP container"
 	@echo ""
 	@echo "  make db-dump         - dump the database to a file"
 	@echo "  make db-restore      - restore the database from the dump"
-	@echo ""
-	@echo "  make test            - full test suite (lint:twig, phpunit, phpstan, php-cs-fixer) on a clean database"
-	@echo ""
-	@echo "  phpstan              - phpstan"
-	@echo ""
-	@echo "  php-cs-fixer         - php-cs-fixer"
 	@echo ""
 
 ## ========================
@@ -95,6 +101,14 @@ db-reset:
 fixtures:
 	docker compose exec $(APP_CONTAINER) php bin/console doctrine:fixtures:load --no-interaction
 
+user:
+	docker compose exec $(APP_CONTAINER) php bin/console app:create-user '$(APP_USER_EMAIL)' '$(APP_USER_PASSWORD)'
+
+token:
+	curl -X POST http://$(APP_HOST):$(APP_PORT)/api/login_check \
+    -H "Content-Type: application/json" \
+    -d '{"email": "$(APP_USER_EMAIL)", "password": "$(APP_USER_PASSWORD)"}'
+
 ## ========================
 ## 💾 Database backup
 ## ========================
@@ -109,7 +123,6 @@ db-restore:
 ## ========================
 ## tests
 ## ========================
-
 TEST_PATH ?=
 
 test:

@@ -32,28 +32,17 @@ make build       # zbuduj i uruchom kontenery
 make install     # composer install
 make migrate     # migracje bazy dev
 make fixtures    # przykładowe dane demo
-
 make test        # baza testowa + phpunit + phpstan + cs-fixer
-
-docker compose exec php php bin/console app:create-user twoj@email.pl haslo123
+make user        # dodaj "domyślnego" użytkownika
+make token       # wygeneruj JWT dla "domyślnego" użytkownika
 ```
 
 ## Logowanie
 
 Domyślny user: `twoj@email.pl` / `haslo123`
 
-Aplikacja wymaga zalogowania (Symfony Security).
-
-Appka dostępna pod http://localhost:8081
-
-API docs: http://localhost:8081/api/docs
-API login: http://localhost:8081/api/login_check
-
-```bash
-curl -X POST http://localhost:8081/api/login_check \
--H "Content-Type: application/json" \
--d '{"email": "twoj@email.pl", "password": "haslo123"}'
-```
+web: http://localhost:8081  
+api: http://localhost:8081/api/docs
 
 ## Bezpieczeństwo
 
