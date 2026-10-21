@@ -1,5 +1,7 @@
 # Finance App
 
+[![CI](https://github.com/021800rr/Finance-App/actions/workflows/ci.yml/badge.svg)](https://github.com/021800rr/Finance-App/actions/workflows/ci.yml)
+
 Osobisty tracker finansowy do kontroli domowych kont (Symfony 8.1 / PHP 8.5, PostgreSQL, Docker) — napisany jako pełnoprawna aplikacja z API, a nie skrypt na kolanie.
 
 Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazję do poćwiczenia architektury, jaką stosuję zawodowo: czyste rozdzielenie warstw, pełne pokrycie testami i REST API zgodne z OpenAPI.
