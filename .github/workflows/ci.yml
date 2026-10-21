@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Tests and static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    defaults:
+      run:
+        working-directory: app
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: finance
+          POSTGRES_USER: finance
+          POSTGRES_PASSWORD: finance
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U finance -d finance"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      APP_ENV: test
+      # The compose file reaches the database as "postgres"; on the runner it is published on localhost.
+      DATABASE_URL: postgresql://finance:finance@127.0.0.1:5432/finance?serverVersion=16&charset=utf8
+      PHP_CS_FIXER_IGNORE_ENV: "1"
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: bcmath, ctype, iconv, intl, mbstring, pdo_pgsql, xml
+          tools: composer:v2
+          coverage: none
+
+      - name: Get the Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ hashFiles('app/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      # The Twig layout needs public/build/entrypoints.json, which is not committed.
+      - name: Build the front-end assets
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
+      # The JWT key pair is git-ignored, so the login tests need a fresh one.
+      - name: Generate the JWT key pair
+        run: php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
+        env:
+          JWT_PASSPHRASE: ""
+
+      - name: Prepare the test database
+        run: |
+          php bin/console doctrine:database:create --if-not-exists --env=test
+          php bin/console doctrine:migrations:migrate --no-interaction --env=test
+          php bin/console doctrine:fixtures:load --no-interaction --env=test
+
+      - name: Lint Twig templates
+        run: php bin/console lint:twig templates --env=test
+
+      - name: PHPUnit
+        run: vendor/bin/phpunit --colors=always
+
+      - name: PHPStan (level 9)
+        run: vendor/bin/phpstan analyse -l 9 --memory-limit 1G --no-progress src tests
+
+      - name: PHP CS Fixer (dry run)
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff src
