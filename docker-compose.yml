@@ -60,7 +60,7 @@ services:
       - finance-dev
 
   node:
-    image: node:22-bullseye
+    image: node:24-bookworm
     container_name: finance-node-dev
     working_dir: /var/www/html
     volumes:
