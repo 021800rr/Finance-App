@@ -19,7 +19,8 @@ use App\State\SummaryProvider;
             description: 'Financial summary across all accounts. By default hidden accounts are excluded '
             .'from both the accounts list and all totals, mirroring the web app\'s "Show hidden" toggle. '
             .'Pass ?showHidden=true to include them. Each account row carries "rate": the bank\'s latest stored rate to PLN '
-            .'for accounts in another currency, or null for PLN accounts and when no rate is stored (see "missing_rate").',
+            .'for accounts in another currency, or null for PLN accounts and when no rate is stored (see "missing_rate"). '
+            .'"is_main" marks the main account (the ★ in the web app); at most one account has it.',
             provider: SummaryProvider::class,
             parameters: [
                 'showHidden' => new QueryParameter(
@@ -36,7 +37,13 @@ final class SummaryResource
     /** @var list<array<string, mixed>> */
     public array $accounts = [];
 
-    /** @var array<string, array{raw: array<string, array{amount: string, currency: string}>, pln: array{amount: string, currency: string}}> */
+    /** @var array<string, array{
+     *     raw: array<string, array{
+     *         amount: string,
+     *         currency: string
+     *     }>,
+     *     pln: array{amount: string, currency: string}
+     * }> */
     public array $byType = [];
 
     /** @var array<string, array{amount: string, currency: string}> */

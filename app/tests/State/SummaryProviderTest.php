@@ -12,6 +12,7 @@ use App\Entity\Bank;
 use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\Entity\Household;
+use App\Repository\AccountRepository;
 use App\State\SummaryProvider;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -146,6 +147,31 @@ final class SummaryProviderTest extends KernelTestCase
         self::assertTrue($row['missing_rate']);
     }
 
+    public function testProvideMarksOnlyTheMainAccountAsMain(): void
+    {
+        $mainNumber = 'MAIN-' . uniqid();
+        $otherNumber = 'OTHER-' . uniqid();
+        $main = $this->createAccount($mainNumber, hidden: false);
+        $this->createAccount($otherNumber, hidden: false);
+
+        /** @var AccountRepository $accountRepository */
+        $accountRepository = self::getContainer()->get(AccountRepository::class);
+        $accountRepository->setAsMainAccount($main);
+
+        $this->pushRequest([]);
+
+        $result = $this->provider->provide(new Get());
+
+        self::assertInstanceOf(SummaryResource::class, $result);
+        $mainRow = $this->findAccountRow($result, $mainNumber);
+        $otherRow = $this->findAccountRow($result, $otherNumber);
+        self::assertNotNull($mainRow);
+        self::assertNotNull($otherRow);
+        self::assertTrue($mainRow['is_main']);
+        self::assertFalse($otherRow['is_main']);
+        self::assertCount(1, array_filter($result->accounts, static fn (array $account): bool => true === $account['is_main']));
+    }
+
     /**
      * @param array<string, mixed> $query
      */
@@ -165,6 +191,7 @@ final class SummaryProviderTest extends KernelTestCase
      *     household: string,
      *     is_own_funds: bool,
      *     is_retirement: bool,
+     *     is_main: bool,
      *     saldo: mixed,
      *     rate: mixed,
      *     missing_rate: bool
@@ -184,6 +211,7 @@ final class SummaryProviderTest extends KernelTestCase
                  *     household: string,
                  *     is_own_funds: bool,
                  *     is_retirement: bool,
+                 *     is_main: bool,
                  *     saldo: mixed,
                  *     rate: mixed,
                  *     missing_rate: bool
