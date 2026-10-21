@@ -33,13 +33,13 @@ make install     # composer install
 make migrate     # migracje bazy dev
 make fixtures    # przykładowe dane demo
 make test        # baza testowa + phpunit + phpstan + cs-fixer
-make user        # dodaj "domyślnego" użytkownika
-make token       # wygeneruj JWT dla "domyślnego" użytkownika
+make user        # załóż konto demo
+make token       # pobierz token JWT konta demo
 ```
 
 ## Logowanie
 
-Domyślny user: `twoj@email.pl` / `haslo123`
+Demo user: `twoj@email.pl` / `haslo123`
 
 web: http://localhost:8081  
 api: http://localhost:8081/api/docs
