@@ -25,7 +25,7 @@ final readonly class FixedExpensePlannerService
      * @throws \DateMalformedStringException
      * @throws \RuntimeException
      */
-    public function planNextMonth(): int
+    public function planNextMonth(): FixedExpensePlanResult
     {
         $account = $this->accountRepository->findMain();
         if (!$account) {
@@ -78,6 +78,6 @@ final readonly class FixedExpensePlannerService
 
         $this->entityManager->flush();
 
-        return count($operationsToCreate);
+        return new FixedExpensePlanResult($targetMonth, count($operationsToCreate));
     }
 }

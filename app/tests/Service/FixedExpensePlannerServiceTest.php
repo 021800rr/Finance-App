@@ -53,9 +53,13 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         $this->createFixedExpense(day: 10, amount: -15000, description: 'Rent');
         $this->createFixedExpense(day: 20, amount: -5000, description: 'Internet');
 
-        $count = $this->planner->planNextMonth();
+        $result = $this->planner->planNextMonth();
 
-        self::assertSame(2, $count);
+        self::assertSame(2, $result->createdCount);
+        self::assertSame(
+            new DateTimeImmutable('first day of this month')->modify('+1 month')->format('Y-m'),
+            $result->month->format('Y-m'),
+        );
     }
 
     public function testPlanNextMonthCreatesOperationWithCorrectFields(): void
