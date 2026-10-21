@@ -239,6 +239,7 @@ final class AccountOperationApiTest extends WebTestCase
     {
         yield 'zero' => ['0'];
         yield 'not a number' => ['abc'];
+        yield 'comma as the decimal separator' => ['12,50'];
         yield 'above the upper bound' => ['1000000.00'];
         yield 'far above the upper bound' => ['9999999999'];
     }
