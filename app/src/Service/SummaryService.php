@@ -88,13 +88,19 @@ final readonly class SummaryService
         );
 
         $enrichedAccounts = $this->enrichAccountsWithPlnValue($accounts, $ratesByBank);
-        $retirementBalance = $this->sumRetirementBalance($enrichedAccounts);
+        // Per-type and retirement totals describe our own money only; the mother's accounts show up
+        // solely in the per-household totals.
+        $ownFundsAccounts = array_values(array_filter(
+            $enrichedAccounts,
+            static fn (array $account) => $account['is_own_funds']
+        ));
+        $retirementBalance = $this->sumRetirementBalance($ownFundsAccounts);
         $ownFundsHouseholdName = $this->householdRepository->findOwnFundsHouseholdName();
         $byHousehold = $this->summarizeByHousehold($enrichedAccounts, $goldValue, $ownFundsHouseholdName);
 
         return [
             'accounts' => $this->toPublicAccountRows($enrichedAccounts),
-            'byType' => $this->summarizeByType($enrichedAccounts),
+            'byType' => $this->summarizeByType($ownFundsAccounts),
             'byHousehold' => $byHousehold,
             'ownFundsHouseholdName' => $ownFundsHouseholdName,
             'gold' => $goldValue,

@@ -20,7 +20,9 @@ use App\State\SummaryProvider;
             .'from both the accounts list and all totals, mirroring the web app\'s "Show hidden" toggle. '
             .'Pass ?showHidden=true to include them. Each account row carries "rate": the bank\'s latest stored rate to PLN '
             .'for accounts in another currency, or null for PLN accounts and when no rate is stored (see "missing_rate"). '
-            .'"is_main" marks the main account (the ★ in the web app); at most one account has it.',
+            .'"is_main" marks the main account (the ★ in the web app); at most one account has it. '
+            .'"byType", "retirementBalance" and "retirementBalanceWithGold" cover only own-funds accounts; '
+            .'"byHousehold" splits the totals of all accounts (and our gold) by household.',
             provider: SummaryProvider::class,
             parameters: [
                 'showHidden' => new QueryParameter(
@@ -43,7 +45,8 @@ final class SummaryResource
      *         currency: string
      *     }>,
      *     pln: array{amount: string, currency: string}
-     * }> */
+     * }>
+     */
     public array $byType = [];
 
     /** @var array<string, array{amount: string, currency: string}> */
