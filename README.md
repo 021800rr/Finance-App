@@ -14,7 +14,6 @@ Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazj�
 - **PHP CS Fixer** wymuszający spójny styl kodu.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
 - **Świadomy model bezpieczeństwa** — hasła hashowane, throttling logowania, jawnie opisane granice (patrz sekcja [Bezpieczeństwo](#bezpieczeństwo)).
-- Kod (nazwy, komentarze, docbloki, komunikaty wyjątków) — polski tylko w warstwie tłumaczeń/UI.
 
 ## Stack
 
