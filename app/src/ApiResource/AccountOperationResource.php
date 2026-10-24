@@ -66,7 +66,9 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Patch(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Updates an existing operation. Same rules as POST for contractorId/contractorName. '
+            description: 'Updates an existing operation. Send the contractor as in POST, but only when it changes: a '
+            .'contractorId or a contractorName that differs from the current contractor assigns the operation to that '
+            .'contractor (created when the name is new). '
             .'The account of an operation is fixed at creation and cannot be changed.',
             denormalizationContext: ['groups' => ['operation:write']],
             provider: AccountOperationProvider::class,

@@ -40,7 +40,9 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Patch(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Updates an existing fixed expense. Same rules as POST for contractorId/contractorName.',
+            description: 'Updates an existing fixed expense. Send the contractor as in POST, but only when it changes: a '
+            .'contractorId or a contractorName that differs from the current contractor assigns the fixed expense to '
+            .'that contractor (created when the name is new).',
             provider: FixedExpenseProvider::class,
             processor: FixedExpenseProcessor::class,
         ),

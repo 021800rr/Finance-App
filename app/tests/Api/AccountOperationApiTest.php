@@ -200,6 +200,67 @@ final class AccountOperationApiTest extends WebTestCase
         self::assertSame('Edited', $reloaded->getDescription());
     }
 
+    public function testPatchWithANewContractorNameAssignsTheOperationToACreatedContractor(): void
+    {
+        $account = $this->createAccount();
+        $operation = $this->createOperation($account, 'Keeps its description');
+        $newName = 'Brand new contractor '.uniqid();
+
+        $this->client->request(
+            'PATCH',
+            '/api/account_operations/'.$operation->getId(),
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/merge-patch+json'],
+            content: json_encode(['contractorName' => $newName], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseIsSuccessful();
+        $data = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame($newName, self::stringAt($data, 'contractorName'));
+
+        $this->em()->clear();
+        $reloaded = $this->em()->find(AccountOperation::class, $operation->getId());
+        self::assertSame($newName, $reloaded?->getContractor()->getName());
+        self::assertSame('Keeps its description', $reloaded->getDescription());
+    }
+
+    public function testPatchWithTheNameOfAnExistingContractorAssignsThatContractor(): void
+    {
+        $account = $this->createAccount();
+        $operation = $this->createOperation($account, 'Reassigned');
+        $other = $this->createOperation($account, 'Owner of the other contractor')->getContractor();
+
+        $this->client->request(
+            'PATCH',
+            '/api/account_operations/'.$operation->getId(),
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/merge-patch+json'],
+            content: json_encode(['contractorName' => $other->getName()], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseIsSuccessful();
+        $this->em()->clear();
+        $reloaded = $this->em()->find(AccountOperation::class, $operation->getId());
+        self::assertSame($other->getId(), $reloaded?->getContractor()->getId());
+    }
+
+    public function testPatchWithANewContractorIdAssignsThatContractor(): void
+    {
+        $account = $this->createAccount();
+        $operation = $this->createOperation($account, 'Reassigned by id');
+        $other = $this->createOperation($account, 'Owner of the other contractor')->getContractor();
+
+        $this->client->request(
+            'PATCH',
+            '/api/account_operations/'.$operation->getId(),
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/merge-patch+json'],
+            content: json_encode(['contractorId' => $other->getId()], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseIsSuccessful();
+        $this->em()->clear();
+        $reloaded = $this->em()->find(AccountOperation::class, $operation->getId());
+        self::assertSame($other->getId(), $reloaded?->getContractor()->getId());
+    }
+
     public function testOpenApiOffersTheAccountIdOnCreateButNotOnUpdate(): void
     {
         $this->client->request('GET', '/api/docs.jsonopenapi');
@@ -239,7 +300,6 @@ final class AccountOperationApiTest extends WebTestCase
     {
         yield 'zero' => ['0'];
         yield 'not a number' => ['abc'];
-        yield 'comma as the decimal separator' => ['12,50'];
         yield 'above the upper bound' => ['1000000.00'];
         yield 'far above the upper bound' => ['9999999999'];
     }

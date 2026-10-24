@@ -81,7 +81,11 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
 
     private function update(AccountOperation $accountOperation, AccountOperationResource $data): AccountOperation
     {
-        $contractor = $this->contractorResolver->resolve($data->contractorId, $data->contractorName);
+        $contractor = $this->contractorResolver->resolveForUpdate(
+            $data->contractorId,
+            $data->contractorName,
+            $accountOperation->getContractor(),
+        );
         $operationDate = $this->parseOperationDate($data->operationDate);
         $amount = $this->parseAmount($data->amount, $accountOperation->getCurrency()->getCode());
 

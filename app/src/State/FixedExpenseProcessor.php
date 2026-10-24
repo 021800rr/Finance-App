@@ -48,7 +48,9 @@ final readonly class FixedExpenseProcessor implements ProcessorInterface
 
         $fixedExpense = $operation instanceof Patch ? $this->loadExisting($uriVariables) : null;
 
-        $contractor = $this->contractorResolver->resolve($data->contractorId, $data->contractorName);
+        $contractor = null === $fixedExpense
+            ? $this->contractorResolver->resolve($data->contractorId, $data->contractorName)
+            : $this->contractorResolver->resolveForUpdate($data->contractorId, $data->contractorName, $fixedExpense->getContractor());
         $day = $this->requireDay($data->day);
         $amountMinorUnits = $this->parseAmount($data->amount);
         $currency = $this->currencyRepository->findPlnOrThrow();

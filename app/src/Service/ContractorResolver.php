@@ -19,6 +19,26 @@ final readonly class ContractorResolver
     {
     }
 
+    /**
+     * Resolves the contractor for a PATCH. The API resource handed to the processor is the stored record
+     * with the request's fields merged over it, so it always carries the current contractor's id and name.
+     * A client that sends only a new "contractorName" therefore still has the old "contractorId" here, and
+     * going through resolve() would silently keep the old contractor. Instead, whichever field differs from
+     * the current contractor is what the client changed: a different id wins, otherwise a different name.
+     */
+    public function resolveForUpdate(?int $contractorId, ?string $contractorName, Contractor $current): Contractor
+    {
+        if ($contractorId !== $current->getId()) {
+            return $this->resolve($contractorId, $contractorName);
+        }
+
+        if (null === $contractorName || trim($contractorName) === $current->getName()) {
+            return $current;
+        }
+
+        return $this->resolve(null, $contractorName);
+    }
+
     public function resolve(?int $contractorId, ?string $contractorName): Contractor
     {
         if (null !== $contractorId) {
