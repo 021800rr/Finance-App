@@ -105,6 +105,32 @@ final class FixedExpensePlanApiTest extends WebTestCase
         self::assertStringContainsString('main account', (string) $this->client->getResponse()->getContent());
     }
 
+    public function testPlanWithAForeignCurrencyMainAccountRespondsWithConflictAndCreatesNothing(): void
+    {
+        $this->createMainAccount(currencyCode: 'CHF');
+        $this->createFixedExpense(day: 12, amount: -15000);
+        $operationsBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+
+        $this->client->request('POST', '/api/fixed_expenses/plan', server: $this->authHeaders());
+
+        self::assertResponseStatusCodeSame(409);
+        self::assertStringContainsString('is in CHF', (string) $this->client->getResponse()->getContent());
+        self::assertSame($operationsBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
+    public function testPlanWithAMainAccountOfAnotherHouseholdRespondsWithConflictAndCreatesNothing(): void
+    {
+        $this->createMainAccount(ownFunds: false);
+        $this->createFixedExpense(day: 12, amount: -15000);
+        $operationsBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+
+        $this->client->request('POST', '/api/fixed_expenses/plan', server: $this->authHeaders());
+
+        self::assertResponseStatusCodeSame(409);
+        self::assertStringContainsString('our own accounts', (string) $this->client->getResponse()->getContent());
+        self::assertSame($operationsBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
     /**
      * @return array<string, string>
      */
@@ -127,23 +153,23 @@ final class FixedExpensePlanApiTest extends WebTestCase
         return self::stringAt($data, 'token');
     }
 
-    private function createMainAccount(): Account
+    private function createMainAccount(string $currencyCode = 'PLN', bool $ownFunds = true): Account
     {
         $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
-        $currency = $this->em()->getRepository(Currency::class)->find('PLN');
+        $currency = $this->em()->getRepository(Currency::class)->find($currencyCode);
         if (null === $currency) {
-            $currency = new Currency('PLN');
+            $currency = new Currency($currencyCode);
             $this->em()->persist($currency);
         }
 
         $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
+        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => $ownFunds]);
         if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
+            throw new \RuntimeException('Fixtures must provide the household for this test.');
         }
 
         $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);

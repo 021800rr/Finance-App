@@ -6,6 +6,7 @@ namespace App\Service;
 
 use App\Entity\AccountOperation;
 use App\Entity\FixedExpense;
+use App\Exception\FixedExpensePlanningException;
 use App\Repository\AccountOperationRepository;
 use App\Repository\AccountRepository;
 use App\Repository\FixedExpenseRepository;
@@ -23,13 +24,17 @@ final readonly class FixedExpensePlannerService
 
     /**
      * @throws \DateMalformedStringException
-     * @throws \RuntimeException
+     * @throws FixedExpensePlanningException
      */
     public function planNextMonth(): FixedExpensePlanResult
     {
         $account = $this->accountRepository->findMain();
         if (!$account) {
-            throw new \RuntimeException('No account is marked as the main account. Mark one account as main first.');
+            throw FixedExpensePlanningException::noMainAccount();
+        }
+
+        if (!$account->getHousehold()->isOwnFunds()) {
+            throw FixedExpensePlanningException::mainAccountNotOwn($account->getAccountNumber(), $account->getHousehold()->getName());
         }
 
         $targetMonth = new \DateTimeImmutable('first day of this month')->modify('+1 month');
@@ -42,6 +47,10 @@ final readonly class FixedExpensePlannerService
         $operationsToCreate = [];
 
         foreach ($fixedExpenses as $expense) {
+            if ($expense->getCurrency()->getCode() !== $account->getCurrencyCode()) {
+                throw FixedExpensePlanningException::currencyMismatch($expense->getCurrency()->getCode(), $account->getAccountNumber(), $account->getCurrencyCode());
+            }
+
             $date = \DateTimeImmutable::createFromFormat(
                 'Y-m-d H:i:s',
                 sprintf('%04d-%02d-%02d 00:00:00', $year, $month, $expense->getDay())
@@ -57,7 +66,7 @@ final readonly class FixedExpensePlannerService
                 $date,
                 $expense->getAmount()
             )) {
-                throw new \RuntimeException(sprintf('Suspected duplicate: an operation for "%s" with amount %d on %s already exists. Check the account before planning again.', $expense->getContractor()->getName(), $expense->getAmount(), $date->format('Y-m-d')));
+                throw FixedExpensePlanningException::suspectedDuplicate($expense->getContractor()->getName(), $expense->getAmountAsMoney()->toDecimalString(), $date->format('Y-m-d'));
             }
 
             $operationsToCreate[] = [$expense, $date];

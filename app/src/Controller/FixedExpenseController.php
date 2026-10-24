@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Constant\DatabaseLimits;
 use App\Dto\ContractorFormResult;
 use App\Entity\FixedExpense;
+use App\Exception\FixedExpensePlanningException;
 use App\Form\FixedExpenseType;
 use App\Repository\AccountRepository;
 use App\Repository\FixedExpenseRepository;
@@ -18,6 +19,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Translation\TranslatableMessage;
 
 #[Route('/fixed-expense')]
 class FixedExpenseController extends AbstractController
@@ -113,8 +115,8 @@ class FixedExpenseController extends AbstractController
 
         try {
             $planner->planNextMonth();
-        } catch (\RuntimeException $e) {
-            $this->addFlash('warning', $e->getMessage());
+        } catch (FixedExpensePlanningException $e) {
+            $this->addFlash('warning', new TranslatableMessage($e->translationKey, $e->translationParameters));
         }
 
         $mainAccount = $this->accountRepository->findMain();

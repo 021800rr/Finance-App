@@ -118,6 +118,22 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         self::assertCount(1, $operations);
     }
 
+    public function testPlanNextMonthRefusesAMainAccountInAnotherCurrencyThanTheFixedExpenses(): void
+    {
+        $this->createFixedExpense(day: 10, amount: -15000, description: 'Rent');
+        $this->markAsMain($this->createAccount(currencyCode: 'CHF'));
+
+        $this->assertPlanningIsRefusedWith('/is in CHF/');
+    }
+
+    public function testPlanNextMonthRefusesAMainAccountOfAnotherHousehold(): void
+    {
+        $this->createFixedExpense(day: 10, amount: -15000, description: 'Rent');
+        $this->markAsMain($this->createAccount(ownFunds: false));
+
+        $this->assertPlanningIsRefusedWith('/only be planned on our own accounts/');
+    }
+
     public function testPlanNextMonthSkipsExpenseWithInvalidDayForFebruary(): void
     {
         // Days 29-31 can never be reached because FixedExpense enforces day <= 28,
@@ -189,9 +205,14 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
 
     private function getPlnCurrency(): Currency
     {
-        $currency = $this->em()->getRepository(Currency::class)->find('PLN');
+        return $this->findOrCreateCurrency('PLN');
+    }
+
+    private function findOrCreateCurrency(string $code): Currency
+    {
+        $currency = $this->em()->getRepository(Currency::class)->find($code);
         if (null === $currency) {
-            $currency = new Currency('PLN');
+            $currency = new Currency($code);
             $this->em()->persist($currency);
             $this->em()->flush();
         }
@@ -199,19 +220,40 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         return $currency;
     }
 
-    private function createAccount(): Account
+    private function markAsMain(Account $account): void
+    {
+        /** @var AccountRepository $accountRepository */
+        $accountRepository = self::getContainer()->get(AccountRepository::class);
+        $accountRepository->setAsMainAccount($account);
+    }
+
+    private function assertPlanningIsRefusedWith(string $messagePattern): void
+    {
+        $operationsBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+
+        try {
+            $this->planner->planNextMonth();
+            self::fail('Planning should have been refused.');
+        } catch (RuntimeException $exception) {
+            self::assertMatchesRegularExpression($messagePattern, $exception->getMessage());
+        }
+
+        self::assertSame($operationsBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
+    private function createAccount(string $currencyCode = 'PLN', bool $ownFunds = true): Account
     {
         $bank = new Bank('Test Bank ' . uniqid());
         $this->em()->persist($bank);
 
-        $currency = $this->getPlnCurrency();
+        $currency = $this->findOrCreateCurrency($currencyCode);
 
         $accountType = new AccountType('Test Type ' . uniqid());
         $this->em()->persist($accountType);
 
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
+        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => $ownFunds]);
         if (null === $household) {
-            throw new RuntimeException('Fixtures must provide exactly one own-funds household.');
+            throw new RuntimeException('Fixtures must provide the household for this test.');
         }
 
         $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);

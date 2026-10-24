@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Constant\Currencies;
+use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\FixedExpense;
+use App\Entity\Household;
 use App\Repository\AccountRepository;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -213,6 +215,40 @@ final class FixedExpenseControllerTest extends WebTestCase
 
         $this->client->followRedirect();
         self::assertSelectorTextContains('body', 'Suspected duplicate');
+    }
+
+    public function testPlanShowsAFlashMessageWhenTheMainAccountIsInAnotherCurrency(): void
+    {
+        $this->createFixedExpenseInDatabase();
+
+        $chf = $this->em()->getRepository(Currency::class)->find('CHF');
+        self::assertNotNull($chf, 'CHF currency must exist in fixtures.');
+        $reference = $this->em()->getRepository(Account::class)->findOneBy([]);
+        self::assertNotNull($reference);
+        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
+        self::assertNotNull($household);
+
+        $foreignAccount = new Account(
+            $reference->getBank(),
+            $chf,
+            $reference->getType(),
+            'CHF-MAIN-' . uniqid(),
+            $household
+        );
+        $this->em()->persist($foreignAccount);
+        $this->em()->flush();
+
+        /** @var AccountRepository $accountRepository */
+        $accountRepository = self::getContainer()->get(AccountRepository::class);
+        $accountRepository->setAsMainAccount($foreignAccount);
+
+        $crawler = $this->client->request('GET', '/fixed-expense');
+        $csrfToken = $crawler->filter('form[action*="/fixed-expense/plan"] input[name="_token"]')->attr('value');
+
+        $this->client->request('POST', '/fixed-expense/plan', ['_token' => $csrfToken]);
+
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'Fixed expenses are in PLN, but the main account');
     }
 
     private function createFixedExpenseInDatabase(): FixedExpense

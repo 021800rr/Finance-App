@@ -37,6 +37,10 @@ fixed_expense:
     list_title: 'Fixed expenses list'
     none_found: 'No fixed expenses found'
     plan_button: 'Plan expenses'
+    plan_currency_mismatch: 'Fixed expenses are in %expense_currency%, but the main account "%account%" is in %account_currency%. Mark a %expense_currency% account as main first.'
+    plan_duplicate: 'Suspected duplicate: an operation for "%contractor%" with amount %amount% on %date% already exists. Check the account before planning again.'
+    plan_main_not_own: 'Fixed expenses can only be planned on our own accounts, but the main account "%account%" belongs to "%household%". Mark one of our accounts as main first.'
+    plan_no_main_account: 'No account is marked as the main account. Mark one account as main first.'
 
 form:
     account: 'Account'
