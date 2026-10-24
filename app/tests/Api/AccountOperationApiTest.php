@@ -261,6 +261,24 @@ final class AccountOperationApiTest extends WebTestCase
         self::assertSame($other->getId(), $reloaded?->getContractor()->getId());
     }
 
+    public function testMissingRequiredFieldsAreReportedWithTranslatedMessages(): void
+    {
+        $account = $this->createAccount();
+
+        $this->client->request(
+            'POST',
+            '/api/account_operations',
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/ld+json'],
+            content: json_encode(['accountId' => $account->getId(), 'contractorName' => 'Anyone'], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseStatusCodeSame(422);
+        $violations = self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'violations');
+        $messages = array_column($violations, 'message', 'propertyPath');
+        self::assertSame('Please enter a date.', $messages['operationDate'] ?? null);
+        self::assertSame('Please enter an amount.', $messages['amount'] ?? null);
+    }
+
     public function testOpenApiOffersTheAccountIdOnCreateButNotOnUpdate(): void
     {
         $this->client->request('GET', '/api/docs.jsonopenapi');

@@ -1,13 +1,47 @@
+account:
+    number_max_length: 'Numer konta może mieć najwyżej 50 znaków.'
+    number_min_length: 'Numer konta musi mieć co najmniej 1 znak.'
+    number_not_blank: 'Podaj numer konta.'
+
+account_type:
+    name_max_length: 'Nazwa typu konta może mieć najwyżej 50 znaków.'
+    name_min_length: 'Nazwa typu konta musi mieć co najmniej 2 znaki.'
+    name_not_blank: 'Podaj nazwę typu konta.'
+
+bank:
+    name_max_length: 'Nazwa banku może mieć najwyżej 100 znaków.'
+    name_min_length: 'Nazwa banku musi mieć co najmniej 2 znaki.'
+    name_not_blank: 'Podaj nazwę banku.'
+
 common:
+    amount_cannot_be_zero: 'Kwota nie może być równa zero.'
     amount_not_blank: 'Podaj kwotę.'
+    amount_out_of_range: 'Kwota musi być z zakresu od -999 999,99 do 999 999,99.'
     date_not_blank: 'Podaj datę.'
     numeric_invalid: 'Podaj poprawną liczbę.'
 
 contractor:
+    name_max_length: 'Nazwa kontrahenta może mieć najwyżej 255 znaków.'
+    name_min_length: 'Nazwa kontrahenta musi mieć co najmniej 2 znaki.'
+    name_not_blank: 'Podaj nazwę kontrahenta.'
     required: 'Wybierz kontrahenta z listy.'
 
+currency:
+    code_invalid_format: 'Podaj poprawny kod waluty.'
+    code_not_blank: 'Podaj kod waluty.'
+
+currency_exchange_rate:
+    bank_required: 'Wybierz bank.'
+    currency_required: 'Wybierz walutę.'
+    rate_not_blank: 'Podaj kurs.'
+    rate_out_of_range: 'Kurs musi być z zakresu od 0,0001 do 99,9999.'
+
 fixed_expense:
+    amount_must_be_negative: 'Kwota musi być ujemna, z zakresu od -999 999,99 do -0,01.'
+    amount_not_blank: 'Podaj kwotę.'
+    amount_out_of_range: 'Kwota musi być ujemna, z zakresu od -999 999,99 do -0,01.'
     day_out_of_range: 'Dzień musi być z zakresu 1-28.'
+    day_required: 'Podaj dzień miesiąca.'
 
 gold_asset:
     description_not_blank: 'Podaj opis.'
@@ -15,9 +49,31 @@ gold_asset:
     ounces_must_be_positive: 'Ilość uncji musi być większa od zera.'
     ounces_out_of_range: 'Ilość uncji musi być z zakresu 0,0001-999,9999.'
 
+gold_form:
+    name_max_length: 'Nazwa formy złota może mieć najwyżej 50 znaków.'
+    name_min_length: 'Nazwa formy złota musi mieć co najmniej 2 znaki.'
+    name_not_blank: 'Podaj nazwę formy złota.'
+
 gold_price:
     asset_not_null: 'Wybierz aktywo.'
     price_not_blank: 'Podaj cenę.'
+    price_out_of_range: 'Cena musi być z zakresu od 0,01 do 999 999,99.'
+
+household:
+    name_max_length: 'Nazwa gospodarstwa może mieć najwyżej 100 znaków.'
+    name_min_length: 'Nazwa gospodarstwa musi mieć co najmniej 2 znaki.'
+    name_not_blank: 'Podaj nazwę gospodarstwa.'
+
+operation:
+    account_required: 'Wybierz konto.'
+    amount_not_blank: 'Podaj kwotę.'
+    date_not_blank: 'Podaj datę.'
 
 rate:
     value_not_blank: 'Podaj kurs.'
+
+transfer:
+    amount_from_required: 'Podaj kwotę przelewu.'
+    amount_to_required_for_currency_exchange: 'Podaj kwotę do otrzymania przy wymianie między różnymi walutami.'
+    from_account_required: 'Wybierz konto źródłowe.'
+    to_account_required: 'Wybierz konto docelowe.'

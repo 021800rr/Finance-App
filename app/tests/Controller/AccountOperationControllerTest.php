@@ -170,6 +170,24 @@ final class AccountOperationControllerTest extends WebTestCase
         self::assertSame($newContractor->getId(), $updated->getContractor()->getId());
     }
 
+    public function testEditShowsATranslatedMessageForAZeroAmount(): void
+    {
+        $operation = $this->createOperationInDatabase();
+
+        $crawler = $this->client->request('GET', '/operation/' . $operation->getId() . '/edit');
+        $form = $crawler->filter('#operation_form button[type="submit"]')->form();
+
+        $this->client->submit($form, [
+            'account_operation[amount]' => '0',
+            'account_operation[contractor]' => (string) $operation->getContractor()->getId(),
+            'contractor_input' => $operation->getContractor()->getName(),
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'The amount cannot be zero.');
+        self::assertSelectorTextNotContains('body', 'common.amount_cannot_be_zero');
+    }
+
     public function testDeleteReturnsNotFoundForNonNumericId(): void
     {
         $this->client->request('POST', '/operation/alamakota/delete');
