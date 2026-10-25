@@ -91,6 +91,93 @@ final class FixedExpenseControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
+    public function testEditPrefillsExistingValues(): void
+    {
+        $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
+
+        $this->client->request('GET', '/fixed-expense/' . $fixedExpense->getId() . '/edit');
+
+        self::assertResponseIsSuccessful();
+        self::assertInputValueSame('fixed_expense[day]', '15');
+        self::assertInputValueSame('fixed_expense[amount]', '-123.45');
+        self::assertInputValueSame('fixed_expense[description]', 'Internet subscription');
+        self::assertInputValueSame('fixed_expense[contractor]', (string) $fixedExpense->getContractor()->getId());
+        self::assertInputValueSame('contractor_input', $fixedExpense->getContractor()->getName());
+    }
+
+    public function testEditWithoutChangesPreservesExistingValues(): void
+    {
+        $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
+        $fixedExpenseId = $fixedExpense->getId();
+        $contractorId = $fixedExpense->getContractor()->getId();
+        $countBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
+
+        $crawler = $this->client->request('GET', '/fixed-expense/' . $fixedExpenseId . '/edit');
+        $form = $crawler->filter('#fixed_expense_form button[type="submit"]')->form();
+        $this->client->submit($form);
+
+        self::assertResponseRedirects('/fixed-expense');
+
+        $this->em()->clear();
+        $updated = $this->em()->find(FixedExpense::class, $fixedExpenseId);
+
+        self::assertNotNull($updated);
+        self::assertSame(15, $updated->getDay());
+        self::assertSame(-12345, $updated->getAmount());
+        self::assertSame('Internet subscription', $updated->getDescription());
+        self::assertSame($contractorId, $updated->getContractor()->getId());
+        self::assertSame(Currencies::SETTLEMENT_CURRENCY_CODE, $updated->getCurrency()->getCode());
+        self::assertSame($countBefore, $this->em()->getRepository(FixedExpense::class)->count([]));
+    }
+
+    public function testEditChangingOnlyDayPreservesAmountAndDescription(): void
+    {
+        $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
+        $fixedExpenseId = $fixedExpense->getId();
+
+        $crawler = $this->client->request('GET', '/fixed-expense/' . $fixedExpenseId . '/edit');
+        $form = $crawler->filter('#fixed_expense_form button[type="submit"]')->form();
+        $this->client->submit($form, ['fixed_expense[day]' => '20']);
+
+        self::assertResponseRedirects('/fixed-expense');
+
+        $this->em()->clear();
+        $updated = $this->em()->find(FixedExpense::class, $fixedExpenseId);
+
+        self::assertNotNull($updated);
+        self::assertSame(20, $updated->getDay());
+        self::assertSame(-12345, $updated->getAmount());
+        self::assertSame('Internet subscription', $updated->getDescription());
+    }
+
+    public function testEditInvalidSubmissionKeepsSubmittedValuesAndDoesNotUpdateExpense(): void
+    {
+        $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
+        $fixedExpenseId = $fixedExpense->getId();
+
+        $crawler = $this->client->request('GET', '/fixed-expense/' . $fixedExpenseId . '/edit');
+        $form = $crawler->filter('#fixed_expense_form button[type="submit"]')->form();
+        $this->client->submit($form, [
+            'fixed_expense[day]' => '20',
+            'fixed_expense[amount]' => 'invalid',
+            'fixed_expense[description]' => 'Updated description',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertInputValueSame('fixed_expense[day]', '20');
+        self::assertInputValueSame('fixed_expense[amount]', 'invalid');
+        self::assertInputValueSame('fixed_expense[description]', 'Updated description');
+        self::assertSelectorExists('#fixed_expense_amount.is-invalid');
+
+        $this->em()->clear();
+        $unchanged = $this->em()->find(FixedExpense::class, $fixedExpenseId);
+
+        self::assertNotNull($unchanged);
+        self::assertSame(15, $unchanged->getDay());
+        self::assertSame(-12345, $unchanged->getAmount());
+        self::assertSame('Internet subscription', $unchanged->getDescription());
+    }
+
     public function testEditUpdatesFixedExpenseAndRedirects(): void
     {
         $fixedExpense = $this->createFixedExpenseInDatabase();
@@ -251,7 +338,7 @@ final class FixedExpenseControllerTest extends WebTestCase
         self::assertSelectorTextContains('body', 'Fixed expenses are in PLN, but the main account');
     }
 
-    private function createFixedExpenseInDatabase(): FixedExpense
+    private function createFixedExpenseInDatabase(int $day = 10, int $amount = -5000, ?string $description = null): FixedExpense
     {
         $contractor = new Contractor('Test Contractor ' . uniqid());
         $this->em()->persist($contractor);
@@ -259,7 +346,8 @@ final class FixedExpenseControllerTest extends WebTestCase
         $pln = $this->em()->getRepository(Currency::class)->find(Currencies::SETTLEMENT_CURRENCY_CODE);
         self::assertNotNull($pln, 'PLN currency must exist in fixtures.');
 
-        $fixedExpense = new FixedExpense($contractor, 10, -5000, $pln);
+        $fixedExpense = new FixedExpense($contractor, $day, $amount, $pln);
+        $fixedExpense->setDescription($description);
         $this->em()->persist($fixedExpense);
         $this->em()->flush();
 

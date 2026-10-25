@@ -135,7 +135,14 @@ class FixedExpenseController extends AbstractController
         string $contractorName,
         ?FixedExpense $existingFixedExpense,
     ): ContractorFormResult|Response {
-        $form = $this->createForm(FixedExpenseType::class);
+        $form = $this->createForm(
+            FixedExpenseType::class,
+            null === $existingFixedExpense ? null : [
+                'day' => $existingFixedExpense->getDay(),
+                'amount' => $existingFixedExpense->getAmountAsMoney()->toDecimalString(),
+                'description' => $existingFixedExpense->getDescription(),
+            ]
+        );
         $form->handleRequest($request);
 
         $contractorId = null;
