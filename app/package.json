@@ -18,9 +18,10 @@
         "@symfony/webpack-encore": "^6.0.0",
         "core-js": "^3.38.0",
         "regenerator-runtime": "^0.13.11",
-        "sass": "^1.97.2",
-        "sass-loader": "^16.0.8",
         "webpack-cli": "^6.0.1"
+    },
+    "allowScripts": {
+        "core-js": false
     },
     "version": "1.0.0",
     "main": "webpack.config.js",

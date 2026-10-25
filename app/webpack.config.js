@@ -5,8 +5,6 @@ Encore
     .setPublicPath('/build')
     .addEntry('app', './assets/app.js')
 
-    .enableSassLoader()
-
     .enableStimulusBridge('./assets/controllers.json')
 
     .splitEntryChunks()

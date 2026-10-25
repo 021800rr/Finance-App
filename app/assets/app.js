@@ -2,7 +2,8 @@ import './bootstrap';
 
 import 'bootstrap/dist/js/bootstrap.bundle';
 
-import './styles/app.scss';
+import 'bootstrap/dist/css/bootstrap.css';
+import './styles/app.css';
 
 import './js/sort-table';
 import './js/contractor-validation';
