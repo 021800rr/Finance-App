@@ -27,6 +27,8 @@ final class GoldPriceRepository extends ServiceEntityRepository
     }
 
     /**
+     * Uses the latest price date per asset, breaking ties by the highest ID.
+     *
      * @throws Exception
      */
     public function fetchLatestTotalPricePln(): int
@@ -34,15 +36,12 @@ final class GoldPriceRepository extends ServiceEntityRepository
         /** @var string $result */
         $result = $this->getEntityManager()->getConnection()->fetchOne(
             <<<SQL
-            SELECT COALESCE(SUM(gp.price_pln_minor_units), 0)
-            FROM gold_price gp
-            INNER JOIN (
-                SELECT gold_asset_id, MAX(price_date) AS max_date
+            SELECT COALESCE(SUM(latest.price_pln_minor_units), 0)
+            FROM (
+                SELECT DISTINCT ON (gold_asset_id) price_pln_minor_units
                 FROM gold_price
-                GROUP BY gold_asset_id
+                ORDER BY gold_asset_id, price_date DESC, id DESC
             ) latest
-                ON latest.gold_asset_id = gp.gold_asset_id
-            AND latest.max_date = gp.price_date
             SQL
         );
 

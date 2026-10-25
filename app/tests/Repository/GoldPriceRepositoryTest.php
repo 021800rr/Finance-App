@@ -61,6 +61,26 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         self::assertSame(1300000, $total);
     }
 
+    public function testFetchLatestTotalPricePlnUsesHighestIdToBreakLatestDateTiesPerAsset(): void
+    {
+        $assetA = $this->createGoldAsset();
+        $assetB = $this->createGoldAsset();
+        $latestDateA = new DateTimeImmutable('2026-10-20');
+        $latestDateB = new DateTimeImmutable('2026-10-19');
+
+        // The last price wins a date tie, even when it is lower than the previous price.
+        $this->createGoldPrice($assetA, $latestDateA, 1100000);
+        $this->createGoldPrice($assetA, $latestDateA, 1000000);
+        $this->createGoldPrice($assetB, $latestDateB, 200000);
+        $this->createGoldPrice($assetB, $latestDateB, 300000);
+
+        // Older prices inserted later must not win just because they have higher IDs.
+        $this->createGoldPrice($assetA, new DateTimeImmutable('2026-10-01'), 9000000);
+        $this->createGoldPrice($assetB, new DateTimeImmutable('2026-09-01'), 8000000);
+
+        self::assertSame(1300000, $this->repository->fetchLatestTotalPricePln());
+    }
+
     public function testFetchLatestTotalPricePlnReturnsZeroWhenNoPricesExist(): void
     {
         $this->createGoldAsset();
