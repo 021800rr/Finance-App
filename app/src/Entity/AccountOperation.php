@@ -146,9 +146,14 @@ class AccountOperation
 
     public function setAmount(int $amount): void
     {
+        self::assertValidAmount($amount);
+        $this->amount = $amount;
+    }
+
+    public static function assertValidAmount(int $amount): void
+    {
         self::assertNotZero($amount, 'Amount');
         self::assertInRange($amount, -99999999, 99999999, 'Amount');
-        $this->amount = $amount;
     }
 
     public function getCurrency(): Currency

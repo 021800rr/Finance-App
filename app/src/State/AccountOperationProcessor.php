@@ -17,6 +17,7 @@ use App\Service\ContractorResolver;
 use App\Util\BusinessDateRange;
 use App\Util\DateParser;
 use App\ValueObject\Money;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
@@ -29,6 +30,7 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
         private AccountOperationRepository $accountOperationRepository,
         private AccountRepository $accountRepository,
         private ContractorResolver $contractorResolver,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -53,46 +55,64 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
         }
 
         try {
-            $accountOperation = $operation instanceof Patch
-                ? $this->update($this->loadExisting($uriVariables), $data)
-                : $this->create($data);
+            $existingOperation = $operation instanceof Patch ? $this->loadExisting($uriVariables) : null;
+            $account = $existingOperation?->getAccount() ?? $this->resolveAccount($data->accountId);
+            $operationDate = $this->parseOperationDate($data->operationDate);
+            $amount = $this->parseAmount($data->amount, $account->getCurrencyCode());
+
+            // Include the resolver's contractor flush and the final operation flush in one transaction.
+            /** @var AccountOperation $accountOperation */
+            $accountOperation = $this->entityManager->wrapInTransaction(function () use (
+                $existingOperation,
+                $account,
+                $data,
+                $operationDate,
+                $amount,
+            ): AccountOperation {
+                $accountOperation = null === $existingOperation
+                    ? $this->create($account, $data, $operationDate, $amount)
+                    : $this->update($existingOperation, $data, $operationDate, $amount);
+
+                $this->accountOperationRepository->save($accountOperation);
+
+                return $accountOperation;
+            });
         } catch (\InvalidArgumentException $exception) {
             throw new UnprocessableEntityHttpException($exception->getMessage(), $exception);
         }
 
-        $this->accountOperationRepository->save($accountOperation, flush: true);
-
         return AccountOperationResource::fromEntity($accountOperation);
     }
 
-    private function create(AccountOperationResource $data): AccountOperation
-    {
-        $account = $this->resolveAccount($data->accountId);
-        $currency = $account->getCurrency();
-        $operationDate = $this->parseOperationDate($data->operationDate);
-
+    private function create(
+        Account $account,
+        AccountOperationResource $data,
+        \DateTimeImmutable $operationDate,
+        int $amount,
+    ): AccountOperation {
         return new AccountOperation(
             $account,
             $this->contractorResolver->resolve($data->contractorId, $data->contractorName),
             $operationDate,
-            $this->parseAmount($data->amount, $currency->getCode()),
-            $currency,
+            $amount,
+            $account->getCurrency(),
             description: $data->description,
             confirmed: $data->confirmed,
         );
     }
 
-    private function update(AccountOperation $accountOperation, AccountOperationResource $data): AccountOperation
-    {
-        $operationDate = $this->parseOperationDate($data->operationDate);
+    private function update(
+        AccountOperation $accountOperation,
+        AccountOperationResource $data,
+        \DateTimeImmutable $operationDate,
+        int $amount,
+    ): AccountOperation {
         $contractor = $this->contractorResolver->resolveForUpdate(
             $data->contractorId,
             $data->contractorName,
             $accountOperation->getContractor(),
         );
-        $amount = $this->parseAmount($data->amount, $accountOperation->getCurrency()->getCode());
 
-        // The date has already been validated. Check the amount before changing any other fields.
         $accountOperation->setAmount($amount);
         $accountOperation->setContractor($contractor);
         $accountOperation->setOperationDate($operationDate);
@@ -136,7 +156,10 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException('Amount is required.');
         }
 
-        return Money::fromDecimalString($amount, $currencyCode)->getMinorUnits();
+        $minorUnits = Money::fromDecimalString($amount, $currencyCode)->getMinorUnits();
+        AccountOperation::assertValidAmount($minorUnits);
+
+        return $minorUnits;
     }
 
     private function parseOperationDate(?string $operationDate): \DateTimeImmutable

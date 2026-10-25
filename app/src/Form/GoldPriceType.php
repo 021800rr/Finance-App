@@ -35,11 +35,11 @@ class GoldPriceType extends AbstractType
                 'required' => true,
                 'constraints' => [
                     new NotBlank(message: 'common.date_not_blank'),
-                    new BusinessDate()
+                    new BusinessDate(),
                 ],
                 'attr' => [
                     'min' => BusinessDateRange::MIN_DATE,
-                    'max' => BusinessDateRange::MAX_DATE
+                    'max' => BusinessDateRange::MAX_DATE,
                 ],
                 'data' => new \DateTimeImmutable(),
             ])
