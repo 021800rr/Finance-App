@@ -8,6 +8,8 @@ use App\Constant\Currencies;
 use App\Entity\Trait\NumericGuardTrait;
 use App\Entity\Trait\TimestampTrait;
 use App\Repository\CurrencyExchangeRateRepository;
+use App\Util\BusinessDateRange;
+use App\Validator\BusinessDate;
 use App\ValueObject\Money;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -36,6 +38,7 @@ class CurrencyExchangeRate
 
     #[ORM\Column(name: 'rate_date', type: 'datetime_immutable')]
     #[Assert\NotBlank(message: 'common.date_not_blank')]
+    #[BusinessDate]
     private \DateTimeImmutable $rateDate;
 
     #[ORM\Column(name: 'rate_to_pln_minor_units', type: 'bigint')]
@@ -44,6 +47,8 @@ class CurrencyExchangeRate
 
     public function __construct(Bank $bank, Currency $currency, \DateTimeImmutable $rateDate, int $rateToPln)
     {
+        BusinessDateRange::assertContains($rateDate);
+
         $this->bank = $bank;
         $this->currency = $currency;
         $this->rateDate = $rateDate;

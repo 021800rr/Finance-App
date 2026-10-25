@@ -8,6 +8,8 @@ use App\Constant\Currencies;
 use App\Entity\Trait\NumericGuardTrait;
 use App\Entity\Trait\TimestampTrait;
 use App\Repository\GoldPriceRepository;
+use App\Util\BusinessDateRange;
+use App\Validator\BusinessDate;
 use App\ValueObject\Money;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -32,6 +34,7 @@ class GoldPrice
 
     #[ORM\Column(type: 'datetime_immutable')]
     #[Assert\NotBlank(message: 'common.date_not_blank')]
+    #[BusinessDate]
     private \DateTimeImmutable $priceDate;
 
     #[ORM\Column(name: 'price_pln_minor_units', type: 'bigint')]
@@ -48,6 +51,7 @@ class GoldPrice
         int $pricePln,
         Currency $currency,
     ) {
+        BusinessDateRange::assertContains($priceDate);
         self::assertInRange($pricePln, 1, 99999999, 'Price');
 
         $this->goldAsset = $goldAsset;

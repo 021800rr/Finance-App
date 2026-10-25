@@ -18,6 +18,7 @@ common:
     amount_not_blank: 'Please enter an amount.'
     amount_out_of_range: 'The amount must be between -999,999.99 and 999,999.99.'
     date_not_blank: 'Please enter a date.'
+    date_out_of_range: 'Date must be between {{ min }} and {{ max }} (inclusive).'
     numeric_invalid: 'Please enter a valid number.'
 
 contractor:

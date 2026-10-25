@@ -13,6 +13,8 @@ use App\Entity\Contractor;
 use App\Repository\AccountRepository;
 use App\Repository\ContractorRepository;
 use App\Service\TransactionService;
+use App\Util\BusinessDateRange;
+use App\Util\DateParser;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
@@ -40,8 +42,8 @@ final readonly class TransferProcessor implements ProcessorInterface
 
         $fromAccount = $this->resolveAccount($data->fromAccountId, 'fromAccountId');
         $toAccount = $this->resolveAccount($data->toAccountId, 'toAccountId');
-        $contractor = $this->resolveFixedContractor();
         $operationDate = $this->parseOperationDate($data->operationDate);
+        $contractor = $this->resolveFixedContractor();
         $amountFrom = $this->requireAmount($data->amountFrom, 'amountFrom');
 
         $result = $this->performTransfer($fromAccount, $toAccount, $contractor, $operationDate, $amountFrom, $data->amountTo, $data->description);
@@ -101,11 +103,16 @@ final readonly class TransferProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException('Operation date is required.');
         }
 
-        try {
-            return new \DateTimeImmutable($operationDate);
-        } catch (\Exception) {
+        $date = DateParser::tryParse($operationDate);
+        if (null === $date) {
             throw new UnprocessableEntityHttpException('Invalid operation date format.');
         }
+
+        if (!BusinessDateRange::contains($date)) {
+            throw new UnprocessableEntityHttpException(BusinessDateRange::ERROR_MESSAGE);
+        }
+
+        return $date;
     }
 
     private function requireAmount(?string $amount, string $field): string

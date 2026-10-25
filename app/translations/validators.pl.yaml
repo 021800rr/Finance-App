@@ -18,6 +18,7 @@ common:
     amount_not_blank: 'Podaj kwotę.'
     amount_out_of_range: 'Kwota musi być z zakresu od -999 999,99 do 999 999,99.'
     date_not_blank: 'Podaj datę.'
+    date_out_of_range: 'Data musi mieścić się w zakresie od {{ min }} do {{ max }} (włącznie).'
     numeric_invalid: 'Podaj poprawną liczbę.'
 
 contractor:

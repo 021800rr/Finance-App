@@ -14,6 +14,8 @@ use App\Entity\GoldPrice;
 use App\Repository\CurrencyRepository;
 use App\Repository\GoldAssetRepository;
 use App\Repository\GoldPriceRepository;
+use App\Util\BusinessDateRange;
+use App\Util\DateParser;
 use App\ValueObject\Money;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -98,11 +100,16 @@ final readonly class GoldPriceProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException('priceDate is required.');
         }
 
-        try {
-            return new \DateTimeImmutable($priceDate);
-        } catch (\Exception) {
+        $date = DateParser::tryParse($priceDate);
+        if (null === $date) {
             throw new UnprocessableEntityHttpException('Invalid priceDate format.');
         }
+
+        if (!BusinessDateRange::contains($date)) {
+            throw new UnprocessableEntityHttpException(BusinessDateRange::ERROR_MESSAGE);
+        }
+
+        return $date;
     }
 
     private function parsePrice(?string $pricePln): int

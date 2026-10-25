@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\AccountOperation;
 use App\State\TransferProcessor;
+use App\Util\BusinessDateRange;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -38,7 +39,8 @@ final class TransferResource
     #[Assert\NotNull(message: 'transfer.to_account_required')]
     public ?int $toAccountId = null;
 
-    #[ApiProperty(description: 'Transfer date, format YYYY-MM-DD. Required.', example: '2026-09-29')]
+    #[ApiProperty(description: 'Transfer date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '
+        .BusinessDateRange::MAX_DATE.' inclusive. Required.', example: '2026-09-29')]
     #[Assert\NotBlank(message: 'common.date_not_blank')]
     public ?string $operationDate = null;
 

@@ -18,6 +18,7 @@ use App\Entity\AccountOperation;
 use App\Service\Paginator;
 use App\State\AccountOperationProcessor;
 use App\State\AccountOperationProvider;
+use App\Util\BusinessDateRange;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -113,7 +114,8 @@ final class AccountOperationResource
     #[Groups(['operation:write'])]
     public ?string $contractorName = null;
 
-    #[ApiProperty(description: 'Operation date, format YYYY-MM-DD. Required.', example: '2026-09-29')]
+    #[ApiProperty(description: 'Operation date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '
+        .BusinessDateRange::MAX_DATE.' inclusive. Required.', example: '2026-09-29')]
     #[Assert\NotBlank(message: 'operation.date_not_blank')]
     #[Groups(['operation:write'])]
     public ?string $operationDate = null;

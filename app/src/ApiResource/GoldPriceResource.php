@@ -14,6 +14,7 @@ use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\GoldPrice;
 use App\State\GoldPriceProcessor;
 use App\State\GoldPriceProvider;
+use App\Util\BusinessDateRange;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -54,7 +55,8 @@ final class GoldPriceResource
     #[Assert\NotNull(message: 'gold_price.asset_not_null')]
     public ?int $goldAssetId = null;
 
-    #[ApiProperty(description: 'Price date, format YYYY-MM-DD. Required.', example: '2026-09-29')]
+    #[ApiProperty(description: 'Price date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '
+        .BusinessDateRange::MAX_DATE.' inclusive. Required.', example: '2026-09-29')]
     #[Assert\NotBlank(message: 'common.date_not_blank')]
     public ?string $priceDate = null;
 

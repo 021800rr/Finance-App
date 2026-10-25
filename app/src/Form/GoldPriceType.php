@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Form;
 
 use App\Entity\GoldAsset;
+use App\Util\BusinessDateRange;
+use App\Validator\BusinessDate;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Range;
 
 class GoldPriceType extends AbstractType
@@ -30,6 +33,14 @@ class GoldPriceType extends AbstractType
                 'widget' => 'single_text',
                 'input' => 'datetime_immutable',
                 'required' => true,
+                'constraints' => [
+                    new NotBlank(message: 'common.date_not_blank'),
+                    new BusinessDate()
+                ],
+                'attr' => [
+                    'min' => BusinessDateRange::MIN_DATE,
+                    'max' => BusinessDateRange::MAX_DATE
+                ],
                 'data' => new \DateTimeImmutable(),
             ])
             ->add('pricePln', MoneyType::class, [

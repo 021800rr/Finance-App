@@ -14,6 +14,8 @@ use App\Entity\AccountOperation;
 use App\Repository\AccountOperationRepository;
 use App\Repository\AccountRepository;
 use App\Service\ContractorResolver;
+use App\Util\BusinessDateRange;
+use App\Util\DateParser;
 use App\ValueObject\Money;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -67,11 +69,12 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
     {
         $account = $this->resolveAccount($data->accountId);
         $currency = $account->getCurrency();
+        $operationDate = $this->parseOperationDate($data->operationDate);
 
         return new AccountOperation(
             $account,
             $this->contractorResolver->resolve($data->contractorId, $data->contractorName),
-            $this->parseOperationDate($data->operationDate),
+            $operationDate,
             $this->parseAmount($data->amount, $currency->getCode()),
             $currency,
             description: $data->description,
@@ -81,16 +84,15 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
 
     private function update(AccountOperation $accountOperation, AccountOperationResource $data): AccountOperation
     {
+        $operationDate = $this->parseOperationDate($data->operationDate);
         $contractor = $this->contractorResolver->resolveForUpdate(
             $data->contractorId,
             $data->contractorName,
             $accountOperation->getContractor(),
         );
-        $operationDate = $this->parseOperationDate($data->operationDate);
         $amount = $this->parseAmount($data->amount, $accountOperation->getCurrency()->getCode());
 
-        // setAmount() is the only setter that can refuse a value, so it goes first: a rejected amount
-        // must leave the operation untouched.
+        // The date has already been validated. Check the amount before changing any other fields.
         $accountOperation->setAmount($amount);
         $accountOperation->setContractor($contractor);
         $accountOperation->setOperationDate($operationDate);
@@ -143,10 +145,15 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException('Operation date is required.');
         }
 
-        try {
-            return new \DateTimeImmutable($operationDate);
-        } catch (\Exception) {
+        $date = DateParser::tryParse($operationDate);
+        if (null === $date) {
             throw new UnprocessableEntityHttpException('Invalid operation date format.');
         }
+
+        if (!BusinessDateRange::contains($date)) {
+            throw new UnprocessableEntityHttpException(BusinessDateRange::ERROR_MESSAGE);
+        }
+
+        return $date;
     }
 }

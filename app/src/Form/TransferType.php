@@ -9,6 +9,8 @@ use App\Entity\Account;
 use App\Entity\Contractor;
 use App\Repository\AccountRepository;
 use App\Repository\ContractorRepository;
+use App\Util\BusinessDateRange;
+use App\Validator\BusinessDate;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
@@ -17,6 +19,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Callback;
+use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Positive;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
@@ -65,6 +68,14 @@ class TransferType extends AbstractType
                 'data' => new \DateTimeImmutable(),
                 'input' => 'datetime_immutable',
                 'required' => true,
+                'constraints' => [
+                    new NotBlank(message: 'common.date_not_blank'),
+                    new BusinessDate()
+                ],
+                'attr' => [
+                    'min' => BusinessDateRange::MIN_DATE,
+                    'max' => BusinessDateRange::MAX_DATE
+                ],
             ])
             ->add('description', TextType::class, [
                 'required' => false,

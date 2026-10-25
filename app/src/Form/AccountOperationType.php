@@ -7,6 +7,8 @@ namespace App\Form;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Repository\AccountRepository;
+use App\Util\BusinessDateRange;
+use App\Validator\BusinessDate;
 use App\ValueObject\Money;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
@@ -17,6 +19,7 @@ use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotEqualTo;
 use Symfony\Component\Validator\Constraints\Range;
 
@@ -46,6 +49,14 @@ class AccountOperationType extends AbstractType
                 'widget' => 'single_text',
                 'input' => 'datetime_immutable',
                 'required' => true,
+                'constraints' => [
+                    new NotBlank(message: 'common.date_not_blank'),
+                    new BusinessDate(),
+                ],
+                'attr' => [
+                    'min' => BusinessDateRange::MIN_DATE,
+                    'max' => BusinessDateRange::MAX_DATE,
+                ],
                 'data' => $existingOperation?->getOperationDate() ?? new \DateTimeImmutable(),
             ])
             ->add('amount', MoneyType::class, [

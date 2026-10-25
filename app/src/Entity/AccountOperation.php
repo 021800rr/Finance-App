@@ -7,6 +7,8 @@ namespace App\Entity;
 use App\Entity\Trait\NumericGuardTrait;
 use App\Entity\Trait\TimestampTrait;
 use App\Repository\AccountOperationRepository;
+use App\Util\BusinessDateRange;
+use App\Validator\BusinessDate;
 use App\ValueObject\Money;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
@@ -38,6 +40,7 @@ class AccountOperation
 
     #[ORM\Column(type: 'datetime_immutable')]
     #[Assert\NotBlank(message: 'common.date_not_blank')]
+    #[BusinessDate]
     private \DateTimeImmutable $operationDate;
 
     #[ORM\Column(type: 'string', nullable: true)]
@@ -71,7 +74,7 @@ class AccountOperation
         self::assertSameCurrency($currency, $account);
         $this->account = $account;
         $this->contractor = $contractor;
-        $this->operationDate = $operationDate;
+        $this->setOperationDate($operationDate);
         $this->setAmount($amount);
         $this->currency = $currency;
         $this->description = $description;
@@ -106,6 +109,8 @@ class AccountOperation
 
     public function setOperationDate(\DateTimeImmutable $operationDate): void
     {
+        BusinessDateRange::assertContains($operationDate);
+
         $this->operationDate = $operationDate;
     }
 

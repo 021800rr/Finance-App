@@ -66,6 +66,14 @@ Appka jest jednoosobowa, więc model bezpieczeństwa jest celowo prosty.
 
 ## Zasady wprowadzania danych
 
+**Daty operacji, przelewów, cen złota i kursów walut** muszą mieścić się w zakresie
+**2025-01-01 – 2070-12-31 (włącznie)**. To stała reguła biznesowa obowiązująca przy dodawaniu
+i edycji danych, również dla operacji generowanych z opłat stałych.
+Formularze pokazują błąd przy polu daty, a encje pilnują zakresu także przy zapisie z kodu.
+API przyjmuje wyłącznie istniejące daty w formacie `YYYY-MM-DD` (np. `2028-02-29`),
+bez godziny i określeń względnych takich jak `tomorrow`. Nieistniejące daty (np. `2026-02-31`)
+oraz daty poza zakresem są odrzucane z kodem `422`, bez zapisywania zmian.
+
 Nowe operacje na koncie dodajemy bez znaku, jeśli to **przychód** na koncie: "309 zł refundacja /zwrot"
 lub ze znakiem `-` jeżeli to **wydatek** z konta: "-309 zł zakup okularów"
 

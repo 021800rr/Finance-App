@@ -7,12 +7,15 @@ namespace App\Form;
 use App\Constant\Currencies;
 use App\Entity\Bank;
 use App\Entity\Currency;
+use App\Util\BusinessDateRange;
+use App\Validator\BusinessDate;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Range;
 
 class CurrencyExchangeRateType extends AbstractType
@@ -48,6 +51,8 @@ class CurrencyExchangeRateType extends AbstractType
                 'widget' => 'single_text',
                 'input' => 'datetime_immutable',
                 'required' => true,
+                'constraints' => [new NotBlank(message: 'common.date_not_blank'), new BusinessDate()],
+                'attr' => ['min' => BusinessDateRange::MIN_DATE, 'max' => BusinessDateRange::MAX_DATE],
                 'data' => new \DateTimeImmutable(),
             ])
             ->add('rateToPln', MoneyType::class, [

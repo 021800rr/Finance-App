@@ -14,6 +14,8 @@ use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\Repository\BankRepository;
 use App\Repository\CurrencyExchangeRateRepository;
+use App\Util\BusinessDateRange;
+use App\Util\DateParser;
 use App\ValueObject\Money;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -114,11 +116,16 @@ final readonly class CurrencyExchangeRateProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException('rateDate is required.');
         }
 
-        try {
-            return new \DateTimeImmutable($rateDate);
-        } catch (\Exception) {
+        $date = DateParser::tryParse($rateDate);
+        if (null === $date) {
             throw new UnprocessableEntityHttpException('Invalid rateDate format.');
         }
+
+        if (!BusinessDateRange::contains($date)) {
+            throw new UnprocessableEntityHttpException(BusinessDateRange::ERROR_MESSAGE);
+        }
+
+        return $date;
     }
 
     private function parseRate(?string $rateToPln): int

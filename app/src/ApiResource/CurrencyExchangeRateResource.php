@@ -15,6 +15,7 @@ use App\Entity\CurrencyExchangeRate;
 use App\State\CurrencyExchangeRateHistoryProvider;
 use App\State\CurrencyExchangeRateProcessor;
 use App\State\CurrencyExchangeRateProvider;
+use App\Util\BusinessDateRange;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -67,7 +68,8 @@ final class CurrencyExchangeRateResource
     #[Assert\NotBlank(message: 'currency_exchange_rate.currency_required')]
     public ?string $currencyCode = null;
 
-    #[ApiProperty(description: 'Rate date, format YYYY-MM-DD. Required.', example: '2026-09-29')]
+    #[ApiProperty(description: 'Rate date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '
+        .BusinessDateRange::MAX_DATE.' inclusive. Required.', example: '2026-09-29')]
     #[Assert\NotBlank(message: 'common.date_not_blank')]
     public ?string $rateDate = null;
 
