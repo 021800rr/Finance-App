@@ -74,6 +74,7 @@ rate:
 
 transfer:
     amount_from_required: 'Podaj kwotę przelewu.'
+    amount_must_be_positive: 'Kwota przelewu musi być większa od zera.'
     amount_to_required_for_currency_exchange: 'Podaj kwotę do otrzymania przy wymianie między różnymi walutami.'
     from_account_required: 'Wybierz konto źródłowe.'
     to_account_required: 'Wybierz konto docelowe.'

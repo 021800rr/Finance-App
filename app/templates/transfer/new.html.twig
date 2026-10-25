@@ -29,6 +29,9 @@
                         <th class="pe-3 text-end">{{ 'transfer.debit'|trans }}</th>
                         <td>
                             {{ form_widget(form.amountFrom) }}
+                            <div class="invalid-feedback{% if form.amountFrom.vars.errors|length > 0 %} d-block{% endif %}">
+                                {{ form_errors(form.amountFrom) }}
+                            </div>
                         </td>
                         <th class="pe-3 text-end">{{ 'transfer.credit'|trans }}</th>
                         <td>

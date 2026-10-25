@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use App\Entity\Account;
+use App\Entity\AccountOperation;
 use App\Entity\AccountType;
 use App\Entity\Bank;
 use App\Entity\Contractor;
@@ -305,6 +306,55 @@ final class TransactionServiceTest extends KernelTestCase
 
         self::assertFalse($result['out']->isConfirmed());
         self::assertFalse($result['in']->isConfirmed());
+    }
+
+    #[DataProvider('provideNonPositiveTransferAmounts')]
+    public function testNonPositiveAmountsAreRejectedWithoutPersistingOperations(
+        string $toCurrency,
+        string $amountFrom,
+        ?string $amountTo,
+    ): void {
+        $from = $this->createAccount('PLN');
+        $to = $this->createAccount($toCurrency);
+        $contractor = $this->createContractor();
+        $operations = $this->em()->getRepository(AccountOperation::class);
+        $countBefore = $operations->count([]);
+
+        try {
+            $this->transactionService->transferBetweenAccounts(
+                $from, $to, $contractor, new DateTimeImmutable(), $amountFrom, $amountTo, null
+            );
+            self::fail('A non-positive transfer amount must be rejected.');
+        } catch (InvalidArgumentException $exception) {
+            self::assertSame('Transfer amounts must be positive.', $exception->getMessage());
+        }
+
+        // A later flush must not save either side of the rejected transfer.
+        self::assertTrue($this->em()->isOpen());
+        $this->em()->flush();
+        self::assertSame($countBefore, $operations->count([]));
+    }
+
+    /**
+     * @return array<string, array{string, string, ?string}>
+     */
+    public static function provideNonPositiveTransferAmounts(): array
+    {
+        return [
+            'negative debit with implicit credit' => ['PLN', '-100.00', null],
+            'negative debit with explicit credit' => ['PLN', '-100.00', '100.00'],
+            'negative credit in same currency' => ['PLN', '100.00', '-100.00'],
+            'negative debit in exchange' => ['CHF', '-100.00', '25.00'],
+            'negative credit in exchange' => ['CHF', '100.00', '-25.00'],
+            'negative debit and credit in exchange' => ['CHF', '-100.00', '-25.00'],
+            'zero debit' => ['PLN', '0.00', null],
+            'zero credit in same currency' => ['PLN', '100.00', '0.00'],
+            'zero credit in exchange' => ['CHF', '100.00', '0.00'],
+            'debit rounded to zero' => ['PLN', '0.004', null],
+            'credit rounded to zero' => ['CHF', '100.00', '0.004'],
+            'credit' => ['CHF', '100.00', '0.004'],
+            'negative debit rounded to zero' => ['PLN', '-0.004', null],
+        ];
     }
 
     private function createAccount(string $currencyCode): Account

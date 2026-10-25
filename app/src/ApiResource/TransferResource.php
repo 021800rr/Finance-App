@@ -43,14 +43,14 @@ final class TransferResource
     public ?string $operationDate = null;
 
     #[ApiProperty(
-        description: 'Amount debited from fromAccount, as a decimal string, e.g. "100.00". Required.',
+        description: 'Positive amount debited from fromAccount, as a decimal string, e.g. "100.00". Required.',
         example: '100.00',
     )]
     #[Assert\NotBlank(message: 'transfer.amount_from_required')]
     public ?string $amountFrom = null;
 
     #[ApiProperty(
-        description: 'Amount credited to toAccount, as a decimal string. Required only when fromAccount '
+        description: 'Positive amount credited to toAccount, as a decimal string. Required only when fromAccount '
         .'and toAccount use different currencies; otherwise omit it (defaults to amountFrom).',
         example: null,
     )]

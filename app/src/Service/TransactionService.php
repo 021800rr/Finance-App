@@ -44,13 +44,17 @@ final readonly class TransactionService
 
         $debitMoney = Money::fromDecimalString($amountFrom, $fromCurrencyCode);
 
-        if (0 === $debitMoney->getMinorUnits()) {
-            throw new \InvalidArgumentException('Transfer amount must be non-zero.');
+        if (!$debitMoney->isPositive()) {
+            throw new \InvalidArgumentException('Transfer amounts must be positive.');
         }
 
         $creditMoney = null !== $amountTo
             ? Money::fromDecimalString($amountTo, $toCurrencyCode)
             : Money::fromDecimalString($amountFrom, $toCurrencyCode);
+
+        if (!$creditMoney->isPositive()) {
+            throw new \InvalidArgumentException('Transfer amounts must be positive.');
+        }
 
         /** @var array{out: AccountOperation, in: AccountOperation} $result */
         $result = $this->em->wrapInTransaction(function () use (

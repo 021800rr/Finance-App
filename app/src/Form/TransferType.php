@@ -17,6 +17,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Callback;
+use Symfony\Component\Validator\Constraints\Positive;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 class TransferType extends AbstractType
@@ -50,12 +51,14 @@ class TransferType extends AbstractType
                 'currency' => false,
                 'grouping' => true,
                 'input' => 'string',
+                'constraints' => [new Positive(message: 'transfer.amount_must_be_positive')],
             ])
             ->add('amountTo', MoneyType::class, [
                 'currency' => false,
                 'grouping' => true,
                 'input' => 'string',
                 'required' => false,
+                'constraints' => [new Positive(message: 'transfer.amount_must_be_positive')],
             ])
             ->add('date', DateType::class, [
                 'widget' => 'single_text',

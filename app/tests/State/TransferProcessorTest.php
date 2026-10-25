@@ -18,6 +18,7 @@ use App\Repository\ContractorRepository;
 use App\State\TransferProcessor;
 use App\Tests\DatabaseTestTrait;
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -133,6 +134,47 @@ final class TransferProcessorTest extends KernelTestCase
         $this->expectException(UnprocessableEntityHttpException::class);
 
         $this->processor->process($resource, new Post());
+    }
+
+    #[DataProvider('provideNonPositiveAmounts')]
+    public function testProcessRejectsNonPositiveAmountsWith422AndNoOperations(string $amountFrom, string $amountTo): void
+    {
+        $this->ensureFixedContractor();
+        $from = $this->createAccount('PLN');
+        $to = $this->createAccount('CHF');
+        $resource = $this->buildResource(
+            fromAccountId: $from->getId(),
+            toAccountId: $to->getId(),
+            amountFrom: $amountFrom,
+            amountTo: $amountTo,
+        );
+        $operations = $this->em()->getRepository(AccountOperation::class);
+        $countBefore = $operations->count([]);
+
+        try {
+            $this->processor->process($resource, new Post());
+            self::fail('A non-positive transfer amount must be rejected.');
+        } catch (UnprocessableEntityHttpException $exception) {
+            self::assertSame(422, $exception->getStatusCode());
+            self::assertSame('Transfer amounts must be positive.', $exception->getMessage());
+        }
+
+        self::assertSame($countBefore, $operations->count([]));
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function provideNonPositiveAmounts(): array
+    {
+        return [
+            'negative debit' => ['-100.00', '25.00'],
+            'negative credit' => ['100.00', '-25.00'],
+            'zero credit' => ['100.00', '0.00'],
+            'credit rounded to zero' => ['100.00', '0.004'],
+            'zero debit' => ['0.00', '100.00'],
+            'debit rounded to zero' => ['0.004', '100.00'],
+        ];
     }
 
     public function testProcessThrowsUnprocessableWhenFromAccountIdMissing(): void

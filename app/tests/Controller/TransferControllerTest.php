@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\Account;
+use App\Entity\AccountOperation;
 use App\Entity\AccountType;
 use App\Entity\Bank;
 use App\Entity\Currency;
 use App\Entity\Household;
 use App\Tests\DatabaseTestTrait;
-use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -78,6 +79,54 @@ final class TransferControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('#transfer_amountTo_error1');
+    }
+
+    #[DataProvider('provideNonPositiveAmounts')]
+    public function testNonPositiveAmountsShowFieldErrorWithoutCreatingOperations(
+        string $field,
+        string $amountFrom,
+        string $amountTo,
+        string $toCurrency,
+    ): void {
+        $fromAccount = $this->createAccount('PLN');
+        $toAccount = $this->createAccount($toCurrency);
+        $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+        $crawler = $this->client->request('GET', '/transfer/new');
+        $form = $crawler->filter('#transfer_form button[type="submit"]')->form();
+
+        $this->client->submit($form, [
+            'transfer[fromAccount]' => (string) $fromAccount->getId(),
+            'transfer[toAccount]' => (string) $toAccount->getId(),
+            'transfer[amountFrom]' => $amountFrom,
+            'transfer[amountTo]' => $amountTo,
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('#transfer_'.$field.'_error1', 'The transfer amount must be greater than zero.');
+        self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
+    /**
+     * @return array<string, array{string, string, string, string}>
+     */
+    public static function provideNonPositiveAmounts(): array
+    {
+        return [
+            'negative debit' => ['amountFrom', '-100', '', 'PLN'],
+            'zero debit' => ['amountFrom', '0', '', 'PLN'],
+            'debit rounded to zero' => ['amountFrom', '0.004', '', 'PLN'],
+            'negative credit in same currency' => ['amountTo', '100', '-25', 'PLN'],
+
+            'negative credit in exchange' => ['amountTo', '100', '-25', 'CHF'],
+            'negative debit in exchange' => ['amountFrom', '-100', '25', 'CHF'],
+            'negative debit and credit in exchange (message at from field)' => ['amountFrom', '-100', '-25', 'CHF'],
+            'negative debit and credit in exchange (message at to field)' => ['amountTo', '-100', '-25', 'CHF'],
+
+            'zero credit' => ['amountTo', '100', '0', 'CHF'],
+            'zero debit in exchange' => ['amountFrom', '0', '25', 'CHF'],
+            'credit rounded to zero' => ['amountTo', '100', '0.004', 'CHF'],
+            'debit rounded to zero in exchange' => ['amountFrom', '0.004', '0.01', 'CHF'],
+        ];
     }
 
     private function createAccount(string $currencyCode): Account

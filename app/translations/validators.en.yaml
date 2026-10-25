@@ -74,6 +74,7 @@ rate:
 
 transfer:
     amount_from_required: 'Please enter the amount to transfer.'
+    amount_must_be_positive: 'The transfer amount must be greater than zero.'
     amount_to_required_for_currency_exchange: 'Please enter the amount to receive when exchanging between different currencies.'
     from_account_required: 'Please select the source account.'
     to_account_required: 'Please select the destination account.'
