@@ -165,6 +165,28 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         self::assertSame(16800.0, $result[$formName][$date->format('Y-m-d')]);
     }
 
+    public function testSaveStoresOnlyTheCalendarDateAndReloadsAtMidnight(): void
+    {
+        $price = $this->createGoldPrice(
+            $this->createGoldAsset(),
+            new DateTimeImmutable('2026-10-26 12:34:56'),
+            500000,
+        );
+        $id = $price->getId();
+
+        $storedDate = $this->em()->getConnection()->fetchOne(
+            'SELECT price_date FROM gold_price WHERE id = ?',
+            [$id],
+        );
+        self::assertSame('2026-10-26', $storedDate);
+
+        $this->em()->clear();
+        $reloaded = $this->repository->find($id);
+
+        self::assertNotNull($reloaded);
+        self::assertSame('2026-10-26 00:00:00', $reloaded->getPriceDate()->format('Y-m-d H:i:s'));
+    }
+
     private function createGoldAsset(): GoldAsset
     {
         $goldForm = new GoldForm('Test Form ' . uniqid());

@@ -70,15 +70,24 @@ final class AccountOperationTest extends TestCase
         $account = $this->createAccount();
         $contractor = new Contractor('Test Contractor');
         $currency = new Currency('PLN');
-        $date = new \DateTimeImmutable();
+        $date = new \DateTimeImmutable('2026-10-26 12:34:56');
 
         $operation = new AccountOperation($account, $contractor, $date, -15000, $currency);
 
         self::assertSame($account, $operation->getAccount());
         self::assertSame($contractor, $operation->getContractor());
-        self::assertSame($date, $operation->getOperationDate());
+        self::assertSame('2026-10-26 00:00:00', $operation->getOperationDate()->format('Y-m-d H:i:s'));
         self::assertSame(-15000, $operation->getAmount());
         self::assertSame($currency, $operation->getCurrency());
+    }
+
+    public function testSetOperationDateKeepsTheDayAndDiscardsTheTime(): void
+    {
+        $operation = $this->createOperation();
+
+        $operation->setOperationDate(new \DateTimeImmutable('2028-02-29 18:30:45'));
+
+        self::assertSame('2028-02-29 00:00:00', $operation->getOperationDate()->format('Y-m-d H:i:s'));
     }
 
     public function testConstructorDefaultsToNoDescriptionUnconfirmedAndNoTransaction(): void

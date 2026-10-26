@@ -181,6 +181,29 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         self::assertSame(1, $queryCounter->count, 'Expected exactly one query.');
     }
 
+    public function testSaveStoresOnlyTheCalendarDateAndReloadsAtMidnight(): void
+    {
+        $rate = $this->createRate(
+            $this->createBank(),
+            $this->findOrCreateCurrency('CHF'),
+            new DateTimeImmutable('2026-10-26 12:34:56'),
+            43210,
+        );
+        $id = $rate->getId();
+
+        $storedDate = $this->em()->getConnection()->fetchOne(
+            'SELECT rate_date FROM currency_exchange_rate WHERE id = ?',
+            [$id],
+        );
+        self::assertSame('2026-10-26', $storedDate);
+
+        $this->em()->clear();
+        $reloaded = $this->repository->find($id);
+
+        self::assertNotNull($reloaded);
+        self::assertSame('2026-10-26 00:00:00', $reloaded->getRateDate()->format('Y-m-d H:i:s'));
+    }
+
     private function createBank(): Bank
     {
         $bank = new Bank('Test Bank ' . uniqid());

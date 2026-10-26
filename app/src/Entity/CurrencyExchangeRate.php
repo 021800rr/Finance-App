@@ -36,7 +36,7 @@ class CurrencyExchangeRate
     #[ORM\JoinColumn(name: 'currency_code', referencedColumnName: 'code', nullable: false, onDelete: 'RESTRICT')]
     private Currency $currency;
 
-    #[ORM\Column(name: 'rate_date', type: 'datetime_immutable')]
+    #[ORM\Column(name: 'rate_date', type: 'date_immutable')]
     #[Assert\NotBlank(message: 'common.date_not_blank')]
     #[BusinessDate]
     private \DateTimeImmutable $rateDate;
@@ -51,7 +51,7 @@ class CurrencyExchangeRate
 
         $this->bank = $bank;
         $this->currency = $currency;
-        $this->rateDate = $rateDate;
+        $this->rateDate = $rateDate->setTime(0, 0, 0);
         $this->setRateToPln($rateToPln);
     }
 

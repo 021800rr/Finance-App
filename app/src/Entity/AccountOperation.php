@@ -38,7 +38,7 @@ class AccountOperation
     #[ORM\JoinColumn(name: 'contractor_id', nullable: false, onDelete: 'RESTRICT')]
     private Contractor $contractor;
 
-    #[ORM\Column(type: 'datetime_immutable')]
+    #[ORM\Column(type: 'date_immutable')]
     #[Assert\NotBlank(message: 'common.date_not_blank')]
     #[BusinessDate]
     private \DateTimeImmutable $operationDate;
@@ -111,7 +111,7 @@ class AccountOperation
     {
         BusinessDateRange::assertContains($operationDate);
 
-        $this->operationDate = $operationDate;
+        $this->operationDate = $operationDate->setTime(0, 0, 0);
     }
 
     public function getDescription(): ?string

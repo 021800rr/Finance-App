@@ -32,7 +32,7 @@ class GoldPrice
     #[ORM\JoinColumn(name: 'gold_asset_id', nullable: false, onDelete: 'CASCADE')]
     private GoldAsset $goldAsset;
 
-    #[ORM\Column(type: 'datetime_immutable')]
+    #[ORM\Column(type: 'date_immutable')]
     #[Assert\NotBlank(message: 'common.date_not_blank')]
     #[BusinessDate]
     private \DateTimeImmutable $priceDate;
@@ -55,7 +55,7 @@ class GoldPrice
         self::assertInRange($pricePln, 1, 99999999, 'Price');
 
         $this->goldAsset = $goldAsset;
-        $this->priceDate = $priceDate;
+        $this->priceDate = $priceDate->setTime(0, 0, 0);
         $this->pricePln = $pricePln;
         $this->currency = $currency;
     }

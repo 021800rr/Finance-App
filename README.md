@@ -10,7 +10,7 @@ Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazj�
 
 - **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
 - **PHPStan na poziomie 9**.
-- **~891 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
+- **~897 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
 - **PHP CS Fixer** wymuszający spójny styl kodu.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
 - **Świadomy model bezpieczeństwa** — hasła hashowane, throttling logowania, jawnie opisane granice (patrz sekcja [Bezpieczeństwo](#bezpieczeństwo)).
@@ -73,6 +73,12 @@ Formularze pokazują błąd przy polu daty, a encje pilnują zakresu także przy
 API przyjmuje wyłącznie istniejące daty w formacie `YYYY-MM-DD` (np. `2028-02-29`),
 bez godziny i określeń względnych takich jak `tomorrow`. Nieistniejące daty (np. `2026-02-31`)
 oraz daty poza zakresem są odrzucane z kodem `422`, bez zapisywania zmian.
+
+**Najmniejszą jednostką czasu dla dat biznesowych jest dzień.** Dotyczy to operacji na koncie
+(także przelewów i zaplanowanych opłat stałych), cen złota oraz kursów walut.
+W bazie `operation_date`, `price_date` i `rate_date` mają typ `DATE`, a encje zerują czas przekazany z kodu PHP.
+Saldo do dziś obejmuje wszystkie operacje z datą dzisiejszą i wcześniejszą.
+Czasy utworzenia i modyfikacji rekordów (`created_at`, `updated_at`) są przechowywane z godziną.
 
 Nowe operacje na koncie dodajemy bez znaku, jeśli to **przychód** na koncie: "309 zł refundacja /zwrot"
 lub ze znakiem `-` jeżeli to **wydatek** z konta: "-309 zł zakup okularów"

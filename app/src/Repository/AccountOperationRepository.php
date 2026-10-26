@@ -144,7 +144,7 @@ final class AccountOperationRepository extends ServiceEntityRepository
             ->andWhere('o.amount = :amount')
             ->setParameter('account', $account)
             ->setParameter('contractor', $contractor)
-            ->setParameter('date', $date)
+            ->setParameter('date', $date, Types::DATE_IMMUTABLE)
             ->setParameter('amount', $amount)
             ->getQuery()
             ->getSingleScalarResult();

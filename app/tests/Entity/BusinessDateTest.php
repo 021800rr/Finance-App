@@ -40,7 +40,8 @@ final class BusinessDateTest extends TestCase
             $entity instanceof CurrencyExchangeRate => $entity->getRateDate(),
         };
 
-        self::assertSame($date, $storedDate);
+        self::assertSame($date->format('Y-m-d'), $storedDate->format('Y-m-d'));
+        self::assertSame('00:00:00', $storedDate->format('H:i:s'));
     }
 
     #[DataProvider('invalidDates')]
@@ -49,6 +50,7 @@ final class BusinessDateTest extends TestCase
         $date = new \DateTimeImmutable('2026-01-15');
         $operation = $this->createEntity(AccountOperation::class, $date);
         self::assertInstanceOf(AccountOperation::class, $operation);
+        $storedDate = $operation->getOperationDate();
 
         try {
             $operation->setOperationDate(new \DateTimeImmutable($value));
@@ -57,7 +59,7 @@ final class BusinessDateTest extends TestCase
             self::assertSame('Date must be between 2025-01-01 and 2070-12-31 (inclusive).', $exception->getMessage());
         }
 
-        self::assertSame($date, $operation->getOperationDate());
+        self::assertSame($storedDate, $operation->getOperationDate());
     }
 
     /**

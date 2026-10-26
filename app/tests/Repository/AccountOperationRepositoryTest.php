@@ -376,6 +376,27 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         self::assertTrue($result);
     }
 
+    public function testExistsForContractorAndDateIgnoresTheTime(): void
+    {
+        $account = $this->createAccount();
+        $contractor = $this->createContractorWithName('Rent');
+        $this->createOperationWithContractor(
+            $account,
+            15050,
+            new DateTimeImmutable('2026-03-15 12:00:00'),
+            $contractor,
+        );
+
+        $result = $this->repository->existsForContractorAndDate(
+            $account,
+            $contractor,
+            new DateTimeImmutable('2026-03-15 23:59:59'),
+            15050,
+        );
+
+        self::assertTrue($result);
+    }
+
     public function testExistsForContractorAndDateReturnsFalseForDifferentAmount(): void
     {
         $account = $this->createAccount();
@@ -457,6 +478,42 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $sums = $this->repository->sumBalancesForAccount($this->createAccount(), new DateTimeImmutable('today'));
 
         self::assertSame(['total' => 0, 'upToToday' => 0], $sums);
+    }
+
+    public function testSumBalancesForAccountIncludesTheWholeDayAndExcludesTomorrow(): void
+    {
+        $account = $this->createAccount();
+        $this->createOperation($account, 1000, new DateTimeImmutable('2026-10-26 00:00:00'), 'midnight');
+        $this->createOperation($account, 12345, new DateTimeImmutable('2026-10-26 12:00:00'), 'noon');
+        $this->createOperation($account, -2345, new DateTimeImmutable('2026-10-26 23:59:59'), 'end of day');
+        $this->createOperation($account, 5000, new DateTimeImmutable('2026-10-27 00:00:00'), 'tomorrow');
+
+        $sums = $this->repository->sumBalancesForAccount($account, new DateTimeImmutable('2026-10-26'));
+
+        self::assertSame(['total' => 16000, 'upToToday' => 11000], $sums);
+    }
+
+    public function testSaveStoresOnlyTheCalendarDateAndReloadsAtMidnight(): void
+    {
+        $operation = $this->createOperation(
+            $this->createAccount(),
+            12345,
+            new DateTimeImmutable('2026-10-26 12:34:56'),
+            'date without time',
+        );
+        $id = $operation->getId();
+
+        $storedDate = $this->em()->getConnection()->fetchOne(
+            'SELECT operation_date FROM account_operation WHERE id = ?',
+            [$id],
+        );
+        self::assertSame('2026-10-26', $storedDate);
+
+        $this->em()->clear();
+        $reloaded = $this->repository->find($id);
+
+        self::assertNotNull($reloaded);
+        self::assertSame('2026-10-26 00:00:00', $reloaded->getOperationDate()->format('Y-m-d H:i:s'));
     }
 
     public function testSumBalancesForAccountIgnoresOtherAccounts(): void

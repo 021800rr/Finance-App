@@ -47,13 +47,13 @@ final class CurrencyExchangeRateTest extends TestCase
     {
         $bank = new Bank('Test Bank');
         $currency = new Currency('CHF');
-        $date = new \DateTimeImmutable();
+        $date = new \DateTimeImmutable('2026-10-26 12:34:56');
 
         $rate = new CurrencyExchangeRate($bank, $currency, $date, 41234);
 
         self::assertSame($bank, $rate->getBank());
         self::assertSame($currency, $rate->getCurrency());
-        self::assertSame($date, $rate->getRateDate());
+        self::assertSame('2026-10-26 00:00:00', $rate->getRateDate()->format('Y-m-d H:i:s'));
         self::assertSame(41234, $rate->getRateToPln());
     }
 
