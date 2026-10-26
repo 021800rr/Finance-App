@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\CurrencyExchangeRateResource;
 use App\Repository\CurrencyExchangeRateRepository;
+use Doctrine\DBAL\Exception;
 
 /**
  * @implements ProviderInterface<CurrencyExchangeRateResource>
@@ -23,11 +24,13 @@ final readonly class CurrencyExchangeRateHistoryProvider implements ProviderInte
      * @param array<string, mixed> $context
      *
      * @return list<CurrencyExchangeRateResource>
+     *
+     * @throws Exception
      */
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array
     {
-        $rates = $this->currencyExchangeRateRepository->findChartRates();
+        $rates = $this->currencyExchangeRateRepository->findDataForChart();
 
-        return array_values(array_map(CurrencyExchangeRateResource::fromEntity(...), $rates));
+        return array_map(CurrencyExchangeRateResource::fromRow(...), $rates);
     }
 }

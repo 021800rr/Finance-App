@@ -54,7 +54,7 @@ final class CurrencyExchangeRateProviderTest extends KernelTestCase
         self::assertNull($result);
     }
 
-    public function testProvideCollectionOrdersByIdDescending(): void
+    public function testProvideCollectionOrdersSameDayRatesByIdDescending(): void
     {
         $first = $this->createRate();
         $second = $this->createRate();
@@ -76,7 +76,7 @@ final class CurrencyExchangeRateProviderTest extends KernelTestCase
     public function testProvideCollectionRespectsTheLatestLimit(): void
     {
         $ids = [];
-        // One more than findLatestOrdered()'s default limit (Paginator::DEFAULT_PER_PAGE, 20).
+        // One more than findDataForList()'s default limit (Paginator::DEFAULT_PER_PAGE, 20).
         for ($i = 0; $i < 21; ++$i) {
             $ids[] = $this->createRate()->getId();
         }

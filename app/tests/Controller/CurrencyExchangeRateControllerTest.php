@@ -42,6 +42,36 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
     }
 
+    public function testChartGroupsDailyRatesByBankAndDateAndConvertsMinorUnits(): void
+    {
+        $bankA = $this->createBank();
+        $bankB = $this->createBank();
+        $chf = $this->getOrCreateCurrency('CHF');
+        $eur = $this->getOrCreateCurrency('EUR');
+
+        foreach ([
+            [$bankA, $chf, '2026-10-26', 45000],
+            [$bankA, $chf, '2026-10-26', 43210],
+            [$bankB, $chf, '2026-10-26', 44000],
+            [$bankA, $eur, '2026-10-26', 48000],
+            [$bankA, $chf, '2026-10-25', 91000],
+        ] as [$bank, $currency, $date, $minorUnits]) {
+            $rate = new CurrencyExchangeRate($bank, $currency, new DateTimeImmutable($date), $minorUnits);
+            $this->em()->persist($rate);
+        }
+        $this->em()->flush();
+
+        $crawler = $this->client->request('GET', '/rate');
+
+        self::assertResponseIsSuccessful();
+        $chartJson = $crawler->filter('#ratesChart')->attr('data-chart');
+        self::assertIsString($chartJson);
+        $chart = json_decode($chartJson, true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($chart);
+        self::assertSame(['2026-10-25' => 9.1, '2026-10-26' => 4.321], $chart[$bankA->getName()]);
+        self::assertSame(['2026-10-26' => 4.4], $chart[$bankB->getName()]);
+    }
+
     public function testIndexSubmittingWithValidDataCreatesRateAndRedirects(): void
     {
         $bank = $this->createBankWithForeignCurrencyAccount();

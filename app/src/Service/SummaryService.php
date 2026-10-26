@@ -81,9 +81,9 @@ final readonly class SummaryService
     public function getSummary(bool $showHidden = false): array
     {
         $accounts = $this->fetchAccounts($showHidden);
-        $ratesByBank = $this->currencyExchangeRateRepository->fetchLatestRatesToPlnByBank();
+        $ratesByBank = $this->currencyExchangeRateRepository->fetchSummary();
         $goldValue = Money::fromMinorUnits(
-            minorUnits: $this->goldPriceRepository->fetchLatestTotalPricePln(),
+            minorUnits: $this->goldPriceRepository->fetchSummary(),
             currencyCode: Currencies::SETTLEMENT_CURRENCY_CODE
         );
 

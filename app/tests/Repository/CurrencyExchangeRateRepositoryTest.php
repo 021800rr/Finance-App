@@ -35,7 +35,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         $this->closeEntityManager();
     }
 
-    public function testFetchLatestRatesToPlnByBankReturnsExpectedShape(): void
+    public function testFetchSummaryReturnsExpectedShape(): void
     {
         $currencyRepository = $this->em()->getRepository(Currency::class);
         $currency = $currencyRepository->findOneBy(['code' => 'CHF']);
@@ -56,27 +56,57 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
 
         $this->em()->flush();
 
-        $result = $this->repository->fetchLatestRatesToPlnByBank();
+        $result = $this->repository->fetchSummary();
 
         self::assertArrayHasKey($testBankName, $result);
         self::assertArrayHasKey('CHF', $result[$testBankName]);
         self::assertSame(455, $result[$testBankName]['CHF']);
     }
 
-    public function testFindLatestOrderedReturnsResultsOrderedByIdDescending(): void
+    public function testFindDataForListReturnsResultsOrderedByDateThenIdDescending(): void
     {
         $bank = $this->createBank();
         $currency = $this->findOrCreateCurrency('CHF');
 
-        $older = $this->createRate($bank, $currency, new DateTimeImmutable('-5 days'), 400);
-        $newer = $this->createRate($bank, $currency, new DateTimeImmutable('-1 day'), 450);
+        $day = new DateTimeImmutable('2026-10-26');
+        $first = $this->createRate($bank, $currency, $day, 45000);
+        $second = $this->createRate($bank, $currency, $day, 44000);
+        $backfilled = $this->createRate($bank, $currency, new DateTimeImmutable('2026-10-25'), 40000);
 
-        $result = $this->repository->findLatestOrdered();
+        $result = $this->repository->findDataForList();
 
-        self::assertSame($newer->getId(), $result[0]->getId());
+        self::assertSame(
+            [$second->getId(), $first->getId(), $backfilled->getId()],
+            array_map(static fn (CurrencyExchangeRate $rate): int => $rate->getId(), $result),
+        );
     }
 
-    public function testFindLatestOrderedRespectsDefaultLimit(): void
+    public function testCurrentRatesAndChartUseDateThenIdPerBankAndCurrency(): void
+    {
+        $bankA = $this->createBank();
+        $bankB = $this->createBank();
+        $chf = $this->findOrCreateCurrency('CHF');
+        $eur = $this->findOrCreateCurrency('EUR');
+        $day = new DateTimeImmutable('2026-10-26');
+
+        $this->createRate($bankA, $chf, $day, 45000);
+        $latestA = $this->createRate($bankA, $chf, $day, 43000);
+        $latestB = $this->createRate($bankB, $chf, $day, 44000);
+        $this->createRate($bankA, $eur, $day, 48000);
+        $this->createRate($bankA, $eur, $day, 47000);
+        $historical = $this->createRate($bankA, $chf, new DateTimeImmutable('2026-10-25'), 90000);
+        $this->createRate($bankA, $eur, new DateTimeImmutable('2026-10-25'), 80000);
+
+        $rates = $this->repository->fetchSummary();
+        $chart = $this->repository->findDataForChart();
+
+        self::assertSame(['CHF' => 43000, 'EUR' => 47000], $rates[$bankA->getName()]);
+        self::assertSame(['CHF' => 44000], $rates[$bankB->getName()]);
+        self::assertSame([$historical->getId(), $latestA->getId(), $latestB->getId()], array_column($chart, 'id'));
+        self::assertSame([90000, 43000, 44000], array_column($chart, 'rate_to_pln_minor_units'));
+    }
+
+    public function testFindDataForListRespectsDefaultLimit(): void
     {
         $bank = $this->createBank();
         $currency = $this->findOrCreateCurrency('CHF');
@@ -85,12 +115,12 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
             $this->createRate($bank, $currency, new DateTimeImmutable("-{$i} days"), 400 + $i);
         }
 
-        $result = $this->repository->findLatestOrdered();
+        $result = $this->repository->findDataForList();
 
         self::assertCount(20, $result);
     }
 
-    public function testFindLatestOrderedRespectsExplicitLimit(): void
+    public function testFindDataForListRespectsExplicitLimit(): void
     {
         $bank = $this->createBank();
         $currency = $this->findOrCreateCurrency('CHF');
@@ -99,14 +129,14 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
             $this->createRate($bank, $currency, new DateTimeImmutable("-{$i} days"), 400 + $i);
         }
 
-        $result = $this->repository->findLatestOrdered(10);
+        $result = $this->repository->findDataForList(10);
 
         self::assertCount(10, $result);
     }
 
-    public function testFindLatestOrderedEagerLoadsBankAndCurrencyWithoutExtraQueries(): void
+    public function testFindDataForListEagerLoadsBankAndCurrencyWithoutExtraQueries(): void
     {
-        // Regression guard: findLatestOrdered() must addSelect('b', 'c'), not just join() them —
+        // Regression guard: findDataForList() must addSelect('b', 'c'), not just join() them —
         // without addSelect, reading bank.name / currency.code (as the Twig list does) would trigger
         // one lazy-load query per distinct bank/currency instead of zero.
         for ($i = 0; $i < 3; ++$i) {
@@ -122,7 +152,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         $queryCounter = self::getContainer()->get(QueryCounter::class);
         $queryCounter->reset();
 
-        $result = $this->repository->findLatestOrdered();
+        $result = $this->repository->findDataForList();
         foreach ($result as $rate) {
             // Simulates exactly what templates/rate/index.html.twig reads: r.bank.name, r.currency.code.
             $rate->getBank()->getName();
@@ -132,37 +162,44 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         self::assertSame(1, $queryCounter->count, 'Expected exactly one query; bank/currency access triggered extra lazy-load queries.');
     }
 
-    public function testFindChartRatesGroupedReturnsOnlyChfRates(): void
+    public function testFindAllHistoricalRatesReturnsOnlyChfRates(): void
     {
         $bank = $this->createBank();
         $chf = $this->findOrCreateCurrency('CHF');
-        $pln = $this->findOrCreateCurrency('PLN');
+        $eur = $this->findOrCreateCurrency('EUR');
 
-        $this->createRate($bank, $chf, new DateTimeImmutable('-1 day'), 45500);
+        $tracked = $this->createRate($bank, $chf, new DateTimeImmutable('-1 day'), 45500);
+        $this->createRate($bank, $eur, new DateTimeImmutable('-1 day'), 42000);
 
-        $result = $this->repository->findChartRatesGrouped();
+        $result = $this->repository->findDataForChart();
 
-        self::assertArrayHasKey($bank->getName(), $result);
+        self::assertSame([$tracked->getId()], array_column($result, 'id'));
+        self::assertSame(['CHF'], array_column($result, 'currency_code'));
     }
 
-    public function testFindChartRatesGroupedConvertsMinorUnitsToDecimal(): void
+    public function testFindAllHistoricalRatesReturnsScalarRowsWithMinorUnits(): void
     {
         $bank = $this->createBank();
         $currency = $this->findOrCreateCurrency('CHF');
         $date = new DateTimeImmutable('-1 day');
 
-        $this->createRate($bank, $currency, $date, 45500);
+        $rate = $this->createRate($bank, $currency, $date, 45500);
 
-        $result = $this->repository->findChartRatesGrouped();
+        $result = $this->repository->findDataForChart();
 
-        self::assertSame(4.55, $result[$bank->getName()][$date->format('Y-m-d')]);
+        self::assertSame([[
+            'id' => $rate->getId(),
+            'bank_id' => $bank->getId(),
+            'bank_name' => $bank->getName(),
+            'currency_code' => 'CHF',
+            'rate_date' => $date->format('Y-m-d'),
+            'rate_to_pln_minor_units' => 45500,
+        ]], $result);
     }
 
-    public function testFindChartRatesGroupedExecutesExactlyOneQuery(): void
+    public function testFindAllHistoricalRatesExecutesExactlyOneQuery(): void
     {
-        // Regression guard: the method selects scalar columns (b.name, r.rateDate, r.rateToPln)
-        // instead of hydrating entities, so there's no proxy to lazily initialize later. Guards
-        // against a future refactor (e.g. selecting entities instead of scalars) reintroducing N+1.
+        // Reading the selected daily rates and bank names must use a single query.
         for ($i = 0; $i < 3; ++$i) {
             $this->createRate(
                 $this->createBank(),
@@ -175,8 +212,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         /** @var QueryCounter $queryCounter */
         $queryCounter = self::getContainer()->get(QueryCounter::class);
         $queryCounter->reset();
-
-        $this->repository->findChartRatesGrouped();
+        $this->repository->findDataForChart();
 
         self::assertSame(1, $queryCounter->count, 'Expected exactly one query.');
     }

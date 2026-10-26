@@ -8,7 +8,9 @@ use App\Constant\DatabaseLimits;
 use App\Entity\CurrencyExchangeRate;
 use App\Form\CurrencyExchangeRateType;
 use App\Repository\CurrencyExchangeRateRepository;
+use App\Service\CurrencyExchangeRateChartDataBuilder;
 use App\Service\CurrencyExchangeRateFactory;
+use Doctrine\DBAL\Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,11 +20,15 @@ use Symfony\Component\Routing\Requirement\Requirement;
 #[Route('/rate')]
 class CurrencyExchangeRateController extends AbstractController
 {
+    /**
+     * @throws Exception
+     */
     #[Route(path: '', name: 'rate', methods: ['GET', 'POST'])]
     public function index(
         Request $request,
         CurrencyExchangeRateRepository $currencyExchangeRateRepository,
         CurrencyExchangeRateFactory $currencyExchangeRateFactory,
+        CurrencyExchangeRateChartDataBuilder $chartDataBuilder,
     ): Response {
         $form = $this->createForm(CurrencyExchangeRateType::class);
         $form->handleRequest($request);
@@ -35,8 +41,8 @@ class CurrencyExchangeRateController extends AbstractController
             return $this->redirectToRoute('rate');
         }
 
-        $rates = $currencyExchangeRateRepository->findLatestOrdered();
-        $chartData = $currencyExchangeRateRepository->findChartRatesGrouped();
+        $rates = $currencyExchangeRateRepository->findDataForList();
+        $chartData = $chartDataBuilder->build($currencyExchangeRateRepository->findDataForChart());
 
         return $this->render('rate/index.html.twig', [
             'form' => $form->createView(),

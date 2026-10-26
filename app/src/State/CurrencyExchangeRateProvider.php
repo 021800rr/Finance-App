@@ -32,7 +32,7 @@ final readonly class CurrencyExchangeRateProvider implements ProviderInterface
             return $rate ? CurrencyExchangeRateResource::fromEntity($rate) : null;
         }
 
-        $rates = $this->currencyExchangeRateRepository->findLatestOrdered();
+        $rates = $this->currencyExchangeRateRepository->findDataForList();
 
         return array_values(array_map(CurrencyExchangeRateResource::fromEntity(...), $rates));
     }

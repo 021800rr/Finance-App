@@ -7,13 +7,21 @@ namespace App\Repository;
 use App\Constant\Currencies;
 use App\Entity\CurrencyExchangeRate;
 use App\Service\Paginator;
-use App\ValueObject\Money;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Exception;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<CurrencyExchangeRate>
+ *
+ * @phpstan-type ChartRateRow array{
+ *     id: int|string,
+ *     bank_id: int|string,
+ *     bank_name: string,
+ *     currency_code: string,
+ *     rate_date: string,
+ *     rate_to_pln_minor_units: int|string,
+ * }
  */
 final class CurrencyExchangeRateRepository extends ServiceEntityRepository
 {
@@ -31,22 +39,16 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
      *
      * @throws Exception
      */
-    public function fetchLatestRatesToPlnByBank(): array
+    public function fetchSummary(): array
     {
+        $latestRates = LatestQuoteQuery::build('currency_exchange_rate', ['bank_id', 'currency_code'], 'rate_date');
+
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
             <<<SQL
-            SELECT b.name AS bank, c.code AS currency, r.rate_to_pln_minor_units
-            FROM currency_exchange_rate r
-            JOIN currency c ON c.code = r.currency_code
-            JOIN bank b ON b.id = r.bank_id
-            WHERE r.id = (
-                SELECT r2.id
-                FROM currency_exchange_rate r2
-                WHERE r2.currency_code = r.currency_code
-                  AND r2.bank_id = r.bank_id
-                ORDER BY r2.id DESC
-                LIMIT 1
-            )
+            SELECT b.name AS bank, latest.currency_code AS currency, latest.rate_to_pln_minor_units
+            FROM ({$latestRates}) latest
+            JOIN bank b ON b.id = latest.bank_id
+            ORDER BY b.name, latest.currency_code
             SQL
         );
 
@@ -66,23 +68,20 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
     }
 
     /**
-     * Most recent rates, newest-added first (ordered by id DESC, so the most recently added rate
-     * wins regardless of rate date). Shared verbatim by the web list and the API's GetCollection —
-     * both are the same "page 1" view, no page 2 ever requested, so neither bothers with pagination
-     * — and both read bank.name/currency.code, not just identifiers, so bank/currency are eagerly
-     * selected (addSelect) to avoid N+1 lazy-loading one query per distinct bank. Contrast with
-     * findChartRates(), which only reads identifiers and therefore needs no join/select at all.
+     * Rate entries ordered by date, then ID, newest first. Shared by the web list and the API.
+     * Eagerly load bank and currency because the web list displays their names/codes.
      *
      * @return CurrencyExchangeRate[]
      */
-    public function findLatestOrdered(int $limit = Paginator::DEFAULT_PER_PAGE): array
+    public function findDataForList(int $limit = Paginator::DEFAULT_PER_PAGE): array
     {
         /** @var CurrencyExchangeRate[] $result */
         $result = $this->createQueryBuilder('r')
             ->addSelect('b', 'c')
             ->join('r.bank', 'b')
             ->join('r.currency', 'c')
-            ->orderBy('r.id', 'DESC')
+            ->orderBy('r.rateDate', 'DESC')
+            ->addOrderBy('r.id', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -91,63 +90,35 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
     }
 
     /**
-     * Full historical rates for the tracked foreign currency, as flat, ungrouped entities.
-     * Unlike findChartRatesGrouped(), does not group/dedup by bank/date, so the caller stays free
-     * to shape the data however it needs (used by the API's chart/history endpoint, which returns
-     * a normalized, flat resource and leaves grouping to the client).
+     * Historical rates for the tracked currency as scalar rows, shared by the API and Twig chart.
+     * Selects the highest ID per bank/currency/day for both callers.
+     * Dates are YYYY-MM-DD and rates remain in minor units for callers to format.
      *
-     * Filtered to Currencies::TRACKED_FOREIGN_CURRENCY_CODE via IDENTITY(r.currency) on the owning
-     * side's FK column — no join needed, since bank_id/currency_code already live on this table and
-     * fromEntity() only ever reads identifiers (see CurrencyExchangeRateResource).
+     * @return list<ChartRateRow>
      *
-     * @return CurrencyExchangeRate[]
+     * @throws Exception
      */
-    public function findChartRates(): array
+    public function findDataForChart(): array
     {
-        /** @var CurrencyExchangeRate[] $result */
-        $result = $this->createQueryBuilder('r')
-            ->where('IDENTITY(r.currency) = :currency')
-            ->setParameter('currency', Currencies::TRACKED_FOREIGN_CURRENCY_CODE)
-            ->orderBy('r.rateDate', 'ASC')
-            ->addOrderBy('r.id', 'ASC')
-            ->getQuery()
-            ->getResult();
+        $dailyRates = LatestQuoteQuery::build(
+            'currency_exchange_rate',
+            ['bank_id', 'currency_code'],
+            'rate_date',
+            perDay: true,
+        );
 
-        return $result;
-    }
+        /** @var list<ChartRateRow> $rates */
+        $rates = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            <<<SQL
+            SELECT r.id, r.bank_id, b.name AS bank_name, r.currency_code, r.rate_date, r.rate_to_pln_minor_units
+            FROM ({$dailyRates}) r
+            JOIN bank b ON b.id = r.bank_id
+            WHERE r.currency_code = :currency
+            ORDER BY r.rate_date, r.id
+            SQL,
+            ['currency' => Currencies::TRACKED_FOREIGN_CURRENCY_CODE],
+        );
 
-    /**
-     * Full historical rates for the tracked foreign currency, grouped and deduped by bank/date —
-     * ready to plot directly (contrast with findChartRates(), which returns flat, ungrouped entities).
-     *
-     * @return array<string, array<string, float>> Bank name => [date => rate]
-     */
-    public function findChartRatesGrouped(): array
-    {
-        /** @var list<array{bankName: string, rateDate: \DateTimeImmutable, rateToPln: string}> $rates */
-        $rates = $this->createQueryBuilder('r')
-            ->select('b.name as bankName, r.rateDate, r.rateToPln')
-            ->join('r.bank', 'b')
-            ->where('IDENTITY(r.currency) = :currency')
-            ->setParameter('currency', Currencies::TRACKED_FOREIGN_CURRENCY_CODE)
-            ->orderBy('r.rateDate', 'ASC')
-            ->addOrderBy('r.id', 'ASC')
-            ->getQuery()
-            ->getResult();
-
-        // When several rates exist for the same day, later iterations (higher id) overwrite
-        // earlier ones, so the most recently added rate wins per bank/day.
-        $data = [];
-        foreach ($rates as $rate) {
-            $bankName = $rate['bankName'];
-            $date = $rate['rateDate']->format('Y-m-d');
-            $data[$bankName][$date] = (float) Money::fromMinorUnits(
-                (int) $rate['rateToPln'],
-                Currencies::SETTLEMENT_CURRENCY_CODE,
-                Currencies::EXCHANGE_RATE_SCALE
-            )->toDecimalString();
-        }
-
-        return $data;
+        return $rates;
     }
 }

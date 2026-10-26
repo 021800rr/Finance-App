@@ -9,6 +9,7 @@ use App\Entity\GoldPrice;
 use App\Form\GoldPriceType;
 use App\Repository\GoldPriceRepository;
 use App\Service\GoldPriceFactory;
+use Doctrine\DBAL\Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,6 +19,9 @@ use Symfony\Component\Routing\Requirement\Requirement;
 #[Route('/gold-prices')]
 class GoldPriceController extends AbstractController
 {
+    /**
+     * @throws Exception
+     */
     #[Route(path: '', name: 'gold_prices', methods: ['GET', 'POST'])]
     public function index(
         Request $request,
@@ -35,8 +39,8 @@ class GoldPriceController extends AbstractController
             return $this->redirectToRoute('gold_prices');
         }
 
-        $prices = $goldPriceRepository->findLatestOrdered();
-        $chartData = $goldPriceRepository->findHistoricalPricesForChart();
+        $prices = $goldPriceRepository->findDataForList();
+        $chartData = $goldPriceRepository->findDataForChart();
 
         return $this->render('gold_price/index.html.twig', [
             'form' => $form->createView(),

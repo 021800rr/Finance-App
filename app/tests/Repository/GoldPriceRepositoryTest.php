@@ -36,19 +36,19 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         $this->closeEntityManager();
     }
 
-    public function testFetchLatestTotalPricePlnSumsOnlyLatestPricePerAsset(): void
+    public function testFetchSummarySumsOnlyLatestPricePerAsset(): void
     {
         $asset = $this->createGoldAsset();
 
         $this->createGoldPrice($asset, new DateTimeImmutable('-5 days'), 800000);
         $this->createGoldPrice($asset, new DateTimeImmutable('-1 day'), 850000);
 
-        $total = $this->repository->fetchLatestTotalPricePln();
+        $total = $this->repository->fetchSummary();
 
         self::assertSame(850000, $total);
     }
 
-    public function testFetchLatestTotalPricePlnSumsAcrossMultipleAssets(): void
+    public function testFetchSummarySumsAcrossMultipleAssets(): void
     {
         $assetA = $this->createGoldAsset();
         $assetB = $this->createGoldAsset();
@@ -56,12 +56,12 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         $this->createGoldPrice($assetA, new DateTimeImmutable('-1 day'), 800000);
         $this->createGoldPrice($assetB, new DateTimeImmutable('-1 day'), 500000);
 
-        $total = $this->repository->fetchLatestTotalPricePln();
+        $total = $this->repository->fetchSummary();
 
         self::assertSame(1300000, $total);
     }
 
-    public function testFetchLatestTotalPricePlnUsesHighestIdToBreakLatestDateTiesPerAsset(): void
+    public function testFetchSummaryUsesHighestIdToBreakLatestDateTiesPerAsset(): void
     {
         $assetA = $this->createGoldAsset();
         $assetB = $this->createGoldAsset();
@@ -78,32 +78,50 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         $this->createGoldPrice($assetA, new DateTimeImmutable('2026-10-01'), 9000000);
         $this->createGoldPrice($assetB, new DateTimeImmutable('2026-09-01'), 8000000);
 
-        self::assertSame(1300000, $this->repository->fetchLatestTotalPricePln());
+        self::assertSame(1300000, $this->repository->fetchSummary());
     }
 
-    public function testFetchLatestTotalPricePlnReturnsZeroWhenNoPricesExist(): void
+    public function testFetchSummaryReturnsZeroWhenNoPricesExist(): void
     {
         $this->createGoldAsset();
 
-        $total = $this->repository->fetchLatestTotalPricePln();
+        $total = $this->repository->fetchSummary();
 
         self::assertSame(0, $total);
+        self::assertSame([], $this->repository->findDataForChart());
     }
 
-    public function testFindLatestOrderedSortsByDateDescending(): void
+    public function testFindDataForListSortsByDateDescending(): void
     {
         $asset = $this->createGoldAsset();
 
         $older = $this->createGoldPrice($asset, new DateTimeImmutable('-5 days'), 800000);
         $newer = $this->createGoldPrice($asset, new DateTimeImmutable('-1 day'), 850000);
 
-        $result = $this->repository->findLatestOrdered();
+        $result = $this->repository->findDataForList();
 
         self::assertSame($newer->getId(), $result[0]->getId());
         self::assertSame($older->getId(), $result[1]->getId());
     }
 
-    public function testFindLatestOrderedRespectsDefaultLimit(): void
+    public function testFindDataForListUsesDateThenIdAcrossAssets(): void
+    {
+        $assetA = $this->createGoldAsset();
+        $assetB = $this->createGoldAsset();
+        $day = new DateTimeImmutable('2026-10-26');
+        $first = $this->createGoldPrice($assetA, $day, 1100000);
+        $second = $this->createGoldPrice($assetB, $day, 1000000);
+        $backfilled = $this->createGoldPrice($assetA, new DateTimeImmutable('2026-10-25'), 900000);
+
+        $result = $this->repository->findDataForList();
+
+        self::assertSame(
+            [$second->getId(), $first->getId(), $backfilled->getId()],
+            array_map(static fn (GoldPrice $price): int => $price->getId(), $result),
+        );
+    }
+
+    public function testFindDataForListRespectsDefaultLimit(): void
     {
         $asset = $this->createGoldAsset();
 
@@ -111,12 +129,12 @@ final class GoldPriceRepositoryTest extends KernelTestCase
             $this->createGoldPrice($asset, new DateTimeImmutable("-{$i} days"), 800000 + $i);
         }
 
-        $result = $this->repository->findLatestOrdered();
+        $result = $this->repository->findDataForList();
 
         self::assertCount(20, $result);
     }
 
-    public function testFindLatestOrderedRespectsExplicitLimit(): void
+    public function testFindDataForListRespectsExplicitLimit(): void
     {
         $asset = $this->createGoldAsset();
 
@@ -124,14 +142,14 @@ final class GoldPriceRepositoryTest extends KernelTestCase
             $this->createGoldPrice($asset, new DateTimeImmutable("-{$i} days"), 800000 + $i);
         }
 
-        $result = $this->repository->findLatestOrdered(10);
+        $result = $this->repository->findDataForList(10);
 
         self::assertCount(10, $result);
     }
 
-    public function testFindLatestOrderedEagerLoadsGoldAssetWithoutExtraQueries(): void
+    public function testFindDataForListEagerLoadsGoldAssetWithoutExtraQueries(): void
     {
-        // Regression guard: findLatestOrdered() must addSelect('ga'), not just join() it — without
+        // Regression guard: findDataForList() must addSelect('ga'), not just join() it — without
         // addSelect, reading goldAsset.description (as the Twig list does) would trigger one
         // lazy-load query per distinct asset instead of zero.
         for ($i = 0; $i < 3; ++$i) {
@@ -143,7 +161,7 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         $queryCounter = self::getContainer()->get(QueryCounter::class);
         $queryCounter->reset();
 
-        $result = $this->repository->findLatestOrdered();
+        $result = $this->repository->findDataForList();
         foreach ($result as $price) {
             // Simulates exactly what templates/gold_price/index.html.twig reads: p.goldAsset.description.
             $price->getGoldAsset()->getDescription();
@@ -152,17 +170,72 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         self::assertSame(1, $queryCounter->count, 'Expected exactly one query; goldAsset access triggered extra lazy-load queries.');
     }
 
-    public function testFindHistoricalPricesForChartConvertsMinorUnitsToDecimal(): void
+    public function testFindDataForChartConvertsMinorUnitsToDecimal(): void
     {
         $asset = $this->createGoldAsset();
         $date = new DateTimeImmutable('-1 day');
 
         $this->createGoldPrice($asset, $date, 1680000);
 
-        $result = $this->repository->findHistoricalPricesForChart();
+        $result = $this->repository->findDataForChart();
 
-        $formName = $asset->getForm()->getName();
-        self::assertSame(16800.0, $result[$formName][$date->format('Y-m-d')]);
+        self::assertSame([
+            [
+                'assetId' => $asset->getId(),
+                'label' => $asset->getDescription(),
+                'prices' => [$date->format('Y-m-d') => 16800.0],
+            ],
+        ], $result);
+    }
+
+    public function testChartKeepsAssetsSeparateAndUsesTheSameDailyPricesAsTheValuation(): void
+    {
+        $assetA = $this->createGoldAsset();
+        // Same form, weight and description: only the asset ID distinguishes these two assets.
+        $assetB = new GoldAsset($assetA->getForm(), $assetA->getOunces(), $assetA->getDescription());
+        $this->em()->persist($assetB);
+        $this->em()->flush();
+        $day = new DateTimeImmutable('2026-10-26');
+
+        $this->createGoldPrice($assetA, $day, 1100000);
+        $this->createGoldPrice($assetA, $day, 1000000);
+        $this->createGoldPrice($assetB, $day, 1200000);
+        $this->createGoldPrice($assetB, $day, 1300000);
+        $this->createGoldPrice($assetA, new DateTimeImmutable('2026-10-25'), 9000000);
+
+        $series = array_column($this->repository->findDataForChart(), null, 'assetId');
+
+        self::assertCount(2, $series);
+        self::assertSame([
+            'assetId' => $assetA->getId(),
+            'label' => $assetA->getDescription(),
+            'prices' => ['2026-10-25' => 90000.0, '2026-10-26' => 10000.0],
+        ], $series[$assetA->getId()]);
+        self::assertSame([
+            'assetId' => $assetB->getId(),
+            'label' => $assetB->getDescription(),
+            'prices' => ['2026-10-26' => 13000.0],
+        ], $series[$assetB->getId()]);
+        self::assertSame(2300000, $this->repository->fetchSummary());
+    }
+
+    public function testDeletingTheLatestDailyPriceRevealsThePreviousQuote(): void
+    {
+        $asset = $this->createGoldAsset();
+        $day = new DateTimeImmutable('2026-09-15');
+        $this->createGoldPrice($asset, $day, 850000);
+        $latest = $this->createGoldPrice($asset, $day, 860000);
+
+        $chart = $this->repository->findDataForChart();
+        self::assertSame(8600.0, $chart[0]['prices']['2026-09-15']);
+        self::assertSame(860000, $this->repository->fetchSummary());
+
+        $this->em()->remove($latest);
+        $this->em()->flush();
+
+        $chart = $this->repository->findDataForChart();
+        self::assertSame(8500.0, $chart[0]['prices']['2026-09-15']);
+        self::assertSame(850000, $this->repository->fetchSummary());
     }
 
     public function testSaveStoresOnlyTheCalendarDateAndReloadsAtMidnight(): void

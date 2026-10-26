@@ -7,6 +7,7 @@ namespace App\Tests\Api;
 use App\Entity\Bank;
 use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
+use App\Tests\Controller\LogsInTrait;
 use App\Tests\DatabaseTestTrait;
 use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -15,6 +16,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
+    use LogsInTrait;
 
     private const string VALID_EMAIL = 'test@example.com';
     private const string VALID_PASSWORD = 'test1234';
@@ -25,6 +27,7 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
     {
         $this->client = self::createClient();
         $this->initEntityManager($this->client->getKernel());
+        $this->logIn();
     }
 
     protected function tearDown(): void
@@ -33,7 +36,7 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
         $this->closeEntityManager();
     }
 
-    public function testHistoryEndpointReturnsExactlyTheStoredIdBankIdCurrencyCodeAndRatePairs(): void
+    public function testHistoryReturnsDailyWinnersMatchingTheWebChart(): void
     {
         $bankA = new Bank('History Test Bank A '.uniqid());
         $bankB = new Bank('History Test Bank B '.uniqid());
@@ -47,28 +50,29 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
             $this->em()->persist($chf);
         }
 
-        // Two distinct banks/amounts, on purpose: this test exists to catch exactly the kind of bug
-        // where id/bankId/currencyCode/rate get mismatched or swapped between rows during mapping.
-        $rateOne = new CurrencyExchangeRate($bankA, $chf, new \DateTimeImmutable('2026-01-05'), 43210);
+        // The daily winner has a lower rate but a higher ID; selection must match the web chart.
+        $rateOne = new CurrencyExchangeRate($bankA, $chf, new \DateTimeImmutable('2026-01-05'), 47000);
         $rateTwo = new CurrencyExchangeRate($bankB, $chf, new \DateTimeImmutable('2026-02-10'), 43999);
+        $sameDayRate = new CurrencyExchangeRate($bankA, $chf, new \DateTimeImmutable('2026-01-05'), 45000);
         $this->em()->persist($rateOne);
         $this->em()->persist($rateTwo);
+        $this->em()->persist($sameDayRate);
         $this->em()->flush();
 
         $expected = [
-            [
-                'id' => $rateOne->getId(),
-                'bankId' => $bankA->getId(),
-                'currencyCode' => 'CHF',
-                'rateDate' => '2026-01-05',
-                'rateToPln' => $rateOne->getRateToPlnAsMoney()->toDecimalString(),
-            ],
             [
                 'id' => $rateTwo->getId(),
                 'bankId' => $bankB->getId(),
                 'currencyCode' => 'CHF',
                 'rateDate' => '2026-02-10',
                 'rateToPln' => $rateTwo->getRateToPlnAsMoney()->toDecimalString(),
+            ],
+            [
+                'id' => $sameDayRate->getId(),
+                'bankId' => $bankA->getId(),
+                'currencyCode' => 'CHF',
+                'rateDate' => '2026-01-05',
+                'rateToPln' => '4.5000',
             ],
         ];
 
@@ -83,11 +87,14 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
         self::assertArrayHasKey('member', $data);
         self::assertIsArray($data['member']);
 
-        /** @var array<int, array{id: int, bankId: int, currencyCode: string, rateDate: string, rateToPln: string}> $byId */
         $byId = [];
         foreach ($data['member'] as $item) {
             self::assertIsArray($item);
-            /** @var int $id */
+            self::assertIsInt($item['id']);
+            self::assertIsInt($item['bankId']);
+            self::assertIsString($item['currencyCode']);
+            self::assertIsString($item['rateDate']);
+            self::assertIsString($item['rateToPln']);
             $id = $item['id'];
             $byId[$id] = [
                 'id' => $item['id'],
@@ -101,6 +108,26 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
         foreach ($expected as $expectedRow) {
             self::assertArrayHasKey($expectedRow['id'], $byId, 'Response is missing rate id '.$expectedRow['id']);
             self::assertSame($expectedRow, $byId[$expectedRow['id']]);
+        }
+        self::assertArrayNotHasKey($rateOne->getId(), $byId);
+
+        $bankNames = [$bankA->getId() => $bankA->getName(), $bankB->getId() => $bankB->getName()];
+        $apiChart = [];
+        foreach ($byId as $row) {
+            $bankName = $bankNames[$row['bankId']] ?? null;
+            if (null !== $bankName) {
+                $apiChart[$bankName][$row['rateDate']] = (float) $row['rateToPln'];
+            }
+        }
+
+        $crawler = $this->client->request('GET', '/rate');
+        self::assertResponseIsSuccessful();
+        $chartJson = $crawler->filter('#ratesChart')->attr('data-chart');
+        self::assertIsString($chartJson);
+        $webChart = json_decode($chartJson, true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($webChart);
+        foreach ($bankNames as $bankName) {
+            self::assertSame($apiChart[$bankName], $webChart[$bankName]);
         }
     }
 

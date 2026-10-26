@@ -10,7 +10,7 @@ Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazj�
 
 - **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
 - **PHPStan na poziomie 9**.
-- **~897 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
+- **~900 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
 - **PHP CS Fixer** wymuszający spójny styl kodu.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
 - **Świadomy model bezpieczeństwa** — hasła hashowane, throttling logowania, jawnie opisane granice (patrz sekcja [Bezpieczeństwo](#bezpieczeństwo)).
@@ -79,6 +79,13 @@ oraz daty poza zakresem są odrzucane z kodem `422`, bez zapisywania zmian.
 W bazie `operation_date`, `price_date` i `rate_date` mają typ `DATE`, a encje zerują czas przekazany z kodu PHP.
 Saldo do dziś obejmuje wszystkie operacje z datą dzisiejszą i wcześniejszą.
 Czasy utworzenia i modyfikacji rekordów (`created_at`, `updated_at`) są przechowywane z godziną.
+
+**Wybór cen złota i kursów walut jest wspólny dla wykresów i podsumowań:**
+dla danego dnia wygrywa rekord z najwyższym ID, osobno dla aktywa złota lub pary bank–waluta.
+Wykres przedstawia dzienne notowania chronologicznie, a bieżąca wycena korzysta z najnowszego dnia.
+Dopisanie starszego notowania z wyższym ID nie zmienia bieżącej wyceny.
+Każde aktywo złota ma własną serię na wykresie, również gdy ma tę samą formę, masę lub opis co inne aktywo.
+Listy cen i kursów pokazują wszystkie wpisy od najnowszej daty, a w obrębie dnia od najwyższego ID.
 
 Nowe operacje na koncie dodajemy bez znaku, jeśli to **przychód** na koncie: "309 zł refundacja /zwrot"
 lub ze znakiem `-` jeżeli to **wydatek** z konta: "-309 zł zakup okularów"

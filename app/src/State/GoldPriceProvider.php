@@ -32,7 +32,7 @@ final readonly class GoldPriceProvider implements ProviderInterface
             return $goldPrice ? GoldPriceResource::fromEntity($goldPrice) : null;
         }
 
-        $goldPrices = $this->goldPriceRepository->findLatestOrdered();
+        $goldPrices = $this->goldPriceRepository->findDataForList();
 
         return array_values(array_map(GoldPriceResource::fromEntity(...), $goldPrices));
     }

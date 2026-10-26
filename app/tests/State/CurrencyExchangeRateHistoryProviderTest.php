@@ -36,10 +36,10 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
         $this->closeEntityManager();
     }
 
-    public function testProvideReturnsAllRatesWithoutLimit(): void
+    public function testProvideReturnsAllDailyRatesWithoutLimit(): void
     {
         $ids = [];
-        // One more than findLatestOrdered()'s default limit (Paginator::DEFAULT_PER_PAGE, 20),
+        // One more than findDataForList()'s default limit (Paginator::DEFAULT_PER_PAGE, 20),
         // to prove this provider is not bound by that limit.
         for ($i = 0; $i < 21; ++$i) {
             $ids[] = $this->createRate(new \DateTimeImmutable("2026-01-{$this->twoDigit($i + 1)}"))->getId();
@@ -86,10 +86,7 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
 
     public function testProvideDoesNotTriggerExtraQueriesForBankAndCurrencyIdentifiers(): void
     {
-        // Regression guard: fromEntity() must only read identifiers (getBank()->getId(),
-        // getCurrency()->getCode()), which Doctrine resolves from the owning-side FK columns without
-        // initializing the proxy. Reading a non-identifier field (e.g. getBank()->getName()) would
-        // trigger one lazy-load query per distinct bank instead of zero.
+        // Mapping scalar rows to API resources must not issue additional queries.
         for ($i = 0; $i < 3; ++$i) {
             $this->createRate(new \DateTimeImmutable("2026-01-{$this->twoDigit($i + 1)}"));
         }
@@ -101,7 +98,7 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
 
         $this->provider->provide(new GetCollection());
 
-        self::assertSame(1, $queryCounter->count, 'Expected exactly one query; bank/currency access triggered extra lazy-load queries.');
+        self::assertSame(1, $queryCounter->count, 'Expected exactly one query for history and resource mapping.');
     }
 
     private function createRate(\DateTimeImmutable $date, string $currencyCode = 'CHF'): CurrencyExchangeRate

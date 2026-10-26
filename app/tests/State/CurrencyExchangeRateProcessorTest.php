@@ -80,7 +80,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
         self::assertNotSame($first->id, $second->id);
         self::assertSame('4.3210', $first->rateToPln);
         self::assertSame('4.4000', $second->rateToPln);
-        // The most recently added rate (highest id) is the one that counts as current.
+        // For the same date, the highest ID determines the current rate.
         self::assertGreaterThan($first->id, $second->id);
     }
 

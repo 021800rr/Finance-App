@@ -31,17 +31,15 @@ final class GoldPriceRepository extends ServiceEntityRepository
      *
      * @throws Exception
      */
-    public function fetchLatestTotalPricePln(): int
+    public function fetchSummary(): int
     {
+        $latestPrices = LatestQuoteQuery::build('gold_price', ['gold_asset_id'], 'price_date');
+
         /** @var string $result */
         $result = $this->getEntityManager()->getConnection()->fetchOne(
             <<<SQL
             SELECT COALESCE(SUM(latest.price_pln_minor_units), 0)
-            FROM (
-                SELECT DISTINCT ON (gold_asset_id) price_pln_minor_units
-                FROM gold_price
-                ORDER BY gold_asset_id, price_date DESC, id DESC
-            ) latest
+            FROM ({$latestPrices}) latest
             SQL
         );
 
@@ -49,25 +47,19 @@ final class GoldPriceRepository extends ServiceEntityRepository
     }
 
     /**
-     * Most recent prices, newest first. Shared verbatim by the web list and the API's
-     * GetCollection — both are the same "page 1" view, no page 2 ever requested, so neither
-     * bothers with pagination. The web list reads goldAsset.description (not just the
-     * identifier), so goldAsset is eagerly selected (addSelect) to avoid N+1 lazy-loading one
-     * query per distinct asset. The join to goldAsset.form is kept (needed for the ORDER BY
-     * tie-breaker) but its columns are not selected, since nothing reads form fields here —
-     * contrast with findHistoricalPricesForChart(), which does read the form name.
+     * Price entries ordered by date, then ID, newest first. Shared by the web list and the API.
+     * Eagerly load the asset because the web list displays its description.
      *
      * @return GoldPrice[]
      */
-    public function findLatestOrdered(int $limit = Paginator::DEFAULT_PER_PAGE): array
+    public function findDataForList(int $limit = Paginator::DEFAULT_PER_PAGE): array
     {
         /** @var GoldPrice[] $result */
         $result = $this->createQueryBuilder('gp')
             ->addSelect('ga')
             ->join('gp.goldAsset', 'ga')
-            ->join('ga.form', 'gf')
             ->orderBy('gp.priceDate', 'DESC')
-            ->addOrderBy('gf.name', 'ASC')
+            ->addOrderBy('gp.id', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -76,32 +68,38 @@ final class GoldPriceRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return array<string, array<string, float>> Gold form name => [date => price]
+     * @return list<array{assetId: int, label: string, prices: array<string, float>}>
+     *
+     * @throws Exception
      */
-    public function findHistoricalPricesForChart(): array
+    public function findDataForChart(): array
     {
+        $dailyPrices = LatestQuoteQuery::build('gold_price', ['gold_asset_id'], 'price_date', perDay: true);
+
         /**
-         * @var list<array{formName: string, priceDate: \DateTimeImmutable, pricePln: string}> $prices
+         * @var list<array{asset_id: int, label: string, price_date: string, price_pln_minor_units: int|string}> $prices
          */
-        $prices = $this->createQueryBuilder('gp')
-            ->select('gf.name as formName, gp.priceDate, gp.pricePln')
-            ->join('gp.goldAsset', 'ga')
-            ->join('ga.form', 'gf')
-            ->orderBy('gp.priceDate', 'ASC')
-            ->getQuery()
-            ->getResult();
+        $prices = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            <<<SQL
+            SELECT latest.gold_asset_id AS asset_id, ga.description AS label,
+                   latest.price_date, latest.price_pln_minor_units
+            FROM ({$dailyPrices}) latest
+            JOIN gold_asset ga ON ga.id = latest.gold_asset_id
+            ORDER BY latest.price_date, latest.id
+            SQL
+        );
 
         $data = [];
         foreach ($prices as $price) {
-            $formName = $price['formName'];
-            $date = $price['priceDate']->format('Y-m-d');
-            $data[$formName][$date] = (float) Money::fromMinorUnits(
-                (int) $price['pricePln'],
+            $assetId = (int) $price['asset_id'];
+            $data[$assetId] ??= ['assetId' => $assetId, 'label' => $price['label'], 'prices' => []];
+            $data[$assetId]['prices'][$price['price_date']] = (float) Money::fromMinorUnits(
+                (int) $price['price_pln_minor_units'],
                 Currencies::SETTLEMENT_CURRENCY_CODE,
                 Currencies::MINOR_UNIT_SCALE
             )->toDecimalString();
         }
 
-        return $data;
+        return array_values($data);
     }
 }

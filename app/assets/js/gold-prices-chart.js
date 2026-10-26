@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const chartData = JSON.parse(chartDataRaw);
-    const forms = Object.keys(chartData);
+    const assetsById = new Map(chartData.map((asset) => [asset.assetId, asset]));
 
     const colors = [
         'rgb(255, 215, 0)', // Gold
@@ -25,15 +25,16 @@ document.addEventListener('DOMContentLoaded', function() {
         'rgb(153, 102, 255)'
     ];
 
-    const datasets = forms.map((form, index) => {
+    const datasets = chartData.map((asset, index) => {
         const color = colors[index % colors.length];
-        const dataPoints = Object.entries(chartData[form]).map(([date, price]) => ({
+        const dataPoints = Object.entries(asset.prices).map(([date, price]) => ({
             x: date,
             y: price
         })).sort((a, b) => new Date(a.x) - new Date(b.x));
 
         return {
-            label: form,
+            assetId: asset.assetId,
+            label: asset.label,
             data: dataPoints,
             borderColor: color,
             backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
@@ -53,8 +54,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const dateKeyByTimestamp = new Map();
     const allTimestamps = [];
-    Object.values(chartData).forEach((formPrices) => {
-        Object.keys(formPrices).forEach((dateKey) => {
+    chartData.forEach((asset) => {
+        Object.keys(asset.prices).forEach((dateKey) => {
             const timestamp = parseDateToTimestamp(dateKey);
             if (!Number.isFinite(timestamp)) {
                 return;
@@ -133,7 +134,13 @@ document.addEventListener('DOMContentLoaded', function() {
         let visibleRows = 0;
         datasets.forEach((dataset) => {
             const datasetLabel = dataset.label ?? '';
-            const valueRaw = selectedDateKey ? chartData[datasetLabel]?.[selectedDateKey] : null;
+            const valueRaw = selectedDateKey
+                ? assetsById.get(dataset.assetId)?.prices[selectedDateKey]
+                : undefined;
+            if (valueRaw === undefined) {
+                return;
+            }
+
             const value = Number(valueRaw);
             if (!Number.isFinite(value)) {
                 return;

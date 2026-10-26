@@ -11,11 +11,13 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use App\Constant\Currencies;
 use App\Entity\CurrencyExchangeRate;
 use App\State\CurrencyExchangeRateHistoryProvider;
 use App\State\CurrencyExchangeRateProcessor;
 use App\State\CurrencyExchangeRateProvider;
 use App\Util\BusinessDateRange;
+use App\ValueObject\Money;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -31,8 +33,8 @@ use Symfony\Component\Validator\Constraints as Assert;
         new GetCollection(
             uriTemplate: '/currency_exchange_rates/history',
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Full historical rates for the tracked currency, all banks and dates, no limit or '
-            .'pagination. Intended for charting; the client groups/dedups as needed.',
+            description: 'Historical daily rates for the tracked currency, all banks and dates, no limit or '
+            .'pagination. Returns the highest id per bank, currency and date, matching the web chart.',
             provider: CurrencyExchangeRateHistoryProvider::class,
         ),
         new Get(
@@ -43,7 +45,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Post(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Adds a new exchange rate. Multiple rates for the same bank, currency and date are '
-            .'allowed; the most recently added one (highest id) is treated as the current rate.',
+            .'allowed; the most recent date (and, within a date, highest id) is treated as the current rate.',
             processor: CurrencyExchangeRateProcessor::class,
         ),
         new Delete(
@@ -88,6 +90,33 @@ final class CurrencyExchangeRateResource
         $resource->currencyCode = $rate->getCurrency()->getCode();
         $resource->rateDate = $rate->getRateDate()->format('Y-m-d');
         $resource->rateToPln = $rate->getRateToPlnAsMoney()->toDecimalString();
+
+        return $resource;
+    }
+
+    /**
+     * Build a resource from a database row with rate_date in YYYY-MM-DD format.
+     *
+     * @param array{
+     *     id: int|string,
+     *     bank_id: int|string,
+     *     currency_code: string,
+     *     rate_date: string,
+     *     rate_to_pln_minor_units: int|string,
+     * } $row
+     */
+    public static function fromRow(array $row): self
+    {
+        $resource = new self();
+        $resource->id = (int) $row['id'];
+        $resource->bankId = (int) $row['bank_id'];
+        $resource->currencyCode = $row['currency_code'];
+        $resource->rateDate = $row['rate_date'];
+        $resource->rateToPln = Money::fromMinorUnits(
+            (int) $row['rate_to_pln_minor_units'],
+            Currencies::SETTLEMENT_CURRENCY_CODE,
+            Currencies::EXCHANGE_RATE_SCALE,
+        )->toDecimalString();
 
         return $resource;
     }

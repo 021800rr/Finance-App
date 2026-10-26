@@ -41,6 +41,32 @@ final class GoldPriceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
     }
 
+    public function testIndexProvidesSeparateChartSeriesForAssetsWithTheSameDescription(): void
+    {
+        $first = $this->createPriceInDatabase();
+        $second = $this->createPriceInDatabase(860050);
+
+        $crawler = $this->client->request('GET', '/gold-prices');
+
+        self::assertResponseIsSuccessful();
+        $json = $crawler->filter('#goldPricesChart')->attr('data-chart');
+        self::assertNotNull($json);
+        $series = json_decode($json, true, flags: \JSON_THROW_ON_ERROR);
+
+        self::assertSame([
+            [
+                'assetId' => $first->getGoldAsset()->getId(),
+                'label' => 'Test',
+                'prices' => [$first->getPriceDate()->format('Y-m-d') => 8000],
+            ],
+            [
+                'assetId' => $second->getGoldAsset()->getId(),
+                'label' => 'Test',
+                'prices' => [$second->getPriceDate()->format('Y-m-d') => 8600.5],
+            ],
+        ], $series);
+    }
+
     public function testIndexSubmittingWithValidDataCreatesPriceAndRedirects(): void
     {
         $asset = $this->createAssetInDatabase();
@@ -132,14 +158,14 @@ final class GoldPriceControllerTest extends WebTestCase
         return $asset;
     }
 
-    private function createPriceInDatabase(): GoldPrice
+    private function createPriceInDatabase(int $priceMinorUnits = 800000): GoldPrice
     {
         $asset = $this->createAssetInDatabase();
 
         $pln = $this->em()->getRepository(Currency::class)->find(Currencies::SETTLEMENT_CURRENCY_CODE);
         self::assertNotNull($pln, 'PLN currency must exist in fixtures.');
 
-        $price = new GoldPrice($asset, new DateTimeImmutable(), 800000, $pln);
+        $price = new GoldPrice($asset, new DateTimeImmutable(), $priceMinorUnits, $pln);
         $this->em()->persist($price);
         $this->em()->flush();
 
