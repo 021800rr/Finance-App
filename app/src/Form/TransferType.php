@@ -11,6 +11,7 @@ use App\Repository\AccountRepository;
 use App\Repository\ContractorRepository;
 use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
+use App\Validator\ValidTransfer;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
@@ -18,10 +19,8 @@ use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Validator\Constraints\Callback;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Positive;
-use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 class TransferType extends AbstractType
 {
@@ -86,29 +85,8 @@ class TransferType extends AbstractType
     {
         $resolver->setDefaults([
             'constraints' => [
-                new Callback([self::class, 'validateAmountToRequiredForCurrencyExchange']),
+                new ValidTransfer(),
             ],
         ]);
-    }
-
-    public static function validateAmountToRequiredForCurrencyExchange(mixed $data, ExecutionContextInterface $context): void
-    {
-        if (!is_array($data)) {
-            return;
-        }
-
-        $fromAccount = $data['fromAccount'] ?? null;
-        $toAccount = $data['toAccount'] ?? null;
-        $amountTo = $data['amountTo'] ?? null;
-
-        if (!$fromAccount instanceof Account || !$toAccount instanceof Account) {
-            return;
-        }
-
-        if ($fromAccount->getCurrency()->getCode() !== $toAccount->getCurrency()->getCode() && null === $amountTo) {
-            $context->buildViolation('transfer.amount_to_required_for_currency_exchange')
-                ->atPath('[amountTo]')
-                ->addViolation();
-        }
     }
 }

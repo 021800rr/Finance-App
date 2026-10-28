@@ -74,6 +74,7 @@ rate:
     value_not_blank: 'Please enter a rate.'
 
 transfer:
+    accounts_must_differ: 'Choose a different destination account.'
     amount_from_required: 'Please enter the amount to transfer.'
     amount_must_be_positive: 'The transfer amount must be greater than zero.'
     amount_to_required_for_currency_exchange: 'Please enter the amount to receive when exchanging between different currencies.'

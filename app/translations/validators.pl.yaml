@@ -74,6 +74,7 @@ rate:
     value_not_blank: 'Podaj kurs.'
 
 transfer:
+    accounts_must_differ: 'Wybierz inne konto docelowe.'
     amount_from_required: 'Podaj kwotę przelewu.'
     amount_must_be_positive: 'Kwota przelewu musi być większa od zera.'
     amount_to_required_for_currency_exchange: 'Podaj kwotę do otrzymania przy wymianie między różnymi walutami.'

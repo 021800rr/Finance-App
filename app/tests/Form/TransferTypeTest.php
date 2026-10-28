@@ -35,6 +35,25 @@ final class TransferTypeTest extends KernelTestCase
         $this->closeEntityManager();
     }
 
+    public function testSubmitWithSameAccountShowsDestinationAccountError(): void
+    {
+        $account = $this->createAccount('PLN');
+        $form = $this->createTransferForm();
+        $form->submit([
+            'fromAccount' => (string) $account->getId(),
+            'toAccount' => (string) $account->getId(),
+            'amountFrom' => '100',
+            'date' => '2026-01-15',
+        ]);
+
+        self::assertFalse($form->isValid());
+        self::assertCount(1, $form->getErrors(true));
+        self::assertStringContainsString(
+            'Choose a different destination account.',
+            (string) $form->get('toAccount')->getErrors(),
+        );
+    }
+
     public function testSubmitWithSameCurrencyAccountsIsValidWithoutAmountTo(): void
     {
         $fromAccount = $this->createAccount('PLN');

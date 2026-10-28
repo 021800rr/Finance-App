@@ -7,6 +7,7 @@
 
                 <h1 class="h5 mb-3">{{ 'transfer.title'|trans }}</h1>
 
+                {% set toAccountHasError = form.toAccount.vars.errors|length > 0 %}
                 {{ form_start(form, {attr: {id: 'transfer_form'}}) }}
                 {% if form.vars.errors|length > 0 %}
                     <div class="alert alert-danger">
@@ -22,7 +23,15 @@
                         </td>
                         <th class="pe-3 text-end">{{ 'transfer.to_account'|trans }}</th>
                         <td>
-                            {{ form_widget(form.toAccount) }}
+                            {{ form_widget(form.toAccount, {
+                                attr: {
+                                    class: (form.toAccount.vars.attr.class|default(''))
+                                        ~ (toAccountHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if toAccountHasError %} d-block{% endif %}">
+                                {{ form_errors(form.toAccount) }}
+                            </div>
                         </td>
                     </tr>
                     <tr>

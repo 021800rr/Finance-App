@@ -46,6 +46,8 @@ final class TransferControllerTest extends WebTestCase
     {
         $fromAccount = $this->createAccount('PLN');
         $toAccount = $this->createAccount('PLN');
+        $repository = $this->em()->getRepository(AccountOperation::class);
+        $countBefore = $repository->count([]);
 
         $crawler = $this->client->request('GET', '/transfer/new');
         $form = $crawler->filter('#transfer_form button[type="submit"]')->form();
@@ -61,6 +63,40 @@ final class TransferControllerTest extends WebTestCase
             '/account/' . $fromAccount->getId() . '/operations',
             (string) $this->client->getResponse()->headers->get('Location')
         );
+        self::assertSame($countBefore + 2, $repository->count([]));
+        $out = $repository->findOneBy(['account' => $fromAccount]);
+        $in = $repository->findOneBy(['account' => $toAccount]);
+        self::assertNotNull($out);
+        self::assertNotNull($in);
+        self::assertSame(-10000, $out->getAmount());
+        self::assertSame(10000, $in->getAmount());
+        self::assertNotNull($out->getTransactionUuid());
+        self::assertSame($out->getTransactionUuid()->toRfc4122(), $in->getTransactionUuid()?->toRfc4122());
+    }
+
+    public function testSameAccountReturns422WithFieldErrorWithoutCreatingOperations(): void
+    {
+        $account = $this->createAccount('PLN');
+        $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+        $crawler = $this->client->request('GET', '/transfer/new');
+        $form = $crawler->filter('#transfer_form button[type="submit"]')->form();
+
+        $this->client->submit($form, [
+            'transfer[fromAccount]' => (string) $account->getId(),
+            'transfer[toAccount]' => (string) $account->getId(),
+            'transfer[amountFrom]' => '100',
+        ]);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorExists('#transfer_toAccount.is-invalid');
+        self::assertSelectorTextContains(
+            '#transfer_toAccount + .invalid-feedback.d-block',
+            'Choose a different destination account.',
+        );
+        self::assertSelectorExists('#transfer_fromAccount option[value="'.$account->getId().'"][selected]');
+        self::assertSelectorExists('#transfer_toAccount option[value="'.$account->getId().'"][selected]');
+        self::assertInputValueSame('transfer[amountFrom]', '100.00');
+        self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
     public function testNewSubmittingDifferentCurrencyWithoutAmountToShowsError(): void
@@ -77,7 +113,7 @@ final class TransferControllerTest extends WebTestCase
             'transfer[amountFrom]' => '100',
         ]);
 
-        self::assertResponseIsSuccessful();
+        self::assertResponseStatusCodeSame(422);
         self::assertSelectorExists('#transfer_amountTo_error1');
     }
 
@@ -101,7 +137,7 @@ final class TransferControllerTest extends WebTestCase
             'transfer[amountTo]' => $amountTo,
         ]);
 
-        self::assertResponseIsSuccessful();
+        self::assertResponseStatusCodeSame(422);
         self::assertSelectorTextContains('#transfer_'.$field.'_error1', 'The transfer amount must be greater than zero.');
         self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }

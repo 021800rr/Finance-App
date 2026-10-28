@@ -33,7 +33,7 @@ class TransferController extends AbstractController
         }
 
         return $this->render('transfer/new.html.twig', [
-            'form' => $form->createView(),
+            'form' => $form,
         ]);
     }
 }
