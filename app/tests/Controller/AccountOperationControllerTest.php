@@ -15,6 +15,7 @@ use App\Entity\Household;
 use App\Tests\DatabaseTestTrait;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\Uid\Uuid;
@@ -93,6 +94,41 @@ final class AccountOperationControllerTest extends WebTestCase
             '/account/' . $account->getId() . '/operations?highlight=',
             (string) $this->client->getResponse()->headers->get('Location')
         );
+    }
+
+    /**
+     * @param array<string, string> $amount
+     */
+    #[DataProvider('blankAmounts')]
+    public function testNewWithBlankAmountShowsFieldErrorWithoutSaving(array $amount): void
+    {
+        $account = $this->createAccount();
+        $contractor = new Contractor('Blank amount test '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+        $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+        $crawler = $this->client->request('GET', '/operation/new');
+        $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/operation/new', [
+            'account_operation' => [
+                '_token' => $token,
+                'account' => (string) $account->getId(),
+                'contractor' => (string) $contractor->getId(),
+                'operationDate' => '2026-01-15',
+            ] + $amount,
+            'contractor_input' => $contractor->getName(),
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertInputValueSame('account_operation[amount]', '');
+        self::assertSelectorExists('#account_operation_amount.is-invalid');
+        self::assertSelectorTextContains(
+            '#account_operation_amount + .invalid-feedback.d-block',
+            'Please enter an amount.',
+        );
+        self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
     public function testNewRedirectsWhenAccountIdIsInvalid(): void
@@ -186,6 +222,61 @@ final class AccountOperationControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('body', 'The amount cannot be zero.');
         self::assertSelectorTextNotContains('body', 'common.amount_cannot_be_zero');
+    }
+
+    /**
+     * @param array<string, string> $amount
+     */
+    #[DataProvider('blankAmounts')]
+    public function testEditWithBlankAmountShowsFieldErrorWithoutChangingOperation(array $amount): void
+    {
+        $operation = $this->createOperationInDatabase();
+        $id = $operation->getId();
+        $originalDate = $operation->getOperationDate()->format('Y-m-d');
+        $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+        $uri = '/operation/'.$id.'/edit';
+        $crawler = $this->client->request('GET', $uri);
+        $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', $uri, [
+            'account_operation' => [
+                '_token' => $token,
+                'contractor' => (string) $operation->getContractor()->getId(),
+                'operationDate' => '2028-02-29',
+                'description' => 'Must not be saved',
+                'confirmed' => '1',
+            ] + $amount,
+            'contractor_input' => $operation->getContractor()->getName(),
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertInputValueSame('account_operation[amount]', '');
+        self::assertSelectorExists('#account_operation_amount.is-invalid');
+        self::assertSelectorTextContains(
+            '#account_operation_amount + .invalid-feedback.d-block',
+            'Please enter an amount.',
+        );
+        $this->em()->clear();
+        $unchanged = $this->em()->find(AccountOperation::class, $id);
+        self::assertNotNull($unchanged);
+        self::assertSame(10000, $unchanged->getAmount());
+        self::assertSame($originalDate, $unchanged->getOperationDate()->format('Y-m-d'));
+        self::assertNull($unchanged->getDescription());
+        self::assertFalse($unchanged->isConfirmed());
+        self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
+    /**
+     * @return array<string, array{array<string, string>}>
+     */
+    public static function blankAmounts(): array
+    {
+        return [
+            'empty' => [['amount' => '']],
+            'spaces' => [['amount' => '   ']],
+            'missing' => [[]],
+        ];
     }
 
     public function testDeleteReturnsNotFoundForNonNumericId(): void

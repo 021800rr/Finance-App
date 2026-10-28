@@ -13,6 +13,7 @@ use App\Entity\Currency;
 use App\Entity\Household;
 use App\Form\AccountOperationType;
 use App\Tests\DatabaseTestTrait;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
@@ -59,17 +60,61 @@ final class AccountOperationTypeTest extends KernelTestCase
         self::assertFalse($form->get('amount')->isValid());
     }
 
-    public function testSubmitWithValidAmountIsValid(): void
+    #[DataProvider('validAmounts')]
+    public function testSubmitWithValidAmountIsValid(string $amount): void
     {
         $account = $this->createAccount();
 
         $form = $this->createOperationForm();
         $form->submit([
             'account' => (string) $account->getId(),
-            'amount' => '150.50',
+            'operationDate' => '2026-01-15',
+            'contractor' => '1',
+            'amount' => $amount,
         ]);
 
-        self::assertTrue($form->get('amount')->isValid());
+        self::assertTrue($form->isValid(), (string) $form->getErrors(true));
+        self::assertSame($amount, $form->get('amount')->getData());
+    }
+
+    /**
+     * @param array<string, string|null> $amount
+     */
+    #[DataProvider('blankAmounts')]
+    public function testSubmitWithBlankAmountShowsFieldError(array $amount): void
+    {
+        $account = $this->createAccount();
+        $form = $this->createOperationForm();
+        $form->submit([
+            'account' => (string) $account->getId(),
+            'operationDate' => '2026-01-15',
+            'contractor' => '1',
+        ] + $amount);
+
+        self::assertFalse($form->isValid());
+        self::assertCount(1, $form->get('amount')->getErrors());
+        self::assertStringContainsString('Please enter an amount.', (string) $form->get('amount')->getErrors());
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function validAmounts(): array
+    {
+        return ['income' => ['150.50'], 'expense' => ['-150.50']];
+    }
+
+    /**
+     * @return array<string, array{array<string, string|null>}>
+     */
+    public static function blankAmounts(): array
+    {
+        return [
+            'empty' => [['amount' => '']],
+            'spaces' => [['amount' => '   ']],
+            'null' => [['amount' => null]],
+            'missing' => [[]],
+        ];
     }
 
     public function testAccountCanBeChosenWhenCreatingAnOperation(): void
@@ -103,7 +148,7 @@ final class AccountOperationTypeTest extends KernelTestCase
         /** @var FormFactoryInterface $formFactory */
         $formFactory = static::getContainer()->get('form.factory');
 
-        return $formFactory->create(AccountOperationType::class);
+        return $formFactory->create(AccountOperationType::class, options: ['csrf_protection' => false]);
     }
 
     private function createAccount(): Account

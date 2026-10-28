@@ -66,6 +66,7 @@ class AccountOperationType extends AbstractType
                 'required' => true,
                 'invalid_message' => 'common.numeric_invalid',
                 'constraints' => [
+                    new NotBlank(message: 'common.amount_not_blank'),
                     new NotEqualTo(value: 0, message: 'common.amount_cannot_be_zero'),
                     new Range(
                         notInRangeMessage: 'common.amount_out_of_range',

@@ -309,6 +309,122 @@ final class AccountOperationApiTest extends WebTestCase
         $this->em()->clear();
         $reloaded = $this->em()->find(AccountOperation::class, $operation->getId());
         self::assertSame('After', $reloaded?->getDescription());
+        self::assertSame(1000, $reloaded->getAmount());
+    }
+
+    /**
+     * @param array<string, string|null> $amount
+     */
+    #[DataProvider('blankPostAmounts')]
+    public function testPostWithBlankAmountShowsFieldErrorWithoutSaving(array $amount): void
+    {
+        $account = $this->createAccount();
+        $operationsBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+        $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
+
+        $this->client->request('POST', '/api/account_operations', server: $this->authHeaders() + [
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], content: json_encode([
+            'accountId' => $account->getId(),
+            'contractorName' => 'Rejected contractor '.uniqid(),
+            'operationDate' => '2026-01-15',
+        ] + $amount, JSON_THROW_ON_ERROR));
+
+        $this->assertAmountRequiredResponse();
+        self::assertSame($operationsBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+        self::assertSame($contractorsBefore, $this->em()->getRepository(Contractor::class)->count([]));
+    }
+
+    /**
+     * @param array<string, string|null> $amount
+     */
+    #[DataProvider('blankAmounts')]
+    public function testPatchWithBlankAmountShowsFieldErrorWithoutChangingOperation(array $amount): void
+    {
+        $operation = $this->createOperation($this->createAccount(), 'Original');
+        $id = $operation->getId();
+        $originalDate = $operation->getOperationDate()->format('Y-m-d');
+        $contractorId = $operation->getContractor()->getId();
+        $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
+
+        $this->client->request('PATCH', '/api/account_operations/'.$id, server: $this->authHeaders() + [
+            'CONTENT_TYPE' => 'application/merge-patch+json',
+        ], content: json_encode([
+            'operationDate' => '2028-02-29',
+            'description' => 'Must not be saved',
+            'confirmed' => true,
+            'contractorName' => 'Rejected contractor '.uniqid(),
+        ] + $amount, JSON_THROW_ON_ERROR));
+
+        $this->assertAmountRequiredResponse();
+        $this->em()->clear();
+        $unchanged = $this->em()->find(AccountOperation::class, $id);
+        self::assertNotNull($unchanged);
+        self::assertSame(1000, $unchanged->getAmount());
+        self::assertSame($originalDate, $unchanged->getOperationDate()->format('Y-m-d'));
+        self::assertSame('Original', $unchanged->getDescription());
+        self::assertFalse($unchanged->isConfirmed());
+        self::assertSame($contractorId, $unchanged->getContractor()->getId());
+        self::assertSame($contractorsBefore, $this->em()->getRepository(Contractor::class)->count([]));
+    }
+
+    #[DataProvider('validAmounts')]
+    public function testPostWithValidAmountCreatesOperation(string $amount, int $minorUnits): void
+    {
+        $account = $this->createAccount();
+        $this->client->request('POST', '/api/account_operations', server: $this->authHeaders() + [
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], content: json_encode([
+            'accountId' => $account->getId(),
+            'contractorName' => 'Valid amount contractor '.uniqid(),
+            'operationDate' => '2026-01-15',
+            'amount' => $amount,
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertResponseStatusCodeSame(201);
+        $data = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame($amount, self::stringAt($data, 'amount'));
+        $this->em()->clear();
+        $stored = $this->em()->find(AccountOperation::class, self::intAt($data, 'id'));
+        self::assertNotNull($stored);
+        self::assertSame($minorUnits, $stored->getAmount());
+    }
+
+    /**
+     * @return array<string, array{string, int}>
+     */
+    public static function validAmounts(): array
+    {
+        return ['income' => ['150.50', 15050], 'expense' => ['-150.50', -15050]];
+    }
+
+    /**
+     * @return iterable<string, array{array<string, string|null>}>
+     */
+    public static function blankPostAmounts(): iterable
+    {
+        yield from self::blankAmounts();
+        yield 'missing' => [[]];
+    }
+
+    /**
+     * @return iterable<string, array{array<string, string|null>}>
+     */
+    public static function blankAmounts(): iterable
+    {
+        yield 'empty' => [['amount' => '']];
+        yield 'spaces' => [['amount' => '   ']];
+        yield 'null' => [['amount' => null]];
+    }
+
+    private function assertAmountRequiredResponse(): void
+    {
+        self::assertResponseStatusCodeSame(422);
+        $error = self::decodeObject((string) $this->client->getResponse()->getContent());
+        $violations = self::rowsAt($error, 'violations');
+        self::assertCount(1, $violations);
+        self::assertSame('amount', self::stringAt($violations[0], 'propertyPath'));
+        self::assertSame('Please enter an amount.', self::stringAt($violations[0], 'message'));
     }
 
     /**

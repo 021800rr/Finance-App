@@ -125,7 +125,7 @@ final class AccountOperationResource
         .'(exact sign convention follows the same rule as the Twig form). Required.',
         example: '50.00',
     )]
-    #[Assert\NotBlank(message: 'operation.amount_not_blank')]
+    #[Assert\NotBlank(message: 'operation.amount_not_blank', normalizer: 'trim')]
     #[Groups(['operation:write'])]
     public ?string $amount = null;
 
