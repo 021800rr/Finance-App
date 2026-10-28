@@ -8,6 +8,7 @@ use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\FixedExpense;
 use App\Tests\DatabaseTestTrait;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -68,6 +69,43 @@ final class FixedExpenseApiTest extends WebTestCase
         self::assertSame(10, $unchanged->getDay());
         self::assertSame(-15000, $unchanged->getAmount());
         self::assertNull($unchanged->getDescription());
+    }
+
+    #[DataProvider('writeOperations')]
+    public function testInvalidExpenseDoesNotKeepNewContractorOrChangeStoredExpenses(bool $patch): void
+    {
+        $fixedExpense = $patch ? $this->createFixedExpense() : null;
+        $connection = $this->em()->getConnection();
+        $contractorsBefore = $connection->fetchAllAssociative('SELECT * FROM contractor ORDER BY id');
+        $expensesBefore = $connection->fetchAllAssociative('SELECT * FROM fixed_expense ORDER BY id');
+        $body = [
+            'contractorName' => 'Rejected expense contractor '.uniqid(),
+            'day' => 20,
+            'amount' => '30.00',
+            'description' => 'Rejected change',
+        ];
+
+        if (null !== $fixedExpense) {
+            $this->patch($fixedExpense, $body);
+        } else {
+            $this->client->request('POST', '/api/fixed_expenses', server: [
+                'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+                'CONTENT_TYPE' => 'application/ld+json',
+            ], content: json_encode($body, JSON_THROW_ON_ERROR));
+        }
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame($contractorsBefore, $connection->fetchAllAssociative('SELECT * FROM contractor ORDER BY id'));
+        self::assertSame($expensesBefore, $connection->fetchAllAssociative('SELECT * FROM fixed_expense ORDER BY id'));
+    }
+
+    /**
+     * @return iterable<string, array{bool}>
+     */
+    public static function writeOperations(): iterable
+    {
+        yield 'POST' => [false];
+        yield 'PATCH' => [true];
     }
 
     public function testPatchWithANewContractorNameAssignsTheFixedExpenseToACreatedContractor(): void
