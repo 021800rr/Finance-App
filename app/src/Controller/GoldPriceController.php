@@ -8,6 +8,7 @@ use App\Constant\DatabaseLimits;
 use App\Entity\GoldPrice;
 use App\Form\GoldPriceType;
 use App\Repository\GoldPriceRepository;
+use App\Service\GoldPriceChartDataBuilder;
 use App\Service\GoldPriceFactory;
 use Doctrine\DBAL\Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,6 +28,7 @@ class GoldPriceController extends AbstractController
         Request $request,
         GoldPriceRepository $goldPriceRepository,
         GoldPriceFactory $goldPriceFactory,
+        GoldPriceChartDataBuilder $chartDataBuilder,
     ): Response {
         $form = $this->createForm(GoldPriceType::class);
         $form->handleRequest($request);
@@ -40,7 +42,7 @@ class GoldPriceController extends AbstractController
         }
 
         $prices = $goldPriceRepository->findDataForList();
-        $chartData = $goldPriceRepository->findDataForChart();
+        $chartData = $chartDataBuilder->build($goldPriceRepository->findDataForChart());
 
         return $this->render('gold_price/index.html.twig', [
             'form' => $form->createView(),

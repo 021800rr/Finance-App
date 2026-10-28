@@ -26,8 +26,8 @@ final readonly class JwtDecorator implements OpenApiFactoryInterface
         'FixedExpensePlan',
         'CurrencyExchangeRate',
         'Currency',
-        'GoldAsset',
         'GoldPrice',
+        'GoldAsset',
         // the rest alphabetically (appended automatically below)
     ];
 

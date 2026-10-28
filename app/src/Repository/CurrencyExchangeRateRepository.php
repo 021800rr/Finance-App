@@ -41,7 +41,11 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
      */
     public function fetchSummary(): array
     {
-        $latestRates = LatestQuoteQuery::build('currency_exchange_rate', ['bank_id', 'currency_code'], 'rate_date');
+        $latestRates = LatestQuoteQuery::build(
+            table: 'currency_exchange_rate',
+            groupColumns: ['bank_id', 'currency_code'],
+            dateColumn: 'rate_date'
+        );
 
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
             <<<SQL
@@ -101,9 +105,9 @@ final class CurrencyExchangeRateRepository extends ServiceEntityRepository
     public function findDataForChart(): array
     {
         $dailyRates = LatestQuoteQuery::build(
-            'currency_exchange_rate',
-            ['bank_id', 'currency_code'],
-            'rate_date',
+            table: 'currency_exchange_rate',
+            groupColumns: ['bank_id', 'currency_code'],
+            dateColumn: 'rate_date',
             perDay: true,
         );
 

@@ -4,16 +4,23 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Constant\Currencies;
 use App\Entity\GoldPrice;
 use App\Service\Paginator;
-use App\ValueObject\Money;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Exception;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<GoldPrice>
+ *
+ * @phpstan-type ChartPriceRow array{
+ *     id: int|string,
+ *     gold_asset_id: int|string,
+ *     asset_description: string,
+ *     currency_code: string,
+ *     price_date: string,
+ *     price_pln_minor_units: int|string,
+ * }
  */
 final class GoldPriceRepository extends ServiceEntityRepository
 {
@@ -33,7 +40,11 @@ final class GoldPriceRepository extends ServiceEntityRepository
      */
     public function fetchSummary(): int
     {
-        $latestPrices = LatestQuoteQuery::build('gold_price', ['gold_asset_id'], 'price_date');
+        $latestPrices = LatestQuoteQuery::build(
+            table: 'gold_price',
+            groupColumns: ['gold_asset_id'],
+            dateColumn: 'price_date'
+        );
 
         /** @var string $result */
         $result = $this->getEntityManager()->getConnection()->fetchOne(
@@ -68,38 +79,38 @@ final class GoldPriceRepository extends ServiceEntityRepository
     }
 
     /**
-     * @return list<array{assetId: int, label: string, prices: array<string, float>}>
+     * Historical prices as scalar rows, shared by the API and Twig chart.
+     * Selects the highest ID per asset/day. Dates are YYYY-MM-DD and prices remain in minor units.
+     *
+     * @return list<ChartPriceRow>
      *
      * @throws Exception
      */
     public function findDataForChart(): array
     {
-        $dailyPrices = LatestQuoteQuery::build('gold_price', ['gold_asset_id'], 'price_date', perDay: true);
+        $dailyPrices = LatestQuoteQuery::build(
+            table: 'gold_price',
+            groupColumns: ['gold_asset_id'],
+            dateColumn: 'price_date',
+            perDay: true
+        );
 
-        /**
-         * @var list<array{asset_id: int, label: string, price_date: string, price_pln_minor_units: int|string}> $prices
-         */
+        /** @var list<ChartPriceRow> $prices */
         $prices = $this->getEntityManager()->getConnection()->fetchAllAssociative(
             <<<SQL
-            SELECT latest.gold_asset_id AS asset_id, ga.description AS label,
-                   latest.price_date, latest.price_pln_minor_units
+            SELECT
+                latest.id,
+                latest.gold_asset_id,
+                ga.description AS asset_description,
+                latest.currency_code,
+                latest.price_date,
+                latest.price_pln_minor_units
             FROM ({$dailyPrices}) latest
             JOIN gold_asset ga ON ga.id = latest.gold_asset_id
             ORDER BY latest.price_date, latest.id
             SQL
         );
 
-        $data = [];
-        foreach ($prices as $price) {
-            $assetId = (int) $price['asset_id'];
-            $data[$assetId] ??= ['assetId' => $assetId, 'label' => $price['label'], 'prices' => []];
-            $data[$assetId]['prices'][$price['price_date']] = (float) Money::fromMinorUnits(
-                (int) $price['price_pln_minor_units'],
-                Currencies::SETTLEMENT_CURRENCY_CODE,
-                Currencies::MINOR_UNIT_SCALE
-            )->toDecimalString();
-        }
-
-        return array_values($data);
+        return $prices;
     }
 }

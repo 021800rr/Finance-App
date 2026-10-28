@@ -11,10 +11,13 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use App\Constant\Currencies;
 use App\Entity\GoldPrice;
+use App\State\GoldPriceHistoryProvider;
 use App\State\GoldPriceProcessor;
 use App\State\GoldPriceProvider;
 use App\Util\BusinessDateRange;
+use App\ValueObject\Money;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -22,9 +25,26 @@ use Symfony\Component\Validator\Constraints as Assert;
     description: 'A historical price point (in PLN) for a gold asset on a given date.',
     operations: [
         new GetCollection(
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Lists all gold price entries.',
+            openapi: new OpenApiOperation(
+                summary: 'Lists the 20 most recent gold prices.',
+                description: 'Returns 20 entries ordered by date then id descending, '
+                .'with no pagination, like the web list.',
+                security: [['JWT' => []]],
+            ),
+            paginationEnabled: false,
             provider: GoldPriceProvider::class,
+        ),
+        new GetCollection(
+            uriTemplate: '/gold_prices/history',
+            openapi: new OpenApiOperation(
+                summary: 'Retrieves daily gold prices for the chart.',
+                description: 'Historical daily gold prices, all assets and dates, no limit or pagination. '
+                .'Returns the highest id per asset and date, ordered by date then id ascending, '
+                .'matching the web chart.',
+                security: [['JWT' => []]],
+            ),
+            paginationEnabled: false,
+            provider: GoldPriceHistoryProvider::class,
         ),
         new Get(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
@@ -78,6 +98,33 @@ final class GoldPriceResource
         $resource->priceDate = $goldPrice->getPriceDate()->format('Y-m-d');
         $resource->pricePln = $goldPrice->getPricePlnAsMoney()->toDecimalString();
         $resource->currencyCode = $goldPrice->getCurrency()->getCode();
+
+        return $resource;
+    }
+
+    /**
+     * Build a resource from a database row with price_date in YYYY-MM-DD format.
+     *
+     * @param array{
+     *     id: int|string,
+     *     gold_asset_id: int|string,
+     *     currency_code: string,
+     *     price_date: string,
+     *     price_pln_minor_units: int|string,
+     * } $row
+     */
+    public static function fromRow(array $row): self
+    {
+        $resource = new self();
+        $resource->id = (int) $row['id'];
+        $resource->goldAssetId = (int) $row['gold_asset_id'];
+        $resource->priceDate = $row['price_date'];
+        $resource->pricePln = Money::fromMinorUnits(
+            (int) $row['price_pln_minor_units'],
+            $row['currency_code'],
+            Currencies::MINOR_UNIT_SCALE,
+        )->toDecimalString();
+        $resource->currencyCode = $row['currency_code'];
 
         return $resource;
     }

@@ -170,20 +170,23 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         self::assertSame(1, $queryCounter->count, 'Expected exactly one query; goldAsset access triggered extra lazy-load queries.');
     }
 
-    public function testFindDataForChartConvertsMinorUnitsToDecimal(): void
+    public function testFindDataForChartReturnsScalarRowsWithMinorUnits(): void
     {
         $asset = $this->createGoldAsset();
         $date = new DateTimeImmutable('-1 day');
 
-        $this->createGoldPrice($asset, $date, 1680000);
+        $price = $this->createGoldPrice($asset, $date, 1680000);
 
         $result = $this->repository->findDataForChart();
 
         self::assertSame([
             [
-                'assetId' => $asset->getId(),
-                'label' => $asset->getDescription(),
-                'prices' => [$date->format('Y-m-d') => 16800.0],
+                'id' => $price->getId(),
+                'gold_asset_id' => $asset->getId(),
+                'asset_description' => $asset->getDescription(),
+                'currency_code' => 'PLN',
+                'price_date' => $date->format('Y-m-d'),
+                'price_pln_minor_units' => 1680000,
             ],
         ], $result);
     }
@@ -198,24 +201,19 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         $day = new DateTimeImmutable('2026-10-26');
 
         $this->createGoldPrice($assetA, $day, 1100000);
-        $this->createGoldPrice($assetA, $day, 1000000);
+        $latestA = $this->createGoldPrice($assetA, $day, 1000000);
         $this->createGoldPrice($assetB, $day, 1200000);
-        $this->createGoldPrice($assetB, $day, 1300000);
-        $this->createGoldPrice($assetA, new DateTimeImmutable('2026-10-25'), 9000000);
+        $latestB = $this->createGoldPrice($assetB, $day, 1300000);
+        $historical = $this->createGoldPrice($assetA, new DateTimeImmutable('2026-10-25'), 9000000);
 
-        $series = array_column($this->repository->findDataForChart(), null, 'assetId');
+        $prices = $this->repository->findDataForChart();
 
-        self::assertCount(2, $series);
-        self::assertSame([
-            'assetId' => $assetA->getId(),
-            'label' => $assetA->getDescription(),
-            'prices' => ['2026-10-25' => 90000.0, '2026-10-26' => 10000.0],
-        ], $series[$assetA->getId()]);
-        self::assertSame([
-            'assetId' => $assetB->getId(),
-            'label' => $assetB->getDescription(),
-            'prices' => ['2026-10-26' => 13000.0],
-        ], $series[$assetB->getId()]);
+        self::assertSame([$historical->getId(), $latestA->getId(), $latestB->getId()], array_column($prices, 'id'));
+        self::assertSame(
+            [$assetA->getId(), $assetA->getId(), $assetB->getId()],
+            array_column($prices, 'gold_asset_id'),
+        );
+        self::assertSame([9000000, 1000000, 1300000], array_column($prices, 'price_pln_minor_units'));
         self::assertSame(2300000, $this->repository->fetchSummary());
     }
 
@@ -227,14 +225,14 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         $latest = $this->createGoldPrice($asset, $day, 860000);
 
         $chart = $this->repository->findDataForChart();
-        self::assertSame(8600.0, $chart[0]['prices']['2026-09-15']);
+        self::assertSame(860000, $chart[0]['price_pln_minor_units']);
         self::assertSame(860000, $this->repository->fetchSummary());
 
         $this->em()->remove($latest);
         $this->em()->flush();
 
         $chart = $this->repository->findDataForChart();
-        self::assertSame(8500.0, $chart[0]['prices']['2026-09-15']);
+        self::assertSame(850000, $chart[0]['price_pln_minor_units']);
         self::assertSame(850000, $this->repository->fetchSummary());
     }
 

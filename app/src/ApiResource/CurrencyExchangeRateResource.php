@@ -22,19 +22,27 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     shortName: 'CurrencyExchangeRate',
-    description: 'Exchange rate of a currency to PLN for a given bank and date. Mirrors the "Kursy" / '
-    .'"Dodaj kurs" form.',
+    description: 'Exchange rate of a currency to PLN for a given bank and date.',
     operations: [
         new GetCollection(
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Lists the most recent exchange rates (fixed limit, no pagination), like the web list.',
+            openapi: new OpenApiOperation(
+                summary: 'Lists the 20 most recent exchange rates.',
+                description: 'Returns 20 entries ordered by date then id descending, '
+                .'with no pagination, like the web list.',
+                security: [['JWT' => []]],
+            ),
+            paginationEnabled: false,
             provider: CurrencyExchangeRateProvider::class,
         ),
         new GetCollection(
             uriTemplate: '/currency_exchange_rates/history',
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Historical daily rates for the tracked currency, all banks and dates, no limit or '
-            .'pagination. Returns the highest id per bank, currency and date, matching the web chart.',
+            openapi: new OpenApiOperation(
+                summary: 'Retrieves daily exchange rates for the chart.',
+                description: 'Historical daily rates for the tracked currency, all banks and dates, no limit or '
+                .'pagination. Returns the highest id per bank, currency and date, matching the web chart.',
+                security: [['JWT' => []]]
+            ),
+            paginationEnabled: false,
             provider: CurrencyExchangeRateHistoryProvider::class,
         ),
         new Get(
