@@ -13,6 +13,7 @@ use App\Entity\FixedExpense;
 use App\Entity\Household;
 use App\Repository\AccountRepository;
 use App\Tests\DatabaseTestTrait;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -75,6 +76,30 @@ final class FixedExpenseControllerTest extends WebTestCase
         ]);
 
         self::assertResponseRedirects('/fixed-expense');
+    }
+
+    #[DataProvider('invalidDays')]
+    public function testCreateWithInvalidDayShowsFieldErrorWithoutSaving(string $day, string $message): void
+    {
+        $contractor = new Contractor('Invalid day test '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+        $countBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
+
+        $crawler = $this->client->request('GET', '/fixed-expense');
+        $form = $crawler->filter('#fixed_expense_form button[type="submit"]')->form();
+        $this->client->submit($form, [
+            'fixed_expense[day]' => $day,
+            'fixed_expense[amount]' => '-150.00',
+            'fixed_expense[contractor]' => (string) $contractor->getId(),
+            'contractor_input' => $contractor->getName(),
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertInputValueSame('fixed_expense[day]', $day);
+        self::assertSelectorExists('#fixed_expense_day.is-invalid');
+        self::assertSelectorTextContains('#fixed_expense_day + .invalid-feedback.d-block', $message);
+        self::assertSame($countBefore, $this->em()->getRepository(FixedExpense::class)->count([]));
     }
 
     public function testEditReturnsNotFoundForNonNumericId(): void
@@ -176,6 +201,47 @@ final class FixedExpenseControllerTest extends WebTestCase
         self::assertSame(15, $unchanged->getDay());
         self::assertSame(-12345, $unchanged->getAmount());
         self::assertSame('Internet subscription', $unchanged->getDescription());
+    }
+
+    #[DataProvider('invalidDays')]
+    public function testEditWithInvalidDayShowsFieldErrorWithoutChangingExpense(string $day, string $message): void
+    {
+        $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
+        $id = $fixedExpense->getId();
+        $countBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
+
+        $crawler = $this->client->request('GET', '/fixed-expense/'.$id.'/edit');
+        $form = $crawler->filter('#fixed_expense_form button[type="submit"]')->form();
+        $this->client->submit($form, [
+            'fixed_expense[day]' => $day,
+            'fixed_expense[amount]' => '-99.99',
+            'fixed_expense[description]' => 'Changed description',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertInputValueSame('fixed_expense[day]', $day);
+        self::assertSelectorExists('#fixed_expense_day.is-invalid');
+        self::assertSelectorTextContains('#fixed_expense_day + .invalid-feedback.d-block', $message);
+
+        $this->em()->clear();
+        $unchanged = $this->em()->find(FixedExpense::class, $id);
+        self::assertNotNull($unchanged);
+        self::assertSame(15, $unchanged->getDay());
+        self::assertSame(-12345, $unchanged->getAmount());
+        self::assertSame('Internet subscription', $unchanged->getDescription());
+        self::assertSame($countBefore, $this->em()->getRepository(FixedExpense::class)->count([]));
+    }
+
+    /**
+     * @return array<string, array{string, string}>
+     */
+    public static function invalidDays(): array
+    {
+        return [
+            'below minimum' => ['0', 'Day must be between 1 and 28.'],
+            'above maximum' => ['29', 'Day must be between 1 and 28.'],
+            'empty day' => ['', 'Please enter the day of the month.'],
+        ];
     }
 
     public function testEditUpdatesFixedExpenseAndRedirects(): void

@@ -30,6 +30,46 @@ final class FixedExpenseApiTest extends WebTestCase
         $this->closeEntityManager();
     }
 
+    public function testPostRejectsDay29WithoutSavingExpense(): void
+    {
+        $contractor = new Contractor('Invalid day API test '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+        $countBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
+
+        $this->client->request('POST', '/api/fixed_expenses', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], content: json_encode([
+            'contractorId' => $contractor->getId(),
+            'day' => 29,
+            'amount' => '-150.00',
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertResponseStatusCodeSame(422);
+        $error = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame('Day must be between 1 and 28.', self::stringAt($error, 'detail'));
+        self::assertSame($countBefore, $this->em()->getRepository(FixedExpense::class)->count([]));
+    }
+
+    public function testPatchRejectsDay29WithoutChangingExpense(): void
+    {
+        $fixedExpense = $this->createFixedExpense();
+        $id = $fixedExpense->getId();
+
+        $this->patch($fixedExpense, ['day' => 29, 'amount' => '-99.99', 'description' => 'Changed description']);
+
+        self::assertResponseStatusCodeSame(422);
+        $error = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame('Day must be between 1 and 28.', self::stringAt($error, 'detail'));
+        $this->em()->clear();
+        $unchanged = $this->em()->find(FixedExpense::class, $id);
+        self::assertNotNull($unchanged);
+        self::assertSame(10, $unchanged->getDay());
+        self::assertSame(-15000, $unchanged->getAmount());
+        self::assertNull($unchanged->getDescription());
+    }
+
     public function testPatchWithANewContractorNameAssignsTheFixedExpenseToACreatedContractor(): void
     {
         $fixedExpense = $this->createFixedExpense();

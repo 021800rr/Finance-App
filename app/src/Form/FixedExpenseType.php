@@ -10,6 +10,7 @@ use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Range;
 
 class FixedExpenseType extends AbstractType
@@ -22,6 +23,14 @@ class FixedExpenseType extends AbstractType
                 'attr' => [
                     'min' => 1,
                     'max' => 28,
+                ],
+                'constraints' => [
+                    new NotNull(message: 'fixed_expense.day_required'),
+                    new Range(
+                        notInRangeMessage: 'fixed_expense.day_out_of_range',
+                        min: 1,
+                        max: 28,
+                    ),
                 ],
             ])
             ->add('contractor', HiddenType::class, [
