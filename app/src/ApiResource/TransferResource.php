@@ -48,13 +48,27 @@ final class TransferResource
         description: 'Positive amount debited from fromAccount, as a decimal string, e.g. "100.00". Required.',
         example: '100.00',
     )]
-    #[Assert\NotBlank(message: 'transfer.amount_from_required')]
+    #[Assert\Sequentially([
+        new Assert\NotBlank(message: 'transfer.amount_from_required', normalizer: 'trim'),
+        new Assert\Range(
+            min: 0.01,
+            max: 999999.99,
+            notInRangeMessage: 'transfer.amount_out_of_range',
+            invalidMessage: 'common.numeric_invalid',
+        ),
+    ])]
     public ?string $amountFrom = null;
 
     #[ApiProperty(
         description: 'Positive amount credited to toAccount, as a decimal string. Required only when fromAccount '
         .'and toAccount use different currencies; otherwise omit it (defaults to amountFrom).',
         example: null,
+    )]
+    #[Assert\Range(
+        min: 0.01,
+        max: 999999.99,
+        notInRangeMessage: 'transfer.amount_out_of_range',
+        invalidMessage: 'common.numeric_invalid',
     )]
     public ?string $amountTo = null;
 

@@ -61,6 +61,17 @@ final class AccountOperationApiTest extends WebTestCase
         self::assertNotContains("Discount 1000 {$marker}", $descriptions);
     }
 
+    public function testLongNumericQueryFindsMatchingDescription(): void
+    {
+        $query = str_repeat('9', 33);
+        $description = 'Reference '.$query;
+        $this->createOperation($this->createAccount(), $description);
+
+        $descriptions = $this->collectionDescriptions('/api/account_operations?q='.$query);
+
+        self::assertSame([$description], $descriptions);
+    }
+
     public function testAccountOperationsRouteListsOnlyThatAccountsOperations(): void
     {
         $marker = uniqid();
@@ -436,6 +447,9 @@ final class AccountOperationApiTest extends WebTestCase
         yield 'not a number' => ['abc'];
         yield 'above the upper bound' => ['1000000.00'];
         yield 'far above the upper bound' => ['9999999999'];
+        yield '17 digits' => [str_repeat('9', 17)];
+        yield '33 digits' => [str_repeat('9', 33)];
+        yield 'negative 33 digits' => ['-'.str_repeat('9', 33)];
     }
 
     #[DataProvider('invalidAmounts')]

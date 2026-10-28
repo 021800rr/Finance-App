@@ -84,10 +84,18 @@ final class CurrencyExchangeRateResource
     public ?string $rateDate = null;
 
     #[ApiProperty(
-        description: 'Exchange rate to PLN as a decimal string, e.g. "4.3210". Range 0.0001-100. Required.',
+        description: 'Exchange rate to PLN as a decimal string, e.g. "4.3210". Range 0.0001-99.9999. Required.',
         example: '4.3210',
     )]
-    #[Assert\NotBlank(message: 'currency_exchange_rate.rate_not_blank')]
+    #[Assert\Sequentially([
+        new Assert\NotBlank(message: 'currency_exchange_rate.rate_not_blank', normalizer: 'trim'),
+        new Assert\Range(
+            min: 0.0001,
+            max: 99.9999,
+            notInRangeMessage: 'currency_exchange_rate.rate_out_of_range',
+            invalidMessage: 'common.numeric_invalid',
+        ),
+    ])]
     public ?string $rateToPln = null;
 
     public static function fromEntity(CurrencyExchangeRate $rate): self

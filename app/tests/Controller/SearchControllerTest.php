@@ -78,6 +78,18 @@ final class SearchControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
     }
 
+    public function testLongNumericQueryFindsMatchingDescription(): void
+    {
+        $query = str_repeat('9', 33);
+        $description = 'Reference '.$query;
+        $this->createOperation($this->createAccount(), 15000, $description);
+
+        $this->client->request('GET', '/search', ['q' => $query]);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSelectorTextContains('table tbody', $description);
+    }
+
     private function createAccount(): Account
     {
         $bank = new Bank('Test Bank ' . uniqid());

@@ -84,7 +84,15 @@ final class GoldPriceResource
         description: 'Price in PLN as a decimal string, e.g. "250000.00". Required.',
         example: '250000.00',
     )]
-    #[Assert\NotBlank(message: 'gold_price.price_not_blank')]
+    #[Assert\Sequentially([
+        new Assert\NotBlank(message: 'gold_price.price_not_blank', normalizer: 'trim'),
+        new Assert\Range(
+            min: 0.01,
+            max: 999999.99,
+            notInRangeMessage: 'gold_price.price_out_of_range',
+            invalidMessage: 'common.numeric_invalid',
+        ),
+    ])]
     public ?string $pricePln = null;
 
     #[ApiProperty(description: 'Currency code. Always PLN. Read-only, ignored on write.', writable: false, example: 'PLN')]

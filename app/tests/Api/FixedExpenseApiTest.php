@@ -168,6 +168,48 @@ final class FixedExpenseApiTest extends WebTestCase
         self::assertSame(20, $reloaded->getDay());
     }
 
+    #[DataProvider('outOfRangeAmounts')]
+    public function testPatchRejectsOutOfRangeAmountWithoutChangingExpenseOrCreatingContractor(string $amount): void
+    {
+        $expense = $this->createFixedExpense();
+        $id = $expense->getId();
+        $contractorId = $expense->getContractor()->getId();
+        $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
+
+        $this->patch($expense, [
+            'amount' => $amount,
+            'day' => 20,
+            'description' => 'Must not be saved',
+            'contractorName' => 'Rejected amount '.uniqid(),
+        ]);
+
+        self::assertResponseStatusCodeSame(422);
+        $error = self::decodeObject((string) $this->client->getResponse()->getContent());
+        $violations = self::rowsAt($error, 'violations');
+        self::assertCount(1, $violations);
+        self::assertSame('amount', self::stringAt($violations[0], 'propertyPath'));
+        $this->em()->clear();
+        $unchanged = $this->em()->find(FixedExpense::class, $id);
+        self::assertNotNull($unchanged);
+        self::assertSame(-15000, $unchanged->getAmount());
+        self::assertSame(10, $unchanged->getDay());
+        self::assertNull($unchanged->getDescription());
+        self::assertSame($contractorId, $unchanged->getContractor()->getId());
+        self::assertSame($contractorsBefore, $this->em()->getRepository(Contractor::class)->count([]));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function outOfRangeAmounts(): iterable
+    {
+        yield 'below minimum' => ['-1000000.00'];
+        yield 'zero' => ['0.00'];
+        yield 'negative 17 digits' => ['-'.str_repeat('9', 17)];
+        yield 'negative 33 digits' => ['-'.str_repeat('9', 33)];
+        yield 'positive 33 digits' => [str_repeat('9', 33)];
+    }
+
     /**
      * @param array<string, mixed> $body
      */

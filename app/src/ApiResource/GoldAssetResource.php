@@ -64,7 +64,15 @@ final class GoldAssetResource
         description: 'Weight in ounces as a decimal string, up to 4 decimal places, e.g. "1.5000". Required, 0.0001-999.9999.',
         example: '1.0000',
     )]
-    #[Assert\NotBlank(message: 'gold_asset.ounces_must_be_positive')]
+    #[Assert\Sequentially([
+        new Assert\NotBlank(message: 'gold_asset.ounces_must_be_positive', normalizer: 'trim'),
+        new Assert\Range(
+            min: 0.0001,
+            max: 999.9999,
+            notInRangeMessage: 'gold_asset.ounces_out_of_range',
+            invalidMessage: 'common.numeric_invalid',
+        ),
+    ])]
     public ?string $ounces = null;
 
     public static function fromEntity(GoldAsset $goldAsset): self

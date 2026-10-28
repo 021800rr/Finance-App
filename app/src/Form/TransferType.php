@@ -19,6 +19,7 @@ use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\LessThanOrEqual;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Positive;
 
@@ -53,14 +54,20 @@ class TransferType extends AbstractType
                 'currency' => false,
                 'grouping' => true,
                 'input' => 'string',
-                'constraints' => [new Positive(message: 'transfer.amount_must_be_positive')],
+                'constraints' => [
+                    new Positive(message: 'transfer.amount_must_be_positive'),
+                    new LessThanOrEqual(value: 999999.99, message: 'transfer.amount_out_of_range'),
+                ],
             ])
             ->add('amountTo', MoneyType::class, [
                 'currency' => false,
                 'grouping' => true,
                 'input' => 'string',
                 'required' => false,
-                'constraints' => [new Positive(message: 'transfer.amount_must_be_positive')],
+                'constraints' => [
+                    new Positive(message: 'transfer.amount_must_be_positive'),
+                    new LessThanOrEqual(value: 999999.99, message: 'transfer.amount_out_of_range'),
+                ],
             ])
             ->add('date', DateType::class, [
                 'widget' => 'single_text',

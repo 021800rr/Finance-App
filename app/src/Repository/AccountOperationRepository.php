@@ -154,7 +154,7 @@ final class AccountOperationRepository extends ServiceEntityRepository
 
     /**
      * Matches the text in the description or the contractor name (case-insensitive substring) or, when the
-     * text parses as an amount, the exact amount. LIKE wildcards in the input are escaped, so "%", "_" and
+     * text is within the operation amount range, the exact amount. LIKE wildcards are escaped, so "%", "_" and
      * "\\" only ever match themselves.
      */
     private function buildSearchQuery(string $query): QueryBuilder
@@ -179,6 +179,11 @@ final class AccountOperationRepository extends ServiceEntityRepository
     private function tryParseAmountQuery(string $query): ?int
     {
         $normalized = str_replace(',', '.', trim($query));
+
+        // Values outside the operation amount range are only searched as text.
+        if (!is_numeric($normalized) || $normalized < -999999.99 || $normalized > 999999.99) {
+            return null;
+        }
 
         try {
             return Money::fromDecimalString($normalized, self::NO_CURRENCY_CODE)->getMinorUnits();

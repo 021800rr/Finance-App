@@ -82,7 +82,15 @@ final class FixedExpenseResource
         description: 'Amount as a decimal string. Must be negative, e.g. "-200.00". Always in PLN. Required.',
         example: '-200.00',
     )]
-    #[Assert\NotBlank(message: 'fixed_expense.amount_not_blank')]
+    #[Assert\Sequentially([
+        new Assert\NotBlank(message: 'fixed_expense.amount_not_blank', normalizer: 'trim'),
+        new Assert\Range(
+            min: -999999.99,
+            max: -0.01,
+            notInRangeMessage: 'fixed_expense.amount_out_of_range',
+            invalidMessage: 'common.numeric_invalid',
+        ),
+    ])]
     public ?string $amount = null;
 
     #[ApiProperty(

@@ -125,7 +125,15 @@ final class AccountOperationResource
         .'(exact sign convention follows the same rule as the Twig form). Required.',
         example: '50.00',
     )]
-    #[Assert\NotBlank(message: 'operation.amount_not_blank', normalizer: 'trim')]
+    #[Assert\Sequentially([
+        new Assert\NotBlank(message: 'operation.amount_not_blank', normalizer: 'trim'),
+        new Assert\Range(
+            min: -999999.99,
+            max: 999999.99,
+            notInRangeMessage: 'common.amount_out_of_range',
+            invalidMessage: 'common.numeric_invalid',
+        ),
+    ])]
     #[Groups(['operation:write'])]
     public ?string $amount = null;
 

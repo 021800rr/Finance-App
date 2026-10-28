@@ -14,6 +14,7 @@ use App\Entity\Household;
 use App\Repository\AccountOperationRepository;
 use App\Tests\DatabaseTestTrait;
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Uid\Uuid;
 
@@ -279,6 +280,63 @@ final class AccountOperationRepositoryTest extends KernelTestCase
 
         self::assertNotNull($result);
         self::assertSame($opIn->getId(), $result->getId());
+    }
+
+    #[DataProvider('outOfRangeQueries')]
+    public function testOutOfRangeAmountQuerySearchesDescriptionsAndContractorNames(string $query): void
+    {
+        $account = $this->createAccount();
+        $descriptionMatch = $this->createOperation($account, 100, new DateTimeImmutable(), 'Reference '.$query);
+        $contractor = $this->createContractorWithName('Contractor '.$query);
+        $contractorMatch = $this->createOperationWithContractor($account, 200, new DateTimeImmutable(), $contractor);
+        $this->createOperation($account, 99999999, new DateTimeImmutable(), 'Unrelated maximum amount');
+        $this->createOperation($account, -99999999, new DateTimeImmutable(), 'Unrelated minimum amount');
+
+        self::assertSame(2, $this->repository->countByQuery($query));
+        self::assertEqualsCanonicalizing(
+            [$descriptionMatch->getId(), $contractorMatch->getId()],
+            $this->idsOf($this->repository->searchByQueryPaged($query, 10, 0)),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function outOfRangeQueries(): iterable
+    {
+        yield 'one million' => ['1000000'];
+        yield 'negative one million' => ['-1000000'];
+        yield 'just above maximum before rounding' => ['999999.991'];
+        yield 'just below minimum before rounding' => ['-999999.991'];
+        yield '13 digits' => [str_repeat('9', 13)];
+        yield '17 digits' => [str_repeat('9', 17)];
+        yield '33 digits' => [str_repeat('9', 33)];
+        yield 'negative 33 digits' => ['-'.str_repeat('9', 33)];
+    }
+
+    #[DataProvider('boundaryAmountQueries')]
+    public function testAmountQueryStillMatchesAtTheLimits(string $query, int $minorUnits): void
+    {
+        $operation = $this->createOperation(
+            $this->createAccount(),
+            $minorUnits,
+            new DateTimeImmutable(),
+            'Boundary amount',
+        );
+
+        self::assertSame(1, $this->repository->countByQuery($query));
+        self::assertSame([$operation->getId()], $this->idsOf($this->repository->searchByQueryPaged($query, 10, 0)));
+    }
+
+    /**
+     * @return iterable<string, array{string, int}>
+     */
+    public static function boundaryAmountQueries(): iterable
+    {
+        yield 'maximum' => ['999999.99', 99999999];
+        yield 'minimum' => ['-999999.99', -99999999];
+        yield 'comma and whitespace' => [' 999999,99 ', 99999999];
+        yield 'leading zeros' => [str_repeat('0', 33).'999999.99', 99999999];
     }
 
     private function createAccount(): Account

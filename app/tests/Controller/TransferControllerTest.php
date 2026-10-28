@@ -165,6 +165,61 @@ final class TransferControllerTest extends WebTestCase
         ];
     }
 
+    #[DataProvider('excessiveAmounts')]
+    public function testExcessiveAmountShowsFieldErrorWithoutCreatingOperations(string $field, string $amount): void
+    {
+        $from = $this->createAccount('PLN');
+        $to = $this->createAccount('CHF');
+        $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+        $crawler = $this->client->request('GET', '/transfer/new');
+        $form = $crawler->filter('#transfer_form button[type="submit"]')->form();
+        $data = [
+            'transfer[fromAccount]' => (string) $from->getId(),
+            'transfer[toAccount]' => (string) $to->getId(),
+            'transfer[amountFrom]' => '100.00',
+            'transfer[amountTo]' => '25.00',
+        ];
+        $data['transfer['.$field.']'] = $amount;
+
+        $this->client->submit($form, $data);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorExists('#transfer_'.$field.'_error1');
+        self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function excessiveAmounts(): iterable
+    {
+        foreach (['amountFrom', 'amountTo'] as $field) {
+            yield $field.' above maximum' => [$field, '1000000.00'];
+            yield $field.' 17 digits' => [$field, str_repeat('9', 17)];
+            yield $field.' 33 digits' => [$field, str_repeat('9', 33)];
+        }
+    }
+
+    public function testMaximumTransferAmountsAreAccepted(): void
+    {
+        $from = $this->createAccount('PLN');
+        $to = $this->createAccount('CHF');
+        $crawler = $this->client->request('GET', '/transfer/new');
+        $form = $crawler->filter('#transfer_form button[type="submit"]')->form();
+
+        $this->client->submit($form, [
+            'transfer[fromAccount]' => (string) $from->getId(),
+            'transfer[toAccount]' => (string) $to->getId(),
+            'transfer[amountFrom]' => '999999.99',
+            'transfer[amountTo]' => '999999.99',
+        ]);
+
+        self::assertResponseRedirects();
+        $repository = $this->em()->getRepository(AccountOperation::class);
+        self::assertSame(-99999999, $repository->findOneBy(['account' => $from])?->getAmount());
+        self::assertSame(99999999, $repository->findOneBy(['account' => $to])?->getAmount());
+    }
+
     private function createAccount(string $currencyCode): Account
     {
         $bank = new Bank('Test Bank ' . uniqid());

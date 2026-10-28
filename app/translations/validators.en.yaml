@@ -78,6 +78,7 @@ transfer:
     accounts_must_differ: 'Choose a different destination account.'
     amount_from_required: 'Please enter the amount to transfer.'
     amount_must_be_positive: 'The transfer amount must be greater than zero.'
+    amount_out_of_range: 'The transfer amount must be between 0.01 and 999,999.99.'
     amount_to_required_for_currency_exchange: 'Please enter the amount to receive when exchanging between different currencies.'
     from_account_required: 'Please select the source account.'
     to_account_required: 'Please select the destination account.'
