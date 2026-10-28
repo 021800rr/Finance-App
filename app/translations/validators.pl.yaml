@@ -25,6 +25,7 @@ contractor:
     name_max_length: 'Nazwa kontrahenta może mieć najwyżej 255 znaków.'
     name_min_length: 'Nazwa kontrahenta musi mieć co najmniej 2 znaki.'
     name_not_blank: 'Podaj nazwę kontrahenta.'
+    name_not_unique: 'Kontrahent już istnieje — wybierz go z listy.'
     required: 'Wybierz kontrahenta z listy.'
 
 currency:

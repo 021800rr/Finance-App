@@ -216,6 +216,18 @@ export default class extends Controller {
                 body: JSON.stringify({ name })
             });
 
+            if (res.status === 422) {
+                const data = await res.json().catch(() => null);
+                const errors = Array.isArray(data?.errors)
+                    ? data.errors.filter(error => typeof error === 'string')
+                    : [];
+                this.showMessage('error', errors.join(' ') || this.message('msgCreateFailed'));
+                if (errors.length) {
+                    await this.search(name);
+                }
+                return;
+            }
+
             if (!res.ok) {
                 const text = await res.text().catch(() => `${res.status}`);
                 console.warn('createContractor failed', res.status, text);

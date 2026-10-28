@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Contractor;
+use App\Form\ContractorType;
 use App\Repository\ContractorRepository;
-use App\Service\ContractorFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\Serialize;
@@ -32,23 +33,32 @@ class ContractorController extends AbstractController
         return $contractorRepository->searchByName($q);
     }
 
-    #[Route(path: '/create', name: 'contractor_create', methods: ['POST'])]
+    #[Route(path: '/create', name: 'contractor_create', methods: ['POST'], format: 'json')]
     #[Serialize]
     public function create(
         Request $request,
         ContractorRepository $contractorRepository,
-        ContractorFactory $contractorFactory,
     ): Contractor|JsonResponse {
         if (!$this->isCsrfTokenValid('contractor-create', $request->headers->get('X-CSRF-Token'))) {
             return new JsonResponse(['error' => 'CSRF'], 403);
         }
 
-        try {
-            $contractor = $contractorFactory->createFromJsonRequest($request);
-        } catch (\InvalidArgumentException $e) {
-            return new JsonResponse(['error' => $e->getMessage()], 400);
+        // CSRF is checked above using the token from the request header.
+        $form = $this->createForm(ContractorType::class, options: ['csrf_protection' => false]);
+        $form->submit($request->getPayload()->all());
+
+        if (!$form->isValid()) {
+            $errors = [];
+            /** @var FormError $error */
+            foreach ($form->getErrors(true) as $error) {
+                $errors[] = $error->getMessage();
+            }
+
+            return new JsonResponse(['errors' => $errors], 422);
         }
 
+        /** @var Contractor $contractor */
+        $contractor = $form->getData();
         $contractorRepository->save($contractor, flush: true);
 
         return $contractor;

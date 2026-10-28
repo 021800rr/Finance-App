@@ -8,11 +8,13 @@ use App\Entity\Trait\BlankStringGuardTrait;
 use App\Entity\Trait\TimestampTrait;
 use App\Repository\ContractorRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ContractorRepository::class)]
 #[ORM\Table(name: 'contractor')]
 #[ORM\UniqueConstraint(name: 'uniq_contractor_name', columns: ['name'])]
+#[UniqueEntity(fields: ['name'], message: 'contractor.name_not_unique')]
 class Contractor
 {
     use TimestampTrait;
