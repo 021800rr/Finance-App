@@ -66,7 +66,7 @@ class CurrencyExchangeRateType extends AbstractType
                     new Range(
                         notInRangeMessage: 'currency_exchange_rate.rate_out_of_range',
                         min: 0.0001,
-                        max: 100,
+                        max: 99.9999,
                     ),
                 ],
             ]);

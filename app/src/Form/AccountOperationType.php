@@ -70,8 +70,8 @@ class AccountOperationType extends AbstractType
                     new NotEqualTo(value: 0, message: 'common.amount_cannot_be_zero'),
                     new Range(
                         notInRangeMessage: 'common.amount_out_of_range',
-                        min: -1000000,
-                        max: 1000000,
+                        min: -999999.99,
+                        max: 999999.99,
                     ),
                 ],
                 'data' => $existingOperation ? $this->moneyDecimal($existingOperation) : null,

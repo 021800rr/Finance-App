@@ -53,7 +53,7 @@ class GoldPriceType extends AbstractType
                     new Range(
                         notInRangeMessage: 'gold_price.price_out_of_range',
                         min: 0.01,
-                        max: 1000000,
+                        max: 999999.99,
                     ),
                 ],
             ]);
