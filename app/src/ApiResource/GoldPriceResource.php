@@ -25,17 +25,17 @@ use Symfony\Component\Validator\Constraints as Assert;
     description: 'A historical price point (in PLN) for a gold asset on a given date.',
     operations: [
         new GetCollection(
+            uriTemplate: '/gold_prices/recent',
             openapi: new OpenApiOperation(
-                summary: 'Lists the 20 most recent gold prices.',
-                description: 'Returns 20 entries ordered by date then id descending, '
-                .'with no pagination, like the web list.',
+                summary: 'Retrieves the most recent gold prices.',
+                description: 'Returns the most recent entries ordered by date then id descending, with no pagination.',
                 security: [['JWT' => []]],
             ),
             paginationEnabled: false,
             provider: GoldPriceProvider::class,
         ),
         new GetCollection(
-            uriTemplate: '/gold_prices/history',
+            uriTemplate: '/gold_prices/chart',
             openapi: new OpenApiOperation(
                 summary: 'Retrieves daily gold prices for the chart.',
                 description: 'Historical daily gold prices, all assets and dates, no limit or pagination. '

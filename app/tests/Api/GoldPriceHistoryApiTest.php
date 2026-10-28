@@ -35,7 +35,7 @@ final class GoldPriceHistoryApiTest extends WebTestCase
         $this->closeEntityManager();
     }
 
-    public function testHistoryReturnsDailyWinnersMatchingTheWebChart(): void
+    public function testChartReturnsDailyWinnersMatchingTheWebChart(): void
     {
         $this->logIn();
         // Identical form, weight and description must still produce separate series by asset ID.
@@ -47,7 +47,7 @@ final class GoldPriceHistoryApiTest extends WebTestCase
         $latestB = $this->createPrice($assetB, '2026-10-26', 1300020);
         $historical = $this->createPrice($assetA, '2026-10-25', 9000001);
 
-        $rows = $this->getCollection('/api/gold_prices/history');
+        $rows = $this->getCollection('/api/gold_prices/chart');
 
         self::assertSame(
             [$historical->getId(), $latestA->getId(), $latestB->getId()],
@@ -82,7 +82,7 @@ final class GoldPriceHistoryApiTest extends WebTestCase
         ], $chart);
     }
 
-    public function testListReturnsLatestTwentyEntriesWhileHistoryIncludesEveryDay(): void
+    public function testRecentReturnsLatestTwentyEntriesWhileChartIncludesEveryDay(): void
     {
         $asset = $this->createAsset();
         $ids = [];
@@ -92,19 +92,19 @@ final class GoldPriceHistoryApiTest extends WebTestCase
         }
         $sameDayPrice = $this->createPrice($asset, '2026-01-21', 99000);
 
-        $list = $this->getCollection('/api/gold_prices');
+        $list = $this->getCollection('/api/gold_prices/recent');
         $expectedListIds = array_slice(array_reverse([...$ids, $sameDayPrice->getId()]), 0, 20);
         self::assertSame($expectedListIds, array_column($list, 'id'));
 
-        $history = $this->getCollection('/api/gold_prices/history');
+        $history = $this->getCollection('/api/gold_prices/chart');
         $expectedHistoryIds = [...array_slice($ids, 0, -1), $sameDayPrice->getId()];
         self::assertSame($expectedHistoryIds, array_column($history, 'id'));
         self::assertSame('990.00', self::stringAt($history[20], 'pricePln'));
     }
 
-    public function testHistoryRequiresApiAuthentication(): void
+    public function testChartRequiresApiAuthentication(): void
     {
-        $this->client->request('GET', '/api/gold_prices/history');
+        $this->client->request('GET', '/api/gold_prices/chart');
 
         self::assertResponseStatusCodeSame(401);
     }
@@ -115,21 +115,26 @@ final class GoldPriceHistoryApiTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $document = self::decodeObject((string) $this->client->getResponse()->getContent());
         $paths = self::objectAt($document, 'paths');
-        $list = self::objectAt($paths, '/api/gold_prices', 'get');
-        $history = self::objectAt($paths, '/api/gold_prices/history', 'get');
+        $list = self::objectAt($paths, '/api/gold_prices/recent', 'get');
+        $history = self::objectAt($paths, '/api/gold_prices/chart', 'get');
 
         self::assertSame(['GoldPrice'], $list['tags']);
         self::assertSame(['GoldPrice'], $history['tags']);
         self::assertSame([['JWT' => []]], $list['security']);
         self::assertSame([['JWT' => []]], $history['security']);
-        self::assertStringContainsString('20', self::stringAt($list, 'description'));
+        self::assertStringContainsString('most recent entries', self::stringAt($list, 'description'));
         self::assertStringContainsString('highest id per asset and date', self::stringAt($history, 'description'));
 
-        $pricePaths = array_values(array_filter(
-            array_keys($paths),
-            static fn (string $path): bool => str_starts_with($path, '/api/gold_prices'),
-        ));
-        self::assertSame(['/api/gold_prices', '/api/gold_prices/history', '/api/gold_prices/{id}'], $pricePaths);
+        $pricePaths = $paths
+                |> array_keys(...)
+                |> (fn($x) => array_filter($x, static fn(string $path): bool => str_starts_with($path, '/api/gold_prices'),))
+                |> array_values(...);
+        self::assertSame([
+            '/api/gold_prices',
+            '/api/gold_prices/chart',
+            '/api/gold_prices/recent',
+            '/api/gold_prices/{id}',
+        ], $pricePaths);
 
         $tags = array_map(
             static fn (array $tag): string => self::stringAt($tag, 'name'),

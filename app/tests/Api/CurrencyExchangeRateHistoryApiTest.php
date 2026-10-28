@@ -36,7 +36,7 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
         $this->closeEntityManager();
     }
 
-    public function testHistoryReturnsDailyWinnersMatchingTheWebChart(): void
+    public function testChartReturnsDailyWinnersMatchingTheWebChart(): void
     {
         $bankA = new Bank('History Test Bank A '.uniqid());
         $bankB = new Bank('History Test Bank B '.uniqid());
@@ -76,7 +76,7 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
             ],
         ];
 
-        $this->client->request('GET', '/api/currency_exchange_rates/history', server: [
+        $this->client->request('GET', '/api/currency_exchange_rates/chart', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
         ]);
 
