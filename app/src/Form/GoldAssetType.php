@@ -14,6 +14,7 @@ use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Range;
 
 class GoldAssetType extends AbstractType
@@ -47,7 +48,10 @@ class GoldAssetType extends AbstractType
                 'data' => $existingAsset ? $this->ouncesDecimal($existingAsset) : null,
             ])
             ->add('description', TextType::class, [
-                'required' => false,
+                'required' => true,
+                'constraints' => [
+                    new NotBlank(message: 'gold_asset.description_not_blank', normalizer: 'trim'),
+                ],
                 'data' => $existingAsset?->getDescription(),
             ]);
     }

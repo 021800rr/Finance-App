@@ -57,7 +57,7 @@ final class GoldAssetResource
     public ?string $formName = null;
 
     #[ApiProperty(description: 'Free-text description. Required.', example: 'Sztabka 1oz')]
-    #[Assert\NotBlank(message: 'gold_asset.description_not_blank')]
+    #[Assert\NotBlank(message: 'gold_asset.description_not_blank', normalizer: 'trim')]
     public ?string $description = null;
 
     #[ApiProperty(

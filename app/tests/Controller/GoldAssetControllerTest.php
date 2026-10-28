@@ -7,6 +7,7 @@ namespace App\Tests\Controller;
 use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\Tests\DatabaseTestTrait;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -40,6 +41,7 @@ final class GoldAssetControllerTest extends WebTestCase
     public function testIndexSubmittingWithValidDataCreatesAssetAndRedirects(): void
     {
         $goldForm = $this->getOrCreateGoldForm('sztabka');
+        $description = 'Test sztabka '.uniqid();
 
         $crawler = $this->client->request('GET', '/gold-assets');
         $form = $crawler->selectButton('Add')->form();
@@ -47,7 +49,7 @@ final class GoldAssetControllerTest extends WebTestCase
         $this->client->submit($form, [
             'gold_asset[form]' => (string) $goldForm->getId(),
             'gold_asset[ounces]' => '1.5',
-            'gold_asset[description]' => 'Test sztabka ' . uniqid(),
+            'gold_asset[description]' => $description,
         ]);
 
         self::assertResponseRedirects('/gold-assets');
@@ -58,6 +60,38 @@ final class GoldAssetControllerTest extends WebTestCase
         $lastAsset = end($assets);
         self::assertInstanceOf(GoldAsset::class, $lastAsset);
         self::assertSame(15000, $lastAsset->getOunces());
+        self::assertSame($description, $lastAsset->getDescription());
+    }
+
+    /**
+     * @param array<string, string> $description
+     */
+    #[DataProvider('blankDescriptions')]
+    public function testCreateWithBlankDescriptionShowsFieldErrorWithoutSaving(array $description): void
+    {
+        $goldForm = $this->getOrCreateGoldForm('sztabka');
+        $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
+        $crawler = $this->client->request('GET', '/gold-assets');
+        $token = $crawler->filter('#gold_asset_form input[name="gold_asset[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/gold-assets', [
+            'gold_asset' => [
+                '_token' => $token,
+                'form' => (string) $goldForm->getId(),
+                'ounces' => '1.5',
+            ] + $description,
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#gold_asset_description[required].is-invalid');
+        self::assertSelectorTextContains(
+            '#gold_asset_description + .invalid-feedback.d-block',
+            'Please enter a description.',
+        );
+        self::assertInputValueSame('gold_asset[description]', '');
+        self::assertInputValueSame('gold_asset[ounces]', '1.5');
+        self::assertSame($countBefore, $this->em()->getRepository(GoldAsset::class)->count([]));
     }
 
     public function testIndexSubmittingWithNonPositiveOuncesShowsValidationError(): void
@@ -95,6 +129,7 @@ final class GoldAssetControllerTest extends WebTestCase
     {
         $asset = $this->createAssetInDatabase();
         $newGoldForm = $this->getOrCreateGoldForm('moneta');
+        $description = 'Updated description '.uniqid();
 
         $crawler = $this->client->request('GET', '/gold-assets/' . $asset->getId() . '/edit');
         $form = $crawler->filter('#gold_asset_form button[type="submit"]')->form();
@@ -102,7 +137,7 @@ final class GoldAssetControllerTest extends WebTestCase
         $this->client->submit($form, [
             'gold_asset[form]' => (string) $newGoldForm->getId(),
             'gold_asset[ounces]' => '2.25',
-            'gold_asset[description]' => 'Updated description ' . uniqid(),
+            'gold_asset[description]' => $description,
         ]);
 
         self::assertResponseRedirects('/gold-assets');
@@ -112,6 +147,60 @@ final class GoldAssetControllerTest extends WebTestCase
         self::assertNotNull($updated);
         self::assertSame(22500, $updated->getOunces());
         self::assertSame($newGoldForm->getId(), $updated->getForm()->getId());
+        self::assertSame($description, $updated->getDescription());
+    }
+
+    /**
+     * @param array<string, string> $description
+     */
+    #[DataProvider('blankDescriptions')]
+    public function testEditWithBlankDescriptionShowsFieldErrorWithoutChangingAsset(array $description): void
+    {
+        $asset = $this->createAssetInDatabase();
+        $id = $asset->getId();
+        $originalFormId = $asset->getForm()->getId();
+        $newGoldForm = $this->getOrCreateGoldForm('sztabka');
+        $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
+        $uri = '/gold-assets/'.$id.'/edit';
+        $crawler = $this->client->request('GET', $uri);
+        $token = $crawler->filter('#gold_asset_form input[name="gold_asset[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', $uri, [
+            'gold_asset' => [
+                '_token' => $token,
+                'form' => (string) $newGoldForm->getId(),
+                'ounces' => '2.25',
+            ] + $description,
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#gold_asset_description[required].is-invalid');
+        self::assertSelectorTextContains(
+            '#gold_asset_description + .invalid-feedback.d-block',
+            'Please enter a description.',
+        );
+        self::assertInputValueSame('gold_asset[description]', '');
+        self::assertInputValueSame('gold_asset[ounces]', '2.25');
+        $this->em()->clear();
+        $unchanged = $this->em()->find(GoldAsset::class, $id);
+        self::assertNotNull($unchanged);
+        self::assertSame('Test', $unchanged->getDescription());
+        self::assertSame(10000, $unchanged->getOunces());
+        self::assertSame($originalFormId, $unchanged->getForm()->getId());
+        self::assertSame($countBefore, $this->em()->getRepository(GoldAsset::class)->count([]));
+    }
+
+    /**
+     * @return array<string, array{array<string, string>}>
+     */
+    public static function blankDescriptions(): array
+    {
+        return [
+            'empty' => [['description' => '']],
+            'spaces' => [['description' => '   ']],
+            'missing' => [[]],
+        ];
     }
 
     public function testDeleteReturnsNotFoundForNonNumericId(): void
