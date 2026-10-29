@@ -9,7 +9,7 @@ Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazj�
 ## Co tu jest warte pokazania
 
 - **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
-- **PHPStan na poziomie 9**.
+- **PHPStan na najwyższym poziomie (`max`)** — dla `src`, `tests`, `config`, `bin` i `public`.
 - **~1290 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
 - **PHP CS Fixer** wymuszający spójny styl kodu.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
@@ -22,7 +22,7 @@ Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazj�
 - Symfony 8.1 / PHP 8.5, Doctrine ORM, API Platform
 - PostgreSQL
 - Symfony Security (form login do widoku Twig) + JWT (LexikJWTAuthenticationBundle) dla API
-- PHPUnit, PHPStan (poziom 9), PHP CS Fixer
+- PHPUnit, PHPStan (poziom `max`), PHP CS Fixer
 - Bootstrap 5, Stimulus (klasyczny widok Twig)
 
 ## Uruchomienie

@@ -54,7 +54,7 @@ final readonly class JwtDecorator implements OpenApiFactoryInterface
     }
 
     /**
-     * @param Tag[] $tags
+     * @param array<mixed> $tags
      *
      * @return Tag[]
      */
@@ -62,7 +62,9 @@ final readonly class JwtDecorator implements OpenApiFactoryInterface
     {
         $byName = [];
         foreach ($tags as $tag) {
-            $byName[$tag->getName()] = $tag;
+            if ($tag instanceof Tag) {
+                $byName[$tag->getName()] = $tag;
+            }
         }
 
         $ordered = [];

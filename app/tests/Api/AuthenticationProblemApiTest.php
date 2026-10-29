@@ -67,10 +67,14 @@ final class AuthenticationProblemApiTest extends WebTestCase
             }
             $this->login('test1234');
 
-            $problem = $this->assertAuthenticationProblem('auth.too_many_login_attempts', ['minutes' => '15']);
-            self::assertResponseHeaderSame('Retry-After', '900');
+            // The lock lasts 15 minutes, but Symfony's rate limiter rounds the remaining time up to whole seconds
+            // from the start of the current second, so a lock set a fraction of a second ago reads 901 s = 16 min.
+            $minutes = $this->lockMinutes();
+            self::assertContains($minutes, ['15', '16']);
+            $problem = $this->assertAuthenticationProblem('auth.too_many_login_attempts', ['minutes' => $minutes]);
+            self::assertResponseHeaderSame('Retry-After', (string) ((int) $minutes * 60));
             self::assertSame(
-                'Too many failed login attempts, please try again in 15 minutes.',
+                sprintf('Too many failed login attempts, please try again in %s minutes.', $minutes),
                 $problem['detail'] ?? null,
             );
         } finally {
@@ -102,6 +106,16 @@ final class AuthenticationProblemApiTest extends WebTestCase
         }
 
         return $problem;
+    }
+
+    private function lockMinutes(): string
+    {
+        $problem = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
+        self::assertIsArray($problem);
+        self::assertIsArray($problem['params'] ?? null);
+        self::assertIsString($problem['params']['minutes'] ?? null);
+
+        return $problem['params']['minutes'];
     }
 
     private function login(string $password): void

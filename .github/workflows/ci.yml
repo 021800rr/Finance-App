@@ -100,8 +100,8 @@ jobs:
       - name: PHPUnit
         run: vendor/bin/phpunit --colors=always
 
-      - name: PHPStan (level 9)
-        run: vendor/bin/phpstan analyse -l 9 --memory-limit 1G --no-progress src tests
+      - name: PHPStan (max level)
+        run: vendor/bin/phpstan analyse --memory-limit 1G --no-progress
 
       - name: PHP CS Fixer (dry run)
         run: vendor/bin/php-cs-fixer fix --dry-run --diff src

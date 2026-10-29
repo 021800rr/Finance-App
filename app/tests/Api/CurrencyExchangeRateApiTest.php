@@ -115,7 +115,7 @@ final class CurrencyExchangeRateApiTest extends WebTestCase
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<mixed>
      */
     private function violationMessages(): array
     {

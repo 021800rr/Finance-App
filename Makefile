@@ -21,6 +21,7 @@ help:
 	@echo "  make up              - start the containers (up -d)"
 	@echo "  make down            - stop the containers"
 	@echo "  make restart         - restart the containers (down && build)"
+	@echo "  make pull            - pull the newest base images (PHP security patches) and rebuild"
 	@echo ""
 	@echo "  make install         - composer install"
 	@echo "  make cache-clear     - clear the Symfony cache"
@@ -61,6 +62,10 @@ down:
 restart:
 	docker compose down
 	docker compose up -d --build
+
+# Fetches the newest php:8.5-fpm patch release (security fixes) instead of reusing the cached base image.
+pull:
+	docker compose build --pull
 
 logs:
 	docker compose logs -f php nginx
@@ -134,11 +139,11 @@ test:
 	docker exec finance-php-dev php bin/console cache:clear -n --env=test
 	docker exec finance-php-dev php bin/console lint:twig templates --env=test
 	docker exec -t finance-php-dev vendor/bin/phpunit --colors=always tests/$(TEST_PATH)
-	docker exec finance-php-dev vendor/bin/phpstan analyse -l 9 --memory-limit 1G src tests
+	docker exec finance-php-dev vendor/bin/phpstan analyse --memory-limit 1G
 	docker exec finance-php-dev vendor/bin/php-cs-fixer fix src
 
 phpstan:
-	docker exec finance-php-dev vendor/bin/phpstan analyse -l 9 --memory-limit 1G src tests
+	docker exec finance-php-dev vendor/bin/phpstan analyse --memory-limit 1G
 
 php-cs-fixer:
 	docker exec finance-php-dev vendor/bin/php-cs-fixer fix src

@@ -89,7 +89,7 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
         // listeners) is kept; ProblemResponse sets its own Content-Type.
         $headers = [];
         foreach ($original?->headers->allPreserveCaseWithoutCookies() ?? [] as $name => $values) {
-            $headers[$name] = array_values(array_filter($values, 'is_string'));
+            $headers[(string) $name] = array_values(array_filter(is_array($values) ? $values : [], 'is_string'));
         }
 
         $problem = ProblemResponse::create(
