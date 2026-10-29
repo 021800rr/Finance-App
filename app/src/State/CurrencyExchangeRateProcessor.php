@@ -14,7 +14,6 @@ use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\Repository\BankRepository;
 use App\Repository\CurrencyExchangeRateRepository;
-use App\Util\BusinessDateRange;
 use App\Util\DateParser;
 use App\ValueObject\Money;
 use Doctrine\ORM\EntityManagerInterface;
@@ -51,7 +50,7 @@ final readonly class CurrencyExchangeRateProcessor implements ProcessorInterface
 
         $bank = $this->resolveBank($data->bankId);
         $currency = $this->resolveCurrency($data->currencyCode);
-        $rateDate = $this->parseRateDate($data->rateDate);
+        $rateDate = DateParser::parseValidated($data->rateDate);
         $rateMinorUnits = $this->parseRate($data->rateToPln);
 
         try {
@@ -108,24 +107,6 @@ final readonly class CurrencyExchangeRateProcessor implements ProcessorInterface
         }
 
         return $currency;
-    }
-
-    private function parseRateDate(?string $rateDate): \DateTimeImmutable
-    {
-        if (null === $rateDate) {
-            throw new UnprocessableEntityHttpException('rateDate is required.');
-        }
-
-        $date = DateParser::tryParse($rateDate);
-        if (null === $date) {
-            throw new UnprocessableEntityHttpException('Invalid rateDate format.');
-        }
-
-        if (!BusinessDateRange::contains($date)) {
-            throw new UnprocessableEntityHttpException(BusinessDateRange::ERROR_MESSAGE);
-        }
-
-        return $date;
     }
 
     private function parseRate(?string $rateToPln): int

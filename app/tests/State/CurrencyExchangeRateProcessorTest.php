@@ -124,24 +124,26 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
         $this->processor->process($resource, new Post());
     }
 
-    public function testProcessThrowsUnprocessableWhenRateDateMissing(): void
+    public function testProcessTreatsAMissingRateDateAsABug(): void
     {
         $bank = $this->createBank();
         $this->createCurrency('CHF');
         $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '4.3210', rateDate: null);
 
-        $this->expectException(UnprocessableEntityHttpException::class);
+        // The API validates the date first (NotBlank + BusinessDate), so reaching here is a bug.
+        $this->expectException(\LogicException::class);
 
         $this->processor->process($resource, new Post());
     }
 
-    public function testProcessThrowsUnprocessableWhenRateDateInvalid(): void
+    public function testProcessTreatsAnUnvalidatedRateDateAsABug(): void
     {
         $bank = $this->createBank();
         $this->createCurrency('CHF');
         $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '4.3210', rateDate: 'not-a-date');
 
-        $this->expectException(UnprocessableEntityHttpException::class);
+        // The API validates the date first (NotBlank + BusinessDate), so reaching here is a bug.
+        $this->expectException(\LogicException::class);
 
         $this->processor->process($resource, new Post());
     }

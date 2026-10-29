@@ -251,7 +251,7 @@ final class TransferProcessorTest extends KernelTestCase
         $this->processor->process($resource, new Post());
     }
 
-    public function testProcessThrowsUnprocessableWhenOperationDateMissing(): void
+    public function testProcessTreatsAMissingOperationDateAsABug(): void
     {
         $this->ensureFixedContractor();
         $from = $this->createAccount('PLN');
@@ -264,12 +264,13 @@ final class TransferProcessorTest extends KernelTestCase
             operationDate: null,
         );
 
-        $this->expectException(UnprocessableEntityHttpException::class);
+        // The API validates the date first (NotBlank + BusinessDate), so reaching here is a bug.
+        $this->expectException(\LogicException::class);
 
         $this->processor->process($resource, new Post());
     }
 
-    public function testProcessThrowsUnprocessableWhenOperationDateInvalid(): void
+    public function testProcessTreatsAnUnvalidatedOperationDateAsABug(): void
     {
         $this->ensureFixedContractor();
         $from = $this->createAccount('PLN');
@@ -282,7 +283,8 @@ final class TransferProcessorTest extends KernelTestCase
             operationDate: 'not-a-date',
         );
 
-        $this->expectException(UnprocessableEntityHttpException::class);
+        // The API validates the date first (NotBlank + BusinessDate), so reaching here is a bug.
+        $this->expectException(\LogicException::class);
 
         $this->processor->process($resource, new Post());
     }

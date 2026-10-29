@@ -14,7 +14,6 @@ use App\Entity\AccountOperation;
 use App\Repository\AccountOperationRepository;
 use App\Repository\AccountRepository;
 use App\Service\ContractorResolver;
-use App\Util\BusinessDateRange;
 use App\Util\DateParser;
 use App\Util\OptionalText;
 use App\ValueObject\Money;
@@ -58,7 +57,7 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
         try {
             $existingOperation = $operation instanceof Patch ? $this->loadExisting($uriVariables) : null;
             $account = $existingOperation?->getAccount() ?? $this->resolveAccount($data->accountId);
-            $operationDate = $this->parseOperationDate($data->operationDate);
+            $operationDate = DateParser::parseValidated($data->operationDate);
             $amount = $this->parseAmount($data->amount, $account->getCurrencyCode());
 
             // Include the resolver's contractor flush and the final operation flush in one transaction.
@@ -161,23 +160,5 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
         AccountOperation::assertValidAmount($minorUnits);
 
         return $minorUnits;
-    }
-
-    private function parseOperationDate(?string $operationDate): \DateTimeImmutable
-    {
-        if (null === $operationDate) {
-            throw new UnprocessableEntityHttpException('Operation date is required.');
-        }
-
-        $date = DateParser::tryParse($operationDate);
-        if (null === $date) {
-            throw new UnprocessableEntityHttpException('Invalid operation date format.');
-        }
-
-        if (!BusinessDateRange::contains($date)) {
-            throw new UnprocessableEntityHttpException(BusinessDateRange::ERROR_MESSAGE);
-        }
-
-        return $date;
     }
 }

@@ -32,6 +32,28 @@ final class DateParserTest extends TestCase
         self::assertNotNull(DateParser::tryParse('2026-02-28'));
     }
 
+    public function testParseValidatedReturnsTheDateAtMidnight(): void
+    {
+        self::assertSame('2026-01-15 00:00:00', DateParser::parseValidated('2026-01-15')->format('Y-m-d H:i:s'));
+    }
+
+    #[DataProvider('unvalidatedDates')]
+    public function testParseValidatedTreatsADateTheValidatorMissedAsABug(?string $value): void
+    {
+        $this->expectException(\LogicException::class);
+
+        DateParser::parseValidated($value);
+    }
+
+    /**
+     * @return iterable<string, array{?string}>
+     */
+    public static function unvalidatedDates(): iterable
+    {
+        yield 'missing' => [null];
+        yield 'not a date' => ['2026-02-31'];
+    }
+
     /**
      * @return iterable<string, array{string}>
      */
