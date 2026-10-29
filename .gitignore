@@ -1,3 +1,5 @@
 /.idea/
 /.env
 docker/postgres/data/
+/.mcp.json
+/.ai/
