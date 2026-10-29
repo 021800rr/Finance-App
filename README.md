@@ -158,6 +158,8 @@ przynajmniej dla tych banków, w których trzymasz walutę.
 **Opłaty stałe / planowanie przyszłych cyklicznych wydatków** (czynsz, raty itp).
 Wystarczy dodać opłaty stałe do systemu i zanim zacznie się nowy miesiąc dorzucić je do konta głównego ("Zaplanuj wydatki").
 Konto główne oznacza się gwiazdką (☆) na liście kont — klik ustawia je jako główne (`Account.isMain`, wymuszone unikalnym indeksem w bazie).
+Ukrytego konta głównego nie da się użyć do planowania (tak jak ukrytego konta nie można wybrać do nowej operacji
+ani przelewu): planowanie kończy się komunikatem, a API odpowiada `409` z `errorCode: fixed_expense.plan_main_hidden`.
 
 **Gospodarstwa** (`household`) — to tylko etykieta do rozdzielenia sald na dwie kieszenie, nie mechanizm dostępu:
 - **Nasze** — ja i partnerka

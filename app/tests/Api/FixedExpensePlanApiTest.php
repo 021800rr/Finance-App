@@ -132,6 +132,21 @@ final class FixedExpensePlanApiTest extends WebTestCase
         self::assertSame($operationsBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
+    public function testPlanWithAHiddenMainAccountRespondsWithConflictAndCreatesNothing(): void
+    {
+        $main = $this->createMainAccount();
+        $main->setHidden(true);
+        $this->em()->flush();
+        $this->createFixedExpense(day: 12, amount: -15000);
+        $operationsBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+
+        $this->client->request('POST', '/api/fixed_expenses/plan', server: $this->authHeaders());
+
+        $params = $this->assertConflict('fixed_expense.plan_main_hidden', ['account']);
+        self::assertSame($main->getAccountNumber(), $params['account']);
+        self::assertSame($operationsBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
     /**
      * Asserts a 409 problem with the given code and parameter names; returns the parameters.
      *

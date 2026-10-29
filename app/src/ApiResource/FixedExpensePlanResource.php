@@ -21,8 +21,8 @@ use App\State\FixedExpensePlanProcessor;
             status: 201,
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Creates one operation on the main account for every fixed expense, dated in the next '
-            .'calendar month. Takes no request body. Responds with 409 when no account is marked as main, or '
-            .'when a matching operation already exists (nothing is created then).',
+            .'calendar month. Takes no request body. Responds with 409 when no account is marked as main, when '
+            .'the main account is hidden, or when a matching operation already exists (nothing is created then).',
             input: false,
             processor: FixedExpensePlanProcessor::class,
         ),

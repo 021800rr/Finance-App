@@ -39,6 +39,7 @@ fixed_expense:
     plan_button: 'Zaplanuj wydatki'
     plan_currency_mismatch: 'Opłaty stałe są w %expense_currency%, a konto główne "%account%" jest w %account_currency%. Najpierw oznacz jako główne konto w %expense_currency%.'
     plan_duplicate: 'Podejrzenie duplikatu: operacja dla "%contractor%" na kwotę %amount% w dniu %date% już istnieje. Sprawdź konto przed ponownym planowaniem.'
+    plan_main_hidden: 'Konto główne "%account%" jest ukryte, więc nie można dodawać do niego nowych operacji. Najpierw pokaż to konto albo oznacz jako główne inne konto.'
     plan_main_not_own: 'Opłaty stałe można planować tylko na naszych kontach, a konto główne "%account%" należy do: %household%. Najpierw oznacz jako główne jedno z naszych kont.'
     plan_no_main_account: 'Żadne konto nie jest oznaczone jako główne. Najpierw oznacz jedno konto jako główne.'
 

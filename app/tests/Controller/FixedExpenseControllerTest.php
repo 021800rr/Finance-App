@@ -570,6 +570,32 @@ final class FixedExpenseControllerTest extends WebTestCase
         self::assertSelectorTextContains('body', 'Fixed expenses are in PLN, but the main account');
     }
 
+    public function testPlanShowsAFlashMessageAndCreatesNothingWhenTheMainAccountIsHidden(): void
+    {
+        $this->createFixedExpenseInDatabase();
+
+        $main = $this->em()->getRepository(Account::class)->findOneBy(['isMain' => true]);
+        self::assertNotNull($main, 'Fixtures must provide a main account.');
+        $main->setHidden(true);
+        $this->em()->flush();
+        $operationsBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+
+        $crawler = $this->client->request('GET', '/fixed-expense');
+        $csrfToken = $crawler->filter('form[action*="/fixed-expense/plan"] input[name="_token"]')->attr('value');
+
+        $this->client->request('POST', '/fixed-expense/plan', ['_token' => $csrfToken]);
+
+        $this->client->followRedirect();
+        self::assertSelectorTextContains(
+            'body',
+            sprintf(
+                'The main account "%s" is hidden, so no new operations can be added to it.',
+                $main->getAccountNumber(),
+            ),
+        );
+        self::assertSame($operationsBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
     private function assertDescriptionTooLongError(): void
     {
         self::assertResponseIsSuccessful();

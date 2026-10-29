@@ -37,6 +37,11 @@ final readonly class FixedExpensePlannerService
             throw FixedExpensePlanningException::mainAccountNotOwn($account->getAccountNumber(), $account->getHousehold()->getName());
         }
 
+        // Same rule as for operations and transfers: a hidden account takes no new operations.
+        if ($account->isHidden()) {
+            throw FixedExpensePlanningException::mainAccountHidden($account->getAccountNumber());
+        }
+
         $targetMonth = new \DateTimeImmutable('first day of this month')->modify('+1 month');
         $year = (int) $targetMonth->format('Y');
         $month = (int) $targetMonth->format('m');

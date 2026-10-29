@@ -61,6 +61,20 @@ final class FixedExpensePlanningException extends \RuntimeException implements B
         );
     }
 
+    public static function mainAccountHidden(string $accountNumber): self
+    {
+        return new self(
+            sprintf(
+                'The main account "%s" is hidden, so no new operations can be added to it. '
+                .'Show the account again or mark another account as main first.',
+                $accountNumber
+            ),
+            'fixed_expense.plan_main_hidden',
+            ['%account%' => $accountNumber],
+            ['account' => $accountNumber],
+        );
+    }
+
     public static function currencyMismatch(string $expenseCurrency, string $accountNumber, string $accountCurrency): self
     {
         return new self(

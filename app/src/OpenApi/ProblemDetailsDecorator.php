@@ -43,6 +43,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         | `transfer.amount_to_required_for_currency_exchange` | 422 | `fromCurrency`, `toCurrency` |
         | `fixed_expense.plan_no_main_account` | 409 | |
         | `fixed_expense.plan_main_not_own` | 409 | `account`, `household` |
+        | `fixed_expense.plan_main_hidden` | 409 | `account` |
         | `fixed_expense.plan_currency_mismatch` | 409 | `expenseCurrency`, `account`, `accountCurrency` |
         | `fixed_expense.plan_duplicate` | 409 | `contractor`, `amount`, `date` |
 
