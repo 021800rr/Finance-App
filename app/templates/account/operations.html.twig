@@ -19,11 +19,13 @@
                             <strong>{{ 'account.balance_today'|trans }}:</strong> {{ saldoToday|money }}
                         {% endif %}
                     </div>
-                    <div class="mt-3">
-                        <a class="btn btn-sm btn-primary" href="{{ path('operation_new', {account: account.id}) }}">
-                            {{ 'account.add_operation'|trans }}
-                        </a>
-                    </div>
+                    {% if not account.hidden %}
+                        <div class="mt-3">
+                            <a class="btn btn-sm btn-primary" href="{{ path('operation_new', {account: account.id}) }}">
+                                {{ 'account.add_operation'|trans }}
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
 
                 <div class="table-responsive">

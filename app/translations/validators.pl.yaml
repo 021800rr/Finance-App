@@ -1,4 +1,5 @@
 account:
+    hidden_not_selectable: 'To konto jest ukryte. Wybierz konto, które nie jest ukryte.'
     number_max_length: 'Numer konta może mieć najwyżej 50 znaków.'
     number_min_length: 'Numer konta musi mieć co najmniej 1 znak.'
     number_not_blank: 'Podaj numer konta.'
@@ -18,6 +19,7 @@ common:
     amount_not_blank: 'Podaj kwotę.'
     amount_out_of_range: 'Kwota musi być z zakresu od -999 999,99 do 999 999,99.'
     date_not_blank: 'Podaj datę.'
+    description_max_length: 'Opis może mieć najwyżej 255 znaków.'
     date_out_of_range: 'Data musi mieścić się w zakresie od {{ min }} do {{ max }} (włącznie).'
     numeric_invalid: 'Podaj poprawną liczbę.'
 
@@ -34,6 +36,8 @@ currency:
 
 currency_exchange_rate:
     bank_required: 'Wybierz bank.'
+    bank_without_foreign_account: 'Ten bank nie ma nieukrytego konta walutowego. Wybierz inny bank.'
+    currency_pln_not_allowed: 'Nie można dodać kursu dla PLN. Wybierz inną walutę.'
     currency_required: 'Wybierz walutę.'
     rate_not_blank: 'Podaj kurs.'
     rate_out_of_range: 'Kurs musi być z zakresu od 0,0001 do 99,9999.'
@@ -46,9 +50,11 @@ fixed_expense:
     day_required: 'Podaj dzień miesiąca.'
 
 gold_asset:
+    description_max_length: 'Opis może mieć najwyżej 255 znaków.'
     description_not_blank: 'Podaj opis.'
     form_not_null: 'Wybierz formę.'
     ounces_must_be_positive: 'Ilość uncji musi być większa od zera.'
+    ounces_not_blank: 'Podaj liczbę uncji.'
     ounces_out_of_range: 'Ilość uncji musi być z zakresu 0,0001-999,9999.'
 
 gold_form:
@@ -77,6 +83,7 @@ rate:
 transfer:
     amount_out_of_range: 'Kwota przelewu musi być z zakresu od 0,01 do 999 999,99.'
     accounts_must_differ: 'Wybierz inne konto docelowe.'
+    amount_from_not_blank: 'Podaj kwotę przelewu.'
     amount_from_required: 'Podaj kwotę przelewu.'
     amount_must_be_positive: 'Kwota przelewu musi być większa od zera.'
     amount_to_required_for_currency_exchange: 'Podaj kwotę do otrzymania przy wymianie między różnymi walutami.'

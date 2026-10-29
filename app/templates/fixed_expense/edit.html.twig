@@ -14,6 +14,7 @@
                 {% set dayHasError = form.day.vars.errors|length > 0 %}
                 {% set amountHasError = form.amount.vars.errors|length > 0 %}
                 {% set contractorHasError = form.contractor.vars.errors|length > 0 %}
+                {% set descriptionHasError = form.description.vars.errors|length > 0 %}
                 {{ form_start(form, {attr: {id: 'fixed_expense_form'}}) }}
                 <table class="table table-borderless align-middle w-auto">
                     <tbody>
@@ -58,7 +59,14 @@
                     <tr>
                         <th class="pe-3 text-end">{{ 'form.description'|trans }}</th>
                         <td>
-                            {{ form_widget(form.description) }}
+                            {{ form_widget(form.description, {
+                                attr: {
+                                    class: (form.description.vars.attr.class|default('')) ~ (descriptionHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if descriptionHasError %} d-block{% endif %}">
+                                {{ form_errors(form.description) }}
+                            </div>
                         </td>
                     </tr>
                     <tr>

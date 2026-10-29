@@ -5,29 +5,33 @@ declare(strict_types=1);
 namespace App\Form;
 
 use App\Entity\GoldAsset;
+use App\Repository\GoldAssetRepository;
 use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
-use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Range;
 
 class GoldPriceType extends AbstractType
 {
+    public function __construct(private readonly GoldAssetRepository $goldAssetRepository)
+    {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
             ->add('goldAsset', EntityType::class, [
                 'class' => GoldAsset::class,
                 'choice_label' => fn (GoldAsset $asset) => $asset->getDescription(),
-                'query_builder' => function (EntityRepository $assetRepository) {
-                    return $assetRepository->createQueryBuilder('ga')
-                        ->orderBy('ga.id', 'ASC');
-                },
+                // Choices are loaded up front, so a submitted ID is compared in PHP and never reaches SQL.
+                'choices' => $this->goldAssetRepository->findAllOrdered(),
+                'constraints' => [new NotNull(message: 'gold_price.asset_not_null')],
             ])
             ->add('priceDate', DateType::class, [
                 'widget' => 'single_text',
@@ -50,6 +54,7 @@ class GoldPriceType extends AbstractType
                 'required' => true,
                 'invalid_message' => 'common.numeric_invalid',
                 'constraints' => [
+                    new NotBlank(message: 'gold_price.price_not_blank'),
                     new Range(
                         notInRangeMessage: 'gold_price.price_out_of_range',
                         min: 0.01,

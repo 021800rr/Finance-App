@@ -131,6 +131,187 @@ final class AccountOperationControllerTest extends WebTestCase
         self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
+    /**
+     * @param array<string, string> $account
+     */
+    #[DataProvider('blankAccounts')]
+    public function testNewWithBlankAccountShowsFieldErrorWithoutSaving(array $account): void
+    {
+        $contractor = new Contractor('Blank account test '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+        $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+        $crawler = $this->client->request('GET', '/operation/new');
+        $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/operation/new', [
+            'account_operation' => [
+                '_token' => $token,
+                'contractor' => (string) $contractor->getId(),
+                'operationDate' => '2026-01-15',
+                'amount' => '20.00',
+            ] + $account,
+            'contractor_input' => $contractor->getName(),
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#account_operation_account.is-invalid');
+        self::assertSelectorTextContains(
+            '#account_operation_account + .invalid-feedback.d-block',
+            'Please select an account.',
+        );
+        self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
+    /**
+     * @return array<string, array{array<string, string>}>
+     */
+    public static function blankAccounts(): array
+    {
+        return [
+            'empty' => [['account' => '']],
+            'missing' => [[]],
+        ];
+    }
+
+    public function testNewWithTooLongDescriptionShowsFieldErrorWithoutSaving(): void
+    {
+        $account = $this->createAccount();
+        $contractor = new Contractor('Long description test '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+        $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+        $crawler = $this->client->request('GET', '/operation/new');
+        $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/operation/new', [
+            'account_operation' => [
+                '_token' => $token,
+                'account' => (string) $account->getId(),
+                'contractor' => (string) $contractor->getId(),
+                'operationDate' => '2026-01-15',
+                'amount' => '20.00',
+                'description' => str_repeat('a', 256),
+            ],
+            'contractor_input' => $contractor->getName(),
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#account_operation_description.is-invalid');
+        self::assertSelectorTextContains(
+            '#account_operation_description + .invalid-feedback.d-block',
+            'The description cannot be longer than 255 characters.',
+        );
+        self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
+    public function testNewSavesDescriptionOfMaximumLengthAfterTrimming(): void
+    {
+        $account = $this->createAccount();
+        $contractor = new Contractor('Long description test '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+        $description = str_repeat('ą', 255);
+        $crawler = $this->client->request('GET', '/operation/new');
+        $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/operation/new', [
+            'account_operation' => [
+                '_token' => $token,
+                'account' => (string) $account->getId(),
+                'contractor' => (string) $contractor->getId(),
+                'operationDate' => '2026-01-15',
+                'amount' => '20.00',
+                'description' => '  '.$description.'  ',
+            ],
+            'contractor_input' => $contractor->getName(),
+        ]);
+
+        self::assertResponseRedirects();
+        $saved = $this->em()->getRepository(AccountOperation::class)->findOneBy(['account' => $account]);
+        self::assertNotNull($saved);
+        self::assertSame($description, $saved->getDescription());
+    }
+
+    public function testNewFormOffersOnlyVisibleAccounts(): void
+    {
+        $visible = $this->createAccount();
+        $hidden = $this->createHiddenAccount();
+
+        $this->client->request('GET', '/operation/new');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#account_operation_account option[value="'.$visible->getId().'"]');
+        self::assertSelectorNotExists('#account_operation_account option[value="'.$hidden->getId().'"]');
+    }
+
+    #[DataProvider('unavailableAccountIds')]
+    public function testNewWithUnavailableAccountShowsFieldErrorWithoutSaving(?string $accountId): void
+    {
+        $accountId ??= (string) $this->createHiddenAccount()->getId();
+        $contractor = new Contractor('Unavailable account test '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+        $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+        $crawler = $this->client->request('GET', '/operation/new');
+        $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/operation/new', [
+            'account_operation' => [
+                '_token' => $token,
+                'account' => $accountId,
+                'contractor' => (string) $contractor->getId(),
+                'operationDate' => '2026-01-15',
+                'amount' => '20.00',
+            ],
+            'contractor_input' => $contractor->getName(),
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#account_operation_account.is-invalid');
+        self::assertSelectorExists('#account_operation_account + .invalid-feedback.d-block');
+        self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
+    /**
+     * @return array<string, array{?string}>
+     */
+    public static function unavailableAccountIds(): array
+    {
+        return [
+            'hidden' => [null],
+            'above SQL integer' => ['2147483648'],
+            'huge' => [str_repeat('9', 33)],
+        ];
+    }
+
+    public function testNewRedirectsWhenPreselectedAccountIsHidden(): void
+    {
+        $hidden = $this->createHiddenAccount();
+
+        $this->client->request('GET', '/operation/new?account='.$hidden->getId());
+
+        self::assertResponseRedirects('/');
+    }
+
+    public function testEditOfOperationOnHiddenAccountShowsItsOwnAccount(): void
+    {
+        $operation = $this->createOperationInDatabase();
+        $account = $operation->getAccount();
+        $account->setHidden(true);
+        $this->em()->flush();
+
+        $this->client->request('GET', '/operation/'.$operation->getId().'/edit');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorCount(1, '#account_operation_account option');
+        self::assertSelectorExists('#account_operation_account option[value="'.$account->getId().'"][selected]');
+    }
+
     public function testNewRedirectsWhenAccountIdIsInvalid(): void
     {
         $this->client->request('GET', '/operation/new?account=alamakota');
@@ -150,6 +331,39 @@ final class AccountOperationControllerTest extends WebTestCase
         $this->client->request('GET', '/operation/new?account=99999999999');
 
         self::assertResponseRedirects('/');
+    }
+
+    public function testEditWithTooLongDescriptionShowsFieldErrorWithoutChangingOperation(): void
+    {
+        $operation = $this->createOperationInDatabase();
+        $id = $operation->getId();
+        $uri = '/operation/'.$id.'/edit';
+        $crawler = $this->client->request('GET', $uri);
+        $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', $uri, [
+            'account_operation' => [
+                '_token' => $token,
+                'contractor' => (string) $operation->getContractor()->getId(),
+                'operationDate' => '2026-01-15',
+                'amount' => '20.00',
+                'description' => str_repeat('a', 256),
+            ],
+            'contractor_input' => $operation->getContractor()->getName(),
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#account_operation_description.is-invalid');
+        self::assertSelectorTextContains(
+            '#account_operation_description + .invalid-feedback.d-block',
+            'The description cannot be longer than 255 characters.',
+        );
+        $this->em()->clear();
+        $unchanged = $this->em()->find(AccountOperation::class, $id);
+        self::assertNotNull($unchanged);
+        self::assertSame(10000, $unchanged->getAmount());
+        self::assertNull($unchanged->getDescription());
     }
 
     public function testEditReturnsNotFoundForNonNumericId(): void
@@ -429,6 +643,15 @@ final class AccountOperationControllerTest extends WebTestCase
         $this->client->request('GET', '/operation/' . $opOut->getId() . '/go-to-other-side');
 
         self::assertResponseRedirects('/account/' . $account->getId() . '/operations?highlight=' . $opIn->getId());
+    }
+
+    private function createHiddenAccount(): Account
+    {
+        $account = $this->createAccount();
+        $account->setHidden(true);
+        $this->em()->flush();
+
+        return $account;
     }
 
     private function createAccount(): Account

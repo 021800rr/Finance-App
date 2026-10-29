@@ -15,6 +15,7 @@ use App\Entity\FixedExpense;
 use App\Repository\CurrencyRepository;
 use App\Repository\FixedExpenseRepository;
 use App\Service\ContractorResolver;
+use App\Util\OptionalText;
 use App\ValueObject\Money;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -96,7 +97,7 @@ final readonly class FixedExpenseProcessor implements ProcessorInterface
             $amountMinorUnits,
             $currency,
         );
-        $fixedExpense->setDescription($data->description);
+        $fixedExpense->setDescription(OptionalText::normalize($data->description));
 
         return $fixedExpense;
     }
@@ -118,7 +119,7 @@ final readonly class FixedExpenseProcessor implements ProcessorInterface
         $fixedExpense->setDay($day);
         $fixedExpense->setAmount($amountMinorUnits);
         $fixedExpense->setCurrency($currency);
-        $fixedExpense->setDescription($data->description);
+        $fixedExpense->setDescription(OptionalText::normalize($data->description));
 
         return $fixedExpense;
     }

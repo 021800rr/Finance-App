@@ -22,6 +22,24 @@ final class CurrencyRepository extends ServiceEntityRepository
         parent::__construct($registry, Currency::class);
     }
 
+    /**
+     * Currencies an exchange rate may be added for: every currency except PLN, which rates are quoted in.
+     *
+     * @return list<Currency>
+     */
+    public function findForeignOrderedByCode(): array
+    {
+        /** @var list<Currency> $currencies */
+        $currencies = $this->createQueryBuilder('c')
+            ->where('c.code != :settlementCurrency')
+            ->setParameter('settlementCurrency', Currencies::SETTLEMENT_CURRENCY_CODE)
+            ->orderBy('c.code', 'ASC')
+            ->getQuery()
+            ->getResult();
+
+        return $currencies;
+    }
+
     public function findPlnOrThrow(): Currency
     {
         return EntityOrThrow::require(

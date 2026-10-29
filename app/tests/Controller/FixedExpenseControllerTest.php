@@ -102,6 +102,172 @@ final class FixedExpenseControllerTest extends WebTestCase
         self::assertSame($countBefore, $this->em()->getRepository(FixedExpense::class)->count([]));
     }
 
+    /**
+     * @param array<string, string> $amount
+     */
+    #[DataProvider('blankAmounts')]
+    public function testCreateWithBlankAmountShowsFieldErrorWithoutSaving(array $amount): void
+    {
+        $contractor = new Contractor('Blank amount test '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+        $expensesBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
+        $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
+        $crawler = $this->client->request('GET', '/fixed-expense');
+        $token = $crawler->filter('#fixed_expense_form input[name="fixed_expense[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/fixed-expense', [
+            'fixed_expense' => [
+                '_token' => $token,
+                'day' => '10',
+                'contractor' => (string) $contractor->getId(),
+                'description' => 'Must not be saved',
+            ] + $amount,
+            'contractor_input' => $contractor->getName(),
+        ]);
+
+        $this->assertAmountRequiredError();
+        self::assertSame($expensesBefore, $this->em()->getRepository(FixedExpense::class)->count([]));
+        self::assertSame($contractorsBefore, $this->em()->getRepository(Contractor::class)->count([]));
+    }
+
+    /**
+     * @param array<string, string> $amount
+     */
+    #[DataProvider('blankAmounts')]
+    public function testEditWithBlankAmountShowsFieldErrorWithoutChangingExpense(array $amount): void
+    {
+        $expense = $this->createFixedExpenseInDatabase(15, -12345, 'Original description');
+        $id = $expense->getId();
+        $contractorId = $expense->getContractor()->getId();
+        $otherContractor = new Contractor('Unapplied contractor '.uniqid());
+        $this->em()->persist($otherContractor);
+        $this->em()->flush();
+        $expensesBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
+        $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
+        $uri = '/fixed-expense/'.$id.'/edit';
+        $crawler = $this->client->request('GET', $uri);
+        $token = $crawler->filter('#fixed_expense_form input[name="fixed_expense[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', $uri, [
+            'fixed_expense' => [
+                '_token' => $token,
+                'day' => '20',
+                'contractor' => (string) $otherContractor->getId(),
+                'description' => 'Must not be saved',
+            ] + $amount,
+            'contractor_input' => $otherContractor->getName(),
+        ]);
+
+        $this->assertAmountRequiredError();
+        self::assertInputValueSame('fixed_expense[day]', '20');
+        self::assertInputValueSame('fixed_expense[description]', 'Must not be saved');
+        $this->em()->clear();
+        $unchanged = $this->em()->find(FixedExpense::class, $id);
+        self::assertNotNull($unchanged);
+        self::assertSame(15, $unchanged->getDay());
+        self::assertSame(-12345, $unchanged->getAmount());
+        self::assertSame('Original description', $unchanged->getDescription());
+        self::assertSame($contractorId, $unchanged->getContractor()->getId());
+        self::assertSame($expensesBefore, $this->em()->getRepository(FixedExpense::class)->count([]));
+        self::assertSame($contractorsBefore, $this->em()->getRepository(Contractor::class)->count([]));
+    }
+
+    /**
+     * @return array<string, array{array<string, string>}>
+     */
+    public static function blankAmounts(): array
+    {
+        return [
+            'empty' => [['amount' => '']],
+            'spaces' => [['amount' => '   ']],
+            'missing' => [[]],
+        ];
+    }
+
+    public function testCreateWithTooLongDescriptionShowsFieldErrorWithoutSaving(): void
+    {
+        $contractor = new Contractor('Long description test '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+        $expensesBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
+        $crawler = $this->client->request('GET', '/fixed-expense');
+        $token = $crawler->filter('#fixed_expense_form input[name="fixed_expense[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/fixed-expense', [
+            'fixed_expense' => [
+                '_token' => $token,
+                'day' => '10',
+                'contractor' => (string) $contractor->getId(),
+                'amount' => '-20.00',
+                'description' => str_repeat('a', 256),
+            ],
+            'contractor_input' => $contractor->getName(),
+        ]);
+
+        $this->assertDescriptionTooLongError();
+        self::assertSame($expensesBefore, $this->em()->getRepository(FixedExpense::class)->count([]));
+    }
+
+    public function testCreateSavesDescriptionOfMaximumLengthAfterTrimming(): void
+    {
+        $contractor = new Contractor('Long description test '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+        $description = str_repeat('ą', 255);
+        $crawler = $this->client->request('GET', '/fixed-expense');
+        $token = $crawler->filter('#fixed_expense_form input[name="fixed_expense[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/fixed-expense', [
+            'fixed_expense' => [
+                '_token' => $token,
+                'day' => '10',
+                'contractor' => (string) $contractor->getId(),
+                'amount' => '-20.00',
+                'description' => '  '.$description.'  ',
+            ],
+            'contractor_input' => $contractor->getName(),
+        ]);
+
+        self::assertResponseRedirects();
+        $saved = $this->em()->getRepository(FixedExpense::class)->findOneBy(['contractor' => $contractor]);
+        self::assertNotNull($saved);
+        self::assertSame($description, $saved->getDescription());
+    }
+
+    public function testEditWithTooLongDescriptionShowsFieldErrorWithoutChangingExpense(): void
+    {
+        $expense = $this->createFixedExpenseInDatabase(15, -12345, 'Original description');
+        $id = $expense->getId();
+        $uri = '/fixed-expense/'.$id.'/edit';
+        $crawler = $this->client->request('GET', $uri);
+        $token = $crawler->filter('#fixed_expense_form input[name="fixed_expense[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', $uri, [
+            'fixed_expense' => [
+                '_token' => $token,
+                'day' => '20',
+                'contractor' => (string) $expense->getContractor()->getId(),
+                'amount' => '-20.00',
+                'description' => str_repeat('a', 256),
+            ],
+            'contractor_input' => $expense->getContractor()->getName(),
+        ]);
+
+        $this->assertDescriptionTooLongError();
+        $this->em()->clear();
+        $unchanged = $this->em()->find(FixedExpense::class, $id);
+        self::assertNotNull($unchanged);
+        self::assertSame(15, $unchanged->getDay());
+        self::assertSame(-12345, $unchanged->getAmount());
+        self::assertSame('Original description', $unchanged->getDescription());
+    }
+
     public function testEditReturnsNotFoundForNonNumericId(): void
     {
         $this->client->request('GET', '/fixed-expense/alamakota/edit');
@@ -402,6 +568,27 @@ final class FixedExpenseControllerTest extends WebTestCase
 
         $this->client->followRedirect();
         self::assertSelectorTextContains('body', 'Fixed expenses are in PLN, but the main account');
+    }
+
+    private function assertDescriptionTooLongError(): void
+    {
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#fixed_expense_description.is-invalid');
+        self::assertSelectorTextContains(
+            '#fixed_expense_description + .invalid-feedback.d-block',
+            'The description cannot be longer than 255 characters.',
+        );
+    }
+
+    private function assertAmountRequiredError(): void
+    {
+        self::assertResponseStatusCodeSame(200);
+        self::assertInputValueSame('fixed_expense[amount]', '');
+        self::assertSelectorExists('#fixed_expense_amount.is-invalid');
+        self::assertSelectorTextContains(
+            '#fixed_expense_amount + .invalid-feedback.d-block',
+            'Please enter an amount.',
+        );
     }
 
     private function createFixedExpenseInDatabase(int $day = 10, int $amount = -5000, ?string $description = null): FixedExpense

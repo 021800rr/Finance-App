@@ -20,12 +20,21 @@ class SearchController extends AbstractController
         $query = trim((string) $request->query->get('q', ''));
         $total = 0;
         $operations = [];
-        $paginator = Paginator::create((int) $request->query->get('page', 1), 0, Paginator::DEFAULT_PER_PAGE);
+        $paginator = Paginator::create(
+            (int) $request->query->get('page', 1),
+            0,
+            Paginator::DEFAULT_PER_PAGE
+        );
 
         if ('' !== $query) {
             $total = $accountOperationRepository->countByQuery($query);
-            $paginator = Paginator::create((int) $request->query->get('page', 1), $total, Paginator::DEFAULT_PER_PAGE);
-            $operations = $accountOperationRepository->searchByQueryPaged($query, $paginator->perPage, $paginator->offset);
+            $paginator = Paginator::create(
+                (int) $request->query->get('page', 1),
+                $total,
+                Paginator::DEFAULT_PER_PAGE
+            );
+            $operations = $accountOperationRepository
+                ->searchByQueryPaged($query, $paginator->perPage, $paginator->offset);
         }
 
         return $this->render('search/index.html.twig', [

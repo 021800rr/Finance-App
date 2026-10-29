@@ -29,3 +29,9 @@ services:
         decorates: 'api_platform.openapi.factory'
         arguments: [ '@.inner' ]
         autoconfigure: false
+
+    App\OpenApi\OperationDescriptionMetadataFactory:
+        # runs inside the cached factory (priority -10), so the result is cached with the rest of the metadata
+        decorates: 'api_platform.metadata.resource.metadata_collection_factory'
+        decoration_priority: 0
+        arguments: [ '@.inner' ]

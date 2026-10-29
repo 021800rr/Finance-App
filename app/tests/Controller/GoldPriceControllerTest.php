@@ -11,6 +11,7 @@ use App\Entity\GoldForm;
 use App\Entity\GoldPrice;
 use App\Tests\DatabaseTestTrait;
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -103,6 +104,79 @@ final class GoldPriceControllerTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('#gold_price_form .invalid-feedback.d-block');
+    }
+
+    /**
+     * @param array<string, string> $asset
+     */
+    #[DataProvider('blankAssets')]
+    public function testIndexWithBlankAssetShowsFieldErrorWithoutSaving(array $asset): void
+    {
+        $countBefore = $this->em()->getRepository(GoldPrice::class)->count([]);
+        $crawler = $this->client->request('GET', '/gold-prices');
+        $token = $crawler->filter('#gold_price_form input[name="gold_price[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/gold-prices', [
+            'gold_price' => [
+                '_token' => $token,
+                'priceDate' => new DateTimeImmutable()->format('Y-m-d'),
+                'pricePln' => '8000',
+            ] + $asset,
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#gold_price_goldAsset.is-invalid');
+        self::assertSelectorTextContains(
+            '#gold_price_goldAsset + .invalid-feedback.d-block',
+            'Please select an asset.',
+        );
+        self::assertSame($countBefore, $this->em()->getRepository(GoldPrice::class)->count([]));
+    }
+
+    /**
+     * @return array<string, array{array<string, string>}>
+     */
+    public static function blankAssets(): array
+    {
+        return [
+            'empty' => [['goldAsset' => '']],
+            'missing' => [[]],
+        ];
+    }
+
+    #[DataProvider('unavailableAssetIds')]
+    public function testIndexWithUnavailableAssetShowsFieldErrorWithoutSaving(string $assetId): void
+    {
+        $countBefore = $this->em()->getRepository(GoldPrice::class)->count([]);
+        $crawler = $this->client->request('GET', '/gold-prices');
+        $token = $crawler->filter('#gold_price_form input[name="gold_price[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/gold-prices', [
+            'gold_price' => [
+                '_token' => $token,
+                'goldAsset' => $assetId,
+                'priceDate' => new DateTimeImmutable()->format('Y-m-d'),
+                'pricePln' => '8000',
+            ],
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#gold_price_goldAsset.is-invalid');
+        self::assertSelectorExists('#gold_price_goldAsset + .invalid-feedback.d-block');
+        self::assertSame($countBefore, $this->em()->getRepository(GoldPrice::class)->count([]));
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function unavailableAssetIds(): array
+    {
+        return [
+            'above SQL integer' => ['2147483648'],
+            'huge' => [str_repeat('9', 33)],
+        ];
     }
 
     public function testDeleteReturnsNotFoundForNonNumericId(): void

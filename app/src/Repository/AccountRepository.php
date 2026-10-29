@@ -36,6 +36,22 @@ final class AccountRepository extends ServiceEntityRepository
     }
 
     /**
+     * Accounts a user may choose for a new operation: hidden accounts are not offered.
+     *
+     * @return list<Account>
+     */
+    public function findVisibleOrderedForSelect(): array
+    {
+        /** @var list<Account> $accounts */
+        $accounts = $this->createOrderedForSelectQueryBuilder()
+            ->where('a.hidden = false')
+            ->getQuery()
+            ->getResult();
+
+        return $accounts;
+    }
+
+    /**
      * The account used as the default counterparty/target for features like
      * "plan next month's fixed expenses" (see FixedExpensePlannerService).
      * There is at most one (enforced by the uniq_account_is_main partial

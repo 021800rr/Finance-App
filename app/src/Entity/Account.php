@@ -114,7 +114,8 @@ class Account
 
     public function getDisplayLabel(): string
     {
-        return $this->bank->getName().' / '.$this->type->getName().' / '.$this->currency->getCode().' / '.$this->accountNumber;
+        return $this->bank->getName().' / '.$this->type->getName().' / '.$this->currency->getCode().' / '
+            .$this->accountNumber;
     }
 
     public function isHidden(): bool

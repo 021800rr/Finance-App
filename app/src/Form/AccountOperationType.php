@@ -19,12 +19,18 @@ use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotEqualTo;
+use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Range;
 
 class AccountOperationType extends AbstractType
 {
+    public function __construct(private readonly AccountRepository $accountRepository)
+    {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         /** @var ?AccountOperation $existingOperation */
@@ -36,7 +42,12 @@ class AccountOperationType extends AbstractType
             ->add('account', EntityType::class, [
                 'class' => Account::class,
                 'choice_label' => 'displayLabel',
-                'query_builder' => static fn (AccountRepository $accountRepository) => $accountRepository->createOrderedForSelectQueryBuilder(),
+                // Choices are loaded up front, so a submitted ID is compared in PHP and never reaches SQL.
+                // Editing shows only the operation's own account, which stays fixed even if hidden later.
+                'choices' => null !== $existingOperation
+                    ? [$existingOperation->getAccount()]
+                    : $this->accountRepository->findVisibleOrderedForSelect(),
+                'constraints' => [new NotNull(message: 'operation.account_required')],
                 'data' => $preselectedAccount ?? $existingOperation?->getAccount(),
                 // An operation belongs to its account for good: the account is chosen only when it is created.
                 'disabled' => null !== $existingOperation,
@@ -78,6 +89,7 @@ class AccountOperationType extends AbstractType
             ])
             ->add('description', TextType::class, [
                 'required' => false,
+                'constraints' => [new Length(max: 255, maxMessage: 'common.description_max_length')],
                 'data' => $existingOperation?->getDescription(),
             ])
             ->add('confirmed', CheckboxType::class, [

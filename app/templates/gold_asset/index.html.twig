@@ -11,6 +11,7 @@
                     </div>
                 {% endif %}
 
+                {% set formHasError = form.form.vars.errors|length > 0 %}
                 {% set ouncesHasError = form.ounces.vars.errors|length > 0 %}
                 {% set descriptionHasError = form.description.vars.errors|length > 0 %}
                 {{ form_start(form, {attr: {id: 'gold_asset_form'}}) }}
@@ -19,7 +20,14 @@
                     <tr>
                         <th class="pe-3 text-end">{{ 'gold_asset.shape'|trans }}</th>
                         <td>
-                            {{ form_widget(form.form) }}
+                            {{ form_widget(form.form, {
+                                attr: {
+                                    class: (form.form.vars.attr.class|default('')) ~ (formHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if formHasError %} d-block{% endif %}">
+                                {{ form_errors(form.form) }}
+                            </div>
                         </td>
                     </tr>
                     <tr>

@@ -11,15 +11,24 @@
                     </div>
                 {% endif %}
 
+                {% set accountHasError = form.account.vars.errors|length > 0 %}
                 {% set contractorHasError = form.contractor.vars.errors|length > 0 %}
                 {% set amountHasError = form.amount.vars.errors|length > 0 %}
+                {% set descriptionHasError = form.description.vars.errors|length > 0 %}
                 {{ form_start(form, {attr: {id: 'operation_form'}}) }}
                 <table class="table table-borderless align-middle w-auto">
                     <tbody>
                     <tr>
                         <th class="pe-3 text-end">{{ 'form.account'|trans }}</th>
                         <td>
-                            {{ form_widget(form.account) }}
+                            {{ form_widget(form.account, {
+                                attr: {
+                                    class: (form.account.vars.attr.class|default('')) ~ (accountHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if accountHasError %} d-block{% endif %}">
+                                {{ form_errors(form.account) }}
+                            </div>
                         </td>
                     </tr>
                     <tr>
@@ -56,7 +65,14 @@
                     <tr>
                         <th class="pe-3 text-end">{{ 'form.description'|trans }}</th>
                         <td>
-                            {{ form_widget(form.description) }}
+                            {{ form_widget(form.description, {
+                                attr: {
+                                    class: (form.description.vars.attr.class|default('')) ~ (descriptionHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if descriptionHasError %} d-block{% endif %}">
+                                {{ form_errors(form.description) }}
+                            </div>
                         </td>
                     </tr>
                     <tr>

@@ -20,6 +20,7 @@
                     </div>
                 {% endif %}
 
+                {% set assetHasError = form.goldAsset.vars.errors|length > 0 %}
                 {% set dateHasError = form.priceDate.vars.errors|length > 0 %}
                 {% set priceHasError = form.pricePln.vars.errors|length > 0 %}
                 {{ form_start(form, {attr: {id: 'gold_price_form'}}) }}
@@ -28,7 +29,14 @@
                     <tr>
                         <th class="pe-3 text-end">{{ 'gold_price.asset'|trans }}</th>
                         <td>
-                            {{ form_widget(form.goldAsset) }}
+                            {{ form_widget(form.goldAsset, {
+                                attr: {
+                                    class: (form.goldAsset.vars.attr.class|default('')) ~ (assetHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if assetHasError %} d-block{% endif %}">
+                                {{ form_errors(form.goldAsset) }}
+                            </div>
                         </td>
                     </tr>
                     <tr>

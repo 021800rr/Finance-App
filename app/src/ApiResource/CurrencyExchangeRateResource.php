@@ -11,12 +11,14 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use ApiPlatform\OpenApi\Model\Response as OpenApiResponse;
 use App\Constant\Currencies;
 use App\Entity\CurrencyExchangeRate;
 use App\State\CurrencyExchangeRateHistoryProvider;
 use App\State\CurrencyExchangeRateProcessor;
 use App\State\CurrencyExchangeRateProvider;
 use App\Util\BusinessDateRange;
+use App\Validator\RateBank;
 use App\ValueObject\Money;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -51,9 +53,17 @@ use Symfony\Component\Validator\Constraints as Assert;
             provider: CurrencyExchangeRateProvider::class,
         ),
         new Post(
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
+            openapi: new OpenApiOperation(
+                responses: ['422' => new OpenApiResponse(
+                    description: 'Validation failed, e.g. the bank has no visible foreign-currency account '
+                    .'or currencyCode is PLN.',
+                )],
+                security: [['JWT' => []]],
+            ),
             description: 'Adds a new exchange rate. Multiple rates for the same bank, currency and date are '
-            .'allowed; the most recent date (and, within a date, highest id) is treated as the current rate.',
+            .'allowed; the most recent date (and, within a date, highest id) is treated as the current rate. '
+            .'As in the web form, the bank must have at least one visible (not hidden) account in a currency '
+            .'other than PLN, and the currency must not be PLN; otherwise the request is rejected with 422.',
             processor: CurrencyExchangeRateProcessor::class,
         ),
         new Delete(
@@ -70,12 +80,25 @@ final class CurrencyExchangeRateResource
     #[ApiProperty(description: 'Rate id. Read-only, ignored on write.', writable: false, example: 1)]
     public ?int $id = null;
 
-    #[ApiProperty(description: 'Id of the bank this rate applies to. Required.', example: 1)]
+    #[ApiProperty(
+        description: 'Id of the bank this rate applies to. Required; the bank must have at least one visible '
+        .'account in a currency other than PLN, otherwise it is rejected.',
+        example: 1,
+    )]
     #[Assert\NotNull(message: 'currency_exchange_rate.bank_required')]
+    #[RateBank]
     public ?int $bankId = null;
 
-    #[ApiProperty(description: 'Currency code, e.g. "CHF". Required.', example: 'CHF')]
+    #[ApiProperty(
+        description: 'Currency code, e.g. "CHF". Required; any existing currency except PLN.',
+        example: 'CHF',
+    )]
     #[Assert\NotBlank(message: 'currency_exchange_rate.currency_required')]
+    #[Assert\Regex(
+        pattern: '/^\s*'.Currencies::SETTLEMENT_CURRENCY_CODE.'\s*$/',
+        message: 'currency_exchange_rate.currency_pln_not_allowed',
+        match: false,
+    )]
     public ?string $currencyCode = null;
 
     #[ApiProperty(description: 'Rate date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '

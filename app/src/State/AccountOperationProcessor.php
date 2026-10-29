@@ -16,6 +16,7 @@ use App\Repository\AccountRepository;
 use App\Service\ContractorResolver;
 use App\Util\BusinessDateRange;
 use App\Util\DateParser;
+use App\Util\OptionalText;
 use App\ValueObject\Money;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -96,7 +97,7 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
             $operationDate,
             $amount,
             $account->getCurrency(),
-            description: $data->description,
+            description: OptionalText::normalize($data->description),
             confirmed: $data->confirmed,
         );
     }
@@ -116,7 +117,7 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
         $accountOperation->setAmount($amount);
         $accountOperation->setContractor($contractor);
         $accountOperation->setOperationDate($operationDate);
-        $accountOperation->setDescription($data->description);
+        $accountOperation->setDescription(OptionalText::normalize($data->description));
         $accountOperation->setConfirmed($data->confirmed);
 
         return $accountOperation;

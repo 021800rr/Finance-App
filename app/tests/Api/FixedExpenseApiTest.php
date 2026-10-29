@@ -108,6 +108,77 @@ final class FixedExpenseApiTest extends WebTestCase
         yield 'PATCH' => [true];
     }
 
+    #[DataProvider('writeOperations')]
+    public function testDescriptionLongerThan255CharactersIsRejectedWithoutSaving(bool $patch): void
+    {
+        $fixedExpense = $patch ? $this->createFixedExpense() : null;
+        $before = $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM fixed_expense ORDER BY id');
+
+        $this->writeExpense($fixedExpense, ['description' => str_repeat('a', 256)]);
+
+        self::assertResponseStatusCodeSame(422);
+        $violations = self::rowsAt(
+            self::decodeObject((string) $this->client->getResponse()->getContent()),
+            'violations',
+        );
+        $messages = array_column($violations, 'message', 'propertyPath');
+        self::assertSame('The description cannot be longer than 255 characters.', $messages['description'] ?? null);
+        self::assertSame(
+            $before,
+            $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM fixed_expense ORDER BY id'),
+        );
+    }
+
+    #[DataProvider('storedDescriptions')]
+    public function testDescriptionIsStoredTrimmedAndBlankAsNull(bool $patch, string $sent, ?string $stored): void
+    {
+        $fixedExpense = $patch ? $this->createFixedExpense() : null;
+
+        $this->writeExpense($fixedExpense, ['description' => $sent]);
+
+        self::assertResponseStatusCodeSame($patch ? 200 : 201);
+        $id = self::intAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'id');
+        $this->em()->clear();
+        self::assertSame($stored, $this->em()->find(FixedExpense::class, $id)?->getDescription());
+    }
+
+    /**
+     * @return iterable<string, array{bool, string, ?string}>
+     */
+    public static function storedDescriptions(): iterable
+    {
+        foreach (['POST' => false, 'PATCH' => true] as $method => $patch) {
+            yield $method.' 255 characters with surrounding spaces' => [
+                $patch, '  '.str_repeat('ą', 255).'  ', str_repeat('ą', 255),
+            ];
+            yield $method.' only spaces' => [$patch, '   ', null];
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     */
+    private function writeExpense(?FixedExpense $fixedExpense, array $body): void
+    {
+        if (null !== $fixedExpense) {
+            $this->patch($fixedExpense, $body);
+
+            return;
+        }
+
+        $contractor = new Contractor('Description API test '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+        $this->client->request('POST', '/api/fixed_expenses', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], content: json_encode($body + [
+            'contractorId' => $contractor->getId(),
+            'day' => 10,
+            'amount' => '-150.00',
+        ], JSON_THROW_ON_ERROR));
+    }
+
     public function testPatchWithANewContractorNameAssignsTheFixedExpenseToACreatedContractor(): void
     {
         $fixedExpense = $this->createFixedExpense();

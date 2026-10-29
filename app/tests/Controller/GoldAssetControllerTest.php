@@ -94,6 +94,31 @@ final class GoldAssetControllerTest extends WebTestCase
         self::assertSame($countBefore, $this->em()->getRepository(GoldAsset::class)->count([]));
     }
 
+    /**
+     * @param array<string, string> $ounces
+     */
+    #[DataProvider('blankOunces')]
+    public function testCreateWithBlankOuncesShowsFieldErrorWithoutSaving(array $ounces): void
+    {
+        $goldForm = $this->getOrCreateGoldForm('sztabka');
+        $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
+        $crawler = $this->client->request('GET', '/gold-assets');
+        $token = $crawler->filter('#gold_asset_form input[name="gold_asset[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/gold-assets', [
+            'gold_asset' => [
+                '_token' => $token,
+                'form' => (string) $goldForm->getId(),
+                'description' => 'Must not be saved',
+            ] + $ounces,
+        ]);
+
+        $this->assertOuncesRequiredError();
+        self::assertInputValueSame('gold_asset[description]', 'Must not be saved');
+        self::assertSame($countBefore, $this->em()->getRepository(GoldAsset::class)->count([]));
+    }
+
     public function testIndexSubmittingWithNonPositiveOuncesShowsValidationError(): void
     {
         $goldForm = $this->getOrCreateGoldForm('sztabka');
@@ -192,6 +217,53 @@ final class GoldAssetControllerTest extends WebTestCase
     }
 
     /**
+     * @param array<string, string> $ounces
+     */
+    #[DataProvider('blankOunces')]
+    public function testEditWithBlankOuncesShowsFieldErrorWithoutChangingAsset(array $ounces): void
+    {
+        $asset = $this->createAssetInDatabase();
+        $id = $asset->getId();
+        $originalFormId = $asset->getForm()->getId();
+        $newGoldForm = $this->getOrCreateGoldForm('sztabka');
+        $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
+        $uri = '/gold-assets/'.$id.'/edit';
+        $crawler = $this->client->request('GET', $uri);
+        $token = $crawler->filter('#gold_asset_form input[name="gold_asset[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', $uri, [
+            'gold_asset' => [
+                '_token' => $token,
+                'form' => (string) $newGoldForm->getId(),
+                'description' => 'Must not be saved',
+            ] + $ounces,
+        ]);
+
+        $this->assertOuncesRequiredError();
+        self::assertInputValueSame('gold_asset[description]', 'Must not be saved');
+        $this->em()->clear();
+        $unchanged = $this->em()->find(GoldAsset::class, $id);
+        self::assertNotNull($unchanged);
+        self::assertSame('Test', $unchanged->getDescription());
+        self::assertSame(10000, $unchanged->getOunces());
+        self::assertSame($originalFormId, $unchanged->getForm()->getId());
+        self::assertSame($countBefore, $this->em()->getRepository(GoldAsset::class)->count([]));
+    }
+
+    /**
+     * @return array<string, array{array<string, string>}>
+     */
+    public static function blankOunces(): array
+    {
+        return [
+            'empty' => [['ounces' => '']],
+            'spaces' => [['ounces' => '   ']],
+            'missing' => [[]],
+        ];
+    }
+
+    /**
      * @return array<string, array{array<string, string>}>
      */
     public static function blankDescriptions(): array
@@ -201,6 +273,107 @@ final class GoldAssetControllerTest extends WebTestCase
             'spaces' => [['description' => '   ']],
             'missing' => [[]],
         ];
+    }
+
+    /**
+     * @param array<string, string> $invalid
+     */
+    #[DataProvider('invalidFormAndDescription')]
+    public function testInvalidFormOrDescriptionDoesNotWriteAsset(
+        bool $edit,
+        array $invalid,
+        string $field,
+        string $message,
+    ): void {
+        $asset = $edit ? $this->createAssetInDatabase() : null;
+        $goldForm = $this->getOrCreateGoldForm('sztabka');
+        $uri = null === $asset ? '/gold-assets' : '/gold-assets/'.$asset->getId().'/edit';
+        $before = $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM gold_asset ORDER BY id');
+        $crawler = $this->client->request('GET', $uri);
+        $token = $crawler->filter('#gold_asset_form input[name="gold_asset[_token]"]')->attr('value');
+        self::assertIsString($token);
+        $body = $invalid + ['_token' => $token, 'ounces' => '2.25', 'description' => 'Must not be saved'];
+        if ('form' !== $field) {
+            $body['form'] = (string) $goldForm->getId();
+        }
+
+        $this->client->request('POST', $uri, ['gold_asset' => $body]);
+
+        self::assertResponseStatusCodeSame(200);
+        self::assertSelectorExists('#gold_asset_'.$field.'.is-invalid');
+        self::assertSelectorTextContains('#gold_asset_'.$field.' + .invalid-feedback.d-block', $message);
+        self::assertSame(
+            $before,
+            $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM gold_asset ORDER BY id'),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{bool, array<string, string>, string, string}>
+     */
+    public static function invalidFormAndDescription(): iterable
+    {
+        foreach ([false, true] as $edit) {
+            $prefix = $edit ? 'edit ' : 'create ';
+            yield $prefix.'empty form' => [$edit, ['form' => ''], 'form', 'Please select a form.'];
+            yield $prefix.'missing form' => [$edit, [], 'form', 'Please select a form.'];
+            yield $prefix.'unknown form' => [$edit, ['form' => '999999999'], 'form', 'The selected choice is invalid.'];
+            yield $prefix.'form above database limit' => [
+                $edit, ['form' => '2147483648'], 'form', 'The selected choice is invalid.',
+            ];
+            yield $prefix.'form with 33 digits' => [
+                $edit, ['form' => str_repeat('9', 33)], 'form', 'The selected choice is invalid.',
+            ];
+            yield $prefix.'description 256 characters' => [
+                $edit,
+                ['description' => str_repeat('ą', 256)],
+                'description',
+                'The description cannot be longer than 255 characters.',
+            ];
+        }
+    }
+
+    #[DataProvider('validWriteBounds')]
+    public function testWriteAcceptsQuantityBoundsAndTrims255CharacterDescription(
+        bool $edit,
+        string $ounces,
+        int $storedOunces,
+    ): void {
+        $asset = $edit ? $this->createAssetInDatabase() : null;
+        $goldForm = $this->getOrCreateGoldForm('sztabka');
+        $description = str_repeat('ą', 255);
+        $uri = null === $asset ? '/gold-assets' : '/gold-assets/'.$asset->getId().'/edit';
+        $crawler = $this->client->request('GET', $uri);
+        $form = $crawler->filter('#gold_asset_form button[type="submit"]')->form();
+
+        $this->client->submit($form, [
+            'gold_asset[form]' => (string) $goldForm->getId(),
+            'gold_asset[ounces]' => $ounces,
+            'gold_asset[description]' => '  '.$description.'  ',
+        ]);
+
+        self::assertResponseRedirects('/gold-assets');
+        $this->em()->clear();
+        $stored = null === $asset
+            ? $this->em()->getRepository(GoldAsset::class)->findOneBy(['description' => $description])
+            : $this->em()->find(GoldAsset::class, $asset->getId());
+        self::assertNotNull($stored);
+        self::assertSame($storedOunces, $stored->getOunces());
+        self::assertSame($description, $stored->getDescription());
+        self::assertSame($goldForm->getId(), $stored->getForm()->getId());
+    }
+
+    /**
+     * @return iterable<string, array{bool, string, int}>
+     */
+    public static function validWriteBounds(): iterable
+    {
+        foreach ([false, true] as $edit) {
+            $prefix = $edit ? 'edit ' : 'create ';
+            yield $prefix.'minimum' => [$edit, '0.0001', 1];
+            yield $prefix.'maximum' => [$edit, '999.9999', 9999999];
+            yield $prefix.'rounded to four places' => [$edit, '1.23456', 12346];
+        }
     }
 
     public function testDeleteReturnsNotFoundForNonNumericId(): void
@@ -238,6 +411,17 @@ final class GoldAssetControllerTest extends WebTestCase
         $deleted = $this->em()->find(GoldAsset::class, $assetId);
 
         self::assertNull($deleted);
+    }
+
+    private function assertOuncesRequiredError(): void
+    {
+        self::assertResponseStatusCodeSame(200);
+        self::assertSelectorExists('#gold_asset_ounces[required].is-invalid');
+        self::assertSelectorTextContains(
+            '#gold_asset_ounces + .invalid-feedback.d-block',
+            'Please enter the number of ounces.',
+        );
+        self::assertInputValueSame('gold_asset[ounces]', '');
     }
 
     private function getOrCreateGoldForm(string $name): GoldForm

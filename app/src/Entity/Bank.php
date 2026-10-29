@@ -31,7 +31,8 @@ class Bank
     private string $name;
 
     /**
-     * Never read in PHP, but queried: CurrencyExchangeRateType joins "b.accounts" to offer only banks that have accounts.
+     * Never read in PHP, but queried: BankRepository joins "b.accounts" to offer only banks that have
+     * a visible foreign-currency account.
      *
      * @var Collection<int, Account>
      */

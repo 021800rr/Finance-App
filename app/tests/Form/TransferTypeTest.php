@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Form;
 
-use App\Constant\Contractors;
 use App\Entity\Account;
 use App\Entity\AccountType;
 use App\Entity\Bank;
-use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
 use App\Form\TransferType;
-use App\Repository\ContractorRepository;
 use App\Tests\DatabaseTestTrait;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -108,15 +105,6 @@ final class TransferTypeTest extends KernelTestCase
     {
         /** @var FormFactoryInterface $formFactory */
         $formFactory = static::getContainer()->get('form.factory');
-
-        /** @var ContractorRepository $contractorRepository */
-        $contractorRepository = static::getContainer()->get(ContractorRepository::class);
-
-        if (null === $contractorRepository->findOneByName(Contractors::SELF_TRANSFER_NAME)) {
-            $fixed = new Contractor(Contractors::SELF_TRANSFER_NAME);
-            $this->em()->persist($fixed);
-            $this->em()->flush();
-        }
 
         return $formFactory->create(TransferType::class, null, ['csrf_protection' => false]);
     }

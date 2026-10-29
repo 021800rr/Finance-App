@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\GoldAssetResource;
 use App\Entity\Currency;
@@ -94,6 +95,15 @@ final class GoldAssetProcessorTest extends KernelTestCase
         $stored = $this->goldAssetRepository->find($result->id);
         self::assertInstanceOf(GoldAsset::class, $stored);
         self::assertSame(15000, $stored->getOunces());
+    }
+
+    public function testProcessPatchThrowsNotFoundWhenAssetDoesNotExist(): void
+    {
+        $resource = $this->resource($this->createGoldForm(), '1.5');
+
+        $this->expectException(NotFoundHttpException::class);
+
+        $this->processor->process($resource, new Patch(), ['id' => 999999999]);
     }
 
     public function testProcessPostAcceptsSmallestAndLargestQuantity(): void

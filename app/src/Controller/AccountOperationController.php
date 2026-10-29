@@ -40,7 +40,7 @@ class AccountOperationController extends AbstractController
 
         if (null !== $rawAccountId) {
             $preselectedAccount = $accountRepository->findByIdOrNull($rawAccountId);
-            if (!$preselectedAccount) {
+            if (!$preselectedAccount || $preselectedAccount->isHidden()) {
                 $this->addFlash('warning', 'account.not_found');
 
                 return $this->redirectToRoute('home');

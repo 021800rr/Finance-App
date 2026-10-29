@@ -10,6 +10,8 @@ use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Range;
 
@@ -44,6 +46,7 @@ class FixedExpenseType extends AbstractType
                 'required' => true,
                 'invalid_message' => 'common.numeric_invalid',
                 'constraints' => [
+                    new NotBlank(message: 'fixed_expense.amount_not_blank'),
                     new Range(
                         notInRangeMessage: 'fixed_expense.amount_must_be_negative',
                         min: -999999.99,
@@ -53,6 +56,7 @@ class FixedExpenseType extends AbstractType
             ])
             ->add('description', TextType::class, [
                 'required' => false,
+                'constraints' => [new Length(max: 255, maxMessage: 'common.description_max_length')],
             ]);
     }
 }

@@ -12,6 +12,7 @@ use App\Entity\CurrencyExchangeRate;
 use App\Entity\Household;
 use App\Tests\DatabaseTestTrait;
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -114,6 +115,109 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
         self::assertSelectorExists('#rate_form .invalid-feedback.d-block');
     }
 
+    #[DataProvider('blankChoices')]
+    public function testIndexWithBlankChoiceShowsFieldErrorWithoutSaving(
+        string $field,
+        ?string $value,
+        string $message,
+    ): void {
+        $bank = $this->createBankWithForeignCurrencyAccount();
+        $countBefore = $this->em()->getRepository(CurrencyExchangeRate::class)->count([]);
+        $crawler = $this->client->request('GET', '/rate');
+        $token = $crawler->filter('#rate_form input[name="currency_exchange_rate[_token]"]')->attr('value');
+        self::assertIsString($token);
+        $data = [
+            '_token' => $token,
+            'bank' => (string) $bank->getId(),
+            'currency' => 'CHF',
+            'rateDate' => new DateTimeImmutable()->format('Y-m-d'),
+            'rateToPln' => '4.5',
+        ];
+        if (null === $value) {
+            unset($data[$field]);
+        } else {
+            $data[$field] = $value;
+        }
+
+        $this->client->request('POST', '/rate', ['currency_exchange_rate' => $data]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#currency_exchange_rate_'.$field.'.is-invalid');
+        self::assertSelectorTextContains('#currency_exchange_rate_'.$field.' + .invalid-feedback.d-block', $message);
+        self::assertSame($countBefore, $this->em()->getRepository(CurrencyExchangeRate::class)->count([]));
+    }
+
+    /**
+     * @return array<string, array{string, ?string, string}>
+     */
+    public static function blankChoices(): array
+    {
+        return [
+            'bank empty' => ['bank', '', 'Please select a bank.'],
+            'bank missing' => ['bank', null, 'Please select a bank.'],
+            'currency empty' => ['currency', '', 'Please select a currency.'],
+            'currency missing' => ['currency', null, 'Please select a currency.'],
+        ];
+    }
+
+    public function testIndexOffersOnlyBanksWithVisibleForeignCurrencyAccountAndNoPln(): void
+    {
+        $offered = $this->createBankWithAccount('CHF');
+        $notOffered = [
+            $this->createBankWithAccount('CHF', hidden: true),
+            $this->createBankWithAccount('PLN'),
+            $this->createBank(),
+        ];
+
+        $this->client->request('GET', '/rate');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#currency_exchange_rate_bank option[value="'.$offered->getId().'"]');
+        foreach ($notOffered as $bank) {
+            self::assertSelectorNotExists('#currency_exchange_rate_bank option[value="'.$bank->getId().'"]');
+        }
+        self::assertSelectorExists('#currency_exchange_rate_currency option[value="CHF"]');
+        self::assertSelectorNotExists('#currency_exchange_rate_currency option[value="PLN"]');
+    }
+
+    #[DataProvider('unavailableChoices')]
+    public function testIndexWithUnavailableChoiceShowsFieldErrorWithoutSaving(string $field, ?string $value): void
+    {
+        $data = [
+            'bank' => (string) $this->createBankWithForeignCurrencyAccount()->getId(),
+            'currency' => 'CHF',
+            'rateDate' => new DateTimeImmutable()->format('Y-m-d'),
+            'rateToPln' => '4.5',
+        ];
+        $data[$field] = $value ?? (string) $this->createBankWithAccount('CHF', hidden: true)->getId();
+        $countBefore = $this->em()->getRepository(CurrencyExchangeRate::class)->count([]);
+        $crawler = $this->client->request('GET', '/rate');
+        $token = $crawler->filter('#rate_form input[name="currency_exchange_rate[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/rate', ['currency_exchange_rate' => $data + ['_token' => $token]]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#currency_exchange_rate_'.$field.'.is-invalid');
+        self::assertSelectorExists('#currency_exchange_rate_'.$field.' + .invalid-feedback.d-block');
+        self::assertSame($countBefore, $this->em()->getRepository(CurrencyExchangeRate::class)->count([]));
+    }
+
+    /**
+     * Null stands for a bank whose only foreign-currency account is hidden, created inside the test.
+     *
+     * @return array<string, array{string, ?string}>
+     */
+    public static function unavailableChoices(): array
+    {
+        return [
+            'bank with hidden account only' => ['bank', null],
+            'bank above SQL integer' => ['bank', '2147483648'],
+            'bank huge' => ['bank', str_repeat('9', 33)],
+            'currency PLN' => ['currency', 'PLN'],
+        ];
+    }
+
     public function testDeleteReturnsNotFoundForNonNumericId(): void
     {
         $this->client->request('POST', '/rate/alamakota/delete');
@@ -187,10 +291,15 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
 
     private function createBankWithForeignCurrencyAccount(): Bank
     {
+        return $this->createBankWithAccount('CHF');
+    }
+
+    private function createBankWithAccount(string $currencyCode, bool $hidden = false): Bank
+    {
         $bank = new Bank('Test Bank ' . uniqid());
         $this->em()->persist($bank);
 
-        $chf = $this->getOrCreateCurrency('CHF');
+        $currency = $this->getOrCreateCurrency($currencyCode);
 
         $accountType = new AccountType('Test Type ' . uniqid());
         $this->em()->persist($accountType);
@@ -198,7 +307,8 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
         $household = new Household('Test Household ' . uniqid());
         $this->em()->persist($household);
 
-        $account = new Account($bank, $chf, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account->setHidden($hidden);
         $this->em()->persist($account);
 
         $this->em()->flush();

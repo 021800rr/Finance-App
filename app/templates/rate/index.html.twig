@@ -20,6 +20,8 @@
                     </div>
                 {% endif %}
 
+                {% set bankHasError = form.bank.vars.errors|length > 0 %}
+                {% set currencyHasError = form.currency.vars.errors|length > 0 %}
                 {% set dateHasError = form.rateDate.vars.errors|length > 0 %}
                 {% set rateHasError = form.rateToPln.vars.errors|length > 0 %}
                 {{ form_start(form, {attr: {id: 'rate_form'}}) }}
@@ -28,13 +30,27 @@
                     <tr>
                         <th class="pe-3 text-end">{{ 'account.bank'|trans }}</th>
                         <td>
-                            {{ form_widget(form.bank) }}
+                            {{ form_widget(form.bank, {
+                                attr: {
+                                    class: (form.bank.vars.attr.class|default('')) ~ (bankHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if bankHasError %} d-block{% endif %}">
+                                {{ form_errors(form.bank) }}
+                            </div>
                         </td>
                     </tr>
                     <tr>
                         <th class="pe-3 text-end">{{ 'account.currency'|trans }}</th>
                         <td>
-                            {{ form_widget(form.currency) }}
+                            {{ form_widget(form.currency, {
+                                attr: {
+                                    class: (form.currency.vars.attr.class|default('')) ~ (currencyHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if currencyHasError %} d-block{% endif %}">
+                                {{ form_errors(form.currency) }}
+                            </div>
                         </td>
                     </tr>
                     <tr>

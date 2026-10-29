@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Constant\Contractors;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
+use App\Repository\ContractorRepository;
 use Symfony\Component\Form\FormInterface;
 
 final readonly class TransferHandler
 {
-    public function __construct(private TransactionService $transactionService)
-    {
+    public function __construct(
+        private TransactionService $transactionService,
+        private ContractorRepository $contractorRepository,
+    ) {
     }
 
     /**
@@ -25,7 +29,7 @@ final readonly class TransferHandler
         return $this->transactionService->transferBetweenAccounts(
             $this->extractAccount($form, 'fromAccount'),
             $this->extractAccount($form, 'toAccount'),
-            $this->extractContractor($form),
+            $this->resolveFixedContractor(),
             $this->extractDate($form),
             $this->extractAmountFrom($form),
             $this->extractOptionalAmountTo($form),
@@ -43,14 +47,10 @@ final readonly class TransferHandler
         return $account;
     }
 
-    private function extractContractor(FormInterface $form): Contractor
+    // A transfer always belongs to the fixed self-transfer contractor; the form does not offer a choice.
+    private function resolveFixedContractor(): Contractor
     {
-        $contractor = $form->get('contractor')->getData();
-        if (!$contractor instanceof Contractor) {
-            throw new \InvalidArgumentException('Contractor is required.');
-        }
-
-        return $contractor;
+        return $this->contractorRepository->findOrCreateByName(Contractors::SELF_TRANSFER_NAME);
     }
 
     private function extractDate(FormInterface $form): \DateTimeImmutable

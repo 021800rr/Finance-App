@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\GoldAsset;
@@ -35,6 +36,16 @@ use Symfony\Component\Validator\Constraints as Assert;
             description: 'Creates a new gold asset (formId, description, ounces).',
             processor: GoldAssetProcessor::class,
         ),
+        new Patch(
+            openapi: new OpenApiOperation(
+                summary: 'Updates a gold asset.',
+                description: 'Updates the form, ounces or description, as in the web edit form. '
+                .'Omitted fields keep their current values. Its price history is preserved.',
+                security: [['JWT' => []]],
+            ),
+            provider: GoldAssetProvider::class,
+            processor: GoldAssetProcessor::class,
+        ),
         new Delete(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Deletes a gold asset. Its price history (GoldPrice entries) is deleted along with it.',
@@ -56,8 +67,9 @@ final class GoldAssetResource
     #[ApiProperty(description: 'Gold form name. Read-only, ignored on write.', writable: false, example: 'Sztabka')]
     public ?string $formName = null;
 
-    #[ApiProperty(description: 'Free-text description. Required.', example: 'Sztabka 1oz')]
+    #[ApiProperty(description: 'Free-text description. Required, at most 255 characters.', example: 'Sztabka 1oz')]
     #[Assert\NotBlank(message: 'gold_asset.description_not_blank', normalizer: 'trim')]
+    #[Assert\Length(max: 255, maxMessage: 'gold_asset.description_max_length', normalizer: 'trim')]
     public ?string $description = null;
 
     #[ApiProperty(
@@ -65,12 +77,12 @@ final class GoldAssetResource
         example: '1.0000',
     )]
     #[Assert\Sequentially([
-        new Assert\NotBlank(message: 'gold_asset.ounces_must_be_positive', normalizer: 'trim'),
+        new Assert\NotBlank(message: 'gold_asset.ounces_not_blank', normalizer: 'trim'),
         new Assert\Range(
-            min: 0.0001,
-            max: 999.9999,
             notInRangeMessage: 'gold_asset.ounces_out_of_range',
             invalidMessage: 'common.numeric_invalid',
+            min: 0.0001,
+            max: 999.9999,
         ),
     ])]
     public ?string $ounces = null;

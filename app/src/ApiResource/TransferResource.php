@@ -8,9 +8,11 @@ use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use ApiPlatform\OpenApi\Model\Response as OpenApiResponse;
 use App\Entity\AccountOperation;
 use App\State\TransferProcessor;
 use App\Util\BusinessDateRange;
+use App\Validator\SelectableAccount;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -20,10 +22,16 @@ use Symfony\Component\Validator\Constraints as Assert;
     .'the "Transfer / Exchange" form. The contractor is always the fixed "Przelew własny" contractor.',
     operations: [
         new Post(
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
+            openapi: new OpenApiOperation(
+                responses: ['422' => new OpenApiResponse(
+                    description: 'Validation failed, e.g. fromAccountId or toAccountId points to a hidden account.',
+                )],
+                security: [['JWT' => []]],
+            ),
             description: 'Creates a transfer. If fromAccount and toAccount have the same currency, '
             .'amountTo may be omitted (it defaults to amountFrom). If currencies differ, '
-            .'amountTo is required.',
+            .'amountTo is required. A hidden account cannot be chosen on either side: such a request is '
+            .'rejected with 422 on fromAccountId or toAccountId.',
             processor: TransferProcessor::class,
         ),
     ],
@@ -31,12 +39,18 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 final class TransferResource
 {
-    #[ApiProperty(description: 'Id of the account being debited. Required.', example: 1)]
+    #[ApiProperty(description: 'Id of the account being debited. Required; a hidden account is rejected.', example: 1)]
     #[Assert\NotNull(message: 'transfer.from_account_required')]
+    #[SelectableAccount]
     public ?int $fromAccountId = null;
 
-    #[ApiProperty(description: 'Id of the account being credited. Required, must differ from fromAccountId.', example: 2)]
+    #[ApiProperty(
+        description: 'Id of the account being credited. Required, must differ from fromAccountId; '
+        .'a hidden account is rejected.',
+        example: 2,
+    )]
     #[Assert\NotNull(message: 'transfer.to_account_required')]
+    #[SelectableAccount]
     public ?int $toAccountId = null;
 
     #[ApiProperty(description: 'Transfer date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '
@@ -51,10 +65,10 @@ final class TransferResource
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'transfer.amount_from_required', normalizer: 'trim'),
         new Assert\Range(
-            min: 0.01,
-            max: 999999.99,
             notInRangeMessage: 'transfer.amount_out_of_range',
             invalidMessage: 'common.numeric_invalid',
+            min: 0.01,
+            max: 999999.99,
         ),
     ])]
     public ?string $amountFrom = null;
@@ -65,14 +79,19 @@ final class TransferResource
         example: null,
     )]
     #[Assert\Range(
-        min: 0.01,
-        max: 999999.99,
         notInRangeMessage: 'transfer.amount_out_of_range',
         invalidMessage: 'common.numeric_invalid',
+        min: 0.01,
+        max: 999999.99,
     )]
     public ?string $amountTo = null;
 
-    #[ApiProperty(description: 'Free-text note. Optional.', example: 'Monthly savings transfer')]
+    #[ApiProperty(
+        description: 'Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; '
+        .'a blank note is stored as null.',
+        example: 'Monthly savings transfer',
+    )]
+    #[Assert\Length(max: 255, normalizer: 'trim', maxMessage: 'common.description_max_length')]
     public ?string $description = null;
 
     #[ApiProperty(description: 'Shared id linking the debit and credit operations. Read-only.', writable: false, example: null)]

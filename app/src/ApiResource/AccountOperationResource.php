@@ -19,6 +19,7 @@ use App\Service\Paginator;
 use App\State\AccountOperationProcessor;
 use App\State\AccountOperationProvider;
 use App\Util\BusinessDateRange;
+use App\Validator\SelectableAccount;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -59,10 +60,17 @@ use Symfony\Component\Validator\Constraints as Assert;
             provider: AccountOperationProvider::class,
         ),
         new Post(
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
+            openapi: new OpenApiOperation(
+                responses: ['422' => new OpenApiResponse(
+                    description: 'Validation failed, e.g. accountId points to a hidden account.',
+                )],
+                security: [['JWT' => []]],
+            ),
             description: 'Creates a new operation. Either contractorId or contractorName must be given; '
-            .'if contractorName does not match an existing contractor, one is created automatically.',
+            .'if contractorName does not match an existing contractor, one is created automatically. '
+            .'A hidden account cannot be chosen: such a request is rejected with 422 on accountId.',
             denormalizationContext: ['groups' => ['operation:create', 'operation:write']],
+            validationContext: ['groups' => ['Default', 'operation:create']],
             processor: AccountOperationProcessor::class,
         ),
         new Patch(
@@ -70,7 +78,8 @@ use Symfony\Component\Validator\Constraints as Assert;
             description: 'Updates an existing operation. Send the contractor as in POST, but only when it changes: a '
             .'contractorId or a contractorName that differs from the current contractor assigns the operation to that '
             .'contractor (created when the name is new). '
-            .'The account of an operation is fixed at creation and cannot be changed.',
+            .'The account of an operation is fixed at creation and cannot be changed. '
+            .'Operations of an account that was hidden later can still be updated.',
             denormalizationContext: ['groups' => ['operation:write']],
             provider: AccountOperationProvider::class,
             processor: AccountOperationProcessor::class,
@@ -90,11 +99,12 @@ final class AccountOperationResource
     public ?int $id = null;
 
     #[ApiProperty(
-        description: 'Id of the account this operation belongs to. Required on create; '
+        description: 'Id of the account this operation belongs to. Required on create; a hidden account is rejected; '
         .'it cannot be changed afterwards, so it is not part of the update request.',
         example: 1
     )]
     #[Assert\NotNull(message: 'operation.account_required')]
+    #[SelectableAccount(groups: ['operation:create'])]
     #[Groups(['operation:create'])]
     public ?int $accountId = null;
 
@@ -128,10 +138,10 @@ final class AccountOperationResource
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'operation.amount_not_blank', normalizer: 'trim'),
         new Assert\Range(
-            min: -999999.99,
-            max: 999999.99,
             notInRangeMessage: 'common.amount_out_of_range',
             invalidMessage: 'common.numeric_invalid',
+            min: -999999.99,
+            max: 999999.99,
         ),
     ])]
     #[Groups(['operation:write'])]
@@ -144,7 +154,12 @@ final class AccountOperationResource
     )]
     public ?string $currencyCode = null;
 
-    #[ApiProperty(description: 'Free-text note. Optional.', example: 'Rent for September')]
+    #[ApiProperty(
+        description: 'Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; '
+        .'a blank note is stored as null.',
+        example: 'Rent for September',
+    )]
+    #[Assert\Length(max: 255, normalizer: 'trim', maxMessage: 'common.description_max_length')]
     #[Groups(['operation:write'])]
     public ?string $description = null;
 

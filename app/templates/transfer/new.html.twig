@@ -7,7 +7,9 @@
 
                 <h1 class="h5 mb-3">{{ 'transfer.title'|trans }}</h1>
 
+                {% set fromAccountHasError = form.fromAccount.vars.errors|length > 0 %}
                 {% set toAccountHasError = form.toAccount.vars.errors|length > 0 %}
+                {% set descriptionHasError = form.description.vars.errors|length > 0 %}
                 {{ form_start(form, {attr: {id: 'transfer_form'}}) }}
                 {% if form.vars.errors|length > 0 %}
                     <div class="alert alert-danger">
@@ -19,7 +21,15 @@
                     <tr>
                         <th class="pe-3 text-end">{{ 'transfer.from_account'|trans }}</th>
                         <td>
-                            {{ form_widget(form.fromAccount) }}
+                            {{ form_widget(form.fromAccount, {
+                                attr: {
+                                    class: (form.fromAccount.vars.attr.class|default(''))
+                                        ~ (fromAccountHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if fromAccountHasError %} d-block{% endif %}">
+                                {{ form_errors(form.fromAccount) }}
+                            </div>
                         </td>
                         <th class="pe-3 text-end">{{ 'transfer.to_account'|trans }}</th>
                         <td>
@@ -59,7 +69,14 @@
                     <tr>
                         <th class="pe-3 text-end">{{ 'form.description'|trans }}</th>
                         <td>
-                            {{ form_widget(form.description) }}
+                            {{ form_widget(form.description, {
+                                attr: {
+                                    class: (form.description.vars.attr.class|default('')) ~ (descriptionHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if descriptionHasError %} d-block{% endif %}">
+                                {{ form_errors(form.description) }}
+                            </div>
                         </td>
                     </tr>
                     <tr>
@@ -71,7 +88,6 @@
                     </tr>
                     </tbody>
                 </table>
-                {{ form_row(form.contractor, { row_attr: { class: 'd-none' } }) }}
                 {{ form_end(form) }}
             </div>
         </div>

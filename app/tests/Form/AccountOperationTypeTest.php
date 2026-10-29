@@ -117,6 +117,36 @@ final class AccountOperationTypeTest extends KernelTestCase
         ];
     }
 
+    /**
+     * @param array<string, string|null> $account
+     */
+    #[DataProvider('blankAccounts')]
+    public function testSubmitWithBlankAccountShowsFieldError(array $account): void
+    {
+        $form = $this->createOperationForm();
+        $form->submit([
+            'operationDate' => '2026-01-15',
+            'contractor' => '1',
+            'amount' => '20.00',
+        ] + $account);
+
+        self::assertFalse($form->isValid());
+        self::assertCount(1, $form->get('account')->getErrors());
+        self::assertStringContainsString('Please select an account.', (string) $form->get('account')->getErrors());
+    }
+
+    /**
+     * @return array<string, array{array<string, string|null>}>
+     */
+    public static function blankAccounts(): array
+    {
+        return [
+            'empty' => [['account' => '']],
+            'null' => [['account' => null]],
+            'missing' => [[]],
+        ];
+    }
+
     public function testAccountCanBeChosenWhenCreatingAnOperation(): void
     {
         self::assertFalse($this->createOperationForm()->get('account')->isDisabled());

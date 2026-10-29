@@ -56,7 +56,11 @@ final class AccountResource
         example: '12 3456 7890 1234 5678 9012 3456')]
     public ?string $accountNumber = null;
 
-    #[ApiProperty(description: 'Whether the account is hidden from the summary/list views. Writable.', example: false)]
+    #[ApiProperty(
+        description: 'Whether the account is hidden from the summary/list views. A hidden account cannot be chosen '
+        .'for a new operation or transfer; its existing operations can still be updated. Writable.',
+        example: false,
+    )]
     public ?bool $hidden = null;
 
     #[ApiProperty(

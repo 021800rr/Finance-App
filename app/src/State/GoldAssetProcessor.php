@@ -6,6 +6,7 @@ namespace App\State;
 
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Operation;
+use ApiPlatform\Metadata\Patch;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\GoldAssetResource;
 use App\Entity\GoldAsset;
@@ -31,8 +32,12 @@ final readonly class GoldAssetProcessor implements ProcessorInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      */
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): ?GoldAssetResource
-    {
+    public function process(
+        mixed $data,
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): ?GoldAssetResource {
         if ($operation instanceof Delete) {
             // No 409 needed: the only FK to gold_asset (gold_price) is ON DELETE CASCADE.
             $this->goldAssetRepository->remove($this->loadExisting($uriVariables), flush: true);
@@ -44,10 +49,21 @@ final readonly class GoldAssetProcessor implements ProcessorInterface
             throw new \InvalidArgumentException('Expected instance of GoldAssetResource.');
         }
 
+        $goldAsset = $operation instanceof Patch ? $this->loadExisting($uriVariables) : null;
         $form = $this->resolveGoldForm($data->formId);
+        $ounces = $this->parseOunces($data->ounces);
+        $description = trim((string) $data->description);
 
         try {
-            $goldAsset = new GoldAsset($form, $this->parseOunces($data->ounces), (string) $data->description);
+            if (null === $goldAsset) {
+                $goldAsset = new GoldAsset($form, $ounces, $description);
+            } else {
+                $goldAsset->setOunces($ounces);
+                if ($data->description !== $goldAsset->getDescription()) {
+                    $goldAsset->setDescription($description);
+                }
+                $goldAsset->setForm($form);
+            }
         } catch (\InvalidArgumentException $exception) {
             throw new UnprocessableEntityHttpException($exception->getMessage(), $exception);
         }

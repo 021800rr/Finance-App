@@ -85,10 +85,10 @@ final class FixedExpenseResource
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'fixed_expense.amount_not_blank', normalizer: 'trim'),
         new Assert\Range(
-            min: -999999.99,
-            max: -0.01,
             notInRangeMessage: 'fixed_expense.amount_out_of_range',
             invalidMessage: 'common.numeric_invalid',
+            min: -999999.99,
+            max: -0.01,
         ),
     ])]
     public ?string $amount = null;
@@ -100,7 +100,12 @@ final class FixedExpenseResource
     )]
     public ?string $currencyCode = null;
 
-    #[ApiProperty(description: 'Free-text note. Optional.', example: 'Rent')]
+    #[ApiProperty(
+        description: 'Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; '
+        .'a blank note is stored as null.',
+        example: 'Rent',
+    )]
+    #[Assert\Length(max: 255, normalizer: 'trim', maxMessage: 'common.description_max_length')]
     public ?string $description = null;
 
     public static function fromEntity(FixedExpense $fixedExpense): self

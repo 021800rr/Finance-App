@@ -128,6 +128,21 @@ final class AccountControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
     }
 
+    public function testOperationsOffersNewOperationOnlyForVisibleAccount(): void
+    {
+        $account = $this->createTestAccount();
+        $link = 'a[href="/operation/new?account='.$account->getId().'"]';
+
+        $this->client->request('GET', '/account/'.$account->getId().'/operations');
+        self::assertSelectorExists($link);
+
+        $account->setHidden(true);
+        $this->em()->flush();
+        $this->client->request('GET', '/account/'.$account->getId().'/operations');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorNotExists($link);
+    }
+
     public function testOperationsReturnsNotFoundForNonExistentAccount(): void
     {
         $this->client->request('GET', '/account/999999999/operations');

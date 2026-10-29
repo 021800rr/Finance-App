@@ -183,6 +183,28 @@ final class AccountOperationApiTest extends WebTestCase
         self::assertArrayHasKey('404', self::objectAt($operation, 'responses'));
     }
 
+    public function testOpenApiDocumentsThatAHiddenAccountIsRejected(): void
+    {
+        $this->client->request('GET', '/api/docs.jsonopenapi');
+        self::assertResponseIsSuccessful();
+
+        $docs = self::decodeObject((string) $this->client->getResponse()->getContent());
+        $create = self::objectAt($docs, 'paths', '/api/account_operations', 'post');
+        $update = self::objectAt($docs, 'paths', '/api/account_operations/{id}', 'patch');
+        $hidden = self::objectAt($docs, 'components', 'schemas', 'Account.jsonMergePatch', 'properties', 'hidden');
+
+        self::assertIsString($create['description'] ?? null);
+        self::assertStringContainsString('hidden account cannot be chosen', $create['description']);
+        self::assertSame(
+            'Validation failed, e.g. accountId points to a hidden account.',
+            self::objectAt($create, 'responses', '422')['description'] ?? null,
+        );
+        self::assertIsString($update['description'] ?? null);
+        self::assertStringContainsString('hidden later can still be updated', $update['description']);
+        self::assertIsString($hidden['description'] ?? null);
+        self::assertStringContainsString('cannot be chosen for a new operation or transfer', $hidden['description']);
+    }
+
     public function testAbsurdPageNumberReturnsAnEmptyPageInsteadOfFailing(): void
     {
         $descriptions = $this->collectionDescriptions('/api/account_operations?q=anything&page='.PHP_INT_MAX);
@@ -288,6 +310,141 @@ final class AccountOperationApiTest extends WebTestCase
         $messages = array_column($violations, 'message', 'propertyPath');
         self::assertSame('Please enter a date.', $messages['operationDate'] ?? null);
         self::assertSame('Please enter an amount.', $messages['amount'] ?? null);
+    }
+
+    public function testPostOnHiddenAccountIsRejectedWithoutSaving(): void
+    {
+        $account = $this->createAccount();
+        $account->setHidden(true);
+        $this->em()->flush();
+        $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+
+        $this->client->request(
+            'POST',
+            '/api/account_operations',
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/ld+json'],
+            content: json_encode([
+                'accountId' => $account->getId(),
+                'contractorName' => 'Anyone',
+                'operationDate' => '2026-01-15',
+                'amount' => '50.00',
+            ], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseStatusCodeSame(422);
+        $violations = self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'violations');
+        $messages = array_column($violations, 'message', 'propertyPath');
+        self::assertSame(
+            'This account is hidden. Please select an account that is not hidden.',
+            $messages['accountId'] ?? null,
+        );
+        self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
+    public function testPatchOfOperationOnHiddenAccountIsStillAllowed(): void
+    {
+        $account = $this->createAccount();
+        $operation = $this->createOperation($account, 'Before '.uniqid());
+        $account->setHidden(true);
+        $this->em()->flush();
+
+        $this->client->request(
+            'PATCH',
+            '/api/account_operations/'.$operation->getId(),
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/merge-patch+json'],
+            content: json_encode(['description' => 'After'], JSON_THROW_ON_ERROR),
+        );
+
+        self::assertResponseIsSuccessful();
+        $this->em()->clear();
+        self::assertSame('After', $this->em()->find(AccountOperation::class, $operation->getId())?->getDescription());
+    }
+
+    #[DataProvider('descriptionWrites')]
+    public function testDescriptionLongerThan255CharactersIsRejectedWithoutSaving(bool $patch): void
+    {
+        $account = $this->createAccount();
+        $operation = $patch ? $this->createOperation($account, 'Original') : null;
+        $before = $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM account_operation ORDER BY id');
+
+        $this->writeOperation($account, $operation, ['description' => str_repeat('a', 256)]);
+
+        self::assertResponseStatusCodeSame(422);
+        $violations = self::rowsAt(
+            self::decodeObject((string) $this->client->getResponse()->getContent()),
+            'violations',
+        );
+        $messages = array_column($violations, 'message', 'propertyPath');
+        self::assertSame('The description cannot be longer than 255 characters.', $messages['description'] ?? null);
+        self::assertSame(
+            $before,
+            $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM account_operation ORDER BY id'),
+        );
+    }
+
+    #[DataProvider('storedDescriptions')]
+    public function testDescriptionIsStoredTrimmedAndBlankAsNull(bool $patch, string $sent, ?string $stored): void
+    {
+        $account = $this->createAccount();
+        $operation = $patch ? $this->createOperation($account, 'Original') : null;
+
+        $this->writeOperation($account, $operation, ['description' => $sent]);
+
+        self::assertResponseStatusCodeSame($patch ? 200 : 201);
+        $id = self::intAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'id');
+        $this->em()->clear();
+        self::assertSame($stored, $this->em()->find(AccountOperation::class, $id)?->getDescription());
+    }
+
+    /**
+     * @return iterable<string, array{bool}>
+     */
+    public static function descriptionWrites(): iterable
+    {
+        yield 'POST' => [false];
+        yield 'PATCH' => [true];
+    }
+
+    /**
+     * @return iterable<string, array{bool, string, ?string}>
+     */
+    public static function storedDescriptions(): iterable
+    {
+        foreach (['POST' => false, 'PATCH' => true] as $method => $patch) {
+            yield $method.' 255 characters with surrounding spaces' => [
+                $patch, '  '.str_repeat('ą', 255).'  ', str_repeat('ą', 255),
+            ];
+            yield $method.' only spaces' => [$patch, '   ', null];
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $body
+     */
+    private function writeOperation(Account $account, ?AccountOperation $operation, array $body): void
+    {
+        if (null !== $operation) {
+            $this->client->request(
+                'PATCH',
+                '/api/account_operations/'.$operation->getId(),
+                server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/merge-patch+json'],
+                content: json_encode($body, JSON_THROW_ON_ERROR),
+            );
+
+            return;
+        }
+
+        $this->client->request(
+            'POST',
+            '/api/account_operations',
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/ld+json'],
+            content: json_encode($body + [
+                'accountId' => $account->getId(),
+                'contractorName' => 'Anyone',
+                'operationDate' => '2026-01-15',
+                'amount' => '50.00',
+            ], JSON_THROW_ON_ERROR),
+        );
     }
 
     public function testOpenApiOffersTheAccountIdOnCreateButNotOnUpdate(): void

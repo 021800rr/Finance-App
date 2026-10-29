@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
+use App\Constant\Contractors;
 use App\Entity\Account;
 use App\Entity\AccountType;
 use App\Entity\Bank;
-use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
 use App\Service\TransferHandler;
@@ -53,12 +53,10 @@ final class TransferHandlerTest extends KernelTestCase
     {
         $fromAccount = $this->createAccount('PLN');
         $toAccount = $this->createAccount('PLN');
-        $contractor = $this->createContractor();
 
         $form = $this->buildForm(
             $fromAccount,
             $toAccount,
-            $contractor,
             new \DateTimeImmutable('2026-01-15'),
             100.50,
             null,
@@ -72,18 +70,18 @@ final class TransferHandlerTest extends KernelTestCase
         self::assertSame(-10050, $result['out']->getAmount());
         self::assertSame(10050, $result['in']->getAmount());
         self::assertSame('Test transfer', $result['out']->getDescription());
+        self::assertSame(Contractors::SELF_TRANSFER_NAME, $result['out']->getContractor()->getName());
+        self::assertSame(Contractors::SELF_TRANSFER_NAME, $result['in']->getContractor()->getName());
     }
 
     public function testHandleNormalizesBlankDescriptionToNull(): void
     {
         $fromAccount = $this->createAccount('PLN');
         $toAccount = $this->createAccount('PLN');
-        $contractor = $this->createContractor();
 
         $form = $this->buildForm(
             $fromAccount,
             $toAccount,
-            $contractor,
             new \DateTimeImmutable('2026-01-15'),
             50.0,
             null,
@@ -100,7 +98,6 @@ final class TransferHandlerTest extends KernelTestCase
         $form = $this->buildForm(
             null,
             $this->createAccount('PLN'),
-            $this->createContractor(),
             new \DateTimeImmutable(),
             50.0,
             null,
@@ -113,30 +110,11 @@ final class TransferHandlerTest extends KernelTestCase
         $this->handler->handle($form);
     }
 
-    public function testHandleThrowsWhenContractorIsMissing(): void
-    {
-        $form = $this->buildForm(
-            $this->createAccount('PLN'),
-            $this->createAccount('PLN'),
-            null,
-            new \DateTimeImmutable(),
-            50.0,
-            null,
-            null
-        );
-
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Contractor is required.');
-
-        $this->handler->handle($form);
-    }
-
     public function testHandleThrowsWhenDateIsMissing(): void
     {
         $form = $this->buildForm(
             $this->createAccount('PLN'),
             $this->createAccount('PLN'),
-            $this->createContractor(),
             null,
             50.0,
             null,
@@ -172,7 +150,6 @@ final class TransferHandlerTest extends KernelTestCase
     private function buildForm(
         mixed $fromAccount,
         mixed $toAccount,
-        mixed $contractor,
         mixed $date,
         float $amountFrom,
         ?float $amountTo,
@@ -181,7 +158,6 @@ final class TransferHandlerTest extends KernelTestCase
         $form = $this->formFactory->createNamed('', FormType::class, null, ['csrf_protection' => false]);
         $form->add('fromAccount', HiddenType::class, ['mapped' => false]);
         $form->add('toAccount', HiddenType::class, ['mapped' => false]);
-        $form->add('contractor', HiddenType::class, ['mapped' => false]);
         $form->add('date', HiddenType::class, ['mapped' => false]);
         $form->add('amountFrom', MoneyType::class, ['mapped' => false, 'currency' => false, 'input' => 'string']);
         $form->add('amountTo', MoneyType::class, ['mapped' => false, 'currency' => false, 'required' => false, 'input' => 'string']);
@@ -189,7 +165,6 @@ final class TransferHandlerTest extends KernelTestCase
 
         $form->get('fromAccount')->setData($fromAccount);
         $form->get('toAccount')->setData($toAccount);
-        $form->get('contractor')->setData($contractor);
         $form->get('date')->setData($date);
         $form->get('amountFrom')->setData((string) $amountFrom);
         $form->get('amountTo')->setData(null === $amountTo ? null : (string) $amountTo);
@@ -208,7 +183,6 @@ final class TransferHandlerTest extends KernelTestCase
         $form = $this->formFactory->createNamed('', FormType::class, null, ['csrf_protection' => false]);
         $form->add('fromAccount', HiddenType::class, ['mapped' => false]);
         $form->add('toAccount', HiddenType::class, ['mapped' => false]);
-        $form->add('contractor', HiddenType::class, ['mapped' => false]);
         $form->add('date', HiddenType::class, ['mapped' => false]);
         $form->add('amountFrom', HiddenType::class, ['mapped' => false]);
         $form->add('amountTo', HiddenType::class, ['mapped' => false, 'required' => false]);
@@ -216,7 +190,6 @@ final class TransferHandlerTest extends KernelTestCase
 
         $form->get('fromAccount')->setData($this->createAccount('PLN'));
         $form->get('toAccount')->setData($this->createAccount('PLN'));
-        $form->get('contractor')->setData($this->createContractor());
         $form->get('date')->setData(new \DateTimeImmutable());
         $form->get('amountFrom')->setData($rawAmountFrom);
         $form->get('amountTo')->setData($rawAmountTo);
@@ -245,15 +218,6 @@ final class TransferHandlerTest extends KernelTestCase
         $this->em()->flush();
 
         return $account;
-    }
-
-    private function createContractor(): Contractor
-    {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
-        $this->em()->persist($contractor);
-        $this->em()->flush();
-
-        return $contractor;
     }
 
     private function findOrCreateCurrency(string $code): Currency

@@ -6,19 +6,25 @@ namespace App\Form;
 
 use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
+use App\Repository\GoldFormRepository;
 use App\ValueObject\Quantity;
-use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Range;
 
 class GoldAssetType extends AbstractType
 {
+    public function __construct(private readonly GoldFormRepository $goldFormRepository)
+    {
+    }
+
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         /** @var ?GoldAsset $existingAsset */
@@ -28,10 +34,8 @@ class GoldAssetType extends AbstractType
             ->add('form', EntityType::class, [
                 'class' => GoldForm::class,
                 'choice_label' => 'name',
-                'query_builder' => function (EntityRepository $formRepository) {
-                    return $formRepository->createQueryBuilder('gf')
-                        ->orderBy('gf.id', 'ASC');
-                },
+                'constraints' => [new NotNull(message: 'gold_asset.form_not_null')],
+                'choices' => $this->goldFormRepository->findBy([], ['id' => 'ASC']),
                 'data' => $existingAsset?->getForm(),
             ])
             ->add('ounces', NumberType::class, [
@@ -39,6 +43,7 @@ class GoldAssetType extends AbstractType
                 'input' => 'string',
                 'invalid_message' => 'common.numeric_invalid',
                 'constraints' => [
+                    new NotBlank(message: 'gold_asset.ounces_not_blank'),
                     new Range(
                         notInRangeMessage: 'gold_asset.ounces_out_of_range',
                         min: 0.0001,
@@ -51,6 +56,7 @@ class GoldAssetType extends AbstractType
                 'required' => true,
                 'constraints' => [
                     new NotBlank(message: 'gold_asset.description_not_blank', normalizer: 'trim'),
+                    new Length(max: 255, maxMessage: 'gold_asset.description_max_length'),
                 ],
                 'data' => $existingAsset?->getDescription(),
             ]);

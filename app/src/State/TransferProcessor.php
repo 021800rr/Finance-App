@@ -15,6 +15,7 @@ use App\Repository\ContractorRepository;
 use App\Service\TransactionService;
 use App\Util\BusinessDateRange;
 use App\Util\DateParser;
+use App\Util\OptionalText;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
@@ -46,7 +47,15 @@ final readonly class TransferProcessor implements ProcessorInterface
         $contractor = $this->resolveFixedContractor();
         $amountFrom = $this->requireAmount($data->amountFrom, 'amountFrom');
 
-        $result = $this->performTransfer($fromAccount, $toAccount, $contractor, $operationDate, $amountFrom, $data->amountTo, $data->description);
+        $result = $this->performTransfer(
+            $fromAccount,
+            $toAccount,
+            $contractor,
+            $operationDate,
+            $amountFrom,
+            $data->amountTo,
+            OptionalText::normalize($data->description)
+        );
 
         return TransferResource::fromOperations($result['out'], $result['in']);
     }
