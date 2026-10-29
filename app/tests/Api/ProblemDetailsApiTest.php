@@ -166,6 +166,51 @@ final class ProblemDetailsApiTest extends WebTestCase
     }
 
     /**
+     * All error responses share one schema; without its own example each would show "status": 404 in Swagger UI.
+     */
+    public function testOpenApiShowsTheResponseStatusInEveryErrorExample(): void
+    {
+        $docs = $this->openApiDocs();
+        $sharedStatus = self::objectAt($docs, 'components', 'schemas', 'Error', 'properties', 'status');
+        self::assertArrayNotHasKey('examples', $sharedStatus);
+        $sharedErrorCode = self::objectAt($docs, 'components', 'schemas', 'Error', 'properties', 'errorCode');
+        self::assertArrayNotHasKey('examples', $sharedErrorCode);
+
+        $checked = [];
+        foreach (self::objectAt($docs, 'paths') as $path => $pathItem) {
+            self::assertIsArray($pathItem);
+            foreach ($pathItem as $method => $operation) {
+                if (!is_array($operation) || !is_array($operation['responses'] ?? null)) {
+                    continue;
+                }
+                foreach ($operation['responses'] as $status => $response) {
+                    $content = is_array($response) ? ($response['content'] ?? null) : null;
+                    if ((int) $status < 400 || !is_array($content)) {
+                        continue;
+                    }
+                    foreach ($content as $mediaType => $media) {
+                        self::assertIsArray($media);
+                        $where = sprintf('%s %s %s %s', $method, $path, $status, $mediaType);
+                        $example = self::objectAt(self::stringKeyed($media), 'schema', 'allOf', '1', 'properties');
+                        $statusExample = self::objectAt($example, 'status');
+                        self::assertSame([(int) $status], $statusExample['examples'] ?? null, $where);
+                        self::assertSame((int) $status, $statusExample['const'] ?? null, $where);
+                        $errorCodes = self::objectAt($example, 'errorCode')['examples'] ?? null;
+                        self::assertIsArray($errorCodes, $where);
+                        self::assertIsString($errorCodes[0] ?? null, $where);
+                        $checked[$status] = $errorCodes[0];
+                    }
+                }
+            }
+        }
+
+        self::assertSame('http.bad_request', $checked['400'] ?? null);
+        self::assertSame('http.forbidden', $checked['403'] ?? null);
+        self::assertSame('http.not_found', $checked['404'] ?? null);
+        self::assertSame('validation.failed', $checked['422'] ?? null);
+    }
+
+    /**
      * Every factory of every BusinessError in src/Exception, found by reflection: a new refusal cannot be added
      * without being listed in the API docs.
      *

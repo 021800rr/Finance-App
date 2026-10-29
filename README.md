@@ -10,7 +10,7 @@ Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazj�
 
 - **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
 - **PHPStan na najwyższym poziomie (`max`)** — dla `src`, `tests`, `config`, `bin` i `public`.
-- **~1290 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
+- **~1300 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
 - **PHP CS Fixer** wymuszający spójny styl kodu.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
 - **Przewidywalne błędy API** (RFC 9457 Problem Details) — każdy błąd ma stały `errorCode`, parametry
@@ -45,7 +45,8 @@ make token       # pobierz token JWT konta demo
 Demo user: `twoj@email.pl` / `haslo123`
 
 web: http://localhost:8081  
-api: http://localhost:8081/api/docs
+swagger: http://localhost:8081/api/docs  
+openapi: http://localhost:8081/api/docs.jsonopenapi
 
 ## Bezpieczeństwo
 

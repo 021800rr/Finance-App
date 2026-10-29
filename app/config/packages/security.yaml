@@ -13,7 +13,7 @@ security:
             security: false
 
         api_login:
-            pattern: ^/api/login
+            pattern: ^/api/login_check$
             stateless: true
             provider: app_user_provider
             json_login:
@@ -50,7 +50,7 @@ security:
 
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
-        - { path: ^/api/login, roles: PUBLIC_ACCESS }
+        - { path: ^/api/login_check$, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
         - { path: ^/, roles: ROLE_USER }

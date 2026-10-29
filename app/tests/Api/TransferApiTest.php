@@ -158,7 +158,8 @@ final class TransferApiTest extends WebTestCase
                 ['$ref' => '#/components/schemas/ConstraintViolation.jsonld'],
                 ['$ref' => '#/components/schemas/Error.jsonld'],
             ],
-            self::objectAt($unprocessable, 'content', 'application/ld+json', 'schema')['anyOf'] ?? null,
+            // ProblemDetailsDecorator wraps it in "allOf" to add the example status and errorCode.
+            self::objectAt($unprocessable, 'content', 'application/ld+json', 'schema', 'allOf', '0')['anyOf'] ?? null,
         );
     }
 

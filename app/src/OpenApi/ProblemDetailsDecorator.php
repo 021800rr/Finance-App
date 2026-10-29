@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\OpenApi;
 
 use ApiPlatform\OpenApi\Factory\OpenApiFactoryInterface;
+use ApiPlatform\OpenApi\Model\MediaType;
+use ApiPlatform\OpenApi\Model\Operation;
+use ApiPlatform\OpenApi\Model\PathItem;
+use ApiPlatform\OpenApi\Model\Response;
 use ApiPlatform\OpenApi\OpenApi;
 use App\Http\ProblemResponse;
 
@@ -81,9 +85,107 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
             }
         }
 
+        foreach ($openApi->getPaths()->getPaths() as $path => $pathItem) {
+            if ($pathItem instanceof PathItem) {
+                $openApi->getPaths()->addPath($path, $this->withStatusExamples($pathItem));
+            }
+        }
+
         $info = $openApi->getInfo();
 
         return $openApi->withInfo($info->withDescription($info->getDescription().self::ERRORS_DESCRIPTION));
+    }
+
+    /**
+     * All error responses share one schema, so Swagger UI would show the same example ("status": 404) for every
+     * one of them. Each error response gets its own status and a matching example errorCode instead.
+     */
+    private function withStatusExamples(PathItem $pathItem): PathItem
+    {
+        return $pathItem
+            ->withGet($this->withOperationExamples($pathItem->getGet()))
+            ->withPost($this->withOperationExamples($pathItem->getPost()))
+            ->withPut($this->withOperationExamples($pathItem->getPut()))
+            ->withPatch($this->withOperationExamples($pathItem->getPatch()))
+            ->withDelete($this->withOperationExamples($pathItem->getDelete()));
+    }
+
+    private function withOperationExamples(?Operation $operation): ?Operation
+    {
+        if (null === $operation || null === $operation->getResponses()) {
+            return $operation;
+        }
+
+        $responses = [];
+        foreach ($operation->getResponses() as $status => $response) {
+            $responses[$status] = $response instanceof Response && (int) $status >= 400
+                ? $this->withStatusExample($response, (int) $status)
+                : $response;
+        }
+
+        return $operation->withResponses($responses);
+    }
+
+    private function withStatusExample(Response $response, int $status): Response
+    {
+        $content = $response->getContent();
+        if (null === $content) {
+            return $response;
+        }
+
+        /** @var \ArrayObject<string, mixed> $documented */
+        $documented = new \ArrayObject();
+        foreach ($content as $mediaType => $media) {
+            // Responses set in resource attributes (e.g. ErrorResponseContent) are plain arrays, not MediaType.
+            $schema = $this->toArray(match (true) {
+                $media instanceof MediaType => $media->getSchema(),
+                is_array($media) => $media['schema'] ?? null,
+                default => null,
+            });
+            if (!is_array($schema) || !$this->isErrorSchema($schema)) {
+                $documented[(string) $mediaType] = $media;
+                continue;
+            }
+            $withExample = ['allOf' => [
+                $schema,
+                ['type' => 'object', 'properties' => [
+                    'status' => ['type' => 'integer', 'const' => $status, 'examples' => [$status]],
+                    'errorCode' => ['type' => 'string', 'examples' => [$this->exampleErrorCode($status)]],
+                ]],
+            ]];
+            $documented[(string) $mediaType] = $media instanceof MediaType
+                ? $media->withSchema(new \ArrayObject($withExample))
+                : ['schema' => $withExample] + (is_array($media) ? $media : []);
+        }
+
+        return $response->withContent($documented);
+    }
+
+    /**
+     * A reference to one of the error schemas, or a choice ("anyOf") between them.
+     *
+     * @param array<mixed> $schema
+     */
+    private function isErrorSchema(array $schema): bool
+    {
+        $refs = isset($schema['$ref']) ? [$schema] : $schema['anyOf'] ?? null;
+        if (!is_array($refs) || [] === $refs) {
+            return false;
+        }
+        foreach ($refs as $ref) {
+            $ref = $this->toArray($ref);
+            $name = is_array($ref) && is_string($ref['$ref'] ?? null) ? basename($ref['$ref']) : null;
+            if (!in_array($name, self::ERROR_SCHEMAS, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function exampleErrorCode(int $status): string
+    {
+        return 422 === $status ? 'validation.failed' : ProblemResponse::httpErrorCode($status);
     }
 
     /**
@@ -151,11 +253,18 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
             'readOnly' => true,
             'description' => 'Name of the HTTP status, e.g. "Unprocessable Content".',
         ];
+        // API Platform's own example (404) would show up on every error response.
+        $properties['status'] = [
+            'type' => 'integer',
+            'readOnly' => true,
+            'description' => 'HTTP status code of the response.',
+        ];
         $properties['errorCode'] = [
             'type' => 'string',
             'readOnly' => true,
-            'description' => 'Stable code of the problem; see "Errors" in the API description.',
-            'examples' => ['transfer.accounts_must_differ', 'validation.failed', 'http.not_found'],
+            // No examples here: Swagger UI would show them on every response instead of each response's own one.
+            'description' => 'Stable code of the problem, e.g. "transfer.accounts_must_differ", "validation.failed" '
+                .'or "http.not_found"; see "Errors" in the API description.',
         ];
         $properties['params'] = $this->paramsSchema('Values for the message, e.g. {"fromCurrency": "PLN"}.');
 
