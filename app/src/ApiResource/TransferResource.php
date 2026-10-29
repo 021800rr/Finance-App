@@ -13,6 +13,7 @@ use App\Entity\AccountOperation;
 use App\OpenApi\ErrorResponseContent;
 use App\State\TransferProcessor;
 use App\Util\BusinessDateRange;
+use App\Validator\BusinessDate;
 use App\Validator\SelectableAccount;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -63,6 +64,7 @@ final class TransferResource
     #[ApiProperty(description: 'Transfer date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '
         .BusinessDateRange::MAX_DATE.' inclusive. Required.', example: '2026-09-29')]
     #[Assert\NotBlank(message: 'common.date_not_blank')]
+    #[BusinessDate]
     public ?string $operationDate = null;
 
     #[ApiProperty(

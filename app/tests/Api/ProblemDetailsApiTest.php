@@ -76,7 +76,7 @@ final class ProblemDetailsApiTest extends WebTestCase
         );
     }
 
-    public function testInputRefusedOnlyOnSavingHasTheGenericUnprocessableCode(): void
+    public function testDateOutsideTheRangeIsAViolationWithTheRange(): void
     {
         $id = $this->account('Bank1-ROR-PLN')->getId();
         $other = $this->account('Bank1-WAK-PLN')->getId();
@@ -84,7 +84,12 @@ final class ProblemDetailsApiTest extends WebTestCase
 
         $this->postTransfer($json);
 
-        $this->assertProblem(422, 'http.unprocessable_content', []);
+        $problem = $this->assertProblem(422, 'validation.failed', []);
+        $violation = self::rowsAt($problem, 'violations')[0] ?? null;
+        self::assertIsArray($violation);
+        self::assertSame('operationDate', $violation['propertyPath'] ?? null);
+        self::assertSame('common.date_out_of_range', $violation['code'] ?? null);
+        self::assertSame(['min' => '2025-01-01', 'max' => '2070-12-31'], $violation['params'] ?? null);
     }
 
     public function testErrorWithoutABusinessCodeIsNamedAfterTheHttpStatus(): void

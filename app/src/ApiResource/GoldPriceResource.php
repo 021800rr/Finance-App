@@ -17,6 +17,7 @@ use App\State\GoldPriceHistoryProvider;
 use App\State\GoldPriceProcessor;
 use App\State\GoldPriceProvider;
 use App\Util\BusinessDateRange;
+use App\Validator\BusinessDate;
 use App\ValueObject\Money;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -78,6 +79,7 @@ final class GoldPriceResource
     #[ApiProperty(description: 'Price date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '
         .BusinessDateRange::MAX_DATE.' inclusive. Required.', example: '2026-09-29')]
     #[Assert\NotBlank(message: 'common.date_not_blank')]
+    #[BusinessDate]
     public ?string $priceDate = null;
 
     #[ApiProperty(

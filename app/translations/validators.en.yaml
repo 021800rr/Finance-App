@@ -21,6 +21,7 @@ common:
     date_not_blank: 'Please enter a date.'
     description_max_length: 'The description cannot be longer than 255 characters.'
     date_out_of_range: 'Date must be between {{ min }} and {{ max }} (inclusive).'
+    date_invalid: 'Please enter a real date in the format YYYY-MM-DD.'
     numeric_invalid: 'Please enter a valid number.'
 
 contractor:

@@ -21,6 +21,7 @@ common:
     date_not_blank: 'Podaj datę.'
     description_max_length: 'Opis może mieć najwyżej 255 znaków.'
     date_out_of_range: 'Data musi mieścić się w zakresie od {{ min }} do {{ max }} (włącznie).'
+    date_invalid: 'Podaj istniejącą datę w formacie RRRR-MM-DD.'
     numeric_invalid: 'Podaj poprawną liczbę.'
 
 contractor:

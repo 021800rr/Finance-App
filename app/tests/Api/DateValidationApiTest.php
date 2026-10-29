@@ -43,22 +43,22 @@ final class DateValidationApiTest extends WebTestCase
         string $uri,
         string $field,
         string $entityClass,
-        string $date
-    ): void
-    {
+        string $date,
+        string $code,
+    ): void {
         $payload = $this->payloadFor($uri) + [$field => $date];
         $countBefore = $this->em()->getRepository($entityClass)->count([]);
         $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
 
         $this->requestJson('POST', $uri, $payload);
 
-        self::assertResponseStatusCodeSame(422);
+        $this->assertDateViolation($field, $code);
         self::assertSame($countBefore, $this->em()->getRepository($entityClass)->count([]));
         self::assertSame($contractorsBefore, $this->em()->getRepository(Contractor::class)->count([]));
     }
 
     #[DataProvider('invalidDates')]
-    public function testPatchRejectsInvalidDatesWithoutChangingTheOperation(string $date): void
+    public function testPatchRejectsInvalidDatesWithoutChangingTheOperation(string $date, string $code): void
     {
         $operation = $this->createOperation();
         $id = $operation->getId();
@@ -73,7 +73,7 @@ final class DateValidationApiTest extends WebTestCase
             'contractorName' => 'New contractor '.uniqid(),
         ]);
 
-        self::assertResponseStatusCodeSame(422);
+        $this->assertDateViolation('operationDate', $code);
         $this->em()->clear();
         $unchanged = $this->em()->find(AccountOperation::class, $id);
         self::assertNotNull($unchanged);
@@ -93,9 +93,8 @@ final class DateValidationApiTest extends WebTestCase
         string $uri,
         string $field,
         string $entityClass,
-        string $submittedDate
-    ): void
-    {
+        string $submittedDate,
+    ): void {
         $this->requestJson('POST', $uri, $this->payloadFor($uri) + [$field => $submittedDate]);
 
         self::assertResponseStatusCodeSame(201);
@@ -149,17 +148,17 @@ final class DateValidationApiTest extends WebTestCase
     }
 
     /**
-     * @return array<string, array{string}>
+     * @return array<string, array{string, string}>
      */
     public static function invalidDates(): array
     {
         return [
-            'nonexistent day' => ['2026-02-31'],
-            'non-leap year' => ['2025-02-29'],
-            'timestamp' => ['2026-01-15T12:00:00+01:00'],
-            'relative date' => ['tomorrow'],
-            'before supported range' => ['2024-12-31'],
-            'after supported range' => ['2071-01-01'],
+            'nonexistent day' => ['2026-02-31', 'common.date_invalid'],
+            'non-leap year' => ['2025-02-29', 'common.date_invalid'],
+            'timestamp' => ['2026-01-15T12:00:00+01:00', 'common.date_invalid'],
+            'relative date' => ['tomorrow', 'common.date_invalid'],
+            'before supported range' => ['2024-12-31', 'common.date_out_of_range'],
+            'after supported range' => ['2071-01-01', 'common.date_out_of_range'],
         ];
     }
 
@@ -188,13 +187,15 @@ final class DateValidationApiTest extends WebTestCase
     }
 
     /**
-     * @return iterable<string, array{string, string, class-string<AccountOperation|GoldPrice|CurrencyExchangeRate>, string}>
+     * @return iterable<string, array{
+     *     string, string, class-string<AccountOperation|GoldPrice|CurrencyExchangeRate>, string, string
+     * }>
      */
     public static function invalidPostDates(): iterable
     {
         foreach (self::endpoints() as $endpoint => [$uri, $field, $entityClass]) {
-            foreach (self::invalidDates() as $case => [$date]) {
-                yield $endpoint.' / '.$case => [$uri, $field, $entityClass, $date];
+            foreach (self::invalidDates() as $case => [$date, $code]) {
+                yield $endpoint.' / '.$case => [$uri, $field, $entityClass, $date, $code];
             }
         }
     }
@@ -234,6 +235,29 @@ final class DateValidationApiTest extends WebTestCase
             ],
             default => throw new \InvalidArgumentException('Unknown API URI: '.$uri),
         };
+    }
+
+    /**
+     * A wrong date is an ordinary validation error on its field, with a stable code (and the range for a date
+     * outside it), not a generic 422.
+     */
+    private function assertDateViolation(string $field, string $code): void
+    {
+        self::assertResponseStatusCodeSame(422);
+        $problem = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame('validation.failed', $problem['errorCode'] ?? null);
+        $expected = 'common.date_out_of_range' === $code ? ['min' => '2025-01-01', 'max' => '2070-12-31'] : [];
+        self::assertSame(
+            [['propertyPath' => $field, 'code' => $code, 'params' => $expected]],
+            array_map(
+                static fn (array $violation): array => [
+                    'propertyPath' => $violation['propertyPath'] ?? null,
+                    'code' => $violation['code'] ?? null,
+                    'params' => $violation['params'] ?? null,
+                ],
+                self::rowsAt($problem, 'violations'),
+            ),
+        );
     }
 
     private function account(string $number): Account
