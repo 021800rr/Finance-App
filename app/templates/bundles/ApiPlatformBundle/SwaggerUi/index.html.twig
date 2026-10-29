@@ -1,0 +1,22 @@
+{% extends '@!ApiPlatform/SwaggerUi/index.html.twig' %}
+
+{% block stylesheet %}
+    {{ parent() }}
+    <style>
+        /*
+         * Swagger UI gives inline code 5px vertical padding. Chrome does not grow the line for it, so in text with
+         * many code spans (the "Errors" section) the backgrounds of neighbouring lines overlap and hide letters.
+         */
+        .swagger-ui .markdown code,
+        .swagger-ui .renderedMarkdown code {
+            padding: 1px 4px;
+        }
+
+        .swagger-ui .markdown p,
+        .swagger-ui .markdown li,
+        .swagger-ui .renderedMarkdown p,
+        .swagger-ui .renderedMarkdown li {
+            line-height: 1.7;
+        }
+    </style>
+{% endblock %}

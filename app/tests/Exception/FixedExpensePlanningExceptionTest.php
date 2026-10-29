@@ -49,4 +49,15 @@ final class FixedExpensePlanningExceptionTest extends KernelTestCase
         self::assertStringNotContainsString('%', $polish);
         self::assertNotSame($exception->getMessage(), $polish);
     }
+
+    public function testErrorCodeIsTheTranslationKeyAndParamsAreListedExplicitly(): void
+    {
+        $exception = FixedExpensePlanningException::currencyMismatch('PLN', 'ACC-1', 'CHF');
+
+        self::assertSame($exception->translationKey, $exception->getErrorCode());
+        self::assertSame(
+            ['expenseCurrency' => 'PLN', 'account' => 'ACC-1', 'accountCurrency' => 'CHF'],
+            $exception->getErrorParams(),
+        );
+    }
 }

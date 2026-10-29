@@ -296,6 +296,11 @@ final class AccountOperationControllerTest extends WebTestCase
         $this->client->request('GET', '/operation/new?account='.$hidden->getId());
 
         self::assertResponseRedirects('/');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains(
+            '.alert-warning',
+            'This account is hidden. Please select an account that is not hidden.',
+        );
     }
 
     public function testEditOfOperationOnHiddenAccountShowsItsOwnAccount(): void

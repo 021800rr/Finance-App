@@ -8,6 +8,7 @@ use App\Constant\Currencies;
 use App\Entity\Contractor;
 use App\Entity\FixedExpense;
 use App\Repository\CurrencyRepository;
+use App\Util\OptionalText;
 use App\ValueObject\Money;
 use Symfony\Component\Form\FormInterface;
 
@@ -63,6 +64,6 @@ final readonly class FixedExpenseFactory
     {
         $description = $form->get('description')->getData();
 
-        return is_string($description) && '' !== trim($description) ? $description : null;
+        return OptionalText::normalize(is_string($description) ? $description : null);
     }
 }

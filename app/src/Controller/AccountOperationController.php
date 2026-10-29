@@ -19,6 +19,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Translation\TranslatableMessage;
 
 #[Route('/operation')]
 class AccountOperationController extends AbstractController
@@ -41,7 +42,10 @@ class AccountOperationController extends AbstractController
         if (null !== $rawAccountId) {
             $preselectedAccount = $accountRepository->findByIdOrNull($rawAccountId);
             if (!$preselectedAccount || $preselectedAccount->isHidden()) {
-                $this->addFlash('warning', 'account.not_found');
+                $this->addFlash('warning', $preselectedAccount
+                    // Same text as the API's validation message for a hidden account.
+                    ? new TranslatableMessage('account.hidden_not_selectable', domain: 'validators')
+                    : 'account.not_found');
 
                 return $this->redirectToRoute('home');
             }

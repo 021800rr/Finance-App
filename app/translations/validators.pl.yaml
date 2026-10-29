@@ -83,7 +83,6 @@ rate:
 transfer:
     amount_out_of_range: 'Kwota przelewu musi być z zakresu od 0,01 do 999 999,99.'
     accounts_must_differ: 'Wybierz inne konto docelowe.'
-    amount_from_not_blank: 'Podaj kwotę przelewu.'
     amount_from_required: 'Podaj kwotę przelewu.'
     amount_must_be_positive: 'Kwota przelewu musi być większa od zera.'
     amount_to_required_for_currency_exchange: 'Podaj kwotę do otrzymania przy wymianie między różnymi walutami.'

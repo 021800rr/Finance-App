@@ -13,6 +13,7 @@ use App\Form\TransferType;
 use App\Tests\DatabaseTestTrait;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
 
@@ -49,6 +50,25 @@ final class TransferTypeTest extends KernelTestCase
             'Choose a different destination account.',
             (string) $form->get('toAccount')->getErrors(),
         );
+    }
+
+    /**
+     * The form and the API (TransferResource) report an empty amount with the same code.
+     */
+    public function testEmptyAmountUsesTheSameCodeAsTheApi(): void
+    {
+        $form = $this->createTransferForm();
+        $form->submit([
+            'fromAccount' => (string) $this->createAccount('PLN')->getId(),
+            'toAccount' => (string) $this->createAccount('PLN')->getId(),
+            'amountFrom' => '',
+            'date' => '2026-01-15',
+        ]);
+
+        $errors = iterator_to_array($form->get('amountFrom')->getErrors());
+        self::assertCount(1, $errors);
+        self::assertInstanceOf(FormError::class, $errors[0]);
+        self::assertSame('transfer.amount_from_required', $errors[0]->getMessageTemplate());
     }
 
     public function testSubmitWithSameCurrencyAccountsIsValidWithoutAmountTo(): void

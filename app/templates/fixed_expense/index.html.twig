@@ -56,7 +56,8 @@
                         <td>
                             {{ form_widget(form.amount, {
                                 attr: {
-                                    class: (form.amount.vars.attr.class|default('')) ~ (amountHasError ? ' is-invalid' : '')
+                                    class: (form.amount.vars.attr.class|default(''))
+                                        ~ (amountHasError ? ' is-invalid' : '')
                                 }
                             }) }}
                             <div class="invalid-feedback{% if amountHasError %} d-block{% endif %}">
@@ -69,7 +70,8 @@
                         <td>
                             {{ form_widget(form.description, {
                                 attr: {
-                                    class: (form.description.vars.attr.class|default('')) ~ (descriptionHasError ? ' is-invalid' : '')
+                                    class: (form.description.vars.attr.class|default(''))
+                                        ~ (descriptionHasError ? ' is-invalid' : '')
                                 }
                             }) }}
                             <div class="invalid-feedback{% if descriptionHasError %} d-block{% endif %}">

@@ -71,7 +71,8 @@
                         <td>
                             {{ form_widget(form.description, {
                                 attr: {
-                                    class: (form.description.vars.attr.class|default('')) ~ (descriptionHasError ? ' is-invalid' : '')
+                                    class: (form.description.vars.attr.class|default(''))
+                                        ~ (descriptionHasError ? ' is-invalid' : '')
                                 }
                             }) }}
                             <div class="invalid-feedback{% if descriptionHasError %} d-block{% endif %}">

@@ -94,10 +94,12 @@ final class CurrencyExchangeRateResource
         example: 'CHF',
     )]
     #[Assert\NotBlank(message: 'currency_exchange_rate.currency_required')]
+    // Same trim() as the processor uses to look the currency up, so " PLN " or "PLN\0" cannot slip through.
     #[Assert\Regex(
-        pattern: '/^\s*'.Currencies::SETTLEMENT_CURRENCY_CODE.'\s*$/',
+        pattern: '/^'.Currencies::SETTLEMENT_CURRENCY_CODE.'$/D',
         message: 'currency_exchange_rate.currency_pln_not_allowed',
         match: false,
+        normalizer: 'trim',
     )]
     public ?string $currencyCode = null;
 

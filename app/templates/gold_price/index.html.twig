@@ -31,7 +31,8 @@
                         <td>
                             {{ form_widget(form.goldAsset, {
                                 attr: {
-                                    class: (form.goldAsset.vars.attr.class|default('')) ~ (assetHasError ? ' is-invalid' : '')
+                                    class: (form.goldAsset.vars.attr.class|default(''))
+                                        ~ (assetHasError ? ' is-invalid' : '')
                                 }
                             }) }}
                             <div class="invalid-feedback{% if assetHasError %} d-block{% endif %}">
@@ -44,7 +45,8 @@
                         <td>
                             {{ form_widget(form.priceDate, {
                                 attr: {
-                                    class: (form.priceDate.vars.attr.class|default('')) ~ (dateHasError ? ' is-invalid' : '')
+                                    class: (form.priceDate.vars.attr.class|default(''))
+                                        ~ (dateHasError ? ' is-invalid' : '')
                                 }
                             }) }}
                             <div class="invalid-feedback{% if dateHasError %} d-block{% endif %}">
@@ -57,7 +59,8 @@
                         <td>
                             {{ form_widget(form.pricePln, {
                                 attr: {
-                                    class: (form.pricePln.vars.attr.class|default('')) ~ (priceHasError ? ' is-invalid' : '')
+                                    class: (form.pricePln.vars.attr.class|default(''))
+                                        ~ (priceHasError ? ' is-invalid' : '')
                                 }
                             }) }}
                             <div class="invalid-feedback{% if priceHasError %} d-block{% endif %}">

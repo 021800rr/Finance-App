@@ -1,3 +1,7 @@
 api_login_check:
     path: /api/login_check
     methods: [POST]
+    # Reached only when the json_login firewall did not handle the request, i.e. the body is not JSON.
+    controller: App\Controller\ApiLoginCheckController
+    defaults:
+        _locale: en

@@ -10,9 +10,11 @@ Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazj�
 
 - **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
 - **PHPStan na poziomie 9**.
-- **~1230 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
+- **~1290 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
 - **PHP CS Fixer** wymuszający spójny styl kodu.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
+- **Przewidywalne błędy API** (RFC 9457 Problem Details) — każdy błąd ma stały `errorCode`, parametry
+  i angielski opis; szczegóły w sekcji [Błędy API](#błędy-api).
 - **Świadomy model bezpieczeństwa** — hasła hashowane, throttling logowania, jawnie opisane granice (patrz sekcja [Bezpieczeństwo](#bezpieczeństwo)).
 
 ## Stack
@@ -54,7 +56,7 @@ Appka jest jednoosobowa, więc model bezpieczeństwa jest celowo prosty.
 - **Konta zakłada się z CLI**, nie ma publicznej rejestracji: `php bin/console app:create-user <email> <hasło>`.
 
 - **E-mail jest normalizowany** (trim + małe litery) przy zapisie i przy logowaniu, więc `Jan@Example.com` i `jan@example.com` to ten sam użytkownik.
-- **Throttling logowania** (`login_throttling`) na formularzu **i** na `POST /api/login_check`: 5 nieudanych prób na parę login + IP oraz 25 na sam IP w oknie 15 minut. Po przekroczeniu limitu logowanie jest odrzucane (API: `401`), nawet z poprawnym hasłem. Stan limitera leży w pamięci podręcznej (`cache.rate_limiter`), więc przeżywa restart PHP-FPM.
+- **Throttling logowania** (`login_throttling`) na formularzu **i** na `POST /api/login_check`: 5 nieudanych prób na parę login + IP oraz 25 na sam IP w oknie 15 minut. Po przekroczeniu limitu logowanie jest odrzucane (API: `401`, `errorCode: auth.too_many_login_attempts`, nagłówek `Retry-After`), nawet z poprawnym hasłem. Stan limitera leży w pamięci podręcznej (`cache.rate_limiter`), więc przeżywa restart PHP-FPM.
 - **JWT żyje 8 godzin** (`token_ttl: 28800`).
 
 **Świadome ograniczenia:**
@@ -63,6 +65,60 @@ Appka jest jednoosobowa, więc model bezpieczeństwa jest celowo prosty.
 - Brak resetu hasła, zmiany hasła, 2FA i blokady konta.
 - `/api/docs` jest publiczne.
 - **Brak izolacji danych per użytkownik** — appka jest jednoosobowa.
+
+## Błędy API
+
+Każdy błąd API to [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457.html)
+(`Content-Type: application/problem+json`) z trzema polami, na które można liczyć:
+
+- **`errorCode`** — stały kod błędu; po nim klient rozpoznaje, co się stało,
+- **`params`** — dane do komunikatu (zawsze obiekt, wartości jako tekst; `{}` gdy brak),
+- **`detail`** — zwykłe angielskie zdanie dla curla / Postmana; jego treść może się zmieniać, nie parsować.
+
+`type` to `urn:finance-app:problem:` + `errorCode`, a `title` to nazwa statusu HTTP.
+Komunikaty API są zawsze po angielsku (niezależnie od `Accept-Language`); widok Twig zostaje po polsku.
+
+Przykład: przelew z konta PLN na konto CHF bez `amountTo` (ID kont zależą od danych; token z `make token`):
+
+```bash
+$ curl -s -X POST http://localhost:8081/api/transfers -H "Authorization: Bearer $TOKEN" \
+    -H 'Content-Type: application/ld+json' \
+    -d '{"fromAccountId": 1, "toAccountId": 5, "operationDate": "2026-01-15", "amountFrom": "100.00"}'
+```
+
+```json
+{
+  "type": "urn:finance-app:problem:transfer.amount_to_required_for_currency_exchange",
+  "title": "Unprocessable Content",
+  "status": 422,
+  "detail": "For different currencies amountTo is required.",
+  "errorCode": "transfer.amount_to_required_for_currency_exchange",
+  "params": { "fromCurrency": "PLN", "toCurrency": "CHF" }
+}
+```
+
+(Skrócone: błędy zasobów API Platform zawierają też pola JSON-LD `@context`, `@id`, `@type` i `description`.)
+
+Rodzaje kodów:
+
+- **walidacja (`422`)** — `errorCode: validation.failed` i lista `violations`; każde naruszenie ma `propertyPath`
+  (pole JSON), własny `code` (ten sam klucz co komunikat formularza, np. `transfer.to_account_required`), `params`
+  (tylko `limit`, `min`, `max` — nigdy wysłana wartość) i angielski `message`,
+- **reguły biznesowe** — np. `transfer.accounts_must_differ` (`422`), `fixed_expense.plan_duplicate` (`409`);
+  ten sam problem ma ten sam kod w formularzu Twig i w API; dane odrzucone dopiero przy zapisie (np. data poza
+  zakresem) mają ogólny `http.unprocessable_content`,
+- **uwierzytelnianie (`401`)** — `auth.token_missing`, `auth.token_invalid`, `auth.token_expired`,
+  `auth.invalid_credentials`, `auth.too_many_login_attempts`,
+- **pozostałe** — `http.` + stała nazwa statusu, np. `http.not_found`, `http.bad_request`, `http.internal_server_error`
+  (status bez nazwy w tabeli dostaje numer, np. `http.418`);
+  dotyczy też `/api/login_check` (np. `400` przy zepsutym JSON, `415` gdy body nie jest JSON-em) i nieznanych
+  ścieżek `/api`.
+
+Błąd serwera (`5xx`) ma zawsze kod `http.*` (np. `http.internal_server_error`) i puste `params`, a `detail`
+poza trybem debug nie zdradza szczegółów; sam wyjątek trafia do logów (`docker compose logs php`).
+
+Pełna lista kodów z parametrami jest w opisie API pod `/api/docs` (sekcja „Errors”); test pilnuje, żeby żaden
+kod nie zniknął z dokumentacji. Kody są stabilne — można zmieniać treść `detail`, ale nie `errorCode` ani nazw `params`.
 
 ## Zasady wprowadzania danych
 

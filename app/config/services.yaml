@@ -35,3 +35,14 @@ services:
         decorates: 'api_platform.metadata.resource.metadata_collection_factory'
         decoration_priority: 0
         arguments: [ '@.inner' ]
+
+    # Stable "errorCode" and "params" (plus "type" derived from the code) on every API error response.
+    # A regular normalizer, ahead of API Platform's error normalizers (priority -800/-880) in every format.
+    App\Serializer\ProblemNormalizer:
+        autoconfigure: false
+        tags: [ { name: 'serializer.normalizer', priority: 10 } ]
+
+    App\OpenApi\ProblemDetailsDecorator:
+        decorates: 'api_platform.openapi.factory'
+        arguments: [ '@.inner' ]
+        autoconfigure: false

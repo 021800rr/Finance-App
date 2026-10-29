@@ -52,7 +52,7 @@ class TransferType extends AbstractType
                 'grouping' => true,
                 'input' => 'string',
                 'constraints' => [
-                    new NotBlank(message: 'transfer.amount_from_not_blank'),
+                    new NotBlank(message: 'transfer.amount_from_required'),
                     new Positive(message: 'transfer.amount_must_be_positive'),
                     new LessThanOrEqual(value: 999999.99, message: 'transfer.amount_out_of_range'),
                 ],

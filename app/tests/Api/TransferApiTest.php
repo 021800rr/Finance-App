@@ -144,9 +144,21 @@ final class TransferApiTest extends WebTestCase
 
         self::assertIsString($create['description'] ?? null);
         self::assertStringContainsString('hidden account cannot be chosen on either side', $create['description']);
+        $unprocessable = self::objectAt($create, 'responses', '422');
+        self::assertIsString($unprocessable['description'] ?? null);
+        self::assertStringContainsString('points to a hidden account', $unprocessable['description']);
+        self::assertStringContainsString('transfer.accounts_must_differ', $unprocessable['description']);
+        self::assertStringContainsString(
+            'transfer.amount_to_required_for_currency_exchange',
+            $unprocessable['description'],
+        );
+        self::assertStringContainsString('http.unprocessable_content', $unprocessable['description']);
         self::assertSame(
-            'Validation failed, e.g. fromAccountId or toAccountId points to a hidden account.',
-            self::objectAt($create, 'responses', '422')['description'] ?? null,
+            [
+                ['$ref' => '#/components/schemas/ConstraintViolation.jsonld'],
+                ['$ref' => '#/components/schemas/Error.jsonld'],
+            ],
+            self::objectAt($unprocessable, 'content', 'application/ld+json', 'schema')['anyOf'] ?? null,
         );
     }
 

@@ -94,6 +94,7 @@ final class CurrencyExchangeRateApiTest extends WebTestCase
     {
         yield 'PLN' => ['PLN'];
         yield 'PLN with spaces' => [' PLN '];
+        yield 'PLN with a NUL byte, which trim() also strips' => ["PLN\0"];
     }
 
     public function testOpenApiDocumentsWhichBanksAndCurrenciesAreAccepted(): void

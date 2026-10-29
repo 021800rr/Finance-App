@@ -45,7 +45,8 @@
                         <td>
                             {{ form_widget(form.currency, {
                                 attr: {
-                                    class: (form.currency.vars.attr.class|default('')) ~ (currencyHasError ? ' is-invalid' : '')
+                                    class: (form.currency.vars.attr.class|default(''))
+                                        ~ (currencyHasError ? ' is-invalid' : '')
                                 }
                             }) }}
                             <div class="invalid-feedback{% if currencyHasError %} d-block{% endif %}">
@@ -58,7 +59,8 @@
                         <td>
                             {{ form_widget(form.rateDate, {
                                 attr: {
-                                    class: (form.rateDate.vars.attr.class|default('')) ~ (dateHasError ? ' is-invalid' : '')
+                                    class: (form.rateDate.vars.attr.class|default(''))
+                                        ~ (dateHasError ? ' is-invalid' : '')
                                 }
                             }) }}
                             <div class="invalid-feedback{% if dateHasError %} d-block{% endif %}">
@@ -71,7 +73,8 @@
                         <td>
                             {{ form_widget(form.rateToPln, {
                                 attr: {
-                                    class: (form.rateToPln.vars.attr.class|default('')) ~ (rateHasError ? ' is-invalid' : '')
+                                    class: (form.rateToPln.vars.attr.class|default(''))
+                                        ~ (rateHasError ? ' is-invalid' : '')
                                 }
                             }) }}
                             <div class="invalid-feedback{% if rateHasError %} d-block{% endif %}">

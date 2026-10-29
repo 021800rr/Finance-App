@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
+use App\Exception\TransferException;
 use App\ValueObject\Money;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Uid\Uuid;
@@ -32,14 +33,14 @@ final readonly class TransactionService
         ?string $description,
     ): array {
         if ($from === $to) {
-            throw new \InvalidArgumentException('Cannot transfer between the same account.');
+            throw TransferException::accountsMustDiffer();
         }
 
         $fromCurrencyCode = $from->getCurrency()->getCode();
         $toCurrencyCode = $to->getCurrency()->getCode();
 
         if ($fromCurrencyCode !== $toCurrencyCode && null === $amountTo) {
-            throw new \InvalidArgumentException('For different currencies amountTo is required.');
+            throw TransferException::amountToRequired($fromCurrencyCode, $toCurrencyCode);
         }
 
         $debitMoney = Money::fromDecimalString($amountFrom, $fromCurrencyCode);

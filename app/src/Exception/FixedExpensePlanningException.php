@@ -7,18 +7,32 @@ namespace App\Exception;
 /**
  * Planning of the fixed expenses was refused. The exception message is the English text used by the API;
  * the translation key and parameters let the web UI show the same reason in the user's language.
+ * The API also returns the key as "errorCode" and its own "params", listed explicitly per refusal so that
+ * rewording a translation can never change the API contract.
  */
-final class FixedExpensePlanningException extends \RuntimeException
+final class FixedExpensePlanningException extends \RuntimeException implements BusinessError
 {
     /**
      * @param array<string, string> $translationParameters
+     * @param array<string, string> $errorParams
      */
     private function __construct(
         string $message,
         public readonly string $translationKey,
         public readonly array $translationParameters = [],
+        private readonly array $errorParams = [],
     ) {
         parent::__construct($message);
+    }
+
+    public function getErrorCode(): string
+    {
+        return $this->translationKey;
+    }
+
+    public function getErrorParams(): array
+    {
+        return $this->errorParams;
     }
 
     public static function noMainAccount(): self
@@ -43,6 +57,7 @@ final class FixedExpensePlanningException extends \RuntimeException
                 '%account%' => $accountNumber,
                 '%household%' => $householdName,
             ],
+            ['account' => $accountNumber, 'household' => $householdName],
         );
     }
 
@@ -60,7 +75,13 @@ final class FixedExpensePlanningException extends \RuntimeException
             [
                 '%expense_currency%' => $expenseCurrency,
                 '%account%' => $accountNumber,
-                '%account_currency%' => $accountCurrency],
+                '%account_currency%' => $accountCurrency,
+            ],
+            [
+                'expenseCurrency' => $expenseCurrency,
+                'account' => $accountNumber,
+                'accountCurrency' => $accountCurrency,
+            ],
         );
     }
 
@@ -80,6 +101,7 @@ final class FixedExpensePlanningException extends \RuntimeException
                 '%amount%' => $amount,
                 '%date%' => $date,
             ],
+            ['contractor' => $contractorName, 'amount' => $amount, 'date' => $date],
         );
     }
 }

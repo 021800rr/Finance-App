@@ -87,8 +87,7 @@ final class FixedExpensePlanApiTest extends WebTestCase
 
         $this->client->request('POST', '/api/fixed_expenses/plan', server: $this->authHeaders());
 
-        self::assertResponseStatusCodeSame(409);
-        self::assertStringContainsString('Suspected duplicate', (string) $this->client->getResponse()->getContent());
+        $this->assertConflict('fixed_expense.plan_duplicate', ['contractor', 'amount', 'date']);
         self::assertSame($operationsAfterFirstCall, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
@@ -101,8 +100,7 @@ final class FixedExpensePlanApiTest extends WebTestCase
 
         $this->client->request('POST', '/api/fixed_expenses/plan', server: $this->authHeaders());
 
-        self::assertResponseStatusCodeSame(409);
-        self::assertStringContainsString('main account', (string) $this->client->getResponse()->getContent());
+        $this->assertConflict('fixed_expense.plan_no_main_account', []);
     }
 
     public function testPlanWithAForeignCurrencyMainAccountRespondsWithConflictAndCreatesNothing(): void
@@ -113,8 +111,12 @@ final class FixedExpensePlanApiTest extends WebTestCase
 
         $this->client->request('POST', '/api/fixed_expenses/plan', server: $this->authHeaders());
 
-        self::assertResponseStatusCodeSame(409);
-        self::assertStringContainsString('is in CHF', (string) $this->client->getResponse()->getContent());
+        $params = $this->assertConflict(
+            'fixed_expense.plan_currency_mismatch',
+            ['expenseCurrency', 'account', 'accountCurrency'],
+        );
+        self::assertSame('PLN', $params['expenseCurrency']);
+        self::assertSame('CHF', $params['accountCurrency']);
         self::assertSame($operationsBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
@@ -126,9 +128,28 @@ final class FixedExpensePlanApiTest extends WebTestCase
 
         $this->client->request('POST', '/api/fixed_expenses/plan', server: $this->authHeaders());
 
-        self::assertResponseStatusCodeSame(409);
-        self::assertStringContainsString('our own accounts', (string) $this->client->getResponse()->getContent());
+        $this->assertConflict('fixed_expense.plan_main_not_own', ['account', 'household']);
         self::assertSame($operationsBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
+    /**
+     * Asserts a 409 problem with the given code and parameter names; returns the parameters.
+     *
+     * @param list<string> $paramNames
+     *
+     * @return array<string, mixed>
+     */
+    private function assertConflict(string $errorCode, array $paramNames): array
+    {
+        self::assertResponseStatusCodeSame(409);
+        $problem = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame($errorCode, $problem['errorCode'] ?? null);
+        self::assertSame('urn:finance-app:problem:'.$errorCode, $problem['type'] ?? null);
+        self::assertNotSame('', self::stringAt($problem, 'detail'));
+        $params = self::objectAt($problem, 'params');
+        self::assertSame($paramNames, array_keys($params));
+
+        return $params;
     }
 
     /**

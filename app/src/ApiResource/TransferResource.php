@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Response as OpenApiResponse;
 use App\Entity\AccountOperation;
+use App\OpenApi\ErrorResponseContent;
 use App\State\TransferProcessor;
 use App\Util\BusinessDateRange;
 use App\Validator\SelectableAccount;
@@ -24,7 +25,13 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Post(
             openapi: new OpenApiOperation(
                 responses: ['422' => new OpenApiResponse(
-                    description: 'Validation failed, e.g. fromAccountId or toAccountId points to a hidden account.',
+                    description: 'Either validation failed (errorCode "validation.failed", with a "violations" list), '
+                    .'e.g. fromAccountId or toAccountId points to a hidden account; or the transfer was refused '
+                    .'(no "violations"): errorCode "transfer.accounts_must_differ" or '
+                    .'"transfer.amount_to_required_for_currency_exchange" (params fromCurrency, toCurrency). '
+                    .'Other refused input checked only on saving, e.g. operationDate outside the allowed range or '
+                    .'an amount that cannot be read, has errorCode "http.unprocessable_content".',
+                    content: new \ArrayObject(ErrorResponseContent::VALIDATION_OR_BUSINESS_ERROR),
                 )],
                 security: [['JWT' => []]],
             ),

@@ -9,6 +9,7 @@ use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
 use App\Repository\ContractorRepository;
+use App\Util\OptionalText;
 use Symfony\Component\Form\FormInterface;
 
 final readonly class TransferHandler
@@ -91,6 +92,6 @@ final readonly class TransferHandler
     {
         $description = $form->get('description')->getData();
 
-        return is_string($description) && '' !== trim($description) ? $description : null;
+        return OptionalText::normalize(is_string($description) ? $description : null);
     }
 }
