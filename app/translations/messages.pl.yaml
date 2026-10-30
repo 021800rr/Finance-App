@@ -150,6 +150,7 @@ search:
 
 transfer:
     credit: 'Uznanie'
+    credit_same_currency: 'Tyle co obciążenie'
     debit: 'Obciążenie'
     from_account: 'Z konta'
     title: 'Przelew / Wymiana'

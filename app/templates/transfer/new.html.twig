@@ -10,7 +10,11 @@
                 {% set fromAccountHasError = form.fromAccount.vars.errors|length > 0 %}
                 {% set toAccountHasError = form.toAccount.vars.errors|length > 0 %}
                 {% set descriptionHasError = form.description.vars.errors|length > 0 %}
-                {{ form_start(form, {attr: {id: 'transfer_form'}}) }}
+                {{ form_start(form, {attr: {
+                    id: 'transfer_form',
+                    'data-controller': 'transfer-amounts',
+                    'data-transfer-amounts-same-currency-placeholder-value': 'transfer.credit_same_currency'|trans,
+                }}) }}
                 {% if form.vars.errors|length > 0 %}
                     <div class="alert alert-danger">
                         {{ form_errors(form) }}
@@ -23,6 +27,8 @@
                         <td>
                             {{ form_widget(form.fromAccount, {
                                 attr: {
+                                    'data-transfer-amounts-target': 'from',
+                                    'data-action': 'change->transfer-amounts#sync',
                                     class: (form.fromAccount.vars.attr.class|default(''))
                                         ~ (fromAccountHasError ? ' is-invalid' : '')
                                 }
@@ -35,6 +41,8 @@
                         <td>
                             {{ form_widget(form.toAccount, {
                                 attr: {
+                                    'data-transfer-amounts-target': 'to',
+                                    'data-action': 'change->transfer-amounts#sync',
                                     class: (form.toAccount.vars.attr.class|default(''))
                                         ~ (toAccountHasError ? ' is-invalid' : '')
                                 }
@@ -54,7 +62,7 @@
                         </td>
                         <th class="pe-3 text-end">{{ 'transfer.credit'|trans }}</th>
                         <td>
-                            {{ form_widget(form.amountTo) }}
+                            {{ form_widget(form.amountTo, {attr: {'data-transfer-amounts-target': 'amountTo'}}) }}
                             <div class="invalid-feedback{% if form.amountTo.vars.errors|length > 0 %} d-block{% endif %}">
                                 {{ form_errors(form.amountTo) }}
                             </div>

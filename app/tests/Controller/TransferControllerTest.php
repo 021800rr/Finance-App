@@ -44,6 +44,26 @@ final class TransferControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
     }
 
+    public function testFormGivesThePageWhatItNeedsToBlockTheSecondAmount(): void
+    {
+        $account = $this->createAccount('CHF');
+
+        $crawler = $this->client->request('GET', '/transfer/new');
+
+        self::assertSelectorExists('#transfer_form[data-controller="transfer-amounts"]');
+        self::assertNotSame(
+            '',
+            $crawler->filter('#transfer_form')->attr('data-transfer-amounts-same-currency-placeholder-value'),
+        );
+        self::assertSelectorExists('#transfer_amountTo[data-transfer-amounts-target="amountTo"]');
+        foreach (['fromAccount' => 'from', 'toAccount' => 'to'] as $field => $target) {
+            $select = '#transfer_'.$field;
+            self::assertSelectorExists($select.'[data-transfer-amounts-target="'.$target.'"]');
+            self::assertSelectorExists($select.'[data-action="change->transfer-amounts#sync"]');
+            self::assertSelectorExists($select.' option[value="'.$account->getId().'"][data-currency="CHF"]');
+        }
+    }
+
     public function testNewSubmittingSameCurrencyTransferCreatesOperationsAndRedirects(): void
     {
         $fromAccount = $this->createAccount('PLN');

@@ -150,6 +150,7 @@ search:
 
 transfer:
     credit: 'Credit'
+    credit_same_currency: 'Same as debit'
     debit: 'Debit'
     from_account: 'From account'
     title: 'Transfer / Exchange'

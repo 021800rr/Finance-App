@@ -35,18 +35,24 @@ class TransferType extends AbstractType
         // Choices are loaded up front, so a submitted ID is compared in PHP and never reaches SQL.
         // Hidden accounts are not offered on either side of a transfer.
         $accounts = $this->accountRepository->findVisibleOrderedForSelect();
+        // Lets the page block the second amount when both accounts use one currency.
+        $currencyAttribute = static fn (Account $account): array => [
+            'data-currency' => $account->getCurrency()->getCode(),
+        ];
 
         $builder
             ->add('fromAccount', EntityType::class, [
                 'class' => Account::class,
                 'choice_label' => 'displayLabel',
                 'choices' => $accounts,
+                'choice_attr' => $currencyAttribute,
                 'constraints' => [new NotNull(message: 'transfer.from_account_required')],
             ])
             ->add('toAccount', EntityType::class, [
                 'class' => Account::class,
                 'choice_label' => 'displayLabel',
                 'choices' => $accounts,
+                'choice_attr' => $currencyAttribute,
                 'constraints' => [new NotNull(message: 'transfer.to_account_required')],
             ])
             ->add('amountFrom', MoneyType::class, [
