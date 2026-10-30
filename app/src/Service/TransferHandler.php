@@ -71,7 +71,7 @@ final readonly class TransferHandler
             throw new \InvalidArgumentException('Amount must be a numeric value.');
         }
 
-        return (string) $amount;
+        return $amount;
     }
 
     private function extractOptionalAmountTo(FormInterface $form): ?string
