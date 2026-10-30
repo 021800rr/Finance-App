@@ -325,6 +325,37 @@ final class TransferControllerTest extends WebTestCase
         self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
+    #[DataProvider('ignoredAmountsTo')]
+    public function testSameCurrencyIgnoresTheSecondAmount(string $amountTo): void
+    {
+        $fromAccount = $this->createAccount('PLN');
+        $toAccount = $this->createAccount('PLN');
+        $crawler = $this->client->request('GET', '/transfer/new');
+        $form = $crawler->filter('#transfer_form button[type="submit"]')->form();
+
+        $this->client->submit($form, [
+            'transfer[fromAccount]' => (string) $fromAccount->getId(),
+            'transfer[toAccount]' => (string) $toAccount->getId(),
+            'transfer[amountFrom]' => '100.00',
+            'transfer[amountTo]' => $amountTo,
+        ]);
+
+        self::assertResponseRedirects();
+        $operations = $this->em()->getRepository(AccountOperation::class);
+        self::assertSame(-10000, $operations->findOneBy(['account' => $fromAccount])?->getAmount());
+        self::assertSame(10000, $operations->findOneBy(['account' => $toAccount])?->getAmount());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function ignoredAmountsTo(): iterable
+    {
+        yield 'different amount' => ['25'];
+        yield 'negative' => ['-25'];
+        yield 'not a number' => ['abc'];
+    }
+
     /**
      * @return array<string, array{string, string, string, string}>
      */
@@ -334,8 +365,6 @@ final class TransferControllerTest extends WebTestCase
             'negative debit' => ['amountFrom', '-100', '', 'PLN'],
             'zero debit' => ['amountFrom', '0', '', 'PLN'],
             'debit rounded to zero' => ['amountFrom', '0.004', '', 'PLN'],
-            'negative credit in same currency' => ['amountTo', '100', '-25', 'PLN'],
-
             'negative credit in exchange' => ['amountTo', '100', '-25', 'CHF'],
             'negative debit in exchange' => ['amountFrom', '-100', '25', 'CHF'],
             'negative debit and credit in exchange (message at from field)' => ['amountFrom', '-100', '-25', 'CHF'],

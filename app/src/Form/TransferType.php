@@ -15,6 +15,8 @@ use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Form\FormEvent;
+use Symfony\Component\Form\FormEvents;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\LessThanOrEqual;
@@ -85,6 +87,26 @@ class TransferType extends AbstractType
                 'required' => false,
                 'constraints' => [new Length(max: 255, maxMessage: 'common.description_max_length')],
             ]);
+
+        // With one currency the second amount plays no role, so whatever was typed into it is not even read.
+        $builder->addEventListener(FormEvents::PRE_SUBMIT, static function (FormEvent $event) use ($accounts): void {
+            $data = $event->getData();
+            if (!is_array($data)) {
+                return;
+            }
+
+            $currencies = [];
+            foreach ($accounts as $account) {
+                $currencies[(string) $account->getId()] = $account->getCurrency()->getCode();
+            }
+
+            $from = is_string($data['fromAccount'] ?? null) ? $currencies[$data['fromAccount']] ?? null : null;
+            $to = is_string($data['toAccount'] ?? null) ? $currencies[$data['toAccount']] ?? null : null;
+            if (null !== $from && $from === $to) {
+                unset($data['amountTo']);
+                $event->setData($data);
+            }
+        });
     }
 
     public function configureOptions(OptionsResolver $resolver): void

@@ -148,7 +148,8 @@ Nowe operacje na koncie dodajemy bez znaku, jeśli to **przychód** na koncie: "
 lub ze znakiem `-` jeżeli to **wydatek** z konta: "-309 zł zakup okularów"
 
 **Przelewy / transfery / "kantor"** — jeżeli robisz przelew między kontami o tej samej walucie,
-wtedy nie ma potrzeby dodawanie drugiej kwoty.
+wtedy druga kwota (`amountTo`) jest ignorowana: na konto docelowe wchodzi kwota z pierwszego pola,
+a zawartość drugiego pola nie ma żadnego znaczenia i nie jest sprawdzana.
 Jeżeli robisz przelew między kontami o różnych walutach,
 musisz określić jaką kwotę zdejmujesz z pierwszego konta i jaka wejdzie na drugie konto: "100 PLN / 25 EUR".
 Tutaj NIE podajemy żadnych znaków `+/-`.

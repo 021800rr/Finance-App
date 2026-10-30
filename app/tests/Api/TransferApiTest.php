@@ -84,6 +84,81 @@ final class TransferApiTest extends WebTestCase
         self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
+    #[DataProvider('anyAmountTo')]
+    public function testSameCurrencyIgnoresAmountToWhateverItContains(mixed $amountTo): void
+    {
+        $this->client->request('POST', '/api/transfers', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], content: json_encode([
+            'fromAccountId' => $this->account('Bank1-ROR-PLN')->getId(),
+            'toAccountId' => $this->account('Bank1-WAK-PLN')->getId(),
+            'operationDate' => '2026-01-15',
+            'amountFrom' => '100.00',
+            'amountTo' => $amountTo,
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertResponseStatusCodeSame(201);
+        $data = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame('-100.00', self::stringAt($data, 'outAmount'));
+        self::assertSame('100.00', self::stringAt($data, 'inAmount'));
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function anyAmountTo(): iterable
+    {
+        yield 'different amount' => ['2.00'];
+        yield 'negative' => ['-5'];
+        yield 'zero' => ['0'];
+        yield 'out of range' => ['9999999'];
+        yield 'not a number' => ['abc'];
+        yield 'empty' => [''];
+        yield 'null' => [null];
+        yield 'number' => [5];
+        yield 'boolean' => [true];
+        yield 'list' => [[1, 2]];
+        yield 'object' => [['a' => 1]];
+    }
+
+    /**
+     * @param array<string, string> $expected
+     */
+    #[DataProvider('invalidAmountsToInExchange')]
+    public function testDifferentCurrenciesStillCheckAmountTo(mixed $amountTo, array $expected): void
+    {
+        $this->client->request('POST', '/api/transfers', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], content: json_encode([
+            'fromAccountId' => $this->account('Bank1-ROR-PLN')->getId(),
+            'toAccountId' => $this->account('Bank1-WAK-CHF')->getId(),
+            'operationDate' => '2026-01-15',
+            'amountFrom' => '100.00',
+            'amountTo' => $amountTo,
+        ], JSON_THROW_ON_ERROR));
+
+        self::assertResponseStatusCodeSame(422);
+        $violations = self::rowsAt(
+            self::decodeObject((string) $this->client->getResponse()->getContent()),
+            'violations',
+        );
+        self::assertSame($expected, array_column($violations, 'code', 'propertyPath'));
+    }
+
+    /**
+     * @return iterable<string, array{mixed, array<string, string>}>
+     */
+    public static function invalidAmountsToInExchange(): iterable
+    {
+        yield 'not a number' => ['abc', ['amountTo' => 'common.numeric_invalid']];
+        yield 'zero' => ['0', ['amountTo' => 'transfer.amount_out_of_range']];
+        yield 'out of range' => ['9999999', ['amountTo' => 'transfer.amount_out_of_range']];
+        yield 'number' => [5, ['amountTo' => 'validation.invalid_type']];
+        yield 'list' => [[1, 2], ['amountTo' => 'validation.invalid_type']];
+    }
+
     #[DataProvider('accountFields')]
     public function testHiddenAccountIsRejectedWithoutCreatingOperations(string $field): void
     {

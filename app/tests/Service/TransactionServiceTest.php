@@ -41,6 +41,34 @@ final class TransactionServiceTest extends KernelTestCase
         $this->closeEntityManager();
     }
 
+    #[DataProvider('ignoredAmountsTo')]
+    public function testTransferSameCurrencyIgnoresAmountTo(string $amountTo): void
+    {
+        $result = $this->transactionService->transferBetweenAccounts(
+            $this->createAccount('PLN'),
+            $this->createAccount('PLN'),
+            $this->createContractor(),
+            new DateTimeImmutable(),
+            '100.00',
+            $amountTo,
+            null,
+        );
+
+        self::assertSame(-10000, $result['out']->getAmount());
+        self::assertSame(10000, $result['in']->getAmount());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function ignoredAmountsTo(): iterable
+    {
+        yield 'different amount' => ['2.00'];
+        yield 'negative' => ['-100.00'];
+        yield 'zero' => ['0.00'];
+        yield 'not a number' => ['abc'];
+    }
+
     public function testTransferSameCurrencyUsesAmountFromOnBothSides(): void
     {
         $from = $this->createAccount('PLN');
@@ -343,12 +371,10 @@ final class TransactionServiceTest extends KernelTestCase
         return [
             'negative debit with implicit credit' => ['PLN', '-100.00', null],
             'negative debit with explicit credit' => ['PLN', '-100.00', '100.00'],
-            'negative credit in same currency' => ['PLN', '100.00', '-100.00'],
             'negative debit in exchange' => ['CHF', '-100.00', '25.00'],
             'negative credit in exchange' => ['CHF', '100.00', '-25.00'],
             'negative debit and credit in exchange' => ['CHF', '-100.00', '-25.00'],
             'zero debit' => ['PLN', '0.00', null],
-            'zero credit in same currency' => ['PLN', '100.00', '0.00'],
             'zero credit in exchange' => ['CHF', '100.00', '0.00'],
             'debit rounded to zero' => ['PLN', '0.004', null],
             'credit rounded to zero' => ['CHF', '100.00', '0.004'],

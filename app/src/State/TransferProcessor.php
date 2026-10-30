@@ -52,7 +52,7 @@ final readonly class TransferProcessor implements ProcessorInterface
             $contractor,
             $operationDate,
             $amountFrom,
-            $data->amountTo,
+            is_string($data->amountTo) ? $data->amountTo : null,
             OptionalText::normalize($data->description)
         );
 

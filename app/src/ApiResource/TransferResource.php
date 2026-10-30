@@ -16,6 +16,7 @@ use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
 use App\Validator\NoNullCharacter;
 use App\Validator\SelectableAccount;
+use App\Validator\TransferAmountTo;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -38,7 +39,7 @@ use Symfony\Component\Validator\Constraints as Assert;
                 security: [['JWT' => []]],
             ),
             description: 'Creates a transfer. If fromAccount and toAccount have the same currency, '
-            .'amountTo may be omitted (it defaults to amountFrom). If currencies differ, '
+            .'amountTo is ignored, whatever it contains: the credited amount equals amountFrom. If currencies differ, '
             .'amountTo is required. A hidden account cannot be chosen on either side: such a request is '
             .'rejected with 422 on fromAccountId or toAccountId.',
             processor: TransferProcessor::class,
@@ -85,16 +86,13 @@ final class TransferResource
 
     #[ApiProperty(
         description: 'Positive amount credited to toAccount, as a decimal string. Required only when fromAccount '
-        .'and toAccount use different currencies; otherwise omit it (defaults to amountFrom).',
+        .'and toAccount use different currencies; with one currency it is ignored, whatever it contains.',
+        schema: ['type' => ['string', 'null']],
         example: null,
     )]
-    #[Assert\Range(
-        notInRangeMessage: 'transfer.amount_out_of_range',
-        invalidMessage: 'common.numeric_invalid',
-        min: 0.01,
-        max: 999999.99,
-    )]
-    public ?string $amountTo = null;
+    // Not typed as ?string: with one currency a value of any type must be ignored, not refused while reading the body.
+    #[TransferAmountTo]
+    public mixed $amountTo = null;
 
     #[ApiProperty(
         description: 'Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; '

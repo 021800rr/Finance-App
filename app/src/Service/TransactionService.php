@@ -39,6 +39,11 @@ final readonly class TransactionService
         $fromCurrencyCode = $from->getCurrency()->getCode();
         $toCurrencyCode = $to->getCurrency()->getCode();
 
+        // With one currency the credited amount always equals the debited one, whatever was sent as amountTo.
+        if ($fromCurrencyCode === $toCurrencyCode) {
+            $amountTo = null;
+        }
+
         if ($fromCurrencyCode !== $toCurrencyCode && null === $amountTo) {
             throw TransferException::amountToRequired($fromCurrencyCode, $toCurrencyCode);
         }

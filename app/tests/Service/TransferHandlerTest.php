@@ -139,7 +139,7 @@ final class TransferHandlerTest extends KernelTestCase
 
     public function testHandleThrowsWhenAmountToIsNotNumeric(): void
     {
-        $form = $this->buildFormWithRawAmounts(rawAmountFrom: '50.0', rawAmountTo: 'not-a-number');
+        $form = $this->buildFormWithRawAmounts(rawAmountFrom: '50.0', rawAmountTo: 'not-a-number', toCurrency: 'CHF');
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid decimal string: not-a-number');
@@ -178,7 +178,11 @@ final class TransferHandlerTest extends KernelTestCase
      * throws before our validation runs if given a non-numeric value, so amount
      * fields here use HiddenType (no transformer) to let the raw value pass through.
      */
-    private function buildFormWithRawAmounts(mixed $rawAmountFrom, mixed $rawAmountTo): FormInterface
+    private function buildFormWithRawAmounts(
+        mixed $rawAmountFrom,
+        mixed $rawAmountTo,
+        string $toCurrency = 'PLN',
+    ): FormInterface
     {
         $form = $this->formFactory->createNamed('', FormType::class, null, ['csrf_protection' => false]);
         $form->add('fromAccount', HiddenType::class, ['mapped' => false]);
@@ -189,7 +193,7 @@ final class TransferHandlerTest extends KernelTestCase
         $form->add('description', HiddenType::class, ['mapped' => false, 'required' => false]);
 
         $form->get('fromAccount')->setData($this->createAccount('PLN'));
-        $form->get('toAccount')->setData($this->createAccount('PLN'));
+        $form->get('toAccount')->setData($this->createAccount($toCurrency));
         $form->get('date')->setData(new \DateTimeImmutable());
         $form->get('amountFrom')->setData($rawAmountFrom);
         $form->get('amountTo')->setData($rawAmountTo);
