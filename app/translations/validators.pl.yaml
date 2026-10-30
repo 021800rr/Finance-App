@@ -23,6 +23,7 @@ common:
     date_out_of_range: 'Data musi mieścić się w zakresie od {{ min }} do {{ max }} (włącznie).'
     date_invalid: 'Podaj istniejącą datę w formacie RRRR-MM-DD.'
     numeric_invalid: 'Podaj poprawną liczbę.'
+    text_contains_null_character: 'Tekst zawiera niedozwolony znak.'
 
 contractor:
     name_max_length: 'Nazwa kontrahenta może mieć najwyżej 255 znaków.'

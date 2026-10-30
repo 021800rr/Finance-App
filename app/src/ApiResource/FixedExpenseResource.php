@@ -15,6 +15,7 @@ use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\FixedExpense;
 use App\State\FixedExpenseProcessor;
 use App\State\FixedExpenseProvider;
+use App\Validator\NoNullCharacter;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -72,6 +73,8 @@ final class FixedExpenseResource
         .'if none matches. Ignored if contractorId is set.',
         example: 'Rent',
     )]
+    #[Assert\Length(max: 255, maxMessage: 'contractor.name_max_length')]
+    #[NoNullCharacter]
     public ?string $contractorName = null;
 
     #[ApiProperty(description: 'Day of the month the expense is due, 1-28. Required.', example: 10)]
@@ -106,6 +109,7 @@ final class FixedExpenseResource
         example: 'Rent',
     )]
     #[Assert\Length(max: 255, normalizer: 'trim', maxMessage: 'common.description_max_length')]
+    #[NoNullCharacter]
     public ?string $description = null;
 
     public static function fromEntity(FixedExpense $fixedExpense): self

@@ -23,6 +23,7 @@ common:
     date_out_of_range: 'Date must be between {{ min }} and {{ max }} (inclusive).'
     date_invalid: 'Please enter a real date in the format YYYY-MM-DD.'
     numeric_invalid: 'Please enter a valid number.'
+    text_contains_null_character: 'The text contains a forbidden character.'
 
 contractor:
     name_max_length: 'The contractor name cannot be longer than 255 characters.'

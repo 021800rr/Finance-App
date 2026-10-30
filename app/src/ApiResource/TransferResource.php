@@ -14,6 +14,7 @@ use App\OpenApi\ErrorResponseContent;
 use App\State\TransferProcessor;
 use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
+use App\Validator\NoNullCharacter;
 use App\Validator\SelectableAccount;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -101,6 +102,7 @@ final class TransferResource
         example: 'Monthly savings transfer',
     )]
     #[Assert\Length(max: 255, normalizer: 'trim', maxMessage: 'common.description_max_length')]
+    #[NoNullCharacter]
     public ?string $description = null;
 
     #[ApiProperty(description: 'Shared id linking the debit and credit operations. Read-only.', writable: false, example: null)]

@@ -15,6 +15,7 @@ use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\GoldAsset;
 use App\State\GoldAssetProcessor;
 use App\State\GoldAssetProvider;
+use App\Validator\NoNullCharacter;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -70,6 +71,7 @@ final class GoldAssetResource
     #[ApiProperty(description: 'Free-text description. Required, at most 255 characters.', example: 'Sztabka 1oz')]
     #[Assert\NotBlank(message: 'gold_asset.description_not_blank', normalizer: 'trim')]
     #[Assert\Length(max: 255, maxMessage: 'gold_asset.description_max_length', normalizer: 'trim')]
+    #[NoNullCharacter]
     public ?string $description = null;
 
     #[ApiProperty(

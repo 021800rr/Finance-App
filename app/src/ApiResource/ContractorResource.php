@@ -14,6 +14,7 @@ use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\Contractor;
 use App\State\ContractorProcessor;
 use App\State\ContractorProvider;
+use App\Validator\NoNullCharacter;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -26,8 +27,9 @@ use Symfony\Component\Validator\Constraints as Assert;
             provider: ContractorProvider::class,
             parameters: [
                 'name' => new QueryParameter(
-                    description: 'Partial, case-insensitive name match (e.g. "Éc" matches "Écolier"). Min 2 chars.',
-                    constraints: [new Assert\Length(min: 2)],
+                    description: 'Partial, case-insensitive name match (e.g. "Éc" matches "Écolier"). '
+                    .'2-255 characters after trimming.',
+                    constraints: [new Assert\Length(min: 2, max: 255, normalizer: 'trim'), new NoNullCharacter()],
                 ),
             ],
         ),
@@ -52,6 +54,7 @@ final class ContractorResource
     #[ApiProperty(description: 'Contractor name. Must be unique. Required, 2-255 characters.', example: 'ACME Sp. z o.o.')]
     #[Assert\NotBlank(message: 'contractor.name_not_blank')]
     #[Assert\Length(min: 2, max: 255, minMessage: 'contractor.name_min_length', maxMessage: 'contractor.name_max_length')]
+    #[NoNullCharacter]
     public ?string $name = null;
 
     public static function fromEntity(Contractor $contractor): self

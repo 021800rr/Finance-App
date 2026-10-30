@@ -20,6 +20,7 @@ use App\State\AccountOperationProcessor;
 use App\State\AccountOperationProvider;
 use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
+use App\Validator\NoNullCharacter;
 use App\Validator\SelectableAccount;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -36,12 +37,13 @@ use Symfony\Component\Validator\Constraints as Assert;
             parameters: ['q' => new QueryParameter(
                 property: 'description',
                 description: 'Search in the description and the contractor name (case-insensitive, partial match) '
-                .'or by exact amount (e.g. 150.50). Min 2 chars.',
+                .'or by exact amount (e.g. 150.50). 2-255 characters after trimming.',
                 required: true,
-                constraints: [
+                constraints: [new Assert\Sequentially([
                     new Assert\NotBlank(normalizer: 'trim'),
-                    new Assert\Length(min: 2),
-                ]
+                    new Assert\Length(min: 2, max: 255, normalizer: 'trim'),
+                    new NoNullCharacter(),
+                ])]
             )],
         ),
         new GetCollection(
@@ -122,6 +124,8 @@ final class AccountOperationResource
         .'if none matches. Ignored if contractorId is set.',
         example: 'ACME Sp. z o.o.',
     )]
+    #[Assert\Length(max: 255, maxMessage: 'contractor.name_max_length')]
+    #[NoNullCharacter]
     #[Groups(['operation:write'])]
     public ?string $contractorName = null;
 
@@ -162,6 +166,7 @@ final class AccountOperationResource
         example: 'Rent for September',
     )]
     #[Assert\Length(max: 255, normalizer: 'trim', maxMessage: 'common.description_max_length')]
+    #[NoNullCharacter]
     #[Groups(['operation:write'])]
     public ?string $description = null;
 
