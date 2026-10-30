@@ -52,7 +52,7 @@ export default class extends Controller {
             this.hiddenTarget.value = '';
         }
         this.clearMessage();
-        if (q.length < 2) {
+        if (q.length < 1) {
             this.clearResults();
             return;
         }

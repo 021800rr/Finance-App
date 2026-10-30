@@ -59,12 +59,22 @@ final class ContractorRepository extends ServiceEntityRepository
             return [];
         }
 
+        $escapedQuery = addcslashes($trimmedQuery, '\\%_');
+
         /** @var array<int, array{id: int, name: string}> $result */
         $result = $this->createQueryBuilder('c')
             ->select('c.id, c.name')
+            // Best matches first: with a one-letter query the limit must not cut off a contractor named exactly so.
+            ->addSelect(
+                'CASE WHEN LOWER(c.name) = LOWER(:exact) THEN 0 WHEN LOWER(c.name) LIKE LOWER(:prefix) THEN 1 '
+                .'ELSE 2 END AS HIDDEN relevance'
+            )
             ->where('LOWER(c.name) LIKE LOWER(:q)')
-            ->setParameter('q', '%'.addcslashes($trimmedQuery, '\\%_').'%')
-            ->orderBy('c.name', 'ASC')
+            ->setParameter('q', '%'.$escapedQuery.'%')
+            ->setParameter('exact', $trimmedQuery)
+            ->setParameter('prefix', $escapedQuery.'%')
+            ->orderBy('relevance', 'ASC')
+            ->addOrderBy('c.name', 'ASC')
             ->setMaxResults($limit)
             ->getQuery()
             ->getArrayResult();

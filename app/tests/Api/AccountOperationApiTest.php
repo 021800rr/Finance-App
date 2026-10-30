@@ -163,11 +163,28 @@ final class AccountOperationApiTest extends WebTestCase
         self::assertEqualsCanonicalizing(["In A {$marker}", "In B {$marker}"], $descriptions);
     }
 
-    public function testQueryParameterShorterThanTwoCharactersIsRejected(): void
+    #[DataProvider('likeWildcards')]
+    public function testSearchTreatsLikeWildcardsLiterally(string $query, string $matching, string $other): void
     {
-        $this->client->request('GET', '/api/account_operations?q=a', server: $this->authHeaders());
+        $marker = uniqid();
+        $account = $this->createAccount();
+        $this->createOperation($account, "{$matching} {$marker}");
+        $this->createOperation($account, "{$other} {$marker}");
 
-        self::assertResponseStatusCodeSame(422);
+        $descriptions = $this->collectionDescriptions('/api/account_operations?q='.rawurlencode($query));
+
+        self::assertContains("{$matching} {$marker}", $descriptions);
+        self::assertNotContains("{$other} {$marker}", $descriptions);
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string}>
+     */
+    public static function likeWildcards(): iterable
+    {
+        yield 'percent, also as a one-character search' => ['%', 'Rabat 7%', 'Bez znaku'];
+        yield 'underscore' => ['_', 'snake_case', 'snakeXcase'];
+        yield 'backslash' => ['\\', 'a\\b', 'ab'];
     }
 
     public function testOpenApiDocumentsTheAccountOperationsRoute(): void

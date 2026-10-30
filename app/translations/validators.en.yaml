@@ -27,7 +27,6 @@ common:
 
 contractor:
     name_max_length: 'The contractor name cannot be longer than 255 characters.'
-    name_min_length: 'The contractor name must be at least 2 characters long.'
     name_not_blank: 'Please enter a contractor name.'
     name_not_unique: 'The contractor already exists — select it from the list.'
     required: 'Please select a contractor from the list.'

@@ -151,6 +151,19 @@ final class ContractorRepositoryTest extends KernelTestCase
         self::assertCount(3, $result);
     }
 
+    public function testSearchByNameShowsExactThenPrefixMatchesBeforeTheLimitCutsTheRest(): void
+    {
+        $marker = (string) random_int(100000, 999999);
+        $this->createContractor("Aaa {$marker}");
+        $this->createContractor("Abb {$marker}");
+        $this->createContractor("{$marker} zzz");
+        $this->createContractor($marker);
+
+        $names = array_column($this->repository->searchByName($marker, 2), 'name');
+
+        self::assertSame([$marker, "{$marker} zzz"], $names);
+    }
+
     public function testSearchByNameReturnsCorrectShape(): void
     {
         $contractor = $this->createContractor('ShapeTest ' . uniqid());

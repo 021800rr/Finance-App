@@ -37,11 +37,11 @@ use Symfony\Component\Validator\Constraints as Assert;
             parameters: ['q' => new QueryParameter(
                 property: 'description',
                 description: 'Search in the description and the contractor name (case-insensitive, partial match) '
-                .'or by exact amount (e.g. 150.50). 2-255 characters after trimming.',
+                .'or by exact amount (e.g. 150.50). 1-255 characters after trimming.',
                 required: true,
                 constraints: [new Assert\Sequentially([
                     new Assert\NotBlank(normalizer: 'trim'),
-                    new Assert\Length(min: 2, max: 255, normalizer: 'trim'),
+                    new Assert\Length(min: 1, max: 255, normalizer: 'trim'),
                     new NoNullCharacter(),
                 ])]
             )],

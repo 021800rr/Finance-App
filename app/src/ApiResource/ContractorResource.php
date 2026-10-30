@@ -28,8 +28,8 @@ use Symfony\Component\Validator\Constraints as Assert;
             parameters: [
                 'name' => new QueryParameter(
                     description: 'Partial, case-insensitive name match (e.g. "Éc" matches "Écolier"). '
-                    .'2-255 characters after trimming.',
-                    constraints: [new Assert\Length(min: 2, max: 255, normalizer: 'trim'), new NoNullCharacter()],
+                    .'1-255 characters after trimming. Exact matches come first, then names starting with the text.',
+                    constraints: [new Assert\Length(min: 1, max: 255, normalizer: 'trim'), new NoNullCharacter()],
                 ),
             ],
         ),
@@ -51,9 +51,12 @@ final class ContractorResource
     #[ApiProperty(description: 'Contractor id. Read-only, ignored on write.', writable: false, example: 1)]
     public ?int $id = null;
 
-    #[ApiProperty(description: 'Contractor name. Must be unique. Required, 2-255 characters.', example: 'ACME Sp. z o.o.')]
-    #[Assert\NotBlank(message: 'contractor.name_not_blank')]
-    #[Assert\Length(min: 2, max: 255, minMessage: 'contractor.name_min_length', maxMessage: 'contractor.name_max_length')]
+    #[ApiProperty(
+        description: 'Contractor name. Must be unique. Required, 1-255 characters.',
+        example: 'ACME Sp. z o.o.',
+    )]
+    #[Assert\NotBlank(message: 'contractor.name_not_blank', normalizer: 'trim')]
+    #[Assert\Length(max: 255, maxMessage: 'contractor.name_max_length')]
     #[NoNullCharacter]
     public ?string $name = null;
 

@@ -215,14 +215,60 @@ final class ValidationViolationCodeApiTest extends WebTestCase
      */
     public static function invalidSearchTexts(): iterable
     {
-        $tooShort = ['code' => 'validation.too_short', 'params' => ['max' => '255', 'limit' => '2', 'min' => '2']];
-
-        yield 'one character surrounded by spaces' => ['%20a%20', $tooShort];
-        yield 'too long' => [
-            str_repeat('a', 256),
-            ['code' => 'validation.too_long', 'params' => ['min' => '2', 'limit' => '255', 'max' => '255']],
-        ];
         yield 'null character' => ['ab%00cd', ['code' => 'common.text_contains_null_character', 'params' => []]];
+    }
+
+    public function testTooLongSearchTextIsAViolationWithTheLimitsOfEachFilter(): void
+    {
+        $headers = [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_ACCEPT' => 'application/ld+json',
+        ];
+        $tooLong = str_repeat('a', 256);
+
+        $this->client->request('GET', '/api/contractors?name='.$tooLong, server: $headers);
+        self::assertSame(
+            ['code' => 'validation.too_long', 'params' => ['min' => '1', 'limit' => '255', 'max' => '255']],
+            $this->codesAndParams()['name'] ?? null,
+        );
+
+        $this->client->request('GET', '/api/account_operations?q='.$tooLong, server: $headers);
+        self::assertSame(
+            ['code' => 'validation.too_long', 'params' => ['min' => '1', 'limit' => '255', 'max' => '255']],
+            $this->codesAndParams()['q'] ?? null,
+        );
+    }
+
+    public function testOneCharacterContractorCanBeCreatedAndFoundFirst(): void
+    {
+        $headers = [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_ACCEPT' => 'application/ld+json',
+        ];
+
+        $this->client->request('POST', '/api/contractors', server: $headers + [
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], content: json_encode(['name' => 'X'], JSON_THROW_ON_ERROR));
+        self::assertResponseStatusCodeSame(201);
+
+        $this->client->request('GET', '/api/contractors?name=%20x%20', server: $headers);
+        self::assertResponseIsSuccessful();
+        $members = self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'member');
+        self::assertSame('X', $members[0]['name'] ?? null);
+    }
+
+    public function testBlankContractorNameIsAViolation(): void
+    {
+        $this->client->request('POST', '/api/contractors', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_ACCEPT' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], content: json_encode(['name' => ' '], JSON_THROW_ON_ERROR));
+
+        self::assertSame(
+            ['name' => ['code' => 'contractor.name_not_blank', 'params' => []]],
+            $this->codesAndParams(),
+        );
     }
 
     public function testBlankSearchFiltersGetOneViolation(): void
@@ -237,7 +283,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
 
         $this->client->request('GET', '/api/contractors?name=%20%20', server: $headers);
         self::assertSame(
-            ['name' => ['code' => 'validation.too_short', 'params' => ['max' => '255', 'limit' => '2', 'min' => '2']]],
+            ['name' => ['code' => 'validation.too_short', 'params' => ['max' => '255', 'limit' => '1', 'min' => '1']]],
             $this->codesAndParams(),
         );
     }
@@ -309,19 +355,19 @@ final class ValidationViolationCodeApiTest extends WebTestCase
 
     public function testConstraintWithoutOwnMessageGetsTheSymfonyErrorName(): void
     {
-        $this->client->request('GET', '/api/account_operations?q=a', server: [
+        $this->client->request('GET', '/api/contractors?name=', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
             'HTTP_ACCEPT' => 'application/ld+json',
         ]);
 
         self::assertSame(
             [
-                'q' => [
+                'name' => [
                     'code' => 'validation.too_short',
                     'params' => [
                         'max' => '255',
-                        'limit' => '2',
-                        'min' => '2'
+                        'limit' => '1',
+                        'min' => '1'
                     ]
                 ]
             ],

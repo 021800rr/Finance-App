@@ -24,6 +24,20 @@ function prepareController(t) {
     return controller;
 }
 
+test('one typed character already searches, a blank input does not', t => {
+    const controller = prepareController(t);
+    controller.clearMessage = () => {};
+
+    controller.inputTarget.value = ' X ';
+    controller.onInput();
+    assert.deepEqual(controller.search.mock.calls[0].arguments, ['X']);
+
+    controller.inputTarget.value = '   ';
+    controller.onInput();
+    assert.equal(controller.search.mock.calls.length, 1);
+    assert.equal(controller.clearResults.mock.calls.length, 1);
+});
+
 test('422 explains the duplicate and refreshes suggestions without selecting a contractor', async t => {
     const controller = prepareController(t);
     const fetch = t.mock.method(globalThis, 'fetch', async () => Response.json(
@@ -50,7 +64,7 @@ test('422 explains the duplicate and refreshes suggestions without selecting a c
 test('422 displays form validation errors returned by the server', async t => {
     const controller = prepareController(t);
     t.mock.method(globalThis, 'fetch', async () => Response.json(
-        { errors: ['Nazwa kontrahenta musi mieć co najmniej 2 znaki.'] },
+        { errors: ['Nazwa kontrahenta może mieć najwyżej 255 znaków.'] },
         { status: 422 },
     ));
 
@@ -58,7 +72,7 @@ test('422 displays form validation errors returned by the server', async t => {
 
     assert.deepEqual(controller.showMessage.mock.calls[0].arguments, [
         'error',
-        'Nazwa kontrahenta musi mieć co najmniej 2 znaki.',
+        'Nazwa kontrahenta może mieć najwyżej 255 znaków.',
     ]);
     assert.equal(controller.hiddenTarget.value, '');
 });

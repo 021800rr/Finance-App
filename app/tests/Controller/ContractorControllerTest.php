@@ -38,6 +38,38 @@ final class ContractorControllerTest extends WebTestCase
         self::assertSame('[]', $this->client->getResponse()->getContent());
     }
 
+    public function testCreateAcceptsAOneCharacterName(): void
+    {
+        $crawler = $this->client->request('GET', '/');
+        $csrfToken = $crawler->filter('meta[name="csrf-token-contractor-create"]')->attr('content');
+
+        $this->client->request(
+            'POST',
+            '/contractor/create',
+            [],
+            [],
+            ['HTTP_X-CSRF-Token' => $csrfToken, 'CONTENT_TYPE' => 'application/json'],
+            (string) json_encode(['name' => 'X']),
+        );
+
+        self::assertResponseIsSuccessful();
+        self::assertNotNull($this->em()->getRepository(Contractor::class)->findOneBy(['name' => 'X']));
+    }
+
+    public function testSearchWorksFromOneCharacter(): void
+    {
+        $this->em()->persist(new Contractor('X'));
+        $this->em()->flush();
+
+        $this->client->request('GET', '/contractor/search?q=x');
+
+        self::assertResponseIsSuccessful();
+        self::assertMatchesRegularExpression(
+            '/^\[\{"id":\d+,"name":"X"\}/',
+            (string) $this->client->getResponse()->getContent(),
+        );
+    }
+
     public function testSearchReturnsMatchingContractors(): void
     {
         $uniquePart = uniqid();
@@ -205,7 +237,6 @@ final class ContractorControllerTest extends WebTestCase
         yield 'empty name' => [['name' => ''], $required];
         yield 'blank name' => [['name' => '   '], $required];
         yield 'null name' => [['name' => null], $required];
-        yield 'too short' => [['name' => 'A'], 'The contractor name must be at least 2 characters long.'];
         yield 'too long' => [
             ['name' => str_repeat('ą', 256)],
             'The contractor name cannot be longer than 255 characters.',

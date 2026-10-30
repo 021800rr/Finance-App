@@ -27,7 +27,7 @@ class Contractor
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: 'contractor.name_not_blank')]
-    #[Assert\Length(min: 2, max: 255, minMessage: 'contractor.name_min_length', maxMessage: 'contractor.name_max_length')]
+    #[Assert\Length(max: 255, maxMessage: 'contractor.name_max_length')]
     private string $name;
 
     public function __construct(string $name)
