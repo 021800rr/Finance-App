@@ -39,7 +39,6 @@ final readonly class Quantity
 
     /**
      * Whether the quantity is greater than zero.
-     * Used by: setter validation.
      */
     public function isPositive(): bool
     {

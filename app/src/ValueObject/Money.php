@@ -54,7 +54,6 @@ final readonly class Money
     /**
      * Adds two amounts of the same currency and scale, returning a new Money object.
      * Throws if the currencies or scales differ.
-     * Used by: SummaryService::getSummary() and similar.
      */
     public function add(self $other): self
     {
@@ -66,7 +65,6 @@ final readonly class Money
 
     /**
      * Returns the amount with its sign flipped (a positive amount becomes negative and vice versa).
-     * Used by: TransactionService — generating the outgoing leg of a transfer.
      */
     public function negate(): self
     {
@@ -115,7 +113,6 @@ final readonly class Money
 
     /**
      * Whether the amount is positive.
-     * Used by: validation in GoldPriceFactory — a gold price must be positive.
      */
     public function isPositive(): bool
     {
@@ -124,7 +121,6 @@ final readonly class Money
 
     /**
      * Whether the amount is negative (e.g. an expense).
-     * Used by: Twig styling (green/red amount color).
      */
     public function isNegative(): bool
     {
@@ -133,7 +129,6 @@ final readonly class Money
 
     /**
      * Whether the amount is exactly zero.
-     * Used by: setter validation.
      */
     public function isZero(): bool
     {
@@ -161,7 +156,6 @@ final readonly class Money
 
     /**
      * Returns the currency code (e.g. "PLN", "CHF").
-     * Used by: logging/debugging.
      */
     public function getCurrencyCode(): string
     {
@@ -179,7 +173,6 @@ final readonly class Money
     /**
      * Formats the amount as a human-readable string (Polish decimal separator, space thousands
      * separator — this is a single-user Polish app, so the formatting isn't locale-parameterized).
-     * Used by: MoneyExtension — the only Twig filter for displaying amounts.
      */
     public function format(bool $withCurrency = false): string
     {
