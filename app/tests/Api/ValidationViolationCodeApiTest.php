@@ -695,6 +695,45 @@ final class ValidationViolationCodeApiTest extends WebTestCase
         yield 'amount' => ['/api/fixed_expenses', ['amount' => 5], 'amount', 'null|string'];
     }
 
+    #[DataProvider('wrongConfirmedValues')]
+    public function testWrongTypeOnAFieldWithoutConstraintsIsAViolation(mixed $confirmed): void
+    {
+        $countBefore = $this->rowCounts();
+
+        $this->send('POST', '/api/account_operations', ['confirmed' => $confirmed] + $this->validOperation());
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(
+            ['confirmed' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'bool']]],
+            $this->codesAndParams(),
+        );
+        self::assertSame($countBefore, $this->rowCounts());
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function wrongConfirmedValues(): iterable
+    {
+        yield 'text' => ['x'];
+        yield 'null' => [null];
+        yield 'number' => [1];
+    }
+
+    public function testEveryWrongTypeIsReportedAtOnce(): void
+    {
+        $this->send('POST', '/api/fixed_expenses', ['day' => 'x', 'amount' => 5, 'description' => 5]);
+
+        self::assertSame(
+            [
+                'day' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'int|null']],
+                'amount' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'null|string']],
+                'description' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'null|string']],
+            ],
+            $this->codesAndParams(),
+        );
+    }
+
     public function testWrongTypeFromAConstraintNamesTheExpectedType(): void
     {
         $this->send('POST', '/api/transfers', [
