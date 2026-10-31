@@ -40,11 +40,6 @@ final class RecordNotFoundException extends \RuntimeException implements Busines
         return new self('Contractor not found.', 'contractor.not_found');
     }
 
-    public static function currency(): self
-    {
-        return new self('Currency not found.', 'currency.not_found');
-    }
-
     public static function currencyExchangeRate(): self
     {
         return new self('Exchange rate not found.', 'currency_exchange_rate.not_found');
