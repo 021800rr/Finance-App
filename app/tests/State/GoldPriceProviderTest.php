@@ -14,6 +14,7 @@ use App\Entity\GoldPrice;
 use App\State\GoldPriceProvider;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class GoldPriceProviderTest extends KernelTestCase
 {
@@ -49,11 +50,12 @@ final class GoldPriceProviderTest extends KernelTestCase
         self::assertSame($goldAsset->getId(), $result->goldAssetId);
     }
 
-    public function testProvideReturnsNullForNonExistentId(): void
+    public function testProvideThrowsNotFoundForNonExistentId(): void
     {
-        $result = $this->provider->provide(new Get(), ['id' => 999999999]);
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('Gold price entry not found.');
 
-        self::assertNull($result);
+        $this->provider->provide(new Get(), ['id' => 999999999]);
     }
 
     public function testProvideCollectionOrdersByPriceDateDescending(): void

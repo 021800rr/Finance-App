@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\AccountOperationResource;
 use App\Entity\AccountOperation;
+use App\Exception\RecordNotFoundException;
 use App\Repository\AccountOperationRepository;
 use App\Repository\AccountRepository;
 use App\Service\Paginator;
@@ -36,13 +37,13 @@ final readonly class AccountOperationProvider implements ProviderInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      *
-     * @return AccountOperationResource|OffsetPaginator<AccountOperationResource>|null
+     * @return AccountOperationResource|OffsetPaginator<AccountOperationResource>
      */
     public function provide(
         Operation $operation,
         array $uriVariables = [],
         array $context = [],
-    ): AccountOperationResource|OffsetPaginator|null {
+    ): AccountOperationResource|OffsetPaginator {
         if ($operation instanceof CollectionOperationInterface) {
             return isset($uriVariables['accountId'])
                 ? $this->provideAccountHistory($uriVariables['accountId'])
@@ -51,7 +52,13 @@ final readonly class AccountOperationProvider implements ProviderInterface
 
         $accountOperation = $this->accountOperationRepository->findByIdOrNull($uriVariables['id'] ?? null);
 
-        return $accountOperation ? AccountOperationResource::fromEntity($accountOperation) : null;
+        if (!$accountOperation) {
+            $exception = RecordNotFoundException::accountOperation();
+
+            throw new NotFoundHttpException($exception->getMessage(), $exception);
+        }
+
+        return AccountOperationResource::fromEntity($accountOperation);
     }
 
     /**
@@ -64,7 +71,9 @@ final readonly class AccountOperationProvider implements ProviderInterface
     {
         $account = $this->accountRepository->findByIdOrNull($rawAccountId);
         if (null === $account) {
-            throw new NotFoundHttpException('Account not found.');
+            $exception = RecordNotFoundException::account();
+
+            throw new NotFoundHttpException($exception->getMessage(), $exception);
         }
 
         $page = $this->requestedPage($this->requestStack->getCurrentRequest());

@@ -18,6 +18,7 @@ use App\Entity\Household;
 use App\State\AccountProvider;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class AccountProviderTest extends KernelTestCase
 {
@@ -63,18 +64,20 @@ final class AccountProviderTest extends KernelTestCase
         self::assertContains($account->getId(), array_map(static fn (AccountResource $resource): ?int => $resource->id, $result));
     }
 
-    public function testProvideReturnsNullForNonExistentId(): void
+    public function testProvideThrowsNotFoundForNonExistentId(): void
     {
-        $result = $this->provider->provide(new Get(), ['id' => 999999999]);
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('Account not found.');
 
-        self::assertNull($result);
+        $this->provider->provide(new Get(), ['id' => 999999999]);
     }
 
-    public function testProvideReturnsNullForNonNumericId(): void
+    public function testProvideThrowsNotFoundForNonNumericId(): void
     {
-        $result = $this->provider->provide(new Get(), ['id' => 'not-a-number']);
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('Account not found.');
 
-        self::assertNull($result);
+        $this->provider->provide(new Get(), ['id' => 'not-a-number']);
     }
 
     public function testProvideForGetIncludesBalances(): void

@@ -12,6 +12,7 @@ use App\Entity\GoldForm;
 use App\State\GoldAssetProvider;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class GoldAssetProviderTest extends KernelTestCase
 {
@@ -61,11 +62,12 @@ final class GoldAssetProviderTest extends KernelTestCase
         self::assertSame('1.5000', $result->ounces);
     }
 
-    public function testProvideReturnsNullForNonExistentId(): void
+    public function testProvideThrowsNotFoundForNonExistentId(): void
     {
-        $result = $this->provider->provide(new Get(), ['id' => 999999999]);
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('Gold asset not found.');
 
-        self::assertNull($result);
+        $this->provider->provide(new Get(), ['id' => 999999999]);
     }
 
     public function testProvideCollectionOrdersByIdAscending(): void

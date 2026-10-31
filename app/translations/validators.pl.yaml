@@ -7,7 +7,11 @@ account:
     number_min_length: 'Numer konta musi mieć co najmniej 1 znak.'
     number_not_blank: 'Podaj numer konta.'
 
+account_operation:
+    not_found: 'Ta operacja nie istnieje.'
+
 account_type:
+    not_found: 'Ten typ konta nie istnieje.'
     name_max_length: 'Nazwa typu konta może mieć najwyżej 50 znaków.'
     name_min_length: 'Nazwa typu konta musi mieć co najmniej 2 znaki.'
     name_not_blank: 'Podaj nazwę typu konta.'
@@ -43,6 +47,7 @@ currency:
     code_not_blank: 'Podaj kod waluty.'
 
 currency_exchange_rate:
+    not_found: 'Ten kurs nie istnieje.'
     bank_required: 'Wybierz bank.'
     bank_without_foreign_account: 'Ten bank nie ma nieukrytego konta walutowego. Wybierz inny bank.'
     currency_pln_not_allowed: 'Nie można dodać kursu dla PLN. Wybierz inną walutę.'
@@ -51,6 +56,7 @@ currency_exchange_rate:
     rate_out_of_range: 'Kurs musi być z zakresu od 0,0001 do 99,9999.'
 
 fixed_expense:
+    not_found: 'Ta opłata stała nie istnieje.'
     amount_must_be_negative: 'Kwota musi być ujemna, z zakresu od -999 999,99 do -0,01.'
     amount_not_blank: 'Podaj kwotę.'
     amount_out_of_range: 'Kwota musi być ujemna, z zakresu od -999 999,99 do -0,01.'
@@ -73,11 +79,13 @@ gold_form:
     name_not_blank: 'Podaj nazwę formy złota.'
 
 gold_price:
+    not_found: 'Ta cena złota nie istnieje.'
     asset_not_null: 'Wybierz aktywo.'
     price_not_blank: 'Podaj cenę.'
     price_out_of_range: 'Cena musi być z zakresu od 0,01 do 999 999,99.'
 
 household:
+    not_found: 'To gospodarstwo nie istnieje.'
     name_max_length: 'Nazwa gospodarstwa może mieć najwyżej 100 znaków.'
     name_min_length: 'Nazwa gospodarstwa musi mieć co najmniej 2 znaki.'
     name_not_blank: 'Podaj nazwę gospodarstwa.'

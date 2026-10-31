@@ -64,13 +64,12 @@ final class AccountOperationProviderTest extends KernelTestCase
         self::assertSame($account->getId(), $result->accountId);
     }
 
-    public function testProvideReturnsNullForNonExistentId(): void
+    public function testProvideThrowsNotFoundForNonExistentId(): void
     {
-        $this->pushRequest([]);
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('Account operation not found.');
 
-        $result = $this->provider->provide(new Get(), ['id' => 999999999]);
-
-        self::assertNull($result);
+        $this->provider->provide(new Get(), ['id' => 999999999]);
     }
 
     public function testAccountHistoryIsOrderedByDateDescending(): void

@@ -7,7 +7,9 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\GoldAssetResource;
+use App\Exception\RecordNotFoundException;
 use App\Repository\GoldAssetRepository;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<GoldAssetResource>
@@ -22,14 +24,23 @@ final readonly class GoldAssetProvider implements ProviderInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      *
-     * @return GoldAssetResource|list<GoldAssetResource>|null
+     * @return GoldAssetResource|list<GoldAssetResource>
      */
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): GoldAssetResource|array|null
-    {
+    public function provide(
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): GoldAssetResource|array {
         if (isset($uriVariables['id'])) {
             $goldAsset = $this->goldAssetRepository->findByIdOrNull($uriVariables['id']);
 
-            return $goldAsset ? GoldAssetResource::fromEntity($goldAsset) : null;
+            if (!$goldAsset) {
+                $exception = RecordNotFoundException::goldAsset();
+
+                throw new NotFoundHttpException($exception->getMessage(), $exception);
+            }
+
+            return GoldAssetResource::fromEntity($goldAsset);
         }
 
         $goldAssets = $this->goldAssetRepository->findAllOrdered();

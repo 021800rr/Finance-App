@@ -10,8 +10,10 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\AccountResource;
 use App\Entity\Account;
+use App\Exception\RecordNotFoundException;
 use App\Repository\AccountRepository;
 use App\Service\AccountOperationSummaryService;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<AccountResource>
@@ -28,9 +30,9 @@ final readonly class AccountProvider implements ProviderInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      *
-     * @return AccountResource|list<AccountResource>|null
+     * @return AccountResource|list<AccountResource>
      */
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): AccountResource|array|null
+    public function provide(Operation $operation, array $uriVariables = [], array $context = []): AccountResource|array
     {
         if ($operation instanceof CollectionOperationInterface) {
             /** @var list<Account> $accounts */
@@ -41,7 +43,9 @@ final readonly class AccountProvider implements ProviderInterface
 
         $account = $this->accountRepository->findByIdOrNull($uriVariables['id'] ?? null);
         if (null === $account) {
-            return null;
+            $exception = RecordNotFoundException::account();
+
+            throw new NotFoundHttpException($exception->getMessage(), $exception);
         }
 
         $resource = AccountResource::fromEntity($account);

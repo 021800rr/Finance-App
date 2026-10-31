@@ -11,6 +11,7 @@ use App\Entity\Currency;
 use App\State\CurrencyProvider;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class CurrencyProviderTest extends KernelTestCase
 {
@@ -44,11 +45,12 @@ final class CurrencyProviderTest extends KernelTestCase
         self::assertSame($currency->getCode(), $result->code);
     }
 
-    public function testProvideReturnsNullForNonExistentCode(): void
+    public function testProvideThrowsNotFoundForNonExistentCode(): void
     {
-        $result = $this->provider->provide(new Get(), ['code' => 'ZZZ']);
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('Currency not found.');
 
-        self::assertNull($result);
+        $this->provider->provide(new Get(), ['code' => 'ZZZ']);
     }
 
     public function testProvideCollectionOrdersByCodeAscending(): void

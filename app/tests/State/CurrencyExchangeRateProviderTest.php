@@ -13,6 +13,7 @@ use App\Entity\CurrencyExchangeRate;
 use App\State\CurrencyExchangeRateProvider;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class CurrencyExchangeRateProviderTest extends KernelTestCase
 {
@@ -47,11 +48,12 @@ final class CurrencyExchangeRateProviderTest extends KernelTestCase
         self::assertSame($rate->getBank()->getId(), $result->bankId);
     }
 
-    public function testProvideReturnsNullForNonExistentId(): void
+    public function testProvideThrowsNotFoundForNonExistentId(): void
     {
-        $result = $this->provider->provide(new Get(), ['id' => 999999999]);
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('Exchange rate not found.');
 
-        self::assertNull($result);
+        $this->provider->provide(new Get(), ['id' => 999999999]);
     }
 
     public function testProvideCollectionOrdersSameDayRatesByIdDescending(): void

@@ -7,7 +7,9 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\ContractorResource;
+use App\Exception\RecordNotFoundException;
 use App\Repository\ContractorRepository;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<ContractorResource>
@@ -22,14 +24,23 @@ final readonly class ContractorProvider implements ProviderInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      *
-     * @return ContractorResource|list<ContractorResource>|null
+     * @return ContractorResource|list<ContractorResource>
      */
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): ContractorResource|array|null
-    {
+    public function provide(
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): ContractorResource|array {
         if (isset($uriVariables['id'])) {
             $contractor = $this->contractorRepository->findByIdOrNull($uriVariables['id']);
 
-            return $contractor ? ContractorResource::fromEntity($contractor) : null;
+            if (!$contractor) {
+                $exception = RecordNotFoundException::contractor();
+
+                throw new NotFoundHttpException($exception->getMessage(), $exception);
+            }
+
+            return ContractorResource::fromEntity($contractor);
         }
 
         $filters = $context['filters'] ?? [];

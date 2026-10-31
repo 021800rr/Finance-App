@@ -71,13 +71,15 @@ final class IdOutOfRangeTest extends KernelTestCase
      * @param class-string $providerClass
      */
     #[DataProvider('providerClasses')]
-    public function testProviderReturnsNullForIdAboveInt4Max(string $providerClass): void
+    public function testProviderThrowsNotFoundForIdAboveInt4Max(string $providerClass): void
     {
         self::bootKernel();
         $provider = self::getContainer()->get($providerClass);
         self::assertInstanceOf(ProviderInterface::class, $provider);
 
-        self::assertNull($provider->provide(new Get(), ['id' => PHP_INT_MAX]));
+        $this->expectException(NotFoundHttpException::class);
+
+        $provider->provide(new Get(), ['id' => PHP_INT_MAX]);
     }
 
     /**

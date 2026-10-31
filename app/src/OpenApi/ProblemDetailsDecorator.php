@@ -44,6 +44,18 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         | errorCode | Status | params |
         | --- | --- | --- |
         | `contractor.name_not_unique` | 409 | |
+        | `account.not_found` | 404 | |
+        | `account_operation.not_found` | 404 | |
+        | `account_type.not_found` | 404 | |
+        | `bank.not_found` | 404 | |
+        | `contractor.not_found` | 404 | |
+        | `currency.not_found` | 404 | |
+        | `currency_exchange_rate.not_found` | 404 | |
+        | `fixed_expense.not_found` | 404 | |
+        | `gold_asset.not_found` | 404 | |
+        | `gold_form.not_found` | 404 | |
+        | `gold_price.not_found` | 404 | |
+        | `household.not_found` | 404 | |
         | `transfer.accounts_must_differ` | 422 | |
         | `transfer.amount_to_required_for_currency_exchange` | 422 | `fromCurrency`, `toCurrency` |
         | `fixed_expense.plan_no_main_account` | 409 | |

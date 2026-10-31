@@ -11,6 +11,7 @@ use App\Entity\Contractor;
 use App\State\ContractorProvider;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class ContractorProviderTest extends KernelTestCase
 {
@@ -45,11 +46,12 @@ final class ContractorProviderTest extends KernelTestCase
         self::assertSame($contractor->getName(), $result->name);
     }
 
-    public function testProvideReturnsNullForNonExistentId(): void
+    public function testProvideThrowsNotFoundForNonExistentId(): void
     {
-        $result = $this->provider->provide(new Get(), ['id' => 999999999]);
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('Contractor not found.');
 
-        self::assertNull($result);
+        $this->provider->provide(new Get(), ['id' => 999999999]);
     }
 
     public function testProvideCollectionOrdersByNameAscending(): void

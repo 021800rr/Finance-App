@@ -7,7 +7,9 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\CurrencyExchangeRateResource;
+use App\Exception\RecordNotFoundException;
 use App\Repository\CurrencyExchangeRateRepository;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<CurrencyExchangeRateResource>
@@ -22,14 +24,23 @@ final readonly class CurrencyExchangeRateProvider implements ProviderInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      *
-     * @return CurrencyExchangeRateResource|list<CurrencyExchangeRateResource>|null
+     * @return CurrencyExchangeRateResource|list<CurrencyExchangeRateResource>
      */
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): CurrencyExchangeRateResource|array|null
-    {
+    public function provide(
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): CurrencyExchangeRateResource|array {
         if (isset($uriVariables['id'])) {
             $rate = $this->currencyExchangeRateRepository->findByIdOrNull($uriVariables['id']);
 
-            return $rate ? CurrencyExchangeRateResource::fromEntity($rate) : null;
+            if (!$rate) {
+                $exception = RecordNotFoundException::currencyExchangeRate();
+
+                throw new NotFoundHttpException($exception->getMessage(), $exception);
+            }
+
+            return CurrencyExchangeRateResource::fromEntity($rate);
         }
 
         $rates = $this->currencyExchangeRateRepository->findDataForList();

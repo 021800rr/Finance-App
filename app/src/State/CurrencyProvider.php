@@ -7,7 +7,9 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\CurrencyResource;
+use App\Exception\RecordNotFoundException;
 use App\Repository\CurrencyRepository;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<CurrencyResource>
@@ -22,14 +24,20 @@ final readonly class CurrencyProvider implements ProviderInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      *
-     * @return CurrencyResource|list<CurrencyResource>|null
+     * @return CurrencyResource|list<CurrencyResource>
      */
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): CurrencyResource|array|null
+    public function provide(Operation $operation, array $uriVariables = [], array $context = []): CurrencyResource|array
     {
         if (isset($uriVariables['code'])) {
             $currency = $this->currencyRepository->find($uriVariables['code']);
 
-            return $currency ? CurrencyResource::fromEntity($currency) : null;
+            if (!$currency) {
+                $exception = RecordNotFoundException::currency();
+
+                throw new NotFoundHttpException($exception->getMessage(), $exception);
+            }
+
+            return CurrencyResource::fromEntity($currency);
         }
 
         $currencies = $this->currencyRepository->findBy([], ['code' => 'ASC']);

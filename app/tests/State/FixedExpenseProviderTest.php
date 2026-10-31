@@ -13,6 +13,7 @@ use App\Entity\FixedExpense;
 use App\State\FixedExpenseProvider;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class FixedExpenseProviderTest extends KernelTestCase
 {
@@ -49,11 +50,12 @@ final class FixedExpenseProviderTest extends KernelTestCase
         self::assertSame(10, $result->day);
     }
 
-    public function testProvideReturnsNullForNonExistentId(): void
+    public function testProvideThrowsNotFoundForNonExistentId(): void
     {
-        $result = $this->provider->provide(new Get(), ['id' => 999999999]);
+        $this->expectException(NotFoundHttpException::class);
+        $this->expectExceptionMessage('Fixed expense not found.');
 
-        self::assertNull($result);
+        $this->provider->provide(new Get(), ['id' => 999999999]);
     }
 
     public function testProvideCollectionOrdersByDayAscendingThenIdDescending(): void

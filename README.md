@@ -9,8 +9,8 @@ Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazj�
 ## Co tu jest warte pokazania
 
 - **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
+- **~1440 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
 - **PHPStan na najwyższym poziomie (`max`)** — dla `src`, `tests`, `config`, `bin` i `public`.
-- **~1400 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
 - **PHP CS Fixer** wymuszający spójny styl kodu.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
 - **Przewidywalne błędy API** (RFC 9457 Problem Details) — każdy błąd ma stały `errorCode`, parametry
@@ -104,8 +104,9 @@ Rodzaje kodów:
 
 - **walidacja (`422`)** — `errorCode: validation.failed` i lista `violations`; każde naruszenie ma `propertyPath`
   (pole JSON), własny `code` (ten sam klucz co komunikat formularza, np. `transfer.to_account_required`), `params`
-  (tylko `limit`, `min`, `max` — nigdy wysłana wartość) i angielski `message`,
-- **reguły biznesowe** — np. `transfer.accounts_must_differ` (`422`), `fixed_expense.plan_duplicate` (`409`);
+  (tylko `limit`, `min`, `max`, `type` — nigdy wysłana wartość) i angielski `message`,
+- **reguły biznesowe** — np. `transfer.accounts_must_differ` (`422`), `fixed_expense.plan_duplicate` (`409`),
+  `bank.not_found` (`404`, rekord z adresu nie istnieje; nieznany adres ma `http.not_found`);
   ten sam problem ma ten sam kod w formularzu Twig i w API; dane odrzucone dopiero przy zapisie (np. data poza
   zakresem) mają ogólny `http.unprocessable_content`,
 - **uwierzytelnianie (`401`)** — `auth.token_missing`, `auth.token_invalid`, `auth.token_expired`,

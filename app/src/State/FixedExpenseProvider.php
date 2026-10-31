@@ -7,7 +7,9 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\FixedExpenseResource;
+use App\Exception\RecordNotFoundException;
 use App\Repository\FixedExpenseRepository;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<FixedExpenseResource>
@@ -22,14 +24,23 @@ final readonly class FixedExpenseProvider implements ProviderInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      *
-     * @return FixedExpenseResource|list<FixedExpenseResource>|null
+     * @return FixedExpenseResource|list<FixedExpenseResource>
      */
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): FixedExpenseResource|array|null
-    {
+    public function provide(
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): FixedExpenseResource|array {
         if (isset($uriVariables['id'])) {
             $fixedExpense = $this->fixedExpenseRepository->findByIdOrNull($uriVariables['id']);
 
-            return $fixedExpense ? FixedExpenseResource::fromEntity($fixedExpense) : null;
+            if (!$fixedExpense) {
+                $exception = RecordNotFoundException::fixedExpense();
+
+                throw new NotFoundHttpException($exception->getMessage(), $exception);
+            }
+
+            return FixedExpenseResource::fromEntity($fixedExpense);
         }
 
         $fixedExpenses = $this->fixedExpenseRepository->findAllOrdered();

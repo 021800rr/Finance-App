@@ -7,7 +7,11 @@ account:
     number_min_length: 'The account number must be at least 1 character long.'
     number_not_blank: 'Please enter an account number.'
 
+account_operation:
+    not_found: 'This account operation does not exist.'
+
 account_type:
+    not_found: 'This account type does not exist.'
     name_max_length: 'The account type name cannot be longer than 50 characters.'
     name_min_length: 'The account type name must be at least 2 characters long.'
     name_not_blank: 'Please enter an account type name.'
@@ -43,6 +47,7 @@ currency:
     code_not_blank: 'Please enter a currency code.'
 
 currency_exchange_rate:
+    not_found: 'This exchange rate does not exist.'
     bank_required: 'Please select a bank.'
     bank_without_foreign_account: 'This bank has no visible foreign-currency account. Please select another bank.'
     currency_pln_not_allowed: 'A rate cannot be added for PLN. Please select another currency.'
@@ -51,6 +56,7 @@ currency_exchange_rate:
     rate_out_of_range: 'The rate must be between 0.0001 and 99.9999.'
 
 fixed_expense:
+    not_found: 'This fixed expense does not exist.'
     amount_must_be_negative: 'The amount must be negative, between -999,999.99 and -0.01.'
     amount_not_blank: 'Please enter an amount.'
     amount_out_of_range: 'The amount must be negative, between -999,999.99 and -0.01.'
@@ -73,11 +79,13 @@ gold_form:
     name_not_blank: 'Please enter a gold form name.'
 
 gold_price:
+    not_found: 'This gold price entry does not exist.'
     asset_not_null: 'Please select an asset.'
     price_not_blank: 'Please enter a price.'
     price_out_of_range: 'The price must be between 0.01 and 999,999.99.'
 
 household:
+    not_found: 'This household does not exist.'
     name_max_length: 'The household name cannot be longer than 100 characters.'
     name_min_length: 'The household name must be at least 2 characters long.'
     name_not_blank: 'Please enter a household name.'

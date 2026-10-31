@@ -94,12 +94,65 @@ final class ProblemDetailsApiTest extends WebTestCase
 
     public function testErrorWithoutABusinessCodeIsNamedAfterTheHttpStatus(): void
     {
-        $this->client->request('GET', '/api/accounts/999999999', server: [
+        $this->client->request('GET', '/api/no_such_address/1', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
         ]);
 
         $problem = $this->assertProblem(404, 'http.not_found', []);
+        self::assertSame('Not Found.', $problem['detail'] ?? null);
         self::assertSame('Not Found', $problem['title'] ?? null);
+    }
+
+    #[DataProvider('addressesOfMissingRecords')]
+    public function testMissingRecordInTheAddressSaysWhatWasNotFound(
+        string $method,
+        string $uri,
+        string $detail,
+        string $errorCode,
+    ): void {
+        $this->client->request($method, $uri, server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'CONTENT_TYPE' => 'application/merge-patch+json',
+        ], content: 'PATCH' === $method ? '{}' : null);
+
+        $problem = $this->assertProblem(404, $errorCode, []);
+        self::assertSame($detail, $problem['detail'] ?? null);
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string, string}>
+     */
+    public static function addressesOfMissingRecords(): iterable
+    {
+        $id = '999999999';
+        $rateCode = 'currency_exchange_rate.not_found';
+        $records = [
+            ['GET', '/api/accounts/'.$id, 'Account not found.', 'account.not_found'],
+            ['PATCH', '/api/accounts/'.$id, 'Account not found.', 'account.not_found'],
+            ['GET', '/api/accounts/abc', 'Account not found.', 'account.not_found'],
+            ['GET', '/api/accounts/2147483648', 'Account not found.', 'account.not_found'],
+            ['GET', '/api/account_operations/'.$id, 'Account operation not found.', 'account_operation.not_found'],
+            ['PATCH', '/api/account_operations/'.$id, 'Account operation not found.', 'account_operation.not_found'],
+            ['DELETE', '/api/account_operations/'.$id, 'Account operation not found.', 'account_operation.not_found'],
+            ['GET', '/api/account_types/'.$id, 'Account type not found.', 'account_type.not_found'],
+            ['GET', '/api/banks/'.$id, 'Bank not found.', 'bank.not_found'],
+            ['GET', '/api/contractors/'.$id, 'Contractor not found.', 'contractor.not_found'],
+            ['GET', '/api/currency_exchange_rates/'.$id, 'Exchange rate not found.', $rateCode],
+            ['DELETE', '/api/currency_exchange_rates/'.$id, 'Exchange rate not found.', $rateCode],
+            ['GET', '/api/fixed_expenses/'.$id, 'Fixed expense not found.', 'fixed_expense.not_found'],
+            ['PATCH', '/api/fixed_expenses/'.$id, 'Fixed expense not found.', 'fixed_expense.not_found'],
+            ['DELETE', '/api/fixed_expenses/'.$id, 'Fixed expense not found.', 'fixed_expense.not_found'],
+            ['GET', '/api/gold_assets/'.$id, 'Gold asset not found.', 'gold_asset.not_found'],
+            ['PATCH', '/api/gold_assets/'.$id, 'Gold asset not found.', 'gold_asset.not_found'],
+            ['DELETE', '/api/gold_assets/'.$id, 'Gold asset not found.', 'gold_asset.not_found'],
+            ['GET', '/api/gold_forms/'.$id, 'Gold form not found.', 'gold_form.not_found'],
+            ['GET', '/api/gold_prices/'.$id, 'Gold price entry not found.', 'gold_price.not_found'],
+            ['DELETE', '/api/gold_prices/'.$id, 'Gold price entry not found.', 'gold_price.not_found'],
+            ['GET', '/api/households/'.$id, 'Household not found.', 'household.not_found'],
+        ];
+        foreach ($records as [$method, $uri, $detail, $errorCode]) {
+            yield "{$method} {$uri}" => [$method, $uri, $detail, $errorCode];
+        }
     }
 
     public function testMalformedJsonIsABadRequest(): void
