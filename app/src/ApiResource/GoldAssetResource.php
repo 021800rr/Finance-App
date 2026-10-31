@@ -13,9 +13,11 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\GoldAsset;
+use App\Entity\GoldForm;
 use App\State\GoldAssetProcessor;
 use App\State\GoldAssetProvider;
 use App\Validator\NoNullCharacter;
+use App\Validator\RecordExists;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -63,6 +65,7 @@ final class GoldAssetResource
 
     #[ApiProperty(description: 'Id of an existing gold form. Required.', example: 1)]
     #[Assert\NotNull(message: 'gold_asset.form_not_null')]
+    #[RecordExists(GoldForm::class, message: 'gold_form.not_found')]
     public ?int $formId = null;
 
     #[ApiProperty(description: 'Gold form name. Read-only, ignored on write.', writable: false, example: 'Sztabka')]

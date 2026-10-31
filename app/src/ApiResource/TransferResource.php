@@ -9,12 +9,14 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Response as OpenApiResponse;
+use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\OpenApi\ErrorResponseContent;
 use App\State\TransferProcessor;
 use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
 use App\Validator\NoNullCharacter;
+use App\Validator\RecordExists;
 use App\Validator\SelectableAccount;
 use App\Validator\TransferAmountTo;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -51,6 +53,7 @@ final class TransferResource
 {
     #[ApiProperty(description: 'Id of the account being debited. Required; a hidden account is rejected.', example: 1)]
     #[Assert\NotNull(message: 'transfer.from_account_required')]
+    #[RecordExists(Account::class, message: 'account.not_found')]
     #[SelectableAccount]
     public ?int $fromAccountId = null;
 
@@ -60,6 +63,7 @@ final class TransferResource
         example: 2,
     )]
     #[Assert\NotNull(message: 'transfer.to_account_required')]
+    #[RecordExists(Account::class, message: 'account.not_found')]
     #[SelectableAccount]
     public ?int $toAccountId = null;
 

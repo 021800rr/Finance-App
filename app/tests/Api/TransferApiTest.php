@@ -234,7 +234,7 @@ final class TransferApiTest extends WebTestCase
     }
 
     #[DataProvider('accountFields')]
-    public function testAccountIdAboveSqlIntegerIsNotFoundWithoutCreatingOperations(string $field): void
+    public function testAccountIdAboveSqlIntegerIsAViolationWithoutCreatingOperations(string $field): void
     {
         $ids = [
             'fromAccountId' => $this->account('Bank1-ROR-PLN')->getId(),
@@ -245,7 +245,15 @@ final class TransferApiTest extends WebTestCase
 
         $this->transferBetweenIds($ids['fromAccountId'], $ids['toAccountId']);
 
-        self::assertResponseStatusCodeSame(404);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(
+            [$field => 'account.not_found'],
+            array_column(
+                self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'violations'),
+                'code',
+                'propertyPath',
+            ),
+        );
         self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 

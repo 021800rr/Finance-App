@@ -30,7 +30,7 @@ final class GoldPriceApiTest extends WebTestCase
     }
 
     #[DataProvider('unknownAssetIds')]
-    public function testUnknownAssetIsNotFoundWithoutSaving(int $goldAssetId): void
+    public function testUnknownAssetIsAViolationWithoutSaving(int $goldAssetId): void
     {
         $countBefore = $this->em()->getRepository(GoldPrice::class)->count([]);
 
@@ -43,7 +43,15 @@ final class GoldPriceApiTest extends WebTestCase
             'pricePln' => '8000.00',
         ], JSON_THROW_ON_ERROR));
 
-        self::assertResponseStatusCodeSame(404);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(
+            ['goldAssetId' => 'gold_asset.not_found'],
+            array_column(
+                self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'violations'),
+                'code',
+                'propertyPath',
+            ),
+        );
         self::assertSame($countBefore, $this->em()->getRepository(GoldPrice::class)->count([]));
     }
 

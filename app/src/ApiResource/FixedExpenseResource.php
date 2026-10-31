@@ -12,11 +12,13 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use App\Entity\Contractor;
 use App\Entity\FixedExpense;
 use App\State\FixedExpenseProcessor;
 use App\State\FixedExpenseProvider;
 use App\Validator\ContractorGiven;
 use App\Validator\NoNullCharacter;
+use App\Validator\RecordExists;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
@@ -67,6 +69,7 @@ final class FixedExpenseResource
         .'(leave this null when using contractorName).',
         example: null,
     )]
+    #[RecordExists(Contractor::class, message: 'contractor.not_found')]
     public ?int $contractorId = null;
 
     #[ApiProperty(

@@ -1,4 +1,5 @@
 account:
+    not_found: 'To konto nie istnieje.'
     hidden_not_null: 'Określ, czy konto jest ukryte (true lub false).'
     hidden_not_selectable: 'To konto jest ukryte. Wybierz konto, które nie jest ukryte.'
     is_main_must_be_true: 'Jedyna dozwolona wartość to true. Jeśli nie chcesz ustawić tego konta jako głównego, nie wysyłaj tego pola.'
@@ -12,6 +13,7 @@ account_type:
     name_not_blank: 'Podaj nazwę typu konta.'
 
 bank:
+    not_found: 'Ten bank nie istnieje.'
     name_max_length: 'Nazwa banku może mieć najwyżej 100 znaków.'
     name_min_length: 'Nazwa banku musi mieć co najmniej 2 znaki.'
     name_not_blank: 'Podaj nazwę banku.'
@@ -28,6 +30,7 @@ common:
     text_contains_null_character: 'Tekst zawiera niedozwolony znak.'
 
 contractor:
+    not_found: 'Ten kontrahent nie istnieje.'
     id_or_name_required: 'Podaj contractorId lub contractorName.'
     name_max_length: 'Nazwa kontrahenta może mieć najwyżej 255 znaków.'
     name_not_blank: 'Podaj nazwę kontrahenta.'
@@ -35,6 +38,7 @@ contractor:
     required: 'Wybierz kontrahenta z listy.'
 
 currency:
+    not_found: 'Ta waluta nie istnieje.'
     code_invalid_format: 'Podaj poprawny kod waluty.'
     code_not_blank: 'Podaj kod waluty.'
 
@@ -54,6 +58,7 @@ fixed_expense:
     day_required: 'Podaj dzień miesiąca.'
 
 gold_asset:
+    not_found: 'To złoto nie istnieje.'
     description_max_length: 'Opis może mieć najwyżej 255 znaków.'
     description_not_blank: 'Podaj opis.'
     form_not_null: 'Wybierz formę.'
@@ -62,6 +67,7 @@ gold_asset:
     ounces_out_of_range: 'Ilość uncji musi być z zakresu 0,0001-999,9999.'
 
 gold_form:
+    not_found: 'Ta forma złota nie istnieje.'
     name_max_length: 'Nazwa formy złota może mieć najwyżej 50 znaków.'
     name_min_length: 'Nazwa formy złota musi mieć co najmniej 2 znaki.'
     name_not_blank: 'Podaj nazwę formy złota.'

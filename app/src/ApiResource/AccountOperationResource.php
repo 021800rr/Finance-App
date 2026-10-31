@@ -14,7 +14,9 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\QueryParameter;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Response as OpenApiResponse;
+use App\Entity\Account;
 use App\Entity\AccountOperation;
+use App\Entity\Contractor;
 use App\Service\Paginator;
 use App\State\AccountOperationProcessor;
 use App\State\AccountOperationProvider;
@@ -23,6 +25,7 @@ use App\Validator\BusinessDate;
 use App\Validator\ContractorGiven;
 use App\Validator\NoNullCharacter;
 use App\Validator\NonZeroAmount;
+use App\Validator\RecordExists;
 use App\Validator\SelectableAccount;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -109,6 +112,7 @@ final class AccountOperationResource
         example: 1
     )]
     #[Assert\NotNull(message: 'operation.account_required')]
+    #[RecordExists(Account::class, message: 'account.not_found', groups: ['operation:create'])]
     #[SelectableAccount(groups: ['operation:create'])]
     #[Groups(['operation:create'])]
     public ?int $accountId = null;
@@ -118,6 +122,7 @@ final class AccountOperationResource
         .'(leave this null when using contractorName).',
         example: null,
     )]
+    #[RecordExists(Contractor::class, message: 'contractor.not_found')]
     #[Groups(['operation:write'])]
     public ?int $contractorId = null;
 

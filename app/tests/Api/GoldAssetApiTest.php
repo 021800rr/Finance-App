@@ -295,7 +295,15 @@ final class GoldAssetApiTest extends WebTestCase
 
         $this->patch($asset->getId(), ['formId' => $formId, 'description' => 'Must not be saved']);
 
-        self::assertResponseStatusCodeSame(404);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(
+            ['formId' => 'gold_form.not_found'],
+            array_column(
+                self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'violations'),
+                'code',
+                'propertyPath',
+            ),
+        );
         self::assertSame(
             $before,
             $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM gold_asset ORDER BY id'),

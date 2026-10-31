@@ -1,4 +1,5 @@
 account:
+    not_found: 'This account does not exist.'
     hidden_not_null: 'Please specify whether the account is hidden (true or false).'
     hidden_not_selectable: 'This account is hidden. Please select an account that is not hidden.'
     is_main_must_be_true: 'The only allowed value is true. If you do not want to set this account as main, do not send this field.'
@@ -12,6 +13,7 @@ account_type:
     name_not_blank: 'Please enter an account type name.'
 
 bank:
+    not_found: 'This bank does not exist.'
     name_max_length: 'The bank name cannot be longer than 100 characters.'
     name_min_length: 'The bank name must be at least 2 characters long.'
     name_not_blank: 'Please enter a bank name.'
@@ -28,6 +30,7 @@ common:
     text_contains_null_character: 'The text contains a forbidden character.'
 
 contractor:
+    not_found: 'This contractor does not exist.'
     id_or_name_required: 'Either contractorId or contractorName is required.'
     name_max_length: 'The contractor name cannot be longer than 255 characters.'
     name_not_blank: 'Please enter a contractor name.'
@@ -35,6 +38,7 @@ contractor:
     required: 'Please select a contractor from the list.'
 
 currency:
+    not_found: 'This currency does not exist.'
     code_invalid_format: 'Please enter a valid currency code.'
     code_not_blank: 'Please enter a currency code.'
 
@@ -54,6 +58,7 @@ fixed_expense:
     day_required: 'Please enter the day of the month.'
 
 gold_asset:
+    not_found: 'This gold asset does not exist.'
     description_max_length: 'The description cannot be longer than 255 characters.'
     description_not_blank: 'Please enter a description.'
     form_not_null: 'Please select a form.'
@@ -62,6 +67,7 @@ gold_asset:
     ounces_out_of_range: 'The number of ounces must be between 0.0001 and 999.9999.'
 
 gold_form:
+    not_found: 'This gold form does not exist.'
     name_max_length: 'The gold form name cannot be longer than 50 characters.'
     name_min_length: 'The gold form name must be at least 2 characters long.'
     name_not_blank: 'Please enter a gold form name.'

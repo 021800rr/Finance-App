@@ -94,7 +94,9 @@ final class ProblemDetailsApiTest extends WebTestCase
 
     public function testErrorWithoutABusinessCodeIsNamedAfterTheHttpStatus(): void
     {
-        $this->postTransfer($this->transferJson(999999999, $this->account('Bank1-ROR-PLN')->getId()));
+        $this->client->request('GET', '/api/accounts/999999999', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+        ]);
 
         $problem = $this->assertProblem(404, 'http.not_found', []);
         self::assertSame('Not Found', $problem['title'] ?? null);

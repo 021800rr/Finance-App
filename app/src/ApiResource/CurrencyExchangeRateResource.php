@@ -13,6 +13,8 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Response as OpenApiResponse;
 use App\Constant\Currencies;
+use App\Entity\Bank;
+use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\State\CurrencyExchangeRateHistoryProvider;
 use App\State\CurrencyExchangeRateProcessor;
@@ -20,6 +22,7 @@ use App\State\CurrencyExchangeRateProvider;
 use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
 use App\Validator\RateBank;
+use App\Validator\RecordExists;
 use App\ValueObject\Money;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -87,6 +90,7 @@ final class CurrencyExchangeRateResource
         example: 1,
     )]
     #[Assert\NotNull(message: 'currency_exchange_rate.bank_required')]
+    #[RecordExists(Bank::class, message: 'bank.not_found')]
     #[RateBank]
     public ?int $bankId = null;
 
@@ -95,6 +99,7 @@ final class CurrencyExchangeRateResource
         example: 'CHF',
     )]
     #[Assert\NotBlank(message: 'currency_exchange_rate.currency_required')]
+    #[RecordExists(Currency::class, message: 'currency.not_found')]
     // Same trim() as the processor uses to look the currency up, so " PLN " or "PLN\0" cannot slip through.
     #[Assert\Regex(
         pattern: '/^'.Currencies::SETTLEMENT_CURRENCY_CODE.'$/D',

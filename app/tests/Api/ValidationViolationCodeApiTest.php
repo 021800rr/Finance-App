@@ -324,6 +324,81 @@ final class ValidationViolationCodeApiTest extends WebTestCase
         self::assertSame($hidden, $this->em()->find(Account::class, $account->getId())?->isHidden());
     }
 
+    #[DataProvider('idsOfMissingRecords')]
+    public function testIdOfAMissingRecordIsAViolationOnItsField(
+        string $uri,
+        string $field,
+        int|string $id,
+        string $code,
+    ): void {
+        $countBefore = $this->rowCounts();
+
+        $this->send('POST', $uri, [$field => $id]);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame(['code' => $code, 'params' => []], $this->codesAndParams()[$field] ?? null);
+        self::assertSame($countBefore, $this->rowCounts());
+    }
+
+    /**
+     * @return iterable<string, array{string, string, int|string, string}>
+     */
+    public static function idsOfMissingRecords(): iterable
+    {
+        $fields = [
+            ['/api/account_operations', 'accountId', 'account.not_found'],
+            ['/api/account_operations', 'contractorId', 'contractor.not_found'],
+            ['/api/fixed_expenses', 'contractorId', 'contractor.not_found'],
+            ['/api/transfers', 'fromAccountId', 'account.not_found'],
+            ['/api/transfers', 'toAccountId', 'account.not_found'],
+            ['/api/currency_exchange_rates', 'bankId', 'bank.not_found'],
+            ['/api/gold_prices', 'goldAssetId', 'gold_asset.not_found'],
+            ['/api/gold_assets', 'formId', 'gold_form.not_found'],
+        ];
+        foreach ($fields as [$uri, $field, $code]) {
+            yield "{$uri} {$field}" => [$uri, $field, 999999999, $code];
+            yield "{$uri} {$field} above the database limit" => [$uri, $field, 2147483648, $code];
+        }
+        yield 'currency code' => ['/api/currency_exchange_rates', 'currencyCode', 'XXX', 'currency.not_found'];
+        yield 'lowercase currency' => ['/api/currency_exchange_rates', 'currencyCode', 'chf', 'currency.not_found'];
+    }
+
+    public function testMissingContractorIdIsAViolationOnUpdate(): void
+    {
+        $this->send('POST', '/api/fixed_expenses', ['contractorName' => 'Update', 'day' => 5, 'amount' => '-1.00']);
+        self::assertResponseStatusCodeSame(201);
+        $id = self::intAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'id');
+
+        $this->send('PATCH', '/api/fixed_expenses/'.$id, ['contractorId' => 999999999]);
+
+        self::assertSame(
+            ['contractorId' => ['code' => 'contractor.not_found', 'params' => []]],
+            $this->codesAndParams(),
+        );
+    }
+
+    public function testMissingRecordIsReportedTogetherWithOtherFields(): void
+    {
+        $this->send('POST', '/api/transfers', [
+            'fromAccountId' => 999999999,
+            'toAccountId' => 999999998,
+            'operationDate' => '2026-05-05',
+            'amountFrom' => '0',
+        ]);
+
+        self::assertSame(
+            ['fromAccountId', 'toAccountId', 'amountFrom'],
+            array_keys($this->codesAndParams()),
+        );
+    }
+
+    public function testRecordFromTheAddressStaysNotFound(): void
+    {
+        $this->send('PATCH', '/api/fixed_expenses/999999999', ['day' => 5]);
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
     #[DataProvider('isMainValuesOtherThanTrue')]
     public function testIsMainOtherThanTrueIsAViolationOnAnyAccount(mixed $isMain): void
     {

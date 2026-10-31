@@ -12,12 +12,14 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Constant\Currencies;
+use App\Entity\GoldAsset;
 use App\Entity\GoldPrice;
 use App\State\GoldPriceHistoryProvider;
 use App\State\GoldPriceProcessor;
 use App\State\GoldPriceProvider;
 use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
+use App\Validator\RecordExists;
 use App\ValueObject\Money;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -74,6 +76,7 @@ final class GoldPriceResource
 
     #[ApiProperty(description: 'Id of an existing gold asset this price applies to. Required.', example: 1)]
     #[Assert\NotNull(message: 'gold_price.asset_not_null')]
+    #[RecordExists(GoldAsset::class, message: 'gold_asset.not_found')]
     public ?int $goldAssetId = null;
 
     #[ApiProperty(description: 'Price date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '

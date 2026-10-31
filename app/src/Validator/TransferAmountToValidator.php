@@ -35,7 +35,7 @@ final class TransferAmountToValidator extends ConstraintValidator
 
         $from = $this->accountRepository->findByIdOrNull($transfer->fromAccountId);
         $to = $this->accountRepository->findByIdOrNull($transfer->toAccountId);
-        // A missing account is refused anyway (404).
+        // A missing account is refused anyway (RecordExists).
         if (null === $from || null === $to) {
             return;
         }
