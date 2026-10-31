@@ -43,6 +43,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
 
         | errorCode | Status | params |
         | --- | --- | --- |
+        | `contractor.name_not_unique` | 409 | |
         | `transfer.accounts_must_differ` | 422 | |
         | `transfer.amount_to_required_for_currency_exchange` | 422 | `fromCurrency`, `toCurrency` |
         | `fixed_expense.plan_no_main_account` | 409 | |

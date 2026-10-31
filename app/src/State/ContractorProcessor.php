@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\ContractorResource;
 use App\Entity\Contractor;
+use App\Exception\ContractorException;
 use App\Repository\ContractorRepository;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -37,7 +38,9 @@ final readonly class ContractorProcessor implements ProcessorInterface
         }
 
         if (null !== $this->contractorRepository->findOneByName($trimmedName)) {
-            throw new ConflictHttpException('A contractor with this name already exists.');
+            $exception = ContractorException::nameNotUnique();
+
+            throw new ConflictHttpException($exception->getMessage(), $exception);
         }
 
         try {

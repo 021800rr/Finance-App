@@ -76,6 +76,9 @@ final class ContractorApiTest extends WebTestCase
     {
         self::assertResponseStatusCodeSame(409);
         $error = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame('contractor.name_not_unique', self::stringAt($error, 'errorCode'));
+        self::assertSame('urn:finance-app:problem:contractor.name_not_unique', self::stringAt($error, 'type'));
+        self::assertSame([], $error['params'] ?? null);
         self::assertSame('A contractor with this name already exists.', self::stringAt($error, 'detail'));
         self::assertStringNotContainsString('SQLSTATE', self::stringAt($error, 'detail'));
     }
