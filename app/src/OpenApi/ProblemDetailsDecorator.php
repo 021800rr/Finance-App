@@ -37,7 +37,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         `propertyPath` (the JSON field), `code` (e.g. `transfer.to_account_required`; a constraint without its own
         code gives `validation.` plus the Symfony error name, e.g. `validation.invalid_type`, `validation.too_short`,
         and one whose error cannot be named gives `validation.invalid`),
-        `params` (only `limit`, `min`, `max`; never the submitted value) and an English `message`.
+        `params` (only `limit`, `min`, `max`, `type`; never the submitted value) and an English `message`.
 
         Business errors:
 

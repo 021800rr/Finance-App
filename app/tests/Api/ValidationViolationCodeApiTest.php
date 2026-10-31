@@ -662,8 +662,50 @@ final class ValidationViolationCodeApiTest extends WebTestCase
         $this->postTransfer(['fromAccountId' => 'abc']);
 
         self::assertSame(
-            ['fromAccountId' => ['code' => 'validation.invalid_type', 'params' => []]],
+            ['fromAccountId' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'int|null']]],
             $this->codesAndParams(),
+        );
+        self::assertSame(
+            'fromAccountId: This value should be of type int|null.',
+            self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'detail'),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    #[DataProvider('wrongTypes')]
+    public function testWrongTypeNamesTheExpectedPhpType(string $uri, array $payload, string $field, string $type): void
+    {
+        $this->send('POST', $uri, $payload);
+
+        self::assertSame(
+            ['code' => 'validation.invalid_type', 'params' => ['type' => $type]],
+            $this->codesAndParams()[$field] ?? null,
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string, array<string, mixed>, string, string}>
+     */
+    public static function wrongTypes(): iterable
+    {
+        yield 'day' => ['/api/fixed_expenses', ['day' => 'x'], 'day', 'int|null'];
+        yield 'text field' => ['/api/contractors', ['name' => 5], 'name', 'null|string'];
+        yield 'amount' => ['/api/fixed_expenses', ['amount' => 5], 'amount', 'null|string'];
+    }
+
+    public function testWrongTypeFromAConstraintNamesTheExpectedType(): void
+    {
+        $this->send('POST', '/api/transfers', [
+            'fromAccountId' => $this->accountId('Bank1-ROR-PLN'),
+            'toAccountId' => $this->accountId('Bank1-WAK-CHF'),
+            'amountTo' => 5,
+        ]);
+
+        self::assertSame(
+            ['code' => 'validation.invalid_type', 'params' => ['type' => 'string']],
+            $this->codesAndParams()['amountTo'] ?? null,
         );
     }
 

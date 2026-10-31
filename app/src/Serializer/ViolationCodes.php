@@ -31,6 +31,7 @@ final class ViolationCodes
         '{{ limit }}' => 'limit',
         '{{ min }}' => 'min',
         '{{ max }}' => 'max',
+        '{{ type }}' => 'type',
         // Not "{{ compared_value }}": compared with another field (propertyPath), it is that field's submitted value.
     ];
 
