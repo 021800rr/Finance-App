@@ -49,7 +49,7 @@ final class FixedExpenseApiTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         $error = self::decodeObject((string) $this->client->getResponse()->getContent());
-        self::assertSame('Day must be between 1 and 28.', self::stringAt($error, 'detail'));
+        self::assertSame('day: Day must be between 1 and 28.', self::stringAt($error, 'detail'));
         self::assertSame($countBefore, $this->em()->getRepository(FixedExpense::class)->count([]));
     }
 
@@ -62,7 +62,7 @@ final class FixedExpenseApiTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         $error = self::decodeObject((string) $this->client->getResponse()->getContent());
-        self::assertSame('Day must be between 1 and 28.', self::stringAt($error, 'detail'));
+        self::assertSame('day: Day must be between 1 and 28.', self::stringAt($error, 'detail'));
         $this->em()->clear();
         $unchanged = $this->em()->find(FixedExpense::class, $id);
         self::assertNotNull($unchanged);

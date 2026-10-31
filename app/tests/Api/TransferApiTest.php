@@ -85,8 +85,10 @@ final class TransferApiTest extends WebTestCase
     }
 
     #[DataProvider('anyAmountTo')]
-    public function testSameCurrencyIgnoresAmountToWhateverItContains(mixed $amountTo): void
+    public function testSameCurrencyRefusesAmountToWhateverItContains(mixed $amountTo): void
     {
+        $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+
         $this->client->request('POST', '/api/transfers', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
             'CONTENT_TYPE' => 'application/ld+json',
@@ -98,10 +100,21 @@ final class TransferApiTest extends WebTestCase
             'amountTo' => $amountTo,
         ], JSON_THROW_ON_ERROR));
 
-        self::assertResponseStatusCodeSame(201);
-        $data = self::decodeObject((string) $this->client->getResponse()->getContent());
-        self::assertSame('-100.00', self::stringAt($data, 'outAmount'));
-        self::assertSame('100.00', self::stringAt($data, 'inAmount'));
+        self::assertResponseStatusCodeSame(422);
+        $violations = self::rowsAt(
+            self::decodeObject((string) $this->client->getResponse()->getContent()),
+            'violations',
+        );
+        self::assertSame(
+            ['amountTo' => 'transfer.amount_to_not_allowed_for_same_currency'],
+            array_column($violations, 'code', 'propertyPath'),
+        );
+        self::assertSame(
+            ['amountTo' => 'Both accounts use the same currency, so this amount is generated automatically. '
+                .'Do not send this field.'],
+            array_column($violations, 'message', 'propertyPath'),
+        );
+        self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
     /**
@@ -120,6 +133,42 @@ final class TransferApiTest extends WebTestCase
         yield 'boolean' => [true];
         yield 'list' => [[1, 2]];
         yield 'object' => [['a' => 1]];
+    }
+
+    /**
+     * @param array<string, mixed> $amountTo
+     */
+    #[DataProvider('missingAmountsToInExchange')]
+    public function testDifferentCurrenciesRequireAmountTo(array $amountTo): void
+    {
+        $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
+
+        $this->client->request('POST', '/api/transfers', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], content: json_encode([
+            'fromAccountId' => $this->account('Bank1-ROR-PLN')->getId(),
+            'toAccountId' => $this->account('Bank1-WAK-CHF')->getId(),
+            'operationDate' => '2026-01-15',
+            'amountFrom' => '100.00',
+        ] + $amountTo, JSON_THROW_ON_ERROR));
+
+        self::assertResponseStatusCodeSame(422);
+        $error = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame('transfer.amount_to_required_for_currency_exchange', self::stringAt($error, 'errorCode'));
+        self::assertSame(['fromCurrency' => 'PLN', 'toCurrency' => 'CHF'], $error['params'] ?? null);
+        self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function missingAmountsToInExchange(): iterable
+    {
+        yield 'left out' => [[]];
+        yield 'null' => [['amountTo' => null]];
+        yield 'empty' => [['amountTo' => '']];
+        yield 'spaces' => [['amountTo' => '   ']];
     }
 
     /**

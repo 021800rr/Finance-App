@@ -7,12 +7,13 @@ namespace App\Validator;
 use Symfony\Component\Validator\Constraint;
 
 /**
- * Checks the credited amount of a transfer only when the two accounts use different currencies: with one currency
- * the field plays no role, whatever it contains.
+ * With one currency the credited amount is generated, so sending the field at all is refused. With two currencies
+ * the amount is checked here, and a missing one is refused on saving (TransferException names both currencies).
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 final class TransferAmountTo extends Constraint
 {
+    public string $notAllowedMessage = 'transfer.amount_to_not_allowed_for_same_currency';
     public string $outOfRangeMessage = 'transfer.amount_out_of_range';
     public string $invalidMessage = 'common.numeric_invalid';
     public float $min = 0.01;

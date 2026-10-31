@@ -151,6 +151,245 @@ final class ValidationViolationCodeApiTest extends WebTestCase
         yield 'fixed expense' => ['/api/fixed_expenses', ['day' => 5, 'amount' => '-1.00']];
     }
 
+    #[DataProvider('daysOutOfRange')]
+    public function testDayOutOfRangeIsAViolationOnCreateAndUpdate(int $day): void
+    {
+        $expected = ['code' => 'fixed_expense.day_out_of_range', 'params' => ['min' => '1', 'max' => '28']];
+        $valid = ['contractorName' => 'Day test', 'amount' => '-1.00'];
+
+        $this->send('POST', '/api/fixed_expenses', ['day' => $day] + $valid);
+        self::assertSame(['day' => $expected], $this->codesAndParams());
+
+        $this->send('POST', '/api/fixed_expenses', ['day' => 5] + $valid);
+        self::assertResponseStatusCodeSame(201);
+        $id = self::intAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'id');
+
+        $this->send('PATCH', '/api/fixed_expenses/'.$id, ['day' => $day]);
+        self::assertSame(['day' => $expected], $this->codesAndParams());
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function daysOutOfRange(): iterable
+    {
+        yield 'zero' => [0];
+        yield 'negative' => [-1];
+        yield 'above the maximum' => [29];
+    }
+
+    /**
+     * Also amounts that are rounded to zero when stored.
+     */
+    #[DataProvider('zeroAmounts')]
+    public function testZeroAmountIsAViolationOnCreateAndUpdate(string $amount): void
+    {
+        $expected = ['amount' => ['code' => 'common.amount_cannot_be_zero', 'params' => []]];
+        $valid = $this->validOperation();
+        $countBefore = $this->rowCounts();
+
+        $this->send('POST', '/api/account_operations', ['amount' => $amount] + $valid);
+        self::assertSame($expected, $this->codesAndParams());
+        self::assertSame($countBefore, $this->rowCounts());
+
+        $this->send('POST', '/api/account_operations', ['amount' => '-1.00'] + $valid);
+        self::assertResponseStatusCodeSame(201);
+        $id = self::intAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'id');
+
+        $this->send('PATCH', '/api/account_operations/'.$id, ['amount' => $amount]);
+        self::assertSame($expected, $this->codesAndParams());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function zeroAmounts(): iterable
+    {
+        yield 'zero' => ['0'];
+        yield 'with decimals' => ['0.00'];
+        yield 'negative zero' => ['-0'];
+        yield 'rounded down to zero' => ['0.004'];
+        yield 'negative, rounded to zero' => ['-0.004'];
+    }
+
+    public function testSmallestAmountIsNotTreatedAsZero(): void
+    {
+        $this->send('POST', '/api/account_operations', ['amount' => '0.005'] + $this->validOperation());
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame(
+            '0.01',
+            self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'amount'),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $contractor
+     */
+    #[DataProvider('missingContractors')]
+    public function testMissingContractorIsAViolationAndNothingIsStored(array $contractor): void
+    {
+        $expected = ['contractorName' => ['code' => 'contractor.id_or_name_required', 'params' => []]];
+        $countBefore = $this->rowCounts();
+
+        $operation = $this->validOperation();
+        unset($operation['contractorName']);
+
+        $this->send('POST', '/api/account_operations', $contractor + $operation);
+        self::assertSame($expected, $this->codesAndParams());
+
+        $this->send('POST', '/api/fixed_expenses', $contractor + ['day' => 5, 'amount' => '-1.00']);
+        self::assertSame($expected, $this->codesAndParams());
+
+        self::assertSame($countBefore, $this->rowCounts());
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function missingContractors(): iterable
+    {
+        yield 'no fields' => [[]];
+        yield 'both null' => [['contractorId' => null, 'contractorName' => null]];
+        yield 'empty name' => [['contractorName' => '']];
+        yield 'name of spaces' => [['contractorName' => '   ']];
+    }
+
+    public function testMissingContractorIsReportedTogetherWithOtherFields(): void
+    {
+        $this->send('POST', '/api/fixed_expenses', ['day' => 29, 'amount' => '1.00']);
+
+        self::assertSame(
+            ['contractorName', 'day', 'amount'],
+            array_keys($this->codesAndParams()),
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $contractor
+     */
+    #[DataProvider('clearedContractors')]
+    public function testClearingTheContractorIsAViolationOnUpdate(array $contractor): void
+    {
+        $valid = ['contractorName' => 'Clear test', 'day' => 5, 'amount' => '-1.00'];
+        $this->send('POST', '/api/fixed_expenses', $valid);
+        self::assertResponseStatusCodeSame(201);
+        $id = self::intAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'id');
+
+        $this->send('PATCH', '/api/fixed_expenses/'.$id, $contractor);
+
+        self::assertSame(
+            ['contractorName' => ['code' => 'contractor.id_or_name_required', 'params' => []]],
+            $this->codesAndParams(),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function clearedContractors(): iterable
+    {
+        yield 'both null' => [['contractorId' => null, 'contractorName' => null]];
+        yield 'blank name' => [['contractorName' => '   ']];
+    }
+
+    public function testUpdateWithoutContractorFieldsKeepsTheContractor(): void
+    {
+        $this->send('POST', '/api/fixed_expenses', ['contractorName' => 'Keep test', 'day' => 5, 'amount' => '-1.00']);
+        self::assertResponseStatusCodeSame(201);
+        $id = self::intAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'id');
+
+        $this->send('PATCH', '/api/fixed_expenses/'.$id, ['day' => 6]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSame(
+            'Keep test',
+            self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'contractorName'),
+        );
+    }
+
+    public function testHiddenNullIsAViolationAndTheAccountStaysUnchanged(): void
+    {
+        $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => 'Bank1-ROR-PLN']);
+        self::assertNotNull($account);
+        $hidden = $account->isHidden();
+
+        $this->send('PATCH', '/api/accounts/'.$account->getId(), ['hidden' => null]);
+
+        self::assertSame(
+            ['hidden' => ['code' => 'account.hidden_not_null', 'params' => []]],
+            $this->codesAndParams(),
+        );
+        $this->em()->clear();
+        self::assertSame($hidden, $this->em()->find(Account::class, $account->getId())?->isHidden());
+    }
+
+    #[DataProvider('isMainValuesOtherThanTrue')]
+    public function testIsMainOtherThanTrueIsAViolationOnAnyAccount(mixed $isMain): void
+    {
+        $main = $this->accountId('Bank1-ROR-PLN');
+        $other = $this->accountId('Bank1-WAK-PLN');
+        $this->send('PATCH', '/api/accounts/'.$main, ['isMain' => true]);
+        self::assertResponseIsSuccessful();
+        $expected = ['isMain' => ['code' => 'account.is_main_must_be_true', 'params' => []]];
+
+        foreach ([$main, $other] as $id) {
+            $this->send('PATCH', '/api/accounts/'.$id, ['isMain' => $isMain]);
+            self::assertSame($expected, $this->codesAndParams());
+        }
+
+        $this->em()->clear();
+        self::assertTrue($this->em()->find(Account::class, $main)?->isMain());
+        self::assertFalse($this->em()->find(Account::class, $other)?->isMain());
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function isMainValuesOtherThanTrue(): iterable
+    {
+        yield 'false' => [false];
+        yield 'null' => [null];
+        yield 'text' => ['x'];
+        yield 'text true' => ['true'];
+        yield 'one' => [1];
+        yield 'zero' => [0];
+        yield 'list' => [[true]];
+        yield 'object' => [new \stdClass()];
+    }
+
+    public function testIsMainTrueMovesTheMainAccount(): void
+    {
+        $previous = $this->accountId('Bank1-ROR-PLN');
+        $next = $this->accountId('Bank1-WAK-PLN');
+        $this->send('PATCH', '/api/accounts/'.$previous, ['isMain' => true]);
+        self::assertResponseIsSuccessful();
+
+        $this->send('PATCH', '/api/accounts/'.$next, ['isMain' => true]);
+
+        self::assertResponseIsSuccessful();
+        $this->em()->clear();
+        self::assertFalse($this->em()->find(Account::class, $previous)?->isMain());
+        self::assertTrue($this->em()->find(Account::class, $next)?->isMain());
+    }
+
+    public function testLeavingIsMainOutKeepsItOnEveryAccount(): void
+    {
+        $main = $this->accountId('Bank1-ROR-PLN');
+        $other = $this->accountId('Bank1-WAK-PLN');
+        $this->send('PATCH', '/api/accounts/'.$main, ['isMain' => true]);
+        self::assertResponseIsSuccessful();
+
+        foreach ([$main, $other] as $id) {
+            $this->send('PATCH', '/api/accounts/'.$id, ['hidden' => false]);
+            self::assertResponseIsSuccessful();
+        }
+
+        $this->em()->clear();
+        self::assertTrue($this->em()->find(Account::class, $main)?->isMain());
+        self::assertFalse($this->em()->find(Account::class, $other)?->isMain());
+    }
+
     /**
      * The database driver cuts text at a NUL character: "ab\0cd" would be stored as "ab".
      *
@@ -426,6 +665,43 @@ final class ValidationViolationCodeApiTest extends WebTestCase
             'CONTENT_TYPE' => 'application/ld+json',
             'HTTP_ACCEPT' => $accept,
         ], content: json_encode($payload, JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function send(string $method, string $uri, array $payload): void
+    {
+        $type = 'PATCH' === $method ? 'application/merge-patch+json' : 'application/ld+json';
+        $this->client->request($method, $uri, server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_ACCEPT' => 'application/ld+json',
+            'CONTENT_TYPE' => $type,
+        ], content: json_encode($payload, JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function validOperation(): array
+    {
+        $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => 'Bank1-ROR-PLN']);
+        self::assertNotNull($account);
+
+        return [
+            'accountId' => $account->getId(),
+            'contractorName' => 'Valid operation',
+            'operationDate' => '2026-05-05',
+            'amount' => '-1.00',
+        ];
+    }
+
+    private function accountId(string $accountNumber): int
+    {
+        $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => $accountNumber]);
+        self::assertNotNull($account);
+
+        return (int) $account->getId();
     }
 
     /**

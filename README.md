@@ -10,7 +10,7 @@ Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazj�
 
 - **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
 - **PHPStan na najwyższym poziomie (`max`)** — dla `src`, `tests`, `config`, `bin` i `public`.
-- **~1340 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
+- **~1380 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
 - **PHP CS Fixer** wymuszający spójny styl kodu.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
 - **Przewidywalne błędy API** (RFC 9457 Problem Details) — każdy błąd ma stały `errorCode`, parametry
@@ -148,8 +148,9 @@ Nowe operacje na koncie dodajemy bez znaku, jeśli to **przychód** na koncie: "
 lub ze znakiem `-` jeżeli to **wydatek** z konta: "-309 zł zakup okularów"
 
 **Przelewy / transfery / "kantor"** — jeżeli robisz przelew między kontami o tej samej walucie,
-wtedy druga kwota (`amountTo`) jest ignorowana: na konto docelowe wchodzi kwota z pierwszego pola,
-a zawartość drugiego pola nie ma żadnego znaczenia i nie jest sprawdzana. W formularzu to pole jest wtedy zablokowane.
+wtedy druga kwota (`amountTo`) jest generowana automatycznie: na konto docelowe wchodzi kwota z pierwszego pola.
+W formularzu to pole jest wtedy zablokowane, a w API nie wolno go wysyłać: każda wartość, także `null`, daje `422`
+z kodem `transfer.amount_to_not_allowed_for_same_currency`.
 Jeżeli robisz przelew między kontami o różnych walutach,
 musisz określić jaką kwotę zdejmujesz z pierwszego konta i jaka wejdzie na drugie konto: "100 PLN / 25 EUR".
 Tutaj NIE podajemy żadnych znaków `+/-`.

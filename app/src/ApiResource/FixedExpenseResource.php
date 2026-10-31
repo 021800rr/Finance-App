@@ -15,6 +15,7 @@ use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\FixedExpense;
 use App\State\FixedExpenseProcessor;
 use App\State\FixedExpenseProvider;
+use App\Validator\ContractorGiven;
 use App\Validator\NoNullCharacter;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -75,10 +76,12 @@ final class FixedExpenseResource
     )]
     #[Assert\Length(max: 255, maxMessage: 'contractor.name_max_length')]
     #[NoNullCharacter]
+    #[ContractorGiven]
     public ?string $contractorName = null;
 
     #[ApiProperty(description: 'Day of the month the expense is due, 1-28. Required.', example: 10)]
     #[Assert\NotNull(message: 'fixed_expense.day_required')]
+    #[Assert\Range(notInRangeMessage: 'fixed_expense.day_out_of_range', min: 1, max: 28)]
     public ?int $day = null;
 
     #[ApiProperty(

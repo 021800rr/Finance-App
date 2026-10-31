@@ -1,5 +1,7 @@
 account:
+    hidden_not_null: 'Określ, czy konto jest ukryte (true lub false).'
     hidden_not_selectable: 'To konto jest ukryte. Wybierz konto, które nie jest ukryte.'
+    is_main_must_be_true: 'Jedyna dozwolona wartość to true. Jeśli nie chcesz ustawić tego konta jako głównego, nie wysyłaj tego pola.'
     number_max_length: 'Numer konta może mieć najwyżej 50 znaków.'
     number_min_length: 'Numer konta musi mieć co najmniej 1 znak.'
     number_not_blank: 'Podaj numer konta.'
@@ -26,6 +28,7 @@ common:
     text_contains_null_character: 'Tekst zawiera niedozwolony znak.'
 
 contractor:
+    id_or_name_required: 'Podaj contractorId lub contractorName.'
     name_max_length: 'Nazwa kontrahenta może mieć najwyżej 255 znaków.'
     name_not_blank: 'Podaj nazwę kontrahenta.'
     name_not_unique: 'Kontrahent już istnieje — wybierz go z listy.'
@@ -86,6 +89,7 @@ transfer:
     accounts_must_differ: 'Wybierz inne konto docelowe.'
     amount_from_required: 'Podaj kwotę przelewu.'
     amount_must_be_positive: 'Kwota przelewu musi być większa od zera.'
+    amount_to_not_allowed_for_same_currency: 'Oba konta mają tę samą walutę, więc ta kwota jest generowana automatycznie. Nie wysyłaj tego pola.'
     amount_to_required_for_currency_exchange: 'Podaj kwotę do otrzymania przy wymianie między różnymi walutami.'
     from_account_required: 'Wybierz konto źródłowe.'
     to_account_required: 'Wybierz konto docelowe.'

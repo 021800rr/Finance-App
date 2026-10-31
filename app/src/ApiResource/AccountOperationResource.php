@@ -20,7 +20,9 @@ use App\State\AccountOperationProcessor;
 use App\State\AccountOperationProvider;
 use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
+use App\Validator\ContractorGiven;
 use App\Validator\NoNullCharacter;
+use App\Validator\NonZeroAmount;
 use App\Validator\SelectableAccount;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -126,6 +128,7 @@ final class AccountOperationResource
     )]
     #[Assert\Length(max: 255, maxMessage: 'contractor.name_max_length')]
     #[NoNullCharacter]
+    #[ContractorGiven]
     #[Groups(['operation:write'])]
     public ?string $contractorName = null;
 
@@ -138,7 +141,7 @@ final class AccountOperationResource
 
     #[ApiProperty(
         description: 'Amount as a decimal string, e.g. "50.00". Positive for income, negative for expense '
-        .'(exact sign convention follows the same rule as the Twig form). Required.',
+        .'(exact sign convention follows the same rule as the Twig form). Cannot be zero. Required.',
         example: '50.00',
     )]
     #[Assert\Sequentially([
@@ -149,6 +152,7 @@ final class AccountOperationResource
             min: -999999.99,
             max: 999999.99,
         ),
+        new NonZeroAmount(),
     ])]
     #[Groups(['operation:write'])]
     public ?string $amount = null;

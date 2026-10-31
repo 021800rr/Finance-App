@@ -13,6 +13,8 @@ use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\Account;
 use App\State\AccountProcessor;
 use App\State\AccountProvider;
+use App\Validator\TrueOrOmitted;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     shortName: 'Account',
@@ -32,8 +34,8 @@ use App\State\AccountProvider;
         new Patch(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Updates an account. "hidden" mirrors the web app\'s "Hide"/"Show" toggle. '
-            .'"isMain" mirrors the ☆ toggle: setting it to true makes this the main account and unsets '
-            .'the previous one; setting it to false just unsets this account. No other edits are supported.',
+            .'"isMain" mirrors the ☆ toggle: true makes this the main account and unsets the previous one. '
+            .'No other edits are supported.',
             provider: AccountProvider::class,
             processor: AccountProcessor::class,
         ),
@@ -46,6 +48,9 @@ final class AccountResource
         'Balance including operations dated in the future. Read-only, returned only by GET.';
     private const string SALDO_TODAY_DESCRIPTION =
         'Balance counting only operations dated today or earlier. Read-only, returned only by GET.';
+    private const string IS_MAIN_DESCRIPTION =
+        'Send true to make this the main account; the previous main account is unset automatically. '
+        .'Leave this field out to keep the current state.';
 
     #[ApiProperty(description: 'Account id. Read-only, ignored on write.', writable: false, example: 1)]
     public ?int $id = null;
@@ -61,14 +66,17 @@ final class AccountResource
         .'for a new operation or transfer; its existing operations can still be updated. Writable.',
         example: false,
     )]
+    #[Assert\NotNull(message: 'account.hidden_not_null')]
     public ?bool $hidden = null;
 
+    // Not ?bool: a value of another type has to reach TrueOrOmitted instead of ending as a generic 400.
     #[ApiProperty(
-        description: 'Whether this is the main account (used e.g. by "Zaplanuj wydatki"). At most one '
-        .'account can be main at a time. Writable.',
-        example: false,
+        description: self::IS_MAIN_DESCRIPTION,
+        example: true,
+        schema: ['type' => 'boolean', 'description' => self::IS_MAIN_DESCRIPTION, 'example' => true],
     )]
-    public ?bool $isMain = null;
+    #[TrueOrOmitted]
+    public mixed $isMain = null;
 
     #[ApiProperty(description: 'Bank name. Read-only, ignored on write.', writable: false, example: 'mBank')]
     public ?string $bankName = null;

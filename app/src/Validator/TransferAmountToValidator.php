@@ -6,6 +6,7 @@ namespace App\Validator;
 
 use App\ApiResource\TransferResource;
 use App\Repository\AccountRepository;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Range;
 use Symfony\Component\Validator\Constraints\Sequentially;
@@ -15,8 +16,10 @@ use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 
 final class TransferAmountToValidator extends ConstraintValidator
 {
-    public function __construct(private readonly AccountRepository $accountRepository)
-    {
+    public function __construct(
+        private readonly AccountRepository $accountRepository,
+        private readonly RequestStack $requestStack,
+    ) {
     }
 
     public function validate(mixed $value, Constraint $constraint): void
@@ -26,7 +29,26 @@ final class TransferAmountToValidator extends ConstraintValidator
         }
 
         $transfer = $this->context->getObject();
-        if (!$transfer instanceof TransferResource || !$this->currenciesDiffer($transfer)) {
+        if (!$transfer instanceof TransferResource) {
+            return;
+        }
+
+        $from = $this->accountRepository->findByIdOrNull($transfer->fromAccountId);
+        $to = $this->accountRepository->findByIdOrNull($transfer->toAccountId);
+        // A missing account is refused anyway (404).
+        if (null === $from || null === $to) {
+            return;
+        }
+
+        if ($from->getCurrency()->getCode() === $to->getCurrency()->getCode()) {
+            if ($this->wasSent()) {
+                $this->context->buildViolation($constraint->notAllowedMessage)->addViolation();
+            }
+
+            return;
+        }
+
+        if (null === $value || (is_string($value) && '' === trim($value))) {
             return;
         }
 
@@ -42,21 +64,12 @@ final class TransferAmountToValidator extends ConstraintValidator
     }
 
     /**
-     * False also when an account is missing: such a request is refused anyway (404).
+     * Read from the request body, because the resource holds null both for a field left out and for a sent null.
      */
-    private function currenciesDiffer(TransferResource $transfer): bool
+    private function wasSent(): bool
     {
-        if (null === $transfer->fromAccountId || null === $transfer->toAccountId) {
-            return false;
-        }
+        $body = json_decode((string) $this->requestStack->getCurrentRequest()?->getContent(), true);
 
-        $from = $this->accountRepository->findByIdOrNull($transfer->fromAccountId);
-        $to = $this->accountRepository->findByIdOrNull($transfer->toAccountId);
-
-        return
-            null !== $from
-            && null !== $to
-            && $from->getCurrency()->getCode() !== $to->getCurrency()->getCode()
-        ;
+        return is_array($body) && array_key_exists((string) $this->context->getPropertyName(), $body);
     }
 }

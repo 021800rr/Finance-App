@@ -425,7 +425,8 @@ final class AccountOperationControllerTest extends WebTestCase
         self::assertSame($newContractor->getId(), $updated->getContractor()->getId());
     }
 
-    public function testEditShowsATranslatedMessageForAZeroAmount(): void
+    #[DataProvider('zeroAmounts')]
+    public function testEditShowsATranslatedMessageForAZeroAmount(string $amount): void
     {
         $operation = $this->createOperationInDatabase();
 
@@ -433,7 +434,7 @@ final class AccountOperationControllerTest extends WebTestCase
         $form = $crawler->filter('#operation_form button[type="submit"]')->form();
 
         $this->client->submit($form, [
-            'account_operation[amount]' => '0',
+            'account_operation[amount]' => $amount,
             'account_operation[contractor]' => (string) $operation->getContractor()->getId(),
             'contractor_input' => $operation->getContractor()->getName(),
         ]);
@@ -441,6 +442,16 @@ final class AccountOperationControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('body', 'The amount cannot be zero.');
         self::assertSelectorTextNotContains('body', 'common.amount_cannot_be_zero');
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function zeroAmounts(): iterable
+    {
+        yield 'zero' => ['0'];
+        yield 'with decimals' => ['0.00'];
+        yield 'rounded down to zero' => ['0.004'];
     }
 
     /**

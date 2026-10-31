@@ -1,5 +1,7 @@
 account:
+    hidden_not_null: 'Please specify whether the account is hidden (true or false).'
     hidden_not_selectable: 'This account is hidden. Please select an account that is not hidden.'
+    is_main_must_be_true: 'The only allowed value is true. If you do not want to set this account as main, do not send this field.'
     number_max_length: 'The account number cannot be longer than 50 characters.'
     number_min_length: 'The account number must be at least 1 character long.'
     number_not_blank: 'Please enter an account number.'
@@ -26,6 +28,7 @@ common:
     text_contains_null_character: 'The text contains a forbidden character.'
 
 contractor:
+    id_or_name_required: 'Either contractorId or contractorName is required.'
     name_max_length: 'The contractor name cannot be longer than 255 characters.'
     name_not_blank: 'Please enter a contractor name.'
     name_not_unique: 'The contractor already exists — select it from the list.'
@@ -86,6 +89,7 @@ transfer:
     amount_from_required: 'Please enter the amount to transfer.'
     amount_must_be_positive: 'The transfer amount must be greater than zero.'
     amount_out_of_range: 'The transfer amount must be between 0.01 and 999,999.99.'
+    amount_to_not_allowed_for_same_currency: 'Both accounts use the same currency, so this amount is generated automatically. Do not send this field.'
     amount_to_required_for_currency_exchange: 'Please enter the amount to receive when exchanging between different currencies.'
     from_account_required: 'Please select the source account.'
     to_account_required: 'Please select the destination account.'

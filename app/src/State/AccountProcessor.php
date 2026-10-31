@@ -39,16 +39,11 @@ final readonly class AccountProcessor implements ProcessorInterface
 
         $account->setHidden($data->hidden);
 
-        if (null !== $data->isMain && $data->isMain !== $account->isMain()) {
-            if ($data->isMain) {
-                // Flushes internally (and, as a side effect, persists the "hidden" change set
-                // above too — see AccountRepository::setAsMainAccount() for why this can't be a
-                // single flush together with unsetting the previous main account).
-                $this->accountRepository->setAsMainAccount($account);
-            } else {
-                $account->setMain(false);
-                $this->accountRepository->save($account, flush: true);
-            }
+        if (true === $data->isMain && !$account->isMain()) {
+            // Flushes internally (and, as a side effect, persists the "hidden" change set
+            // above too — see AccountRepository::setAsMainAccount() for why this can't be a
+            // single flush together with unsetting the previous main account).
+            $this->accountRepository->setAsMainAccount($account);
         } else {
             $this->accountRepository->save($account, flush: true);
         }

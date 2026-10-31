@@ -39,7 +39,7 @@ use Symfony\Component\Validator\Constraints as Assert;
                 security: [['JWT' => []]],
             ),
             description: 'Creates a transfer. If fromAccount and toAccount have the same currency, '
-            .'amountTo is ignored, whatever it contains: the credited amount equals amountFrom. If currencies differ, '
+            .'amountTo is generated automatically and must not be sent. If currencies differ, '
             .'amountTo is required. A hidden account cannot be chosen on either side: such a request is '
             .'rejected with 422 on fromAccountId or toAccountId.',
             processor: TransferProcessor::class,
@@ -85,12 +85,12 @@ final class TransferResource
     public ?string $amountFrom = null;
 
     #[ApiProperty(
-        description: 'Positive amount credited to toAccount, as a decimal string. Required only when fromAccount '
-        .'and toAccount use different currencies; with one currency it is ignored, whatever it contains.',
-        schema: ['type' => ['string', 'null']],
-        example: null,
+        description: 'Positive amount credited to toAccount, as a decimal string. Required when fromAccount and '
+        .'toAccount use different currencies. With one currency it is generated automatically: do not send this field.',
+        schema: ['type' => 'string'],
+        example: '23.00',
     )]
-    // Not typed as ?string: with one currency a value of any type must be ignored, not refused while reading the body.
+    // Not typed as ?string: with one currency a value of any type must get the same clear error, not a generic 400.
     #[TransferAmountTo]
     public mixed $amountTo = null;
 
