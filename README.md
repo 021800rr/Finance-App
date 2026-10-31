@@ -107,8 +107,8 @@ Rodzaje kodów:
   (tylko `limit`, `min`, `max`, `type` — nigdy wysłana wartość) i angielski `message`,
 - **reguły biznesowe** — np. `transfer.accounts_must_differ` (`422`), `fixed_expense.plan_duplicate` (`409`),
   `bank.not_found` (`404`, rekord z adresu nie istnieje; nieznany adres ma `http.not_found`);
-  ten sam problem ma ten sam kod w formularzu Twig i w API; dane odrzucone dopiero przy zapisie (np. data poza
-  zakresem) mają ogólny `http.unprocessable_content`,
+  ten sam problem ma ten sam kod w formularzu Twig i w API; dane odrzucone dopiero przy zapisie (np. kwota
+  w zapisie `1e2`) mają ogólny `http.unprocessable_content`,
 - **uwierzytelnianie (`401`)** — `auth.token_missing`, `auth.token_invalid`, `auth.token_expired`,
   `auth.invalid_credentials`, `auth.too_many_login_attempts`,
 - **pozostałe** — `http.` + stała nazwa statusu, np. `http.not_found`, `http.bad_request`, `http.internal_server_error`

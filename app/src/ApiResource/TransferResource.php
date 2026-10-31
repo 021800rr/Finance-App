@@ -34,8 +34,8 @@ use Symfony\Component\Validator\Constraints as Assert;
                     .'e.g. fromAccountId or toAccountId points to a hidden account; or the transfer was refused '
                     .'(no "violations"): errorCode "transfer.accounts_must_differ" or '
                     .'"transfer.amount_to_required_for_currency_exchange" (params fromCurrency, toCurrency). '
-                    .'Other refused input checked only on saving, e.g. operationDate outside the allowed range or '
-                    .'an amount that cannot be read, has errorCode "http.unprocessable_content".',
+                    .'Other refused input checked only on saving, e.g. an amount written as "1e2", has errorCode '
+                    .'"http.unprocessable_content".',
                     content: new \ArrayObject(ErrorResponseContent::VALIDATION_OR_BUSINESS_ERROR),
                 )],
                 security: [['JWT' => []]],
