@@ -30,15 +30,14 @@ final readonly class ExpectedTypeViolationFactory implements DenormalizationViol
         try {
             $this->decorated->handle($exception, $operation);
         } catch (ValidationException $validationException) {
-            if (!$exception instanceof NotNormalizableValueException) {
-                throw $validationException;
-            }
+            $types = $this->expectedTypesByPath($exception);
 
             $violations = new ConstraintViolationList();
             foreach ($validationException->getConstraintViolationList() as $violation) {
                 $parameters = $violation->getParameters();
-                if (Type::INVALID_TYPE_ERROR === $violation->getCode()) {
-                    $parameters['{{ type }}'] = implode('|', $exception->getExpectedTypes() ?? []);
+                $type = $types[$violation->getPropertyPath()] ?? null;
+                if (null !== $type && Type::INVALID_TYPE_ERROR === $violation->getCode()) {
+                    $parameters['{{ type }}'] = $type;
                 }
 
                 $violations->add(new ConstraintViolation(
@@ -57,5 +56,23 @@ final readonly class ExpectedTypeViolationFactory implements DenormalizationViol
 
             throw new ValidationException($violations);
         }
+    }
+
+    /**
+     * @return array<string, string> property path => expected types, as in the message ("int|null")
+     */
+    private function expectedTypesByPath(
+        NotNormalizableValueException|PartialDenormalizationException $exception,
+    ): array {
+        $errors = $exception instanceof NotNormalizableValueException
+            ? [$exception]
+            : $exception->getNotNormalizableValueErrors();
+
+        $types = [];
+        foreach ($errors as $error) {
+            $types[(string) $error->getPath()] = implode('|', $error->getExpectedTypes() ?? []);
+        }
+
+        return $types;
     }
 }

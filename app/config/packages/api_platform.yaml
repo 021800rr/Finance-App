@@ -4,5 +4,7 @@ api_platform:
     description: 'Personal finance API. Properties whose value is null are omitted from responses, so treat a missing property as null.'
     defaults:
         stateless: false
+        # A wrong type gets a violation on its field (422) on every property, all of them at once.
+        collect_denormalization_errors: true
         cache_headers:
             vary: ['Content-Type', 'Authorization', 'Origin', 'Cookie']
