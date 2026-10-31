@@ -155,11 +155,79 @@ final class ProblemDetailsApiTest extends WebTestCase
         }
     }
 
-    public function testMalformedJsonIsABadRequest(): void
+    #[DataProvider('badBodies')]
+    public function testBodyThatIsNotAJsonObjectIsABadRequest(string $body, string $detail): void
     {
-        $this->postTransfer('{bad');
+        $this->postTransfer($body);
 
-        $this->assertProblem(400, 'http.bad_request', []);
+        $problem = $this->assertProblem(400, 'http.bad_request', []);
+        self::assertSame($detail, $problem['detail'] ?? null);
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function badBodies(): iterable
+    {
+        $notJson = 'The request body is not valid JSON.';
+        $notObject = 'The request body must be a JSON object.';
+
+        yield 'malformed' => ['{bad', $notJson];
+        yield 'empty' => ['', $notJson];
+        yield 'number' => ['5', $notObject];
+        yield 'null' => ['null', $notObject];
+        yield 'boolean' => ['true', $notObject];
+        yield 'text' => ['"abc"', $notObject];
+        yield 'list' => ['[1,2]', $notObject];
+        yield 'empty list' => ['[]', $notObject];
+    }
+
+    public function testBadBodyOnUpdateIsABadRequest(): void
+    {
+        $this->client->request('PATCH', '/api/accounts/'.$this->account('Bank1-ROR-PLN')->getId(), server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'CONTENT_TYPE' => 'application/merge-patch+json',
+        ], content: '5');
+
+        $problem = $this->assertProblem(400, 'http.bad_request', []);
+        self::assertSame('The request body must be a JSON object.', $problem['detail'] ?? null);
+    }
+
+    public function testEmptyObjectReachesTheFieldValidation(): void
+    {
+        $this->postTransfer('{}');
+
+        $this->assertProblem(422, 'validation.failed', []);
+    }
+
+    public function testMissingRecordStaysNotFoundWhateverTheBody(): void
+    {
+        $this->client->request('PATCH', '/api/accounts/999999999', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'CONTENT_TYPE' => 'application/merge-patch+json',
+        ], content: '5');
+
+        $this->assertProblem(404, 'account.not_found', []);
+    }
+
+    public function testUnsupportedContentTypeStaysUnsupportedWhateverTheBody(): void
+    {
+        $this->client->request('POST', '/api/transfers', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'CONTENT_TYPE' => 'text/plain',
+        ], content: '{bad');
+
+        self::assertResponseStatusCodeSame(415);
+    }
+
+    public function testOperationWithoutABodyDoesNotRequireOne(): void
+    {
+        $this->client->request('POST', '/api/fixed_expenses/plan', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'CONTENT_TYPE' => 'application/ld+json',
+        ]);
+
+        self::assertNotSame(400, $this->client->getResponse()->getStatusCode());
     }
 
     #[DataProvider('unsupportedAcceptHeaders')]

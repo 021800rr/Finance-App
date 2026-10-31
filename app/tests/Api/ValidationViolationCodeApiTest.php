@@ -820,7 +820,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
             'CONTENT_TYPE' => 'application/ld+json',
             'HTTP_ACCEPT' => $accept,
-        ], content: json_encode($payload, JSON_THROW_ON_ERROR));
+        ], content: json_encode((object) $payload, JSON_THROW_ON_ERROR));
     }
 
     /**

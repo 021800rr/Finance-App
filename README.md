@@ -2,20 +2,22 @@
 
 [![CI](https://github.com/021800rr/Finance-App/actions/workflows/ci.yml/badge.svg)](https://github.com/021800rr/Finance-App/actions/workflows/ci.yml)
 
-Osobisty tracker finansowy do kontroli domowych kont (Symfony 8.1 / PHP 8.5, PostgreSQL, Docker) — napisany jako pełnoprawna aplikacja z API, a nie skrypt na kolanie.
-
-Projekt zaczął się jako "domowy Excel", ale po drodze zamienił się w okazję do poćwiczenia architektury, jaką stosuję zawodowo: czyste rozdzielenie warstw, pełne pokrycie testami i REST API zgodne z OpenAPI.
+Osobisty tracker finansowy do kontroli domowych kont (Symfony 8.1 / PHP 8.5, PostgreSQL, Docker) — napisany jako 
+pełnoprawna aplikacja z API.
 
 ## Co tu jest warte pokazania
 
-- **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
-- **~1440 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, kursy walut, operacje na kontach, złoto, emeryturę.
+- **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest 
+    rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
+- **~1450 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, 
+    kursy walut, operacje na kontach, złoto, emeryturę.
 - **PHPStan na najwyższym poziomie (`max`)** — dla `src`, `tests`, `config`, `bin` i `public`.
 - **PHP CS Fixer** wymuszający spójny styl kodu.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
 - **Przewidywalne błędy API** (RFC 9457 Problem Details) — każdy błąd ma stały `errorCode`, parametry
-  i angielski opis; szczegóły w sekcji [Błędy API](#błędy-api).
-- **Świadomy model bezpieczeństwa** — hasła hashowane, throttling logowania, jawnie opisane granice (patrz sekcja [Bezpieczeństwo](#bezpieczeństwo)).
+    i opis; szczegóły w sekcji [Błędy API](#błędy-api).
+- **Świadomy model bezpieczeństwa** — hasła hashowane, throttling logowania, jawnie opisane granice (patrz sekcja 
+    [Bezpieczeństwo](#bezpieczeństwo)).
 
 ## Stack
 
@@ -55,14 +57,18 @@ Appka jest jednoosobowa, więc model bezpieczeństwa jest celowo prosty.
 **Co jest zrobione:**
 
 - **Konta zakłada się z CLI**, nie ma publicznej rejestracji: `php bin/console app:create-user <email> <hasło>`.
-
-- **E-mail jest normalizowany** (trim + małe litery) przy zapisie i przy logowaniu, więc `Jan@Example.com` i `jan@example.com` to ten sam użytkownik.
-- **Throttling logowania** (`login_throttling`) na formularzu **i** na `POST /api/login_check`: 5 nieudanych prób na parę login + IP oraz 25 na sam IP w oknie 15 minut. Po przekroczeniu limitu logowanie jest odrzucane (API: `401`, `errorCode: auth.too_many_login_attempts`, nagłówek `Retry-After`), nawet z poprawnym hasłem. Stan limitera leży w pamięci podręcznej (`cache.rate_limiter`), więc przeżywa restart PHP-FPM.
+- **E-mail jest normalizowany** (trim + małe litery) przy zapisie i przy logowaniu, więc `Jan@Example.com` i 
+    `jan@example.com` to ten sam użytkownik.
+- **Throttling logowania** (`login_throttling`) na formularzu **i** na `POST /api/login_check`: 5 nieudanych prób na 
+    parę login + IP oraz 25 na sam IP w oknie 15 minut. Po przekroczeniu limitu logowanie jest odrzucane (API: `401`, 
+    `errorCode: auth.too_many_login_attempts`, nagłówek `Retry-After`), nawet z poprawnym hasłem. Stan limitera leży 
+    w pamięci podręcznej (`cache.rate_limiter`), więc przeżywa restart PHP-FPM.
 - **JWT żyje 8 godzin** (`token_ttl: 28800`).
 
 **Świadome ograniczenia:**
 
-- Tokeny JWT **nie są odwoływalne** — wylogowanie nie unieważnia tokena, wygasa on dopiero po TTL. Przy jednym użytkowniku to akceptowalne; przy wielu trzeba by dodać refresh tokeny i blacklistę.
+- Tokeny JWT **nie są odwoływalne** — wylogowanie nie unieważnia tokena, wygasa on dopiero po TTL. Przy jednym 
+  użytkowniku to akceptowalne; przy wielu trzeba by dodać refresh tokeny i blacklistę.
 - Brak resetu hasła, zmiany hasła, 2FA i blokady konta.
 - `/api/docs` jest publiczne.
 - **Brak izolacji danych per użytkownik** — appka jest jednoosobowa.
@@ -74,28 +80,30 @@ Każdy błąd API to [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/r
 
 - **`errorCode`** — stały kod błędu; po nim klient rozpoznaje, co się stało,
 - **`params`** — dane do komunikatu (zawsze obiekt, wartości jako tekst; `{}` gdy brak),
-- **`detail`** — zwykłe angielskie zdanie dla curla / Postmana; jego treść może się zmieniać, nie parsować.
+- **`detail`** — prosty tekst dla curla / Postmana; jego treść może się zmieniać, nie parsować.
 
 `type` to `urn:finance-app:problem:` + `errorCode`, a `title` to nazwa statusu HTTP.
-Komunikaty API są zawsze po angielsku (niezależnie od `Accept-Language`); widok Twig zostaje po polsku.
 
 Przykład: przelew z konta PLN na konto CHF bez `amountTo` (ID kont zależą od danych; token z `make token`):
 
 ```bash
 $ curl -s -X POST http://localhost:8081/api/transfers -H "Authorization: Bearer $TOKEN" \
     -H 'Content-Type: application/ld+json' \
-    -d '{"fromAccountId": 1, "toAccountId": 5, "operationDate": "2026-01-15", "amountFrom": "100.00"}'
+    -d '{"fromAccountId": 1, "toAccountId": 3, "operationDate": "2026-01-15", "amountFrom": "100.00"}'
 ```
 
 ```json
 {
-  "type": "urn:finance-app:problem:transfer.amount_to_required_for_currency_exchange",
-  "title": "Unprocessable Content",
-  "status": 422,
-  "detail": "For different currencies amountTo is required.",
+  "title":     "Unprocessable Content",
+  "detail":    "For different currencies amountTo is required.",
+  "status":    422,
+  "type":      "urn:finance-app:problem:transfer.amount_to_required_for_currency_exchange",
   "errorCode": "transfer.amount_to_required_for_currency_exchange",
-  "params": { "fromCurrency": "PLN", "toCurrency": "CHF" }
-}
+  "params": {
+    "fromCurrency": "PLN",
+    "toCurrency":   "CHF"
+  }
+} 
 ```
 
 (Skrócone: błędy zasobów API Platform zawierają też pola JSON-LD `@context`, `@id`, `@type` i `description`.)
@@ -132,7 +140,7 @@ API przyjmuje wyłącznie istniejące daty w formacie `YYYY-MM-DD` (np. `2028-02
 bez godziny i określeń względnych takich jak `tomorrow`. Nieistniejące daty (np. `2026-02-31`)
 oraz daty poza zakresem są odrzucane z kodem `422`, bez zapisywania zmian.
 
-**Najmniejszą jednostką czasu dla dat biznesowych jest dzień.** Dotyczy to operacji na koncie
+**Najmniejszą jednostką czasu dla dat biznesowych jest doba.** Dotyczy to operacji na koncie
 (także przelewów i zaplanowanych opłat stałych), cen złota oraz kursów walut.
 W bazie `operation_date`, `price_date` i `rate_date` mają typ `DATE`, a encje zerują czas przekazany z kodu PHP.
 Saldo do dziś obejmuje wszystkie operacje z datą dzisiejszą i wcześniejszą.
@@ -160,10 +168,11 @@ Dla poprawnego wyliczenia podsumowań **musisz** dodać kursy walut,
 przynajmniej dla tych banków, w których trzymasz walutę.
 
 **Opłaty stałe / planowanie przyszłych cyklicznych wydatków** (czynsz, raty itp).
-Wystarczy dodać opłaty stałe do systemu i zanim zacznie się nowy miesiąc dorzucić je do konta głównego ("Zaplanuj wydatki").
-Konto główne oznacza się gwiazdką (☆) na liście kont — klik ustawia je jako główne (`Account.isMain`, wymuszone unikalnym indeksem w bazie).
-Ukrytego konta głównego nie da się użyć do planowania (tak jak ukrytego konta nie można wybrać do nowej operacji
-ani przelewu): planowanie kończy się komunikatem, a API odpowiada `409` z `errorCode: fixed_expense.plan_main_hidden`.
+Wystarczy dodać opłaty stałe do systemu i zanim zacznie się nowy miesiąc dorzucić je do konta głównego ("Zaplanuj 
+wydatki"). Konto główne oznacza się gwiazdką (☆) na liście kont — klik ustawia je jako główne (`Account.isMain`, 
+wymuszone unikalnym indeksem w bazie). Ukrytego konta głównego nie da się użyć do planowania (tak jak ukrytego konta 
+nie można wybrać do nowej operacji ani przelewu): planowanie kończy się komunikatem, a API odpowiada `409` 
+z `errorCode: fixed_expense.plan_main_hidden`.
 
 **Gospodarstwa** (`household`) — to tylko etykieta do rozdzielenia sald na dwie kieszenie, nie mechanizm dostępu:
 - **Nasze** — ja i partnerka
@@ -172,4 +181,5 @@ ani przelewu): planowanie kończy się komunikatem, a API odpowiada `409` z `err
 Appka jest **tylko dla mnie** (ewentualnie partnerki) — jeden zalogowany user widzi i edytuje wszystko,
 bez podziału po właścicielu. To świadoma decyzja, nie dziura do załatania: nikogo trzeciego tu nie
 wpuszczam i nie planuję. Gdyby to się kiedyś zmieniło, `household` w obecnej postaci nic by nie chronił —
-trzeba by dopiero dobudować izolację per-użytkownik (patrz [Bezpieczeństwo](#bezpieczeństwo)). Na razie to i tak się nie zmieni — YAGNI.
+trzeba by dopiero dobudować izolację per-użytkownik (patrz [Bezpieczeństwo](#bezpieczeństwo)). Na razie to i tak się nie zmieni — 
+YAGNI.

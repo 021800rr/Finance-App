@@ -25,6 +25,12 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+    # Between loading the record and reading the body (priority 300: API Platform's DeserializeProvider).
+    App\State\RequestBodyCheckProvider:
+        decorates: 'api_platform.state_provider.main'
+        decoration_priority: 301
+        arguments: [ '@.inner' ]
+
     App\Serializer\ExpectedTypeViolationFactory:
         decorates: 'api_platform.state.denormalization_violation_factory'
         arguments: [ '@.inner' ]
