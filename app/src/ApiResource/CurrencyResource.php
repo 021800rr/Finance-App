@@ -6,7 +6,6 @@ namespace App\ApiResource;
 
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\Entity\Currency;
@@ -19,11 +18,6 @@ use App\State\CurrencyProvider;
         new GetCollection(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Lists all currencies, ordered by code.',
-            provider: CurrencyProvider::class,
-        ),
-        new Get(
-            openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Retrieves a single currency by its code.',
             provider: CurrencyProvider::class,
         ),
     ],

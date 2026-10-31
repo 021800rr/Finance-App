@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\State;
 
-use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use App\ApiResource\CurrencyResource;
 use App\Entity\Currency;
 use App\State\CurrencyProvider;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class CurrencyProviderTest extends KernelTestCase
 {
@@ -35,30 +33,11 @@ final class CurrencyProviderTest extends KernelTestCase
         $this->closeEntityManager();
     }
 
-    public function testProvideReturnsResourceForExistingCode(): void
-    {
-        $currency = $this->ensureCurrency('PLN');
-
-        $result = $this->provider->provide(new Get(), ['code' => 'PLN']);
-
-        self::assertInstanceOf(CurrencyResource::class, $result);
-        self::assertSame($currency->getCode(), $result->code);
-    }
-
-    public function testProvideThrowsNotFoundForNonExistentCode(): void
-    {
-        $this->expectException(NotFoundHttpException::class);
-        $this->expectExceptionMessage('Currency not found.');
-
-        $this->provider->provide(new Get(), ['code' => 'ZZZ']);
-    }
-
     public function testProvideCollectionOrdersByCodeAscending(): void
     {
         $this->ensureCurrency('PLN');
         $this->ensureCurrency('CHF');
 
-        /** @var list<CurrencyResource> $result */
         $result = $this->provider->provide(new GetCollection());
 
         $codes = array_map(static fn (CurrencyResource $r): ?string => $r->code, $result);

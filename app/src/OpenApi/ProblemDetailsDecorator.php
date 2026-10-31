@@ -49,7 +49,6 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         | `account_type.not_found` | 404 | |
         | `bank.not_found` | 404 | |
         | `contractor.not_found` | 404 | |
-        | `currency.not_found` | 404 | |
         | `currency_exchange_rate.not_found` | 404 | |
         | `fixed_expense.not_found` | 404 | |
         | `gold_asset.not_found` | 404 | |
