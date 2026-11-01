@@ -34,6 +34,8 @@ common:
     text_contains_null_character: 'The text contains a forbidden character.'
 
 contractor:
+    id_name_mismatch: 'This name is not the name of the contractor with the given contractorId.'
+    null_not_allowed: 'Do not send null here. Leave this field out if you do not want to set it.'
     not_found: 'This contractor does not exist.'
     id_or_name_required: 'Either contractorId or contractorName is required.'
     name_max_length: 'The contractor name cannot be longer than 255 characters.'

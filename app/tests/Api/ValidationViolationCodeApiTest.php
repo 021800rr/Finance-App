@@ -466,6 +466,226 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     }
 
     /**
+     * @param array<string, mixed> $contractor
+     * @param array<string, string> $expected
+     */
+    #[DataProvider('refusedContractorsOnCreate')]
+    public function testContractorFieldsRefusedOnCreate(array $contractor, array $expected): void
+    {
+        $existing = $this->createContractor();
+        $contractor = $this->withExistingId($contractor, $existing);
+        $countBefore = $this->rowCounts();
+
+        foreach ($this->validContractorlessPayloads() as $uri => $valid) {
+            $this->send('POST', $uri, $contractor + $valid);
+
+            self::assertResponseStatusCodeSame(422);
+            self::assertSame($expected, $this->violationCodes());
+        }
+
+        self::assertSame($countBefore, $this->rowCounts());
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, array<string, string>}>
+     */
+    public static function refusedContractorsOnCreate(): iterable
+    {
+        $null = 'contractor.null_not_allowed';
+        $required = 'contractor.id_or_name_required';
+
+        yield 'null id with a name' => [['contractorId' => null, 'contractorName' => 'X'], ['contractorId' => $null]];
+        yield 'null id alone' => [['contractorId' => null], ['contractorId' => $null]];
+        yield 'null name alone' => [['contractorName' => null], ['contractorName' => $null]];
+        yield 'id with a null name' => [
+            ['contractorId' => 'existing', 'contractorName' => null],
+            ['contractorName' => $null],
+        ];
+        yield 'both null' => [['contractorId' => null, 'contractorName' => null], ['contractorName' => $required]];
+        yield 'nothing' => [[], ['contractorName' => $required]];
+        yield 'blank name' => [['contractorName' => '  '], ['contractorName' => $required]];
+        yield 'id with a blank name' => [
+            ['contractorId' => 'existing', 'contractorName' => '  '],
+            ['contractorName' => 'contractor.name_not_blank'],
+        ];
+        yield 'id with another name' => [
+            ['contractorId' => 'existing', 'contractorName' => 'Someone else'],
+            ['contractorName' => 'contractor.id_name_mismatch'],
+        ];
+        yield 'id with the name in another letter case' => [
+            ['contractorId' => 'existing', 'contractorName' => 'contractor rules test'],
+            ['contractorName' => 'contractor.id_name_mismatch'],
+        ];
+        yield 'unknown id' => [['contractorId' => 999999999], ['contractorId' => 'contractor.not_found']];
+    }
+
+    /**
+     * @param array<string, mixed> $contractor
+     */
+    #[DataProvider('acceptedContractorsOnCreate')]
+    public function testContractorFieldsAcceptedOnCreate(array $contractor, string $expectedName): void
+    {
+        $existing = $this->createContractor();
+        $contractor = $this->withExistingId($contractor, $existing);
+
+        foreach ($this->validContractorlessPayloads() as $uri => $valid) {
+            $this->send('POST', $uri, $contractor + $valid);
+
+            self::assertResponseStatusCodeSame(201);
+            self::assertSame(
+                $expectedName,
+                self::stringAt(
+                    self::decodeObject((string) $this->client->getResponse()->getContent()),
+                    'contractorName',
+                ),
+            );
+        }
+
+        self::assertCount(1, $this->em()->getRepository(Contractor::class)->findBy(['name' => $expectedName]));
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, string}>
+     */
+    public static function acceptedContractorsOnCreate(): iterable
+    {
+        $name = 'Contractor rules test';
+
+        yield 'id alone' => [['contractorId' => 'existing'], $name];
+        yield 'id with its name' => [['contractorId' => 'existing', 'contractorName' => $name], $name];
+        yield 'id with its name and spaces' => [
+            ['contractorId' => 'existing', 'contractorName' => "  {$name}  "],
+            $name,
+        ];
+        yield 'existing name' => [['contractorName' => $name], $name];
+        yield 'existing name with spaces' => [['contractorName' => "  {$name} "], $name];
+        yield 'new name' => [['contractorName' => 'Brand new contractor'], 'Brand new contractor'];
+        yield 'name in another letter case is a new contractor' => [
+            ['contractorName' => 'contractor RULES test'],
+            'contractor RULES test',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $contractor
+     * @param array<string, string> $expected
+     */
+    #[DataProvider('refusedContractorsOnUpdate')]
+    public function testContractorFieldsRefusedOnUpdate(array $contractor, array $expected): void
+    {
+        $existing = $this->createContractor();
+        $contractor = $this->withExistingId($contractor, $existing);
+
+        foreach ($this->recordsWithContractor($existing) as $uri) {
+            $this->send('PATCH', $uri, $contractor);
+
+            self::assertResponseStatusCodeSame(422);
+            self::assertSame($expected, $this->violationCodes());
+
+            $this->send('GET', $uri, []);
+            self::assertSame(
+                $existing->getName(),
+                self::stringAt(
+                    self::decodeObject((string) $this->client->getResponse()->getContent()),
+                    'contractorName',
+                ),
+            );
+        }
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, array<string, string>}>
+     */
+    public static function refusedContractorsOnUpdate(): iterable
+    {
+        $null = 'contractor.null_not_allowed';
+        $required = 'contractor.id_or_name_required';
+
+        yield 'null id alone' => [['contractorId' => null], ['contractorName' => $required]];
+        yield 'null id with a blank name' => [
+            ['contractorId' => null, 'contractorName' => '  '],
+            ['contractorName' => $required],
+        ];
+        yield 'both null' => [['contractorId' => null, 'contractorName' => null], ['contractorName' => $required]];
+        yield 'null name alone' => [['contractorName' => null], ['contractorName' => $null]];
+        yield 'id with a null name' => [
+            ['contractorId' => 'existing', 'contractorName' => null],
+            ['contractorName' => $null],
+        ];
+        yield 'blank name alone' => [['contractorName' => '  '], ['contractorName' => $required]];
+        yield 'id with a blank name' => [
+            ['contractorId' => 'existing', 'contractorName' => '  '],
+            ['contractorName' => 'contractor.name_not_blank'],
+        ];
+        yield 'id with another name' => [
+            ['contractorId' => 'existing', 'contractorName' => 'Someone else'],
+            ['contractorName' => 'contractor.id_name_mismatch'],
+        ];
+        yield 'unknown id' => [['contractorId' => 999999999], ['contractorId' => 'contractor.not_found']];
+    }
+
+    /**
+     * @param array<string, mixed> $contractor
+     */
+    #[DataProvider('acceptedContractorsOnUpdate')]
+    public function testContractorFieldsAcceptedOnUpdate(array $contractor, string $expectedName): void
+    {
+        $existing = $this->createContractor();
+        $other = new Contractor('Other rules contractor');
+        $this->em()->persist($other);
+        $this->em()->flush();
+        $contractor = $this->withExistingId($contractor, $other);
+
+        foreach ($this->recordsWithContractor($existing) as $uri) {
+            $this->send('PATCH', $uri, $contractor);
+
+            self::assertResponseIsSuccessful();
+            self::assertSame(
+                $expectedName,
+                self::stringAt(
+                    self::decodeObject((string) $this->client->getResponse()->getContent()),
+                    'contractorName',
+                ),
+            );
+
+            $this->send('PATCH', $uri, $contractor);
+            self::assertResponseIsSuccessful();
+        }
+    }
+
+    /**
+     * @return iterable<string, array{array<string, mixed>, string}>
+     */
+    public static function acceptedContractorsOnUpdate(): iterable
+    {
+        $current = 'Contractor rules test';
+        $other = 'Other rules contractor';
+
+        yield 'no contractor fields' => [[], $current];
+        yield 'null id with a new name' => [['contractorId' => null, 'contractorName' => 'Brand new'], 'Brand new'];
+        yield 'null id with an existing name' => [['contractorId' => null, 'contractorName' => $other], $other];
+        yield 'null id with the current name' => [['contractorId' => null, 'contractorName' => $current], $current];
+        yield 'another id' => [['contractorId' => 'existing'], $other];
+        yield 'another id with its name' => [['contractorId' => 'existing', 'contractorName' => $other], $other];
+        yield 'new name alone' => [['contractorName' => 'Brand new'], 'Brand new'];
+        yield 'existing name alone' => [['contractorName' => $other], $other];
+    }
+
+    public function testRecordSentBackAfterReadingItKeepsItsContractor(): void
+    {
+        $existing = $this->createContractor();
+
+        foreach ($this->recordsWithContractor($existing) as $uri) {
+            $this->send('PATCH', $uri, [
+                'contractorId' => $existing->getId(),
+                'contractorName' => $existing->getName(),
+            ]);
+
+            self::assertResponseIsSuccessful();
+        }
+    }
+
+    /**
      * The database driver cuts text at a NUL character: "ab\0cd" would be stored as "ab".
      *
      * @param array<string, mixed> $payload
@@ -833,7 +1053,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
             'HTTP_ACCEPT' => 'application/ld+json',
             'CONTENT_TYPE' => $type,
-        ], content: json_encode($payload, JSON_THROW_ON_ERROR));
+        ], content: json_encode((object) $payload, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -850,6 +1070,67 @@ final class ValidationViolationCodeApiTest extends WebTestCase
             'operationDate' => '2026-05-05',
             'amount' => '-1.00',
         ];
+    }
+
+    private function createContractor(): Contractor
+    {
+        $contractor = new Contractor('Contractor rules test');
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+
+        return $contractor;
+    }
+
+    /**
+     * @param array<string, mixed> $contractor
+     *
+     * @return array<string, mixed>
+     */
+    private function withExistingId(array $contractor, Contractor $existing): array
+    {
+        if ('existing' === ($contractor['contractorId'] ?? null)) {
+            $contractor['contractorId'] = $existing->getId();
+        }
+
+        return $contractor;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>> create payloads without a contractor, by resource address
+     */
+    private function validContractorlessPayloads(): array
+    {
+        $operation = $this->validOperation();
+        unset($operation['contractorName']);
+
+        return [
+            '/api/account_operations' => $operation,
+            '/api/fixed_expenses' => ['day' => 5, 'amount' => '-1.00'],
+        ];
+    }
+
+    /**
+     * @return list<string> addresses of one record of each resource using the contractor
+     */
+    private function recordsWithContractor(Contractor $contractor): array
+    {
+        $uris = [];
+        foreach ($this->validContractorlessPayloads() as $uri => $valid) {
+            $this->send('POST', $uri, ['contractorId' => $contractor->getId()] + $valid);
+            self::assertResponseStatusCodeSame(201);
+            $id = self::intAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'id');
+            $uris[] = $uri.'/'.$id;
+        }
+
+        return $uris;
+    }
+
+    /**
+     * @return array<string, mixed> property path => code
+     */
+    private function violationCodes(): array
+    {
+        return array_map(static fn (array $row): mixed => $row['code'], $this->codesAndParams());
     }
 
     private function accountId(string $accountNumber): int

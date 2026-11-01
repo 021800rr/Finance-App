@@ -37,8 +37,8 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Post(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Creates a new fixed expense. Either contractorId or contractorName must be given; '
-            .'if contractorName does not match an existing contractor, one is created automatically. '
+            description: 'Creates a new fixed expense. Give contractorId, contractorName or both (of the same '
+            .'contractor); a contractorName that matches no contractor creates one. '
             .'Amount must be negative and is always in PLN.',
             processor: FixedExpenseProcessor::class,
         ),
@@ -59,27 +59,27 @@ use Symfony\Component\Validator\Constraints as Assert;
     ],
     security: "is_granted('ROLE_USER')",
 )]
+#[ContractorGiven]
 final class FixedExpenseResource
 {
     #[ApiProperty(description: 'Fixed expense id. Read-only, ignored on write.', writable: false, example: 1)]
     public ?int $id = null;
 
     #[ApiProperty(
-        description: 'Id of an existing contractor. Provide this OR contractorName, not both '
-        .'(leave this null when using contractorName).',
+        description: 'Id of an existing contractor. Send it alone, or with the name of the same contractor. '
+        .'Null is allowed only on update, together with contractorName, to replace the contractor.',
         example: null,
     )]
     #[RecordExists(Contractor::class, message: 'contractor.not_found')]
     public ?int $contractorId = null;
 
     #[ApiProperty(
-        description: 'Contractor name. Used to find an existing contractor by name, or create a new one '
-        .'if none matches. Ignored if contractorId is set.',
+        description: 'Contractor name, trimmed; letter case matters. Alone, it finds the contractor or creates a new '
+        .'one. With contractorId, it must be the name of that contractor. Null and a blank name are rejected.',
         example: 'Rent',
     )]
     #[Assert\Length(max: 255, maxMessage: 'contractor.name_max_length')]
     #[NoNullCharacter]
-    #[ContractorGiven]
     public ?string $contractorName = null;
 
     #[ApiProperty(description: 'Day of the month the expense is due, 1-28. Required.', example: 10)]

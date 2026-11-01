@@ -74,8 +74,8 @@ use Symfony\Component\Validator\Constraints as Assert;
                 )],
                 security: [['JWT' => []]],
             ),
-            description: 'Creates a new operation. Either contractorId or contractorName must be given; '
-            .'if contractorName does not match an existing contractor, one is created automatically. '
+            description: 'Creates a new operation. Give contractorId, contractorName or both (of the same contractor); '
+            .'a contractorName that matches no contractor creates one. '
             .'A hidden account cannot be chosen: such a request is rejected with 422 on accountId.',
             denormalizationContext: ['groups' => ['operation:create', 'operation:write']],
             validationContext: ['groups' => ['Default', 'operation:create']],
@@ -101,6 +101,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     ],
     security: "is_granted('ROLE_USER')",
 )]
+#[ContractorGiven]
 final class AccountOperationResource
 {
     #[ApiProperty(description: 'Operation id. Read-only, ignored on write.', writable: false, example: 1)]
@@ -118,8 +119,8 @@ final class AccountOperationResource
     public ?int $accountId = null;
 
     #[ApiProperty(
-        description: 'Id of an existing contractor. Provide this OR contractorName, not both '
-        .'(leave this null when using contractorName).',
+        description: 'Id of an existing contractor. Send it alone, or with the name of the same contractor. '
+        .'Null is allowed only on update, together with contractorName, to replace the contractor.',
         example: null,
     )]
     #[RecordExists(Contractor::class, message: 'contractor.not_found')]
@@ -127,13 +128,12 @@ final class AccountOperationResource
     public ?int $contractorId = null;
 
     #[ApiProperty(
-        description: 'Contractor name. Used to find an existing contractor by name, or create a new one '
-        .'if none matches. Ignored if contractorId is set.',
+        description: 'Contractor name, trimmed; letter case matters. Alone, it finds the contractor or creates a new '
+        .'one. With contractorId, it must be the name of that contractor. Null and a blank name are rejected.',
         example: 'ACME Sp. z o.o.',
     )]
     #[Assert\Length(max: 255, maxMessage: 'contractor.name_max_length')]
     #[NoNullCharacter]
-    #[ContractorGiven]
     #[Groups(['operation:write'])]
     public ?string $contractorName = null;
 

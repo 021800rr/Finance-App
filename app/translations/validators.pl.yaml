@@ -34,6 +34,8 @@ common:
     text_contains_null_character: 'Tekst zawiera niedozwolony znak.'
 
 contractor:
+    id_name_mismatch: 'Ta nazwa nie jest nazwą kontrahenta o podanym contractorId.'
+    null_not_allowed: 'Nie wysyłaj tu null. Pomiń to pole, jeśli nie chcesz go ustawiać.'
     not_found: 'Ten kontrahent nie istnieje.'
     id_or_name_required: 'Podaj contractorId lub contractorName.'
     name_max_length: 'Nazwa kontrahenta może mieć najwyżej 255 znaków.'
