@@ -134,13 +134,6 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         $this->assertPlanningIsRefusedWith('/only be planned on our own accounts/');
     }
 
-    public function testPlanNextMonthSkipsExpenseWithInvalidDayForFebruary(): void
-    {
-        // Days 29-31 can never be reached because FixedExpense enforces day <= 28,
-        // so this branch of planNextMonth() is unreachable in practice.
-        self::markTestSkipped('FixedExpense::day is constrained to 1-28, this scenario cannot occur.');
-    }
-
     private function buildPlanner(): FixedExpensePlannerService
     {
         $container = self::getContainer();

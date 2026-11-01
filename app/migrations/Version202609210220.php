@@ -27,7 +27,11 @@ final class Version202609210220 extends AbstractMigration
 
     public function getDescription(): string
     {
-        return 'Initial schema: Currency uses natural key (code), integer money/quantity columns, CHECK constraints, DB-managed audit timestamps, household.is_own_funds with exactly-two-households guarantee, app_user for login; seeds the system contractor used for self-transfers ("Przelew własny") so it exists on every environment independent of fixtures, which never run on production';
+        return 'Creates the initial database. A currency is identified by its code. '
+            .'Money and quantities are stored as integers, and CHECK constraints guard their values. '
+            .'The database sets created_at and updated_at. There are always exactly two households. '
+            .'Users log in through app_user. '
+            .'Adds the contractor "Przelew własny" for transfers, because fixtures never run on production.';
     }
 
     public function up(Schema $schema): void
