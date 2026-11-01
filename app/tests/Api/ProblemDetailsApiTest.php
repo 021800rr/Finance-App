@@ -5,8 +5,15 @@ declare(strict_types=1);
 namespace App\Tests\Api;
 
 use App\Entity\Account;
+use App\Entity\Contractor;
 use App\Exception\BusinessError;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\LosesMainAccountRaceTrait;
+use Doctrine\DBAL\Driver\Exception as DriverException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\Query;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Events;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -18,6 +25,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 final class ProblemDetailsApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
+    use LosesMainAccountRaceTrait;
     use ReadsJsonTrait;
 
     private KernelBrowser $client;
@@ -153,6 +161,63 @@ final class ProblemDetailsApiTest extends WebTestCase
         foreach ($records as [$method, $uri, $detail, $errorCode]) {
             yield "{$method} {$uri}" => [$method, $uri, $detail, $errorCode];
         }
+    }
+
+    public function testLosingTheMainAccountRaceIsAConflictAndKeepsOneMainAccount(): void
+    {
+        $accounts = $this->em()->getRepository(Account::class)->findBy(['isMain' => false], ['id' => 'ASC'], 2);
+        self::assertCount(2, $accounts);
+        [$account, $rival] = $accounts;
+        $rivalId = $rival->getId();
+        $token = $this->obtainJwtToken();
+        $this->loseTheNextMainAccountRace($this->client, $rivalId);
+
+        $this->client->request('PATCH', '/api/accounts/'.$account->getId(), server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token,
+            'CONTENT_TYPE' => 'application/merge-patch+json',
+        ], content: '{"isMain": true}');
+
+        $problem = $this->assertProblem(409, 'account.main_changed_concurrently', []);
+        self::assertStringNotContainsString('SQLSTATE', self::stringAt($problem, 'detail'));
+        self::assertSame(
+            1,
+            $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM account WHERE is_main = true'),
+        );
+    }
+
+    public function testAnOverlookedDuplicateIsAConflictWithoutSql(): void
+    {
+        $token = $this->obtainJwtToken();
+        $this->client->disableReboot();
+        $entityManager = $this->client->getContainer()->get('doctrine.orm.entity_manager');
+        self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
+        $entityManager->getEventManager()->addEventListener(Events::preFlush, new class {
+            public function preFlush(): void
+            {
+                throw new UniqueConstraintViolationException(
+                    new class('SQLSTATE[23505]: uniq_secret_index') extends \Exception implements DriverException {
+                        public function getSQLState(): string
+                        {
+                            return '23505';
+                        }
+                    },
+                    new Query('INSERT INTO secret_table', [], []),
+                );
+            }
+        });
+        $contractor = $this->em()->getRepository(Contractor::class)->findOneBy([]);
+        self::assertNotNull($contractor);
+
+        $this->client->request('POST', '/api/fixed_expenses', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token,
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], content: json_encode(
+            ['contractorId' => $contractor->getId(), 'day' => 5, 'amount' => '-1.00'],
+            JSON_THROW_ON_ERROR,
+        ));
+
+        $problem = $this->assertProblem(409, 'http.conflict', []);
+        self::assertSame('This record already exists.', $problem['detail'] ?? null);
     }
 
     #[DataProvider('badBodies')]

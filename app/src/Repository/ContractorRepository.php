@@ -40,7 +40,6 @@ final class ContractorRepository extends ServiceEntityRepository
         if (null !== $contractor) {
             return $contractor;
         }
-
         $contractor = new Contractor($name);
         $this->save($contractor, flush: true);
 

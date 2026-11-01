@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
+use App\Entity\Account;
 use App\Entity\Contractor;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\LosesContractorRaceTrait;
@@ -79,6 +80,38 @@ final class ContractorApiTest extends WebTestCase
             1,
             $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM contractor WHERE name = ?', [$name]),
         );
+    }
+
+    /**
+     * @param array<string, mixed> $record
+     */
+    #[DataProvider('recordsCreatingAContractor')]
+    public function testLosingTheContractorRaceRefusesTheRecordWithoutSql(string $uri, array $record): void
+    {
+        if ('/api/account_operations' === $uri) {
+            $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => 'Bank1-ROR-PLN']);
+            self::assertNotNull($account);
+            $record['accountId'] = $account->getId();
+        }
+        $token = $this->obtainJwtToken();
+        $name = 'Race in a record '.uniqid();
+        $this->loseTheNextContractorRace($this->client);
+
+        $this->client->request('POST', $uri, server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token,
+            'CONTENT_TYPE' => 'application/ld+json',
+        ], content: json_encode(['contractorName' => $name] + $record, JSON_THROW_ON_ERROR));
+
+        $this->assertDuplicateResponse();
+    }
+
+    /**
+     * @return iterable<string, array{string, array<string, mixed>}>
+     */
+    public static function recordsCreatingAContractor(): iterable
+    {
+        yield 'operation' => ['/api/account_operations', ['operationDate' => '2026-05-05', 'amount' => '-1.00']];
+        yield 'fixed expense' => ['/api/fixed_expenses', ['day' => 5, 'amount' => '-1.00']];
     }
 
     private function postContractor(string $name, string $token): void

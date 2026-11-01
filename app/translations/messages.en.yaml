@@ -1,4 +1,5 @@
 account:
+    main_changed_concurrently: 'Another change of the main account happened at the same time. Check the main account and try again.'
     add_operation: 'Add operation'
     balance: 'Balance'
     balance_today: 'Balance today'

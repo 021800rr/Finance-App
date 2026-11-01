@@ -44,6 +44,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         | errorCode | Status | params |
         | --- | --- | --- |
         | `contractor.name_not_unique` | 409 | |
+        | `account.main_changed_concurrently` | 409 | |
         | `account.not_found` | 404 | |
         | `account_operation.not_found` | 404 | |
         | `account_type.not_found` | 404 | |

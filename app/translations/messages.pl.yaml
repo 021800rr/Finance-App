@@ -1,4 +1,5 @@
 account:
+    main_changed_concurrently: 'Konto główne zostało właśnie zmienione przez inne żądanie. Sprawdź konto główne i spróbuj ponownie.'
     add_operation: 'Dodaj operację'
     balance: 'Saldo'
     balance_today: 'Saldo na dziś'

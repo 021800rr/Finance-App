@@ -6,15 +6,18 @@ namespace App\Controller;
 
 use App\Constant\DatabaseLimits;
 use App\Entity\Account;
+use App\Exception\AccountException;
 use App\Repository\AccountOperationRepository;
 use App\Repository\AccountRepository;
 use App\Service\AccountOperationSummaryService;
 use App\Service\Paginator;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Translation\TranslatableMessage;
 
 #[Route('/account')]
 class AccountController extends AbstractController
@@ -65,7 +68,11 @@ class AccountController extends AbstractController
             throw $this->createAccessDeniedException('Invalid CSRF token.');
         }
 
-        $accountRepository->setAsMainAccount($account);
+        try {
+            $accountRepository->setAsMainAccount($account);
+        } catch (UniqueConstraintViolationException) {
+            $this->addFlash('warning', new TranslatableMessage(AccountException::MAIN_CHANGED_CONCURRENTLY));
+        }
 
         $showHidden = $request->query->getBoolean('show_hidden') ? '1' : '0';
 

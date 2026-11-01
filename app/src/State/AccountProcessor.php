@@ -8,7 +8,10 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\AccountResource;
 use App\Entity\Account;
+use App\Exception\AccountException;
 use App\Repository\AccountRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
@@ -43,7 +46,13 @@ final readonly class AccountProcessor implements ProcessorInterface
             // Flushes internally (and, as a side effect, persists the "hidden" change set
             // above too — see AccountRepository::setAsMainAccount() for why this can't be a
             // single flush together with unsetting the previous main account).
-            $this->accountRepository->setAsMainAccount($account);
+            try {
+                $this->accountRepository->setAsMainAccount($account);
+            } catch (UniqueConstraintViolationException) {
+                $exception = AccountException::mainChangedConcurrently();
+
+                throw new ConflictHttpException($exception->getMessage(), $exception);
+            }
         } else {
             $this->accountRepository->save($account, flush: true);
         }

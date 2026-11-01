@@ -13,6 +13,7 @@ use App\Entity\Currency;
 use App\Entity\Household;
 use App\Repository\AccountRepository;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\LosesMainAccountRaceTrait;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -20,6 +21,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 final class AccountControllerTest extends WebTestCase
 {
     use DatabaseTestTrait;
+    use LosesMainAccountRaceTrait;
     use LogsInTrait;
 
     private KernelBrowser $client;
@@ -214,6 +216,33 @@ final class AccountControllerTest extends WebTestCase
         self::assertNotNull($refreshedNewMain);
         self::assertFalse($refreshedPreviousMain->isMain());
         self::assertTrue($refreshedNewMain->isMain());
+    }
+
+    public function testSetMainLosingARaceShowsAMessageAndKeepsOneMainAccount(): void
+    {
+        $account = $this->createTestAccount();
+        $accountId = $account->getId();
+        $rivalId = $this->createTestAccount()->getId();
+
+        $crawler = $this->client->request('GET', '/');
+        $csrfToken = $crawler
+            ->filter('form[action*="'.$accountId.'/set-main"] input[name="_token"]')
+            ->attr('value');
+        $this->loseTheNextMainAccountRace($this->client, $rivalId);
+
+        $this->client->request('POST', '/account/'.$accountId.'/set-main', ['_token' => $csrfToken]);
+
+        self::assertResponseRedirects();
+        self::assertSame(
+            1,
+            $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM account WHERE is_main = true'),
+        );
+
+        // The failed flush closed the entity manager; in production the redirect is a new request anyway.
+        $this->client->enableReboot();
+        $this->client->followRedirect();
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Another change of the main account happened at the same time.');
     }
 
     public function testSetMainReturnsNotFoundForNonNumericId(): void

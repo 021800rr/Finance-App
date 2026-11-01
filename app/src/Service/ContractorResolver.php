@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Contractor;
+use App\Exception\ContractorException;
 use App\Repository\ContractorRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
@@ -61,7 +64,14 @@ final readonly class ContractorResolver
         }
 
         $contractor = new Contractor($trimmedName);
-        $this->contractorRepository->save($contractor, flush: true);
+
+        try {
+            $this->contractorRepository->save($contractor, flush: true);
+        } catch (UniqueConstraintViolationException) {
+            $exception = ContractorException::nameNotUnique();
+
+            throw new ConflictHttpException($exception->getMessage(), $exception);
+        }
 
         return $contractor;
     }
