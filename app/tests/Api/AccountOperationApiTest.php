@@ -187,6 +187,75 @@ final class AccountOperationApiTest extends WebTestCase
         yield 'backslash' => ['\\', 'a\\b', 'ab'];
     }
 
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function invalidPages(): iterable
+    {
+        yield 'text' => ['abc'];
+        yield 'zero' => ['0'];
+        yield 'negative' => ['-1'];
+        yield 'fraction' => ['1.5'];
+        yield 'empty' => [''];
+        yield 'scientific notation' => ['1e3'];
+        yield 'leading zero' => ['01'];
+        yield 'with a space' => ['1%20'];
+    }
+
+    #[DataProvider('invalidPages')]
+    public function testInvalidPageIsAViolationOnBothLists(string $page): void
+    {
+        $account = $this->createAccount();
+
+        $lists = ['/api/accounts/'.$account->getId().'/operations?page=', '/api/account_operations?q=a&page='];
+        foreach ($lists as $uri) {
+            $this->client->request('GET', $uri.$page, server: $this->authHeaders());
+
+            self::assertResponseStatusCodeSame(422);
+            $error = self::decodeObject((string) $this->client->getResponse()->getContent());
+            self::assertSame('validation.failed', self::stringAt($error, 'errorCode'));
+            self::assertSame(
+                ['page' => 'common.page_invalid'],
+                array_column(self::rowsAt($error, 'violations'), 'code', 'propertyPath'),
+            );
+            self::assertSame(
+                'page: The page number must be a positive whole number.',
+                self::stringAt($error, 'detail'),
+            );
+        }
+    }
+
+    public function testMissingAccountGoesBeforeAnInvalidPage(): void
+    {
+        $this->client->request('GET', '/api/accounts/2147483647/operations?page=abc', server: $this->authHeaders());
+
+        self::assertResponseStatusCodeSame(404);
+        self::assertSame(
+            'account.not_found',
+            self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'errorCode'),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function validPagesWithoutResults(): iterable
+    {
+        yield 'beyond the results' => ['999999'];
+        yield 'above the cap' => ['9999999999'];
+        yield 'above the integer limit' => ['99999999999999999999999'];
+    }
+
+    #[DataProvider('validPagesWithoutResults')]
+    public function testPageBeyondTheResultsIsAnEmptyList(string $page): void
+    {
+        $account = $this->createAccount();
+
+        $data = $this->collection('/api/accounts/'.$account->getId().'/operations?page='.$page);
+
+        self::assertSame([], self::rowsAt($data, 'member'));
+    }
+
     public function testOpenApiDocumentsTheAccountOperationsRoute(): void
     {
         $this->client->request('GET', '/api/docs.jsonopenapi');

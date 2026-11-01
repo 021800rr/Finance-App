@@ -37,7 +37,8 @@ use Symfony\Component\Validator\Constraints as Assert;
         new GetCollection(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Searches the operations of all accounts, newest first, '.Paginator::DEFAULT_PER_PAGE.' per page. '
-            .'The search text q is required. To list the operations of one account use /accounts/{accountId}/operations.',
+            .'The search text q is required; page must be a positive whole number. '
+            .'To list the operations of one account use /accounts/{accountId}/operations.',
             provider: AccountOperationProvider::class,
             parameters: ['q' => new QueryParameter(
                 property: 'description',
@@ -59,7 +60,8 @@ use Symfony\Component\Validator\Constraints as Assert;
                 security: [['JWT' => []]],
             ),
             description: 'Lists the operations of one account, newest first, '.Paginator::DEFAULT_PER_PAGE.' per page. '
-            .'Responds with 404 when the account does not exist.',
+            .'Responds with 404 when the account does not exist, and with 422 when page is not a positive '
+            .'whole number.',
             provider: AccountOperationProvider::class,
         ),
         new Get(

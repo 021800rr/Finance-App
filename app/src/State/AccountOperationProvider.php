@@ -7,6 +7,7 @@ namespace App\State;
 use ApiPlatform\Metadata\CollectionOperationInterface;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
+use ApiPlatform\Validator\Exception\ValidationException;
 use App\ApiResource\AccountOperationResource;
 use App\Entity\AccountOperation;
 use App\Exception\RecordNotFoundException;
@@ -17,6 +18,9 @@ use App\State\Pagination\OffsetPaginator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Regex;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * @implements ProviderInterface<AccountOperationResource|OffsetPaginator<AccountOperationResource>>
@@ -30,6 +34,7 @@ final readonly class AccountOperationProvider implements ProviderInterface
         private AccountOperationRepository $accountOperationRepository,
         private AccountRepository $accountRepository,
         private RequestStack $requestStack,
+        private ValidatorInterface $validator,
     ) {
     }
 
@@ -128,20 +133,21 @@ final readonly class AccountOperationProvider implements ProviderInterface
     }
 
     /**
-     * The page number from ?page=, forced into the range 1..MAX_PAGE ("abc", 0 and -5 become 1).
+     * The page number from ?page=, at most MAX_PAGE. Anything but a positive whole number is refused (422).
      */
     private function requestedPage(?Request $request): int
     {
-        $page = (int) $request?->query->get('page', 1);
+        $page = $request?->query->get('page', '1') ?? '1';
 
-        if ($page < 1) {
-            return 1;
+        $violations = $this->validator->startContext()->atPath('page')->validate($page, [
+            new NotBlank(message: 'common.page_invalid'),
+            new Regex(pattern: '/^[1-9][0-9]*$/D', message: 'common.page_invalid'),
+        ])->getViolations();
+
+        if (count($violations) > 0) {
+            throw new ValidationException($violations);
         }
 
-        if ($page > self::MAX_PAGE) {
-            return self::MAX_PAGE;
-        }
-
-        return $page;
+        return min((int) $page, self::MAX_PAGE);
     }
 }

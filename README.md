@@ -8,7 +8,7 @@ Osobisty tracker finansowy do kontroli domowych kont.
 
 - **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest 
     rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
-- **~1490 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, 
+- **~1500 testów PHPUnit** (jednostkowe + warstwa Provider/Processor) pokrywających logikę biznesową: wyliczanie sald, 
     kursy walut, operacje na kontach, złoto, emeryturę.
 - **PHPStan na najwyższym poziomie (`max`)** — dla `src`, `tests`, `config`, `bin` i `public`.
 - **PHP CS Fixer** wymuszający spójny styl kodu.
