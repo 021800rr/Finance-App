@@ -29,6 +29,13 @@ contractor_autocomplete:
     no_name: '(no name)'
     selected: 'Contractor selected: %name%'
 
+error:
+    back_home: 'Back to the home page'
+    generic_text: 'This could not be done. Please try again in a moment.'
+    generic_title: 'Something went wrong'
+    not_found_text: 'This page does not exist or has been removed. Check the address.'
+    not_found_title: 'Page not found'
+
 fixed_expense:
     add: 'Add'
     add_title: 'Add fixed expense'

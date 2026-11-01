@@ -1,0 +1,18 @@
+{# Stands alone instead of extending base.html.twig: the menu needs the database, which may be why this page shows. #}
+<!DOCTYPE html>
+<html lang="{{ app.request ? app.request.locale : 'pl' }}" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ block('heading') }} - Finance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{ encore_entry_link_tags('app') }}
+</head>
+<body>
+<main class="container text-center py-5">
+    <p class="display-1 text-muted">{{ status_code }}</p>
+    <h1 class="h3">{% block heading %}{{ 'error.generic_title'|trans }}{% endblock %}</h1>
+    <p class="mb-4">{% block message %}{{ 'error.generic_text'|trans }}{% endblock %}</p>
+    <a class="btn btn-primary" href="{{ path('home') }}">{{ 'error.back_home'|trans }}</a>
+</main>
+</body>
+</html>

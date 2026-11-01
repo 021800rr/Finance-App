@@ -29,6 +29,13 @@ contractor_autocomplete:
     no_name: '(brak nazwy)'
     selected: 'Wybrano kontrahenta: %name%'
 
+error:
+    back_home: 'Wróć na stronę główną'
+    generic_text: 'Nie udało się tego wykonać. Spróbuj ponownie za chwilę.'
+    generic_title: 'Coś poszło nie tak'
+    not_found_text: 'Ta strona nie istnieje albo została usunięta. Sprawdź adres.'
+    not_found_title: 'Nie ma takiej strony'
+
 fixed_expense:
     add: 'Dodaj'
     add_title: 'Dodaj opłatę stałą'
