@@ -6,6 +6,7 @@ namespace App\Tests\Controller;
 
 use App\Entity\Contractor;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\LosesContractorRaceTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -13,6 +14,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 final class ContractorControllerTest extends WebTestCase
 {
     use DatabaseTestTrait;
+    use LosesContractorRaceTrait;
     use LogsInTrait;
 
     private KernelBrowser $client;
@@ -266,6 +268,22 @@ final class ContractorControllerTest extends WebTestCase
     {
         yield 'exact name' => [''];
         yield 'name with surrounding spaces' => ['  '];
+    }
+
+    public function testDuplicateCaughtOnlyByTheDatabaseGetsTheSameMessage(): void
+    {
+        $crawler = $this->client->request('GET', '/');
+        $csrfToken = (string) $crawler->filter('meta[name="csrf-token-contractor-create"]')->attr('content');
+        $name = 'Web race '.uniqid();
+        $this->loseTheNextContractorRace($this->client);
+
+        $this->postContractor($name, $csrfToken);
+
+        $this->assertDuplicateResponse();
+        self::assertSame(
+            1,
+            $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM contractor WHERE name = ?', [$name]),
+        );
     }
 
     private function postContractor(string $name, string $token): void

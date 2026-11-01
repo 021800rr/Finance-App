@@ -6,6 +6,7 @@ namespace App\Tests\Api;
 
 use App\Entity\Contractor;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\LosesContractorRaceTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -13,6 +14,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 final class ContractorApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
+    use LosesContractorRaceTrait;
     use ReadsJsonTrait;
 
     private KernelBrowser $client;
@@ -62,6 +64,21 @@ final class ContractorApiTest extends WebTestCase
     {
         yield 'exact name' => [''];
         yield 'name with surrounding spaces' => ['  '];
+    }
+
+    public function testDuplicateCaughtOnlyByTheDatabaseIsTheSameConflict(): void
+    {
+        $token = $this->obtainJwtToken();
+        $name = 'API race '.uniqid();
+        $this->loseTheNextContractorRace($this->client);
+
+        $this->postContractor($name, $token);
+
+        $this->assertDuplicateResponse();
+        self::assertSame(
+            1,
+            $this->em()->getConnection()->fetchOne('SELECT COUNT(*) FROM contractor WHERE name = ?', [$name]),
+        );
     }
 
     private function postContractor(string $name, string $token): void

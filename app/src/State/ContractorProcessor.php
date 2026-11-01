@@ -10,6 +10,7 @@ use App\ApiResource\ContractorResource;
 use App\Entity\Contractor;
 use App\Exception\ContractorException;
 use App\Repository\ContractorRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
@@ -49,7 +50,13 @@ final readonly class ContractorProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException($exception->getMessage(), $exception);
         }
 
-        $this->contractorRepository->save($contractor, flush: true);
+        try {
+            $this->contractorRepository->save($contractor, flush: true);
+        } catch (UniqueConstraintViolationException) {
+            $exception = ContractorException::nameNotUnique();
+
+            throw new ConflictHttpException($exception->getMessage(), $exception);
+        }
 
         return ContractorResource::fromEntity($contractor);
     }

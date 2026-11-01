@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Contractor;
+use App\Exception\ContractorException;
 use App\Form\ContractorType;
 use App\Repository\ContractorRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\Serialize;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[Route('/contractor')]
 class ContractorController extends AbstractController
@@ -38,6 +41,7 @@ class ContractorController extends AbstractController
     public function create(
         Request $request,
         ContractorRepository $contractorRepository,
+        TranslatorInterface $translator,
     ): Contractor|JsonResponse {
         if (!$this->isCsrfTokenValid('contractor-create', $request->headers->get('X-CSRF-Token'))) {
             return new JsonResponse(['error' => 'CSRF'], 403);
@@ -59,7 +63,15 @@ class ContractorController extends AbstractController
 
         /** @var Contractor $contractor */
         $contractor = $form->getData();
-        $contractorRepository->save($contractor, flush: true);
+
+        try {
+            $contractorRepository->save($contractor, flush: true);
+        } catch (UniqueConstraintViolationException) {
+            return new JsonResponse(
+                ['errors' => [$translator->trans(ContractorException::NAME_NOT_UNIQUE, domain: 'validators')]],
+                422,
+            );
+        }
 
         return $contractor;
     }
