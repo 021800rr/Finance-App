@@ -246,7 +246,7 @@ final class ProblemDetailsApiTest extends WebTestCase
      */
     public static function unsupportedAcceptHeaders(): iterable
     {
-        yield 'JSON' => ['application/json'];
+        yield 'XML' => ['application/xml'];
         yield 'Problem JSON only' => ['application/problem+json'];
     }
 
@@ -254,10 +254,77 @@ final class ProblemDetailsApiTest extends WebTestCase
     {
         $this->client->request('POST', '/api/transfers', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
-            'CONTENT_TYPE' => 'application/json',
+            'CONTENT_TYPE' => 'application/xml',
         ], content: '{}');
 
         $this->assertProblem(415, 'http.unsupported_media_type', []);
+    }
+
+    public function testPlainJsonIsAnsweredWithoutJsonLdFields(): void
+    {
+        $this->client->request('GET', '/api/accounts/'.$this->account('Bank1-ROR-PLN')->getId(), server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_ACCEPT' => 'application/json',
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertStringStartsWith(
+            'application/json',
+            (string) $this->client->getResponse()->headers->get('Content-Type'),
+        );
+        $account = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame('Bank1-ROR-PLN', $account['accountNumber'] ?? null);
+        self::assertArrayNotHasKey('@context', $account);
+    }
+
+    public function testPlainJsonRequestCreatesARecord(): void
+    {
+        $name = 'Plain JSON '.uniqid();
+
+        $this->client->request('POST', '/api/contractors', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_ACCEPT' => 'application/json',
+            'CONTENT_TYPE' => 'application/json',
+        ], content: json_encode(['name' => $name], JSON_THROW_ON_ERROR));
+
+        self::assertResponseStatusCodeSame(201);
+        self::assertSame(
+            $name,
+            self::decodeObject((string) $this->client->getResponse()->getContent())['name'] ?? null,
+        );
+    }
+
+    public function testPlainJsonErrorKeepsCodesAndViolations(): void
+    {
+        $this->client->request('POST', '/api/contractors', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_ACCEPT' => 'application/json',
+            'CONTENT_TYPE' => 'application/json',
+        ], content: '{}');
+
+        $problem = $this->assertProblem(422, 'validation.failed', []);
+        $violation = self::rowsAt($problem, 'violations')[0] ?? null;
+        self::assertIsArray($violation);
+        self::assertSame('name', $violation['propertyPath'] ?? null);
+        self::assertSame('contractor.name_not_blank', $violation['code'] ?? null);
+    }
+
+    public function testOpenApiListsPlainJsonOnlyWhereItWorks(): void
+    {
+        $docs = $this->openApiDocs();
+
+        self::assertArrayHasKey(
+            'application/json',
+            self::objectAt($docs, 'paths', '/api/accounts', 'get', 'responses', '200', 'content'),
+        );
+        self::assertArrayHasKey(
+            'application/json',
+            self::objectAt($docs, 'paths', '/api/contractors', 'post', 'requestBody', 'content'),
+        );
+        self::assertSame(
+            ['application/merge-patch+json'],
+            array_keys(self::objectAt($docs, 'paths', '/api/accounts/{id}', 'patch', 'requestBody', 'content')),
+        );
     }
 
     public function testEmptyParamsAreAnObjectNotAList(): void

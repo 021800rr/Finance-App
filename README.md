@@ -50,6 +50,10 @@ web: http://localhost:8081
 swagger: http://localhost:8081/api/docs  
 openapi: http://localhost:8081/api/docs.jsonopenapi
 
+API odpowiada w JSON-LD (domyślnie) albo w zwykłym JSON-ie (`Accept: application/json`). Listy w zwykłym JSON-ie
+to sama tablica, więc `totalItems` i odnośniki do stron (`view`) są dostępne tylko w JSON-LD.
+`PATCH` przyjmuje `application/merge-patch+json`.
+
 ## Bezpieczeństwo
 
 Appka jest jednoosobowa, więc model bezpieczeństwa jest celowo prosty.

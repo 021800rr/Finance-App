@@ -2,6 +2,9 @@ api_platform:
     title: Finance App API
     version: 1.0.0
     description: 'Personal finance API. Properties whose value is null are omitted from responses, so treat a missing property as null.'
+    formats:
+        jsonld: ['application/ld+json']
+        json: ['application/json']
     defaults:
         stateless: false
         # A wrong type gets a violation on its field (422) on every property, all of them at once.
