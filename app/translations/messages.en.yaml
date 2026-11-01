@@ -90,6 +90,8 @@ home:
     set_main: 'Set as main account'
     show: 'Show'
     show_hidden: 'Show hidden'
+    Nasze: 'Our'
+    Matka: 'Mom'
 
 login:
     email: 'E-mail address'

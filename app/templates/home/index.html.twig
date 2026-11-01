@@ -126,7 +126,7 @@
                 </tr>
                 {% for householdName, amount in byHousehold %}
                     <tr {% if householdName == ownFundsHouseholdName %}class="table-secondary"{% endif %}>
-                        <td>{{ householdName }}</td>
+                        <td>{{ ('home.' ~ householdName)|trans }}</td>
                         <td class="text-end fw-bold">
                             {{ amount|money }}
                         </td>

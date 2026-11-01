@@ -90,6 +90,8 @@ home:
     set_main: 'Ustaw jako konto główne'
     show: 'Pokaż'
     show_hidden: 'Pokaż ukryte'
+    Nasze: 'Nasze'
+    Matka: 'Mama'
 
 login:
     email: 'Adres e-mail'
