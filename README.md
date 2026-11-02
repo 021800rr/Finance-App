@@ -118,8 +118,3 @@ walutę.
 **Opłaty stałe / planowanie wydatków cyklicznych** (czynsz, subskrypcje, abonamenty itp). Wystarczy dodać opłaty stałe 
 do systemu i zanim zacznie się nowy miesiąc dorzucić je do konta głównego ("Zaplanuj wydatki").
 
-## Podsumowanie / Strona główna
-
-**Gospodarstwa**
-- **Nasze** — ja i Gosia
-- **Mama** — taki wiek, muszę tym zajmować
