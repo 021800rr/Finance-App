@@ -10,6 +10,7 @@ function prepareController(t) {
                 createUrl: '/contractor/create',
                 msgCreateFailed: 'Błąd przy tworzeniu kontrahenta.',
                 msgCreated: 'Dodano kontrahenta: {name}',
+                msgSessionExpired: 'Sesja wygasła. Zaloguj się ponownie.',
             },
         },
     });
@@ -100,6 +101,30 @@ test('successful creation still selects the returned contractor', async t => {
     assert.deepEqual(controller.showMessage.mock.calls[0].arguments, ['success', 'Dodano kontrahenta: ACME']);
     assert.equal(controller.search.mock.calls.length, 0);
     assert.equal(controller.clearResults.mock.calls.length, 1);
+});
+
+test('an expired session asks to log in again instead of reporting success', async t => {
+    const controller = prepareController(t);
+    const loginPage = new Response('<html>login form</html>', { status: 200 });
+    Object.defineProperty(loginPage, 'redirected', { value: true });
+    t.mock.method(globalThis, 'fetch', async () => loginPage);
+
+    await controller.createContractor('ACME');
+
+    assert.equal(controller.showMessage.mock.calls.length, 1);
+    assert.deepEqual(controller.showMessage.mock.calls[0].arguments, ['error', 'Sesja wygasła. Zaloguj się ponownie.']);
+    assert.equal(controller.hiddenTarget.value, '');
+    assert.equal(controller.search.mock.calls.length, 0);
+});
+
+test('a successful response without an id is an error, not a success', async t => {
+    const controller = prepareController(t);
+    t.mock.method(globalThis, 'fetch', async () => new Response('<html>not JSON</html>', { status: 200 }));
+
+    await controller.createContractor('ACME');
+
+    assert.deepEqual(controller.showMessage.mock.calls[0].arguments, ['error', 'Błąd przy tworzeniu kontrahenta.']);
+    assert.equal(controller.hiddenTarget.value, '');
 });
 
 test('other failures retain the general error message', async t => {

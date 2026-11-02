@@ -216,6 +216,12 @@ export default class extends Controller {
                 body: JSON.stringify({ name })
             });
 
+            // An expired session redirects to the login page, which fetch follows and which answers 200 with HTML.
+            if (res.redirected) {
+                this.showMessage('error', this.message('msgSessionExpired'));
+                return;
+            }
+
             if (res.status === 422) {
                 const data = await res.json().catch(() => null);
                 const errors = Array.isArray(data?.errors)
@@ -245,7 +251,7 @@ export default class extends Controller {
                 return;
             }
 
-            this.showMessage('success', this.message('msgCreatedWithoutId'));
+            this.showMessage('error', this.message('msgCreateFailed'));
         } catch (err) {
             console.error(err);
             this.showMessage('error', this.message('msgNetworkError'));

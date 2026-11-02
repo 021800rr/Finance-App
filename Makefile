@@ -141,6 +141,7 @@ test:
 	docker exec -t finance-php-dev vendor/bin/phpunit --colors=always tests/$(TEST_PATH)
 	docker exec finance-php-dev vendor/bin/phpstan analyse --memory-limit 1G
 	docker exec finance-php-dev vendor/bin/php-cs-fixer fix src
+	docker exec finance-node-dev sh -c 'node --test tests/Frontend/*.test.mjs'
 
 phpstan:
 	docker exec finance-php-dev vendor/bin/phpstan analyse --memory-limit 1G

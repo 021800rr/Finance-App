@@ -22,12 +22,12 @@ contractor_autocomplete:
     confirm_create: 'Add the new contractor "%name%"?'
     create_failed: 'Failed to create the contractor.'
     created: 'Contractor added: %name%'
-    created_without_id: 'Contractor added, but the server did not return an ID.'
     empty_name: 'The name is empty.'
     missing_create_url: 'The contractor creation URL is missing.'
     network_error: 'Network error while creating the contractor.'
     no_name: '(no name)'
     selected: 'Contractor selected: %name%'
+    session_expired: 'Your session has expired. Please log in again.'
 
 error:
     back_home: 'Back to the home page'

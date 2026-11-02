@@ -32,6 +32,29 @@ final class ContractorControllerTest extends WebTestCase
         $this->closeEntityManager();
     }
 
+    public function testAutocompleteReceivesTheSessionExpiredMessage(): void
+    {
+        $crawler = $this->client->request('GET', '/fixed-expense');
+
+        self::assertSame(
+            'Your session has expired. Please log in again.',
+            $crawler->filter('[data-controller~="contractor-autocomplete"]')->attr('data-msg-session-expired'),
+        );
+    }
+
+    public function testCreateWithoutASessionRedirectsToTheLoginPage(): void
+    {
+        $this->client->getCookieJar()->clear();
+
+        $this->client->request('POST', '/contractor/create', server: [
+            'HTTP_ACCEPT' => 'application/json',
+            'CONTENT_TYPE' => 'application/json',
+        ], content: '{"name":"Nobody"}');
+
+        self::assertResponseRedirects('/login');
+        self::assertNull($this->em()->getRepository(Contractor::class)->findOneBy(['name' => 'Nobody']));
+    }
+
     public function testSearchReturnsEmptyArrayForBlankQuery(): void
     {
         $this->client->request('GET', '/contractor/search?q=');

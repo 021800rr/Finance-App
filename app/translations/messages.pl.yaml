@@ -22,12 +22,12 @@ contractor_autocomplete:
     confirm_create: 'Dodać nowego kontrahenta „%name%”?'
     create_failed: 'Błąd przy tworzeniu kontrahenta.'
     created: 'Dodano kontrahenta: %name%'
-    created_without_id: 'Dodano kontrahenta, ale serwer nie zwrócił ID.'
     empty_name: 'Nazwa jest pusta.'
     missing_create_url: 'Brak adresu tworzenia kontrahenta.'
     network_error: 'Błąd sieci przy tworzeniu kontrahenta.'
     no_name: '(brak nazwy)'
     selected: 'Wybrano kontrahenta: %name%'
+    session_expired: 'Sesja wygasła. Zaloguj się ponownie.'
 
 error:
     back_home: 'Wróć na stronę główną'
