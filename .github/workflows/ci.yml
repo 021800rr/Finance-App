@@ -82,6 +82,9 @@ jobs:
           npm ci --no-audit --no-fund
           npm run build
 
+      - name: Front-end tests
+        run: node --test tests/Frontend/*.test.mjs
+
       # The JWT key pair is git-ignored, so the login tests need a fresh one.
       - name: Generate the JWT key pair
         run: php bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction
