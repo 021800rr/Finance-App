@@ -6,6 +6,7 @@ namespace App\Repository;
 
 use App\Entity\Account;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -61,6 +62,22 @@ final class AccountRepository extends ServiceEntityRepository
     public function findMain(): ?Account
     {
         return $this->findOneBy(['isMain' => true]);
+    }
+
+    /**
+     * Like findMain(), but holds a row lock until the surrounding transaction ends (Doctrine requires one):
+     * another caller waits here, and then sees everything this transaction has committed.
+     */
+    public function findMainForUpdate(): ?Account
+    {
+        /** @var Account|null $account */
+        $account = $this->createQueryBuilder('a')
+            ->where('a.isMain = true')
+            ->getQuery()
+            ->setLockMode(LockMode::PESSIMISTIC_WRITE)
+            ->getOneOrNullResult();
+
+        return $account;
     }
 
     /**

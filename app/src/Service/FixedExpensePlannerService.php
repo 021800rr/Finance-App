@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\FixedExpense;
 use App\Exception\FixedExpensePlanningException;
@@ -28,55 +29,102 @@ final readonly class FixedExpensePlannerService
      */
     public function planNextMonth(): FixedExpensePlanResult
     {
-        $account = $this->accountRepository->findMain();
+        return $this->entityManager->wrapInTransaction(fn (): FixedExpensePlanResult => $this->plan());
+    }
+
+    /**
+     * @throws \DateMalformedStringException
+     * @throws FixedExpensePlanningException
+     */
+    private function plan(): FixedExpensePlanResult
+    {
+        // A concurrent planning waits here until this one commits, so its duplicate check sees these operations.
+        $account = $this->accountRepository->findMainForUpdate();
+        $this->validateAccount($account);
+
+        $targetMonth = new \DateTimeImmutable('first day of next month');
+        $year = (int) $targetMonth->format('Y');
+        $month = (int) $targetMonth->format('m');
+
+        $fixedExpenses = $this->fixedExpenseRepository->findAllOrdered();
+
+        $operationsToCreate = $this->planFixedExpenses($fixedExpenses, $account, $year, $month);
+
+        $this->persistAccountOperations($operationsToCreate, $account);
+
+        return new FixedExpensePlanResult($targetMonth, count($operationsToCreate));
+    }
+
+    /**
+     * @phpstan-assert Account $account
+     *
+     * @throws FixedExpensePlanningException
+     */
+    private function validateAccount(?Account $account): void
+    {
         if (!$account) {
             throw FixedExpensePlanningException::noMainAccount();
         }
 
-        if (!$account->getHousehold()->isOwnFunds()) {
-            throw FixedExpensePlanningException::mainAccountNotOwn($account->getAccountNumber(), $account->getHousehold()->getName());
+        $household = $account->getHousehold();
+        if (!$household->isOwnFunds()) {
+            throw FixedExpensePlanningException::mainAccountNotOwn($account->getAccountNumber(), $household->getName());
         }
 
         // Same rule as for operations and transfers: a hidden account takes no new operations.
         if ($account->isHidden()) {
             throw FixedExpensePlanningException::mainAccountHidden($account->getAccountNumber());
         }
+    }
 
-        $targetMonth = new \DateTimeImmutable('first day of this month')->modify('+1 month');
-        $year = (int) $targetMonth->format('Y');
-        $month = (int) $targetMonth->format('m');
-
-        $fixedExpenses = $this->fixedExpenseRepository->findAllOrdered();
-
-        /** @var list<array{0: FixedExpense, 1: \DateTimeImmutable}> $operationsToCreate */
+    /**
+     * Checks every expense before anything is saved, so a single refusal leaves the whole month unplanned.
+     *
+     * @param FixedExpense[] $fixedExpenses
+     *
+     * @return list<array{FixedExpense, \DateTimeImmutable}> each expense with the date of its operation
+     *
+     * @throws FixedExpensePlanningException
+     */
+    private function planFixedExpenses(array $fixedExpenses, Account $account, int $year, int $month): array
+    {
+        $accountCurrency = $account->getCurrencyCode();
         $operationsToCreate = [];
 
         foreach ($fixedExpenses as $expense) {
-            if ($expense->getCurrency()->getCode() !== $account->getCurrencyCode()) {
-                throw FixedExpensePlanningException::currencyMismatch($expense->getCurrency()->getCode(), $account->getAccountNumber(), $account->getCurrencyCode());
+            $currency = $expense->getCurrency()->getCode();
+            if ($currency !== $accountCurrency) {
+                $accountNumber = $account->getAccountNumber();
+
+                throw FixedExpensePlanningException::currencyMismatch($currency, $accountNumber, $accountCurrency);
             }
 
-            $date = \DateTimeImmutable::createFromFormat(
-                'Y-m-d H:i:s',
-                sprintf('%04d-%02d-%02d 00:00:00', $year, $month, $expense->getDay())
-            );
+            $date = new \DateTimeImmutable()->setDate($year, $month, $expense->getDay())->setTime(0, 0);
 
-            if (!$date) {
-                continue;
-            }
-
+            $contractor = $expense->getContractor();
             if ($this->accountOperationRepository->existsForContractorAndDate(
                 $account,
-                $expense->getContractor(),
+                $contractor,
                 $date,
                 $expense->getAmount()
             )) {
-                throw FixedExpensePlanningException::suspectedDuplicate($expense->getContractor()->getName(), $expense->getAmountAsMoney()->toDecimalString(), $date->format('Y-m-d'));
+                $amount = $expense->getAmountAsMoney()->toDecimalString();
+                $day = $date->format('Y-m-d');
+
+                throw FixedExpensePlanningException::suspectedDuplicate($contractor->getName(), $amount, $day);
             }
 
             $operationsToCreate[] = [$expense, $date];
         }
 
+        return $operationsToCreate;
+    }
+
+    /**
+     * @param list<array{FixedExpense, \DateTimeImmutable}> $operationsToCreate each expense with its operation date
+     */
+    private function persistAccountOperations(array $operationsToCreate, Account $account): void
+    {
         foreach ($operationsToCreate as [$expense, $date]) {
             $operation = new AccountOperation(
                 $account,
@@ -89,9 +137,5 @@ final readonly class FixedExpensePlannerService
 
             $this->accountOperationRepository->save($operation);
         }
-
-        $this->entityManager->flush();
-
-        return new FixedExpensePlanResult($targetMonth, count($operationsToCreate));
     }
 }
