@@ -7,6 +7,7 @@ namespace App\OpenApi;
 use ApiPlatform\OpenApi\Factory\OpenApiFactoryInterface;
 use ApiPlatform\OpenApi\Model\MediaType;
 use ApiPlatform\OpenApi\Model\Operation;
+use ApiPlatform\OpenApi\Model\Parameter;
 use ApiPlatform\OpenApi\Model\PathItem;
 use ApiPlatform\OpenApi\Model\Response;
 use ApiPlatform\OpenApi\OpenApi;
@@ -28,6 +29,14 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         Every error is [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457.html)
         (`Content-Type: application/problem+json`). Build your own message from `errorCode` and `params`;
         `detail` is a plain English sentence for curl/Postman and may change wording at any time.
+
+        Ask for `application/ld+json` or `application/json` in `Accept`, also for errors: `application/problem+json`
+        alone gives 406, because it is the type of errors only. With `application/ld+json` an error also has the
+        JSON-LD fields `@context`, `@id` and `@type`.
+
+        `@id` is the address of the general error for the status, e.g. `/api/errors/409`. See
+        `GET /api/errors/{status}` below for how to call it. A client does not need it: read `errorCode` from the
+        error response itself.
 
         - `errorCode`: stable code of the problem; `type` is `urn:finance-app:problem:` followed by it.
         - `params`: values for the message, always an object (`{}` when there are none), values are strings.
@@ -81,6 +90,43 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         wording changes of the status texts.
         MD;
 
+    private const string ERROR_ADDRESS_RESPONSE = 'The general description of this HTTP status. The response has '
+        .'status 200: this address describes an error, it does not report one.';
+
+    private const string ERROR_ADDRESS_DESCRIPTION = <<<'MD'
+        Send your JWT token, as for every other address:
+
+        ```bash
+        curl http://localhost:8081/api/errors/409 \
+          -H "Authorization: Bearer $TOKEN" \
+          -H 'Accept: application/ld+json'
+        ```
+
+        It describes only the HTTP status (`errorCode` `http.conflict` for 409), not the specific problem.
+        MD;
+
+    private const string AUTH_ERROR_DESCRIPTION = 'The JWT token is missing, invalid or expired '
+        .'(errorCode auth.token_missing, auth.token_invalid or auth.token_expired).';
+
+    private const string LOGIN_ERROR_DESCRIPTION = 'Wrong email or password, or the login is locked after too many '
+        .'failed attempts (errorCode auth.invalid_credentials or auth.too_many_login_attempts).';
+
+    private const string CONTRACTOR_RACE_DESCRIPTION = 'Another request stored the same new contractorName at the '
+        .'same moment (errorCode contractor.name_not_unique). Nothing was stored; send the request again.';
+
+    /** "METHOD path" => what the conflict means */
+    private const array CONFLICTS = [
+        'POST /api/contractors' => 'A contractor with this name already exists (errorCode contractor.name_not_unique).',
+        'POST /api/account_operations' => self::CONTRACTOR_RACE_DESCRIPTION,
+        'PATCH /api/account_operations/{id}' => self::CONTRACTOR_RACE_DESCRIPTION,
+        'POST /api/fixed_expenses' => self::CONTRACTOR_RACE_DESCRIPTION,
+        'PATCH /api/fixed_expenses/{id}' => self::CONTRACTOR_RACE_DESCRIPTION,
+        'PATCH /api/accounts/{id}' => 'Another request changed the main account at the same moment '
+            .'(errorCode account.main_changed_concurrently).',
+        'POST /api/fixed_expenses/plan' => 'The expenses cannot be planned (errorCode fixed_expense.plan_*; '
+            .'see "Errors" in the API description). Nothing was created.',
+    ];
+
     public function __construct(private OpenApiFactoryInterface $decorated)
     {
     }
@@ -98,15 +144,78 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
             }
         }
 
+        // API Platform provides this address, but leaves it out of the documentation.
+        $openApi->getPaths()->addPath('/api/errors/{status}', new PathItem(get: new Operation(
+            operationId: 'api_errors_get',
+            tags: ['Error'],
+            responses: ['200' => new Response(self::ERROR_ADDRESS_RESPONSE, new \ArrayObject([
+                'application/ld+json' => ['schema' => ['$ref' => '#/components/schemas/Error.jsonld']],
+                'application/json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
+            ]))],
+            summary: 'Describes an HTTP error status. This is the address in the "@id" of an error.',
+            description: self::ERROR_ADDRESS_DESCRIPTION,
+            parameters: [new Parameter(
+                name: 'status',
+                in: 'path',
+                description: 'HTTP status of the error, e.g. 409.',
+                required: true,
+                schema: ['type' => 'integer'],
+                example: 409,
+            )],
+            security: [['JWT' => []]],
+        )));
+
         foreach ($openApi->getPaths()->getPaths() as $path => $pathItem) {
             if ($pathItem instanceof PathItem) {
-                $openApi->getPaths()->addPath($path, $this->withStatusExamples($pathItem));
+                $openApi->getPaths()->addPath($path, $this->withStatusExamples($this->withErrors($pathItem, $path)));
             }
         }
 
         $info = $openApi->getInfo();
 
         return $openApi->withInfo($info->withDescription($info->getDescription().self::ERRORS_DESCRIPTION));
+    }
+
+    /**
+     * Errors that API Platform cannot know about: 401 comes from the firewall, 409 from the processors.
+     */
+    private function withErrors(PathItem $pathItem, string $path): PathItem
+    {
+        return $pathItem
+            ->withGet($this->withOperationErrors($pathItem->getGet(), 'GET '.$path))
+            ->withPost($this->withOperationErrors($pathItem->getPost(), 'POST '.$path))
+            ->withPatch($this->withOperationErrors($pathItem->getPatch(), 'PATCH '.$path))
+            ->withDelete($this->withOperationErrors($pathItem->getDelete(), 'DELETE '.$path));
+    }
+
+    private function withOperationErrors(?Operation $operation, string $route): ?Operation
+    {
+        if (null === $operation) {
+            return null;
+        }
+
+        $responses = $operation->getResponses() ?? [];
+        if ([] !== ($operation->getSecurity() ?? [])) {
+            $responses['401'] = $this->errorResponse(self::AUTH_ERROR_DESCRIPTION);
+        }
+        if ('POST /api/login_check' === $route) {
+            $responses['401'] = $this->errorResponse(self::LOGIN_ERROR_DESCRIPTION);
+        }
+        if (isset(self::CONFLICTS[$route])) {
+            $responses['409'] = $this->errorResponse(self::CONFLICTS[$route]);
+        }
+        ksort($responses);
+
+        return $operation->withResponses($responses);
+    }
+
+    private function errorResponse(string $description): Response
+    {
+        return new Response($description, new \ArrayObject([
+            'application/ld+json' => ['schema' => ['$ref' => '#/components/schemas/Error.jsonld']],
+            'application/problem+json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
+            'application/json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
+        ]));
     }
 
     /**
@@ -198,7 +307,11 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
 
     private function exampleErrorCode(int $status): string
     {
-        return 422 === $status ? 'validation.failed' : ProblemResponse::httpErrorCode($status);
+        return match ($status) {
+            401 => 'auth.token_missing',
+            422 => 'validation.failed',
+            default => ProblemResponse::httpErrorCode($status),
+        };
     }
 
     /**
@@ -256,6 +369,9 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
      */
     private function properties(array $properties): array
     {
+        // API Platform documents it, but the responses never contain it.
+        unset($properties['instance']);
+
         $properties['type'] = [
             'type' => 'string',
             'readOnly' => true,
@@ -290,8 +406,10 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
                     .'"validation.invalid_type".',
             ];
             $items['properties']['params'] = $this->paramsSchema(
-                'Values for the message: only "limit", "min", "max"; never the submitted value.',
+                'Values for the message: only "limit", "min", "max", "type"; never the submitted value.',
             );
+            // API Platform documents them, but the responses never contain them.
+            unset($items['properties']['hint'], $items['properties']['payload']);
             $items['required'] = ['propertyPath', 'message', 'code', 'params'];
             $violations['items'] = $items;
             $properties['violations'] = $violations;

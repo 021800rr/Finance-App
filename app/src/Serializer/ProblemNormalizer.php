@@ -55,6 +55,11 @@ final class ProblemNormalizer implements NormalizerInterface, NormalizerAwareInt
             $normalized[$key] = $value;
         }
 
+        // API Platform's own "@id" is an id of the violation list that leads nowhere.
+        if ($data instanceof ValidationException && isset($normalized['@id'])) {
+            $normalized['@id'] = '/api/errors/'.$status;
+        }
+
         if ($data instanceof ValidationException && is_array($normalized['violations'] ?? null)) {
             $normalized['violations'] = ViolationCodes::apply(
                 $normalized['violations'],

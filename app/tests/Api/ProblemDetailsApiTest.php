@@ -220,6 +220,97 @@ final class ProblemDetailsApiTest extends WebTestCase
         self::assertSame('This record already exists.', $problem['detail'] ?? null);
     }
 
+    public function testValidationErrorIdIsAnAddressThatExists(): void
+    {
+        $this->postTransfer('{}');
+
+        $problem = $this->assertProblem(422, 'validation.failed', []);
+        self::assertSame('/api/errors/422', $problem['@id'] ?? null);
+
+        $this->client->request('GET', '/api/errors/422', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+        ]);
+        self::assertResponseIsSuccessful();
+    }
+
+    public function testOpenApiDocumentsAuthenticationErrorsOnEveryProtectedOperation(): void
+    {
+        $docs = $this->openApiDocs();
+        $checked = 0;
+
+        foreach (self::objectAt($docs, 'paths') as $path => $methods) {
+            self::assertIsArray($methods);
+            foreach ($methods as $method => $operation) {
+                if (!is_array($operation) || [] === ($operation['security'] ?? [])) {
+                    continue;
+                }
+
+                $responses = $operation['responses'] ?? null;
+                self::assertIsArray($responses, "{$method} {$path}");
+                self::assertArrayHasKey('401', $responses, "{$method} {$path}");
+                ++$checked;
+            }
+        }
+
+        self::assertGreaterThan(30, $checked);
+        self::assertArrayHasKey('401', self::objectAt($docs, 'paths', '/api/login_check', 'post', 'responses'));
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string}>
+     */
+    public static function operationsWithAConflict(): iterable
+    {
+        yield 'new contractor' => ['/api/contractors', 'post', 'contractor.name_not_unique'];
+        yield 'new operation' => ['/api/account_operations', 'post', 'contractor.name_not_unique'];
+        yield 'changed operation' => ['/api/account_operations/{id}', 'patch', 'contractor.name_not_unique'];
+        yield 'new fixed expense' => ['/api/fixed_expenses', 'post', 'contractor.name_not_unique'];
+        yield 'changed fixed expense' => ['/api/fixed_expenses/{id}', 'patch', 'contractor.name_not_unique'];
+        yield 'main account' => ['/api/accounts/{id}', 'patch', 'account.main_changed_concurrently'];
+        yield 'planning' => ['/api/fixed_expenses/plan', 'post', 'fixed_expense.plan_'];
+    }
+
+    #[DataProvider('operationsWithAConflict')]
+    public function testOpenApiDocumentsConflicts(string $path, string $method, string $code): void
+    {
+        $conflict = self::objectAt($this->openApiDocs(), 'paths', $path, $method, 'responses', '409');
+
+        self::assertIsString($conflict['description'] ?? null);
+        self::assertStringContainsString($code, $conflict['description']);
+    }
+
+    public function testOpenApiDescribesOnlyFieldsTheErrorsHave(): void
+    {
+        $docs = $this->openApiDocs();
+        $schemas = self::objectAt($docs, 'components', 'schemas');
+
+        self::assertArrayNotHasKey('instance', self::objectAt($schemas, 'Error', 'properties'));
+        self::assertArrayNotHasKey('instance', self::objectAt($schemas, 'ConstraintViolation', 'properties'));
+        foreach (['"instance"', '"hint"', '"payload"'] as $field) {
+            self::assertStringNotContainsString($field, (string) json_encode($schemas), $field);
+        }
+        self::assertStringContainsString('alone gives 406', self::stringAt($docs, 'info', 'description'));
+        self::assertStringContainsString('GET /api/errors/{status}', self::stringAt($docs, 'info', 'description'));
+    }
+
+    public function testOpenApiDocumentsHowToCallTheErrorAddressAndItWorks(): void
+    {
+        $operation = self::objectAt($this->openApiDocs(), 'paths', '/api/errors/{status}', 'get');
+
+        self::assertSame(['status'], array_column(self::rowsAt($operation, 'parameters'), 'name'));
+        self::assertStringContainsString('curl', self::stringAt($operation, 'description'));
+        self::assertArrayHasKey('401', self::objectAt($operation, 'responses'));
+
+        $this->client->request('GET', '/api/errors/409', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_ACCEPT' => 'application/ld+json',
+        ]);
+
+        self::assertResponseStatusCodeSame(200);
+        $error = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame('http.conflict', self::stringAt($error, 'errorCode'));
+    }
+
     #[DataProvider('badBodies')]
     public function testBodyThatIsNotAJsonObjectIsABadRequest(string $body, string $detail): void
     {

@@ -54,5 +54,7 @@ services:
 
     App\OpenApi\ProblemDetailsDecorator:
         decorates: 'api_platform.openapi.factory'
+        # The outermost one: it also documents what the others add, e.g. LexikJWT's /api/login_check.
+        decoration_priority: -100
         arguments: [ '@.inner' ]
         autoconfigure: false
