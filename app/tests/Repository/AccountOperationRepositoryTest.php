@@ -77,7 +77,9 @@ final class AccountOperationRepositoryTest extends KernelTestCase
 
         $result = $this->repository->findByAccountOrderedPaged($account, 2, 1);
 
-        self::assertCount(2, $result);
+        // Newest first, so skipping one leaves the operations from one and two days ago.
+        $descriptions = array_map(static fn (AccountOperation $o): ?string => $o->getDescription(), $result);
+        self::assertSame(['op1', 'op2'], $descriptions);
     }
 
     public function testCountByAccountReturnsCorrectCount(): void

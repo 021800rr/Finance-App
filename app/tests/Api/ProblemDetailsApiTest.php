@@ -383,7 +383,7 @@ final class ProblemDetailsApiTest extends WebTestCase
             'CONTENT_TYPE' => 'application/ld+json',
         ]);
 
-        self::assertNotSame(400, $this->client->getResponse()->getStatusCode());
+        self::assertResponseStatusCodeSame(201);
     }
 
     #[DataProvider('unsupportedAcceptHeaders')]

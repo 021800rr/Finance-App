@@ -49,6 +49,7 @@ final class HomeControllerTest extends WebTestCase
 
         $this->client->request('GET', '/');
 
+        self::assertResponseIsSuccessful();
         self::assertSelectorNotExists('form[action*="' . $account->getId() . '/toggle-hidden"]');
     }
 

@@ -109,13 +109,23 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
 
         $this->createFixedExpenseWithContractor(day: 10, amount: -15000, contractor: $contractor);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessageMatches('/Suspected duplicate/');
+        $this->assertPlanningIsRefusedWith('/Suspected duplicate/');
+    }
 
-        $this->planner->planNextMonth();
+    public function testPlanNextMonthCreatesNothingWhenOnlyALaterExpenseIsADuplicate(): void
+    {
+        $targetMonth = new DateTimeImmutable('first day of next month');
+        $contractor = $this->createContractor();
+        $duplicateDate = $this->buildExpectedDate((int) $targetMonth->format('Y'), (int) $targetMonth->format('m'), 20);
+        $this->em()->persist(
+            new AccountOperation($this->mainAccount, $contractor, $duplicateDate, -15000, $this->getPlnCurrency()),
+        );
+        $this->em()->flush();
+        // Checked first, because expenses are planned by day: this one alone could be booked.
+        $this->createFixedExpense(day: 5, amount: -5000, description: 'New one');
+        $this->createFixedExpenseWithContractor(day: 20, amount: -15000, contractor: $contractor);
 
-        $operations = $this->em()->getRepository(AccountOperation::class)->findAll();
-        self::assertCount(1, $operations);
+        $this->assertPlanningIsRefusedWith('/Suspected duplicate/');
     }
 
     public function testPlanNextMonthRefusesAMainAccountInAnotherCurrencyThanTheFixedExpenses(): void

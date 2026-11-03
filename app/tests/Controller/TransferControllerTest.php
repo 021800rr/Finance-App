@@ -102,6 +102,7 @@ final class TransferControllerTest extends WebTestCase
     {
         $this->client->request('GET', '/transfer/new');
 
+        self::assertResponseIsSuccessful();
         self::assertSelectorNotExists('[name="transfer[contractor]"]');
     }
 

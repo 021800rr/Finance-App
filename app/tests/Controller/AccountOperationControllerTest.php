@@ -639,26 +639,28 @@ final class AccountOperationControllerTest extends WebTestCase
     public function testGoToOtherSideRedirectsToRelatedOperationAccount(): void
     {
         $account = $this->createAccount();
+        $otherAccount = $this->createAccount();
 
         $contractor = new Contractor('Test Contractor ' . uniqid());
         $this->em()->persist($contractor);
 
-        $transactionUuid = Uuid::v7();
+        $uuid = Uuid::v7();
 
         $pln = $this->em()->getRepository(Currency::class)->find(Currencies::SETTLEMENT_CURRENCY_CODE);
         self::assertNotNull($pln, 'PLN currency must exist in fixtures.');
 
-        $opOut = new AccountOperation($account, $contractor, new DateTimeImmutable(), -10000, $pln, transactionUuid: $transactionUuid);
+        $today = new DateTimeImmutable();
+        $opOut = new AccountOperation($account, $contractor, $today, -10000, $pln, transactionUuid: $uuid);
         $this->em()->persist($opOut);
 
-        $opIn = new AccountOperation($account, $contractor, new DateTimeImmutable(), 10000, $pln, transactionUuid: $transactionUuid);
+        $opIn = new AccountOperation($otherAccount, $contractor, $today, 10000, $pln, transactionUuid: $uuid);
         $this->em()->persist($opIn);
 
         $this->em()->flush();
 
         $this->client->request('GET', '/operation/' . $opOut->getId() . '/go-to-other-side');
 
-        self::assertResponseRedirects('/account/' . $account->getId() . '/operations?highlight=' . $opIn->getId());
+        self::assertResponseRedirects('/account/'.$otherAccount->getId().'/operations?highlight='.$opIn->getId());
     }
 
     private function createHiddenAccount(): Account

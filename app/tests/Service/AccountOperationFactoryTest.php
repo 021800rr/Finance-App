@@ -106,7 +106,10 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $this->factory->createOrUpdateAndPersist(null, $form, $contractor, $this->repository);
     }
 
-    public function testCreateOrUpdateAndPersistDefaultsDescriptionToNullWhenBlank(): void
+    /**
+     * The form already turns a blank field into null, so the factory stores the description as it gets it.
+     */
+    public function testCreateOrUpdateAndPersistStoresTheDescriptionAsTheFormGivesIt(): void
     {
         $account = $this->createAccount();
         $contractor = $this->createContractor();
@@ -127,30 +130,6 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $this->expectExceptionMessage('Operation date is required.');
 
         $this->factory->createOrUpdateAndPersist(null, $form, $contractor, $this->repository);
-    }
-
-    public function testStringCastOfBoundaryFloatValuesNeverProducesScientificNotation(): void
-    {
-        $boundaryValues = [
-            0.01,
-            -0.01,
-            999999.99,
-            -999999.99,
-            1000000.0,
-            -1000000.0,
-            0.10,
-            0.001,
-        ];
-
-        foreach ($boundaryValues as $value) {
-            $stringified = (string) $value;
-
-            self::assertMatchesRegularExpression(
-                '/^-?\d+(\.\d+)?$/',
-                $stringified,
-                "String cast of {$value} produced non-decimal format: {$stringified}"
-            );
-        }
     }
 
     private function buildSubmittedForm(

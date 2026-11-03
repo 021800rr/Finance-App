@@ -76,6 +76,10 @@ final class FixedExpenseControllerTest extends WebTestCase
         ]);
 
         self::assertResponseRedirects('/fixed-expense');
+        $saved = $this->em()->getRepository(FixedExpense::class)->findOneBy(['contractor' => $contractor]);
+        self::assertNotNull($saved);
+        self::assertSame(10, $saved->getDay());
+        self::assertSame(-15000, $saved->getAmount());
     }
 
     #[DataProvider('invalidDays')]
@@ -486,7 +490,9 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testPlanCreatesOperationsForNextMonthWithValidCsrfToken(): void
     {
-        $this->createFixedExpenseInDatabase();
+        $fixedExpense = $this->createFixedExpenseInDatabase();
+        $mainAccount = $this->em()->getRepository(Account::class)->findOneBy(['isMain' => true]);
+        self::assertNotNull($mainAccount, 'Fixtures must provide a main account.');
 
         $crawler = $this->client->request('GET', '/fixed-expense');
         $csrfToken = $crawler->filter('form[action*="/fixed-expense/plan"] input[name="_token"]')->attr('value');
@@ -495,7 +501,17 @@ final class FixedExpenseControllerTest extends WebTestCase
             '_token' => $csrfToken,
         ]);
 
-        self::assertResponseRedirects();
+        self::assertResponseRedirects('/account/'.$mainAccount->getId().'/operations');
+        $operations = $this->em()->getRepository(AccountOperation::class)->findBy([
+            'contractor' => $fixedExpense->getContractor(),
+        ]);
+        self::assertCount(1, $operations);
+        self::assertSame($mainAccount->getId(), $operations[0]->getAccount()->getId());
+        self::assertSame(-5000, $operations[0]->getAmount());
+        self::assertSame(
+            new \DateTimeImmutable('first day of next month')->format('Y-m').'-10',
+            $operations[0]->getOperationDate()->format('Y-m-d'),
+        );
     }
 
     public function testPlanShowsFlashMessageWhenDuplicateDetected(): void

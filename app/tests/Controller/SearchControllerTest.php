@@ -11,6 +11,7 @@ use App\Entity\Bank;
 use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
+use App\Service\Paginator;
 use App\Tests\DatabaseTestTrait;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -48,7 +49,7 @@ final class SearchControllerTest extends WebTestCase
         $this->client->request('GET', '/search?q=');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorNotExists('table tbody tr[data-operation-id]');
+        self::assertSelectorNotExists('table tbody [data-operation-id]');
     }
 
     public function testIndexFindsMatchingOperationByDescription(): void
@@ -64,18 +65,29 @@ final class SearchControllerTest extends WebTestCase
 
     public function testIndexReturnsNoResultsForNonMatchingQuery(): void
     {
-        $this->createAccount();
+        $this->createOperation($this->createAccount(), 15000, 'Something else');
+        $query = 'nothing-'.uniqid();
 
-        $this->client->request('GET', '/search?q=' . uniqid());
+        $this->client->request('GET', '/search', ['q' => $query]);
 
         self::assertResponseIsSuccessful();
+        self::assertSelectorNotExists('table tbody [data-operation-id]');
+        self::assertSelectorTextContains('table tbody', sprintf('No results found for "%s"', $query));
     }
 
     public function testIndexRespectsPageParameter(): void
     {
-        $this->client->request('GET', '/search?q=test&page=2');
+        $marker = 'paged-'.uniqid();
+        $account = $this->createAccount();
+        for ($i = 0; $i < Paginator::DEFAULT_PER_PAGE + 2; ++$i) {
+            $this->createOperation($account, 15000, "{$marker} {$i}");
+        }
+
+        $this->client->request('GET', '/search', ['q' => $marker, 'page' => '2']);
 
         self::assertResponseIsSuccessful();
+        self::assertSelectorCount(2, 'table tbody [data-operation-id]');
+        self::assertSelectorTextContains('.pagination', '2 / 2');
     }
 
     public function testLongNumericQueryFindsMatchingDescription(): void
