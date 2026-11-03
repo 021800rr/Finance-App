@@ -16,7 +16,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CurrencyExchangeRateRepository::class)]
 #[ORM\Table(name: 'currency_exchange_rate')]
-#[ORM\Index(name: 'idx_currency_exchange_rate_bank', columns: ['bank_id'])]
+#[ORM\Index(
+    name: 'idx_currency_exchange_rate_bank_date',
+    columns: ['bank_id', 'currency_code', 'rate_date', 'id'],
+)]
 #[ORM\Index(name: 'idx_currency_exchange_rate_currency', columns: ['currency_code'])]
 class CurrencyExchangeRate
 {

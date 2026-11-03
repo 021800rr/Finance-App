@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AccountOperationRepository::class)]
 #[ORM\Table(name: 'account_operation')]
-#[ORM\Index(name: 'idx_account_operation_account', columns: ['account_id'])]
+#[ORM\Index(name: 'idx_account_operation_account_date', columns: ['account_id', 'operation_date', 'id'])]
 #[ORM\Index(name: 'idx_account_operation_contractor', columns: ['contractor_id'])]
 #[ORM\Index(name: 'idx_account_operation_currency', columns: ['currency_code'])]
 #[ORM\Index(name: 'idx_account_operation_transaction_uuid', columns: ['transaction_uuid'])]

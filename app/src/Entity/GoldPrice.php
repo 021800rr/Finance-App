@@ -16,7 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: GoldPriceRepository::class)]
 #[ORM\Table(name: 'gold_price')]
-#[ORM\Index(name: 'idx_gold_price_gold_asset', columns: ['gold_asset_id'])]
+#[ORM\Index(name: 'idx_gold_price_asset_date', columns: ['gold_asset_id', 'price_date', 'id'])]
 #[ORM\Index(name: 'idx_gold_price_currency', columns: ['currency_code'])]
 class GoldPrice
 {
