@@ -12,7 +12,6 @@ use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
 use App\ValueObject\Money;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CurrencyExchangeRateRepository::class)]
 #[ORM\Table(name: 'currency_exchange_rate')]
@@ -40,12 +39,10 @@ class CurrencyExchangeRate
     private Currency $currency;
 
     #[ORM\Column(name: 'rate_date', type: 'date_immutable')]
-    #[Assert\NotBlank(message: 'common.date_not_blank')]
     #[BusinessDate]
     private \DateTimeImmutable $rateDate;
 
     #[ORM\Column(name: 'rate_to_pln_minor_units', type: 'bigint')]
-    #[Assert\Range(notInRangeMessage: 'currency_exchange_rate.rate_out_of_range', min: 1, max: 999999)]
     private int $rateToPln;
 
     public function __construct(Bank $bank, Currency $currency, \DateTimeImmutable $rateDate, int $rateToPln)

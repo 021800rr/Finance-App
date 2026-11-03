@@ -8,7 +8,6 @@ use App\Entity\Trait\BlankStringGuardTrait;
 use App\Entity\Trait\TimestampTrait;
 use App\Repository\GoldFormRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: GoldFormRepository::class)]
 #[ORM\Table(name: 'gold_form')]
@@ -24,8 +23,6 @@ class GoldForm
     private int $id;
 
     #[ORM\Column(length: 50)]
-    #[Assert\NotBlank(message: 'gold_form.name_not_blank')]
-    #[Assert\Length(min: 2, max: 50, minMessage: 'gold_form.name_min_length', maxMessage: 'gold_form.name_max_length')]
     private string $name;
 
     public function __construct(string $name)

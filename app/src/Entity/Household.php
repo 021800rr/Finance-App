@@ -8,7 +8,6 @@ use App\Entity\Trait\BlankStringGuardTrait;
 use App\Entity\Trait\TimestampTrait;
 use App\Repository\HouseholdRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: HouseholdRepository::class)]
 #[ORM\Table(name: 'household')]
@@ -24,8 +23,6 @@ class Household
     private int $id;
 
     #[ORM\Column(length: 100)]
-    #[Assert\NotBlank(message: 'household.name_not_blank')]
-    #[Assert\Length(min: 2, max: 100, minMessage: 'household.name_min_length', maxMessage: 'household.name_max_length')]
     private string $name;
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]

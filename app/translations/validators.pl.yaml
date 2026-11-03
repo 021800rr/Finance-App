@@ -3,24 +3,15 @@ account:
     hidden_not_null: 'Określ, czy konto jest ukryte (true lub false).'
     hidden_not_selectable: 'To konto jest ukryte. Wybierz konto, które nie jest ukryte.'
     is_main_must_be_true: 'Jedyna dozwolona wartość to true. Jeśli nie chcesz ustawić tego konta jako głównego, nie wysyłaj tego pola.'
-    number_max_length: 'Numer konta może mieć najwyżej 50 znaków.'
-    number_min_length: 'Numer konta musi mieć co najmniej 1 znak.'
-    number_not_blank: 'Podaj numer konta.'
 
 account_operation:
     not_found: 'Ta operacja nie istnieje.'
 
 account_type:
     not_found: 'Ten typ konta nie istnieje.'
-    name_max_length: 'Nazwa typu konta może mieć najwyżej 50 znaków.'
-    name_min_length: 'Nazwa typu konta musi mieć co najmniej 2 znaki.'
-    name_not_blank: 'Podaj nazwę typu konta.'
 
 bank:
     not_found: 'Ten bank nie istnieje.'
-    name_max_length: 'Nazwa banku może mieć najwyżej 100 znaków.'
-    name_min_length: 'Nazwa banku musi mieć co najmniej 2 znaki.'
-    name_not_blank: 'Podaj nazwę banku.'
 
 common:
     amount_cannot_be_zero: 'Kwota nie może być równa zero.'
@@ -46,8 +37,6 @@ contractor:
 
 currency:
     not_found: 'Ta waluta nie istnieje.'
-    code_invalid_format: 'Podaj poprawny kod waluty.'
-    code_not_blank: 'Podaj kod waluty.'
 
 currency_exchange_rate:
     not_found: 'Ten kurs nie istnieje.'
@@ -77,9 +66,6 @@ gold_asset:
 
 gold_form:
     not_found: 'Ta forma złota nie istnieje.'
-    name_max_length: 'Nazwa formy złota może mieć najwyżej 50 znaków.'
-    name_min_length: 'Nazwa formy złota musi mieć co najmniej 2 znaki.'
-    name_not_blank: 'Podaj nazwę formy złota.'
 
 gold_price:
     not_found: 'Ta cena złota nie istnieje.'
@@ -89,9 +75,6 @@ gold_price:
 
 household:
     not_found: 'To gospodarstwo nie istnieje.'
-    name_max_length: 'Nazwa gospodarstwa może mieć najwyżej 100 znaków.'
-    name_min_length: 'Nazwa gospodarstwa musi mieć co najmniej 2 znaki.'
-    name_not_blank: 'Podaj nazwę gospodarstwa.'
 
 operation:
     account_required: 'Wybierz konto.'

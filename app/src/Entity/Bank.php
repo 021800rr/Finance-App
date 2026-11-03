@@ -10,7 +10,6 @@ use App\Repository\BankRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: BankRepository::class)]
 #[ORM\Table(name: 'bank')]
@@ -26,8 +25,6 @@ class Bank
     private int $id;
 
     #[ORM\Column(length: 100)]
-    #[Assert\NotBlank(message: 'bank.name_not_blank')]
-    #[Assert\Length(min: 2, max: 100, minMessage: 'bank.name_min_length', maxMessage: 'bank.name_max_length')]
     private string $name;
 
     /**

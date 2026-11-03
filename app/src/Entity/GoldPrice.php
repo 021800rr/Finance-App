@@ -12,7 +12,6 @@ use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
 use App\ValueObject\Money;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: GoldPriceRepository::class)]
 #[ORM\Table(name: 'gold_price')]
@@ -33,12 +32,10 @@ class GoldPrice
     private GoldAsset $goldAsset;
 
     #[ORM\Column(type: 'date_immutable')]
-    #[Assert\NotBlank(message: 'common.date_not_blank')]
     #[BusinessDate]
     private \DateTimeImmutable $priceDate;
 
     #[ORM\Column(name: 'price_pln_minor_units', type: 'bigint')]
-    #[Assert\Range(notInRangeMessage: 'gold_price.price_out_of_range', min: 1, max: 99999999)]
     private int $pricePln;
 
     #[ORM\ManyToOne]

@@ -3,24 +3,15 @@ account:
     hidden_not_null: 'Please specify whether the account is hidden (true or false).'
     hidden_not_selectable: 'This account is hidden. Please select an account that is not hidden.'
     is_main_must_be_true: 'The only allowed value is true. If you do not want to set this account as main, do not send this field.'
-    number_max_length: 'The account number cannot be longer than 50 characters.'
-    number_min_length: 'The account number must be at least 1 character long.'
-    number_not_blank: 'Please enter an account number.'
 
 account_operation:
     not_found: 'This account operation does not exist.'
 
 account_type:
     not_found: 'This account type does not exist.'
-    name_max_length: 'The account type name cannot be longer than 50 characters.'
-    name_min_length: 'The account type name must be at least 2 characters long.'
-    name_not_blank: 'Please enter an account type name.'
 
 bank:
     not_found: 'This bank does not exist.'
-    name_max_length: 'The bank name cannot be longer than 100 characters.'
-    name_min_length: 'The bank name must be at least 2 characters long.'
-    name_not_blank: 'Please enter a bank name.'
 
 common:
     amount_cannot_be_zero: 'The amount cannot be zero.'
@@ -46,8 +37,6 @@ contractor:
 
 currency:
     not_found: 'This currency does not exist.'
-    code_invalid_format: 'Please enter a valid currency code.'
-    code_not_blank: 'Please enter a currency code.'
 
 currency_exchange_rate:
     not_found: 'This exchange rate does not exist.'
@@ -77,9 +66,6 @@ gold_asset:
 
 gold_form:
     not_found: 'This gold form does not exist.'
-    name_max_length: 'The gold form name cannot be longer than 50 characters.'
-    name_min_length: 'The gold form name must be at least 2 characters long.'
-    name_not_blank: 'Please enter a gold form name.'
 
 gold_price:
     not_found: 'This gold price entry does not exist.'
@@ -89,9 +75,6 @@ gold_price:
 
 household:
     not_found: 'This household does not exist.'
-    name_max_length: 'The household name cannot be longer than 100 characters.'
-    name_min_length: 'The household name must be at least 2 characters long.'
-    name_not_blank: 'Please enter a household name.'
 
 operation:
     account_required: 'Please select an account.'

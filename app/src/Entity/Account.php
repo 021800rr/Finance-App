@@ -8,7 +8,6 @@ use App\Entity\Trait\BlankStringGuardTrait;
 use App\Entity\Trait\TimestampTrait;
 use App\Repository\AccountRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AccountRepository::class)]
 #[ORM\Table(name: 'account')]
@@ -48,8 +47,6 @@ class Account
     private AccountType $type;
 
     #[ORM\Column(name: 'account_number', length: 50)]
-    #[Assert\NotBlank(message: 'account.number_not_blank')]
-    #[Assert\Length(min: 1, max: 50, minMessage: 'account.number_min_length', maxMessage: 'account.number_max_length')]
     private string $accountNumber;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]

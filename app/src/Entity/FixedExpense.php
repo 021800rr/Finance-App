@@ -9,7 +9,6 @@ use App\Entity\Trait\TimestampTrait;
 use App\Repository\FixedExpenseRepository;
 use App\ValueObject\Money;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: FixedExpenseRepository::class)]
 #[ORM\Table(name: 'fixed_expense')]
@@ -34,14 +33,12 @@ class FixedExpense
     // not being able to set a day of 29-31.
     // You just need to remember to pay a bit earlier: if the bill is normally due on the 31st but
     // you pay on the 28th, nothing bad happens.
-    #[Assert\Range(notInRangeMessage: 'fixed_expense.day_out_of_range', min: 1, max: 28)]
     private int $day;
 
     #[ORM\Column(type: 'string', nullable: true)]
     private ?string $description = null;
 
     #[ORM\Column(name: 'amount_minor_units', type: 'bigint')]
-    #[Assert\Range(notInRangeMessage: 'fixed_expense.amount_out_of_range', min: -99999999, max: -1)]
     private int $amount;
 
     #[ORM\ManyToOne]

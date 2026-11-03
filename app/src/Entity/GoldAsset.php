@@ -10,7 +10,6 @@ use App\Entity\Trait\TimestampTrait;
 use App\Repository\GoldAssetRepository;
 use App\ValueObject\Quantity;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: GoldAssetRepository::class)]
 #[ORM\Table(name: 'gold_asset')]
@@ -31,11 +30,9 @@ class GoldAsset
     private GoldForm $form;
 
     #[ORM\Column(type: 'string', nullable: false)]
-    #[Assert\NotBlank(message: 'gold_asset.description_not_blank')]
     private string $description;
 
     #[ORM\Column(name: 'ounces_scaled', type: 'bigint')]
-    #[Assert\Range(notInRangeMessage: 'gold_asset.ounces_out_of_range', min: 1, max: 9999999)]
     private int $ounces;
 
     public function __construct(GoldForm $form, int $ounces, string $description)

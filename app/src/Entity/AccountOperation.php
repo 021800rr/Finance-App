@@ -12,7 +12,6 @@ use App\Validator\BusinessDate;
 use App\ValueObject\Money;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AccountOperationRepository::class)]
 #[ORM\Table(name: 'account_operation')]
@@ -39,7 +38,6 @@ class AccountOperation
     private Contractor $contractor;
 
     #[ORM\Column(type: 'date_immutable')]
-    #[Assert\NotBlank(message: 'common.date_not_blank')]
     #[BusinessDate]
     private \DateTimeImmutable $operationDate;
 
@@ -53,8 +51,6 @@ class AccountOperation
     private ?Uuid $transactionUuid = null;
 
     #[ORM\Column(name: 'amount_minor_units', type: 'bigint')]
-    #[Assert\NotEqualTo(value: 0, message: 'common.amount_cannot_be_zero')]
-    #[Assert\Range(notInRangeMessage: 'common.amount_out_of_range', min: -99999999, max: 99999999)]
     private int $amount;
 
     #[ORM\ManyToOne]

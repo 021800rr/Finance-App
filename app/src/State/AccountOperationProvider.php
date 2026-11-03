@@ -104,8 +104,6 @@ final readonly class AccountOperationProvider implements ProviderInterface
         $rawQuery = $request?->query->get('q');
         $query = is_string($rawQuery) ? trim($rawQuery) : '';
 
-        // The API refuses a missing or blank q before this runs, so only a direct call gets here,
-        // and an empty search must find nothing rather than every operation.
         if ('' === $query) {
             return $this->paginate([], $page, 0);
         }
