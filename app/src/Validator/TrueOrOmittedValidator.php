@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Validator;
 
+use App\Util\RequestBody;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -21,10 +22,10 @@ final class TrueOrOmittedValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, TrueOrOmitted::class);
         }
 
-        $body = json_decode((string) $this->requestStack->getCurrentRequest()?->getContent(), true);
+        $body = RequestBody::decode($this->requestStack);
         $field = (string) $this->context->getPropertyName();
 
-        if (is_array($body) && array_key_exists($field, $body) && true !== $body[$field]) {
+        if (null !== $body && array_key_exists($field, $body) && true !== $body[$field]) {
             $this->context->buildViolation($constraint->message)->addViolation();
         }
     }

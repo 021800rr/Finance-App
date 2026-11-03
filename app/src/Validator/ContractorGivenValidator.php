@@ -7,6 +7,7 @@ namespace App\Validator;
 use App\ApiResource\AccountOperationResource;
 use App\ApiResource\FixedExpenseResource;
 use App\Repository\ContractorRepository;
+use App\Util\RequestBody;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -33,10 +34,8 @@ final class ContractorGivenValidator extends ConstraintValidator
             return;
         }
 
-        // Read from the request body: on update the resource also holds the stored contractor, so it cannot tell
-        // what the client sent, and on create it cannot tell a sent null from a field left out.
-        $body = json_decode((string) $this->requestStack->getCurrentRequest()?->getContent(), true);
-        if (!is_array($body)) {
+        $body = RequestBody::decode($this->requestStack);
+        if (null === $body) {
             return;
         }
 

@@ -6,6 +6,7 @@ namespace App\Validator;
 
 use App\ApiResource\TransferResource;
 use App\Repository\AccountRepository;
+use App\Util\RequestBody;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Range;
@@ -69,8 +70,8 @@ final class TransferAmountToValidator extends ConstraintValidator
      */
     private function wasSent(): bool
     {
-        $body = json_decode((string) $this->requestStack->getCurrentRequest()?->getContent(), true);
+        $body = RequestBody::decode($this->requestStack);
 
-        return is_array($body) && array_key_exists((string) $this->context->getPropertyName(), $body);
+        return null !== $body && array_key_exists((string) $this->context->getPropertyName(), $body);
     }
 }
