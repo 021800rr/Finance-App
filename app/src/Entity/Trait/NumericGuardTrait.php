@@ -6,20 +6,6 @@ namespace App\Entity\Trait;
 
 trait NumericGuardTrait
 {
-    private static function assertPositive(int $value, string $fieldName): void
-    {
-        if ($value <= 0) {
-            throw new \InvalidArgumentException("{$fieldName} must be positive.");
-        }
-    }
-
-    private static function assertNegative(int $value, string $fieldName): void
-    {
-        if ($value >= 0) {
-            throw new \InvalidArgumentException("{$fieldName} must be negative.");
-        }
-    }
-
     private static function assertNotZero(int $value, string $fieldName): void
     {
         if (0 === $value) {

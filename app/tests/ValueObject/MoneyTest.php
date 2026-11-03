@@ -59,7 +59,6 @@ final class MoneyTest extends TestCase
         $money = Money::fromMinorUnits(10000, 'PLN')->negate();
 
         self::assertSame(-10000, $money->getMinorUnits());
-        self::assertTrue($money->isNegative());
     }
 
     public function testNegateTwiceReturnsToOriginal(): void
@@ -105,17 +104,13 @@ final class MoneyTest extends TestCase
         self::assertSame(-41234, $result->getMinorUnits());
     }
 
-    public function testIsPositiveIsNegativeIsZero(): void
+    public function testIsPositiveAndIsZero(): void
     {
         self::assertTrue(Money::fromMinorUnits(1, 'PLN')->isPositive());
-        self::assertFalse(Money::fromMinorUnits(1, 'PLN')->isNegative());
-
-        self::assertTrue(Money::fromMinorUnits(-1, 'PLN')->isNegative());
         self::assertFalse(Money::fromMinorUnits(-1, 'PLN')->isPositive());
 
         self::assertTrue(Money::fromMinorUnits(0, 'PLN')->isZero());
         self::assertFalse(Money::fromMinorUnits(0, 'PLN')->isPositive());
-        self::assertFalse(Money::fromMinorUnits(0, 'PLN')->isNegative());
     }
 
     public function testEqualsComparesValueCurrencyAndScale(): void
@@ -160,7 +155,6 @@ final class MoneyTest extends TestCase
         $money = Money::fromDecimalString('-50.00', 'PLN');
 
         self::assertSame(-5000, $money->getMinorUnits());
-        self::assertTrue($money->isNegative());
     }
 
     public function testFromDecimalStringThrowsOnInvalidInput(): void

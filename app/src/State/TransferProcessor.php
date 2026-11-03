@@ -19,6 +19,9 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
+ * The resource validators refuse a missing or unknown record and an invalid value before this runs, so the checks in
+ * the private methods below never fire through the API. They stay as a guard for direct calls, which the tests use.
+ *
  * @implements ProcessorInterface<mixed, TransferResource>
  */
 final readonly class TransferProcessor implements ProcessorInterface

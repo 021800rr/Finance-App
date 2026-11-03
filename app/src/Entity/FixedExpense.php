@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Entity\Trait\BlankStringGuardTrait;
 use App\Entity\Trait\NumericGuardTrait;
 use App\Entity\Trait\TimestampTrait;
 use App\Repository\FixedExpenseRepository;
@@ -20,7 +19,6 @@ class FixedExpense
 {
     use TimestampTrait;
     use NumericGuardTrait;
-    use BlankStringGuardTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]

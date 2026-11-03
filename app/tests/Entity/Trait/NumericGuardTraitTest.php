@@ -9,48 +9,6 @@ use PHPUnit\Framework\TestCase;
 
 final class NumericGuardTraitTest extends TestCase
 {
-    public function testAssertPositiveAcceptsPositiveValue(): void
-    {
-        NumericGuardTraitFixture::positive(1, 'Test');
-        $this->addToAssertionCount(1);
-    }
-
-    public function testAssertPositiveRejectsZero(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Test must be positive.');
-
-        NumericGuardTraitFixture::positive(0, 'Test');
-    }
-
-    public function testAssertPositiveRejectsNegativeValue(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        NumericGuardTraitFixture::positive(-1, 'Test');
-    }
-
-    public function testAssertNegativeAcceptsNegativeValue(): void
-    {
-        NumericGuardTraitFixture::negative(-1, 'Test');
-        $this->addToAssertionCount(1);
-    }
-
-    public function testAssertNegativeRejectsZero(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Test must be negative.');
-
-        NumericGuardTraitFixture::negative(0, 'Test');
-    }
-
-    public function testAssertNegativeRejectsPositiveValue(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        NumericGuardTraitFixture::negative(1, 'Test');
-    }
-
     public function testAssertNotZeroAcceptsPositiveValue(): void
     {
         NumericGuardTraitFixture::notZero(1, 'Test');

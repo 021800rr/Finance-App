@@ -10,16 +10,6 @@ final class NumericGuardTraitFixture
 {
     use NumericGuardTrait;
 
-    public static function positive(int $value, string $fieldName): void
-    {
-        self::assertPositive($value, $fieldName);
-    }
-
-    public static function negative(int $value, string $fieldName): void
-    {
-        self::assertNegative($value, $fieldName);
-    }
-
     public static function notZero(int $value, string $fieldName): void
     {
         self::assertNotZero($value, $fieldName);

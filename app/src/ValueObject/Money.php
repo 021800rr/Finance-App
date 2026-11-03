@@ -120,14 +120,6 @@ final readonly class Money
     }
 
     /**
-     * Whether the amount is negative (e.g. an expense).
-     */
-    public function isNegative(): bool
-    {
-        return $this->minorUnits < 0;
-    }
-
-    /**
      * Whether the amount is exactly zero.
      */
     public function isZero(): bool

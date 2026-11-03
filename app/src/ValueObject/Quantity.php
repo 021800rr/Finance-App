@@ -38,14 +38,6 @@ final readonly class Quantity
     }
 
     /**
-     * Whether the quantity is greater than zero.
-     */
-    public function isPositive(): bool
-    {
-        return $this->minorUnits > 0;
-    }
-
-    /**
      * Returns the raw value in the smallest unit (ten-thousandths of an ounce) — for storing in
      * the database.
      */

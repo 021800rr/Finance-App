@@ -52,12 +52,6 @@ final class QuantityTest extends TestCase
         Quantity::fromMinorUnits(-1);
     }
 
-    public function testIsPositive(): void
-    {
-        self::assertTrue(Quantity::fromMinorUnits(1)->isPositive());
-        self::assertFalse(Quantity::fromMinorUnits(0)->isPositive());
-    }
-
     public function testToDecimalStringFormatsAtScaleFour(): void
     {
         self::assertSame('1.5000', Quantity::fromMinorUnits(15000)->toDecimalString());
