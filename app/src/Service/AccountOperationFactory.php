@@ -7,6 +7,7 @@ namespace App\Service;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
+use App\Form\FormData;
 use App\Repository\AccountOperationRepository;
 use App\ValueObject\Money;
 use Symfony\Component\Form\FormInterface;
@@ -30,78 +31,36 @@ final readonly class AccountOperationFactory
 
     private function createFromForm(FormInterface $form, Contractor $contractor): AccountOperation
     {
-        $account = $this->extractAccount($form);
+        $account = FormData::entity($form, 'account', Account::class);
         $currency = $account->getCurrency();
-        $money = $this->extractMoney($form, $currency->getCode());
 
         return new AccountOperation(
             $account,
             $contractor,
-            $this->extractOperationDate($form),
-            $money->getMinorUnits(),
+            FormData::date($form, 'operationDate'),
+            $this->amount($form, $currency->getCode()),
             $currency,
-            description: $this->extractDescription($form),
-            confirmed: $this->extractConfirmed($form),
+            description: FormData::optionalText($form, 'description'),
+            confirmed: (bool) $form->get('confirmed')->getData(),
         );
     }
 
-    private function updateFromForm(AccountOperation $operation, FormInterface $form, Contractor $contractor): AccountOperation
-    {
-        $this->applyFormData($operation, $form);
+    private function updateFromForm(
+        AccountOperation $operation,
+        FormInterface $form,
+        Contractor $contractor,
+    ): AccountOperation {
+        $operation->setOperationDate(FormData::date($form, 'operationDate'));
+        $operation->setAmount($this->amount($form, $operation->getCurrency()->getCode()));
+        $operation->setDescription(FormData::optionalText($form, 'description'));
+        $operation->setConfirmed((bool) $form->get('confirmed')->getData());
         $operation->setContractor($contractor);
 
         return $operation;
     }
 
-    private function applyFormData(AccountOperation $operation, FormInterface $form): void
+    private function amount(FormInterface $form, string $currencyCode): int
     {
-        $money = $this->extractMoney($form, $operation->getCurrency()->getCode());
-
-        $operation->setOperationDate($this->extractOperationDate($form));
-        $operation->setAmount($money->getMinorUnits());
-        $operation->setDescription($this->extractDescription($form));
-        $operation->setConfirmed($this->extractConfirmed($form));
-    }
-
-    private function extractAccount(FormInterface $form): Account
-    {
-        $account = $form->get('account')->getData();
-        if (!$account instanceof Account) {
-            throw new \InvalidArgumentException('Account is required.');
-        }
-
-        return $account;
-    }
-
-    private function extractOperationDate(FormInterface $form): \DateTimeImmutable
-    {
-        $operationDate = $form->get('operationDate')->getData();
-        if (!$operationDate instanceof \DateTimeImmutable) {
-            throw new \InvalidArgumentException('Operation date is required.');
-        }
-
-        return $operationDate;
-    }
-
-    private function extractMoney(FormInterface $form, string $currencyCode): Money
-    {
-        $rawAmount = $form->get('amount')->getData();
-        if (!is_string($rawAmount)) {
-            throw new \InvalidArgumentException('Amount must be a numeric value.');
-        }
-
-        return Money::fromDecimalString($rawAmount, $currencyCode);
-    }
-
-    private function extractDescription(FormInterface $form): ?string
-    {
-        $description = $form->get('description')->getData();
-
-        return is_string($description) ? $description : null;
-    }
-
-    private function extractConfirmed(FormInterface $form): bool
-    {
-        return (bool) $form->get('confirmed')->getData();
+        return Money::fromDecimalString(FormData::decimal($form, 'amount'), $currencyCode)->getMinorUnits();
     }
 }

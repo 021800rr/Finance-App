@@ -76,7 +76,7 @@ final class GoldAssetFactoryTest extends KernelTestCase
         $form = $this->buildFormWithoutGoldForm();
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Gold form is required.');
+        $this->expectExceptionMessage('form is required.');
 
         $this->factory->createFromForm($form);
     }

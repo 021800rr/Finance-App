@@ -67,7 +67,7 @@ final class CurrencyExchangeRateFactoryTest extends KernelTestCase
         $form = $this->buildForm(null, $currency, new DateTimeImmutable(), 4.5);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Form data is incomplete or has unexpected types.');
+        $this->expectExceptionMessage('bank is required.');
 
         $this->factory->createFromForm($form);
     }
@@ -78,7 +78,7 @@ final class CurrencyExchangeRateFactoryTest extends KernelTestCase
         $form = $this->buildForm($bank, null, new DateTimeImmutable(), 4.5);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Form data is incomplete or has unexpected types.');
+        $this->expectExceptionMessage('currency is required.');
 
         $this->factory->createFromForm($form);
     }
@@ -90,7 +90,7 @@ final class CurrencyExchangeRateFactoryTest extends KernelTestCase
         $form = $this->buildForm($bank, $currency, null, 4.5);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Form data is incomplete or has unexpected types.');
+        $this->expectExceptionMessage('rateDate is required.');
 
         $this->factory->createFromForm($form);
     }

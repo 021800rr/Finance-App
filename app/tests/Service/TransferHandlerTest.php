@@ -122,7 +122,7 @@ final class TransferHandlerTest extends KernelTestCase
         );
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Date is required.');
+        $this->expectExceptionMessage('date is required.');
 
         $this->handler->handle($form);
     }

@@ -101,15 +101,12 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $form = $this->buildSubmittedFormWithoutAccount();
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Account is required.');
+        $this->expectExceptionMessage('account is required.');
 
         $this->factory->createOrUpdateAndPersist(null, $form, $contractor, $this->repository);
     }
 
-    /**
-     * The form already turns a blank field into null, so the factory stores the description as it gets it.
-     */
-    public function testCreateOrUpdateAndPersistStoresTheDescriptionAsTheFormGivesIt(): void
+    public function testCreateOrUpdateAndPersistTurnsABlankDescriptionIntoNull(): void
     {
         $account = $this->createAccount();
         $contractor = $this->createContractor();
@@ -117,7 +114,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
 
         $operation = $this->factory->createOrUpdateAndPersist(null, $form, $contractor, $this->repository);
 
-        self::assertSame('', $operation->getDescription());
+        self::assertNull($operation->getDescription());
     }
 
     public function testCreateOrUpdateAndPersistThrowsWhenOperationDateIsMissing(): void
@@ -127,7 +124,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $form = $this->buildSubmittedFormWithoutOperationDate($account);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Operation date is required.');
+        $this->expectExceptionMessage('operationDate is required.');
 
         $this->factory->createOrUpdateAndPersist(null, $form, $contractor, $this->repository);
     }

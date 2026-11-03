@@ -66,7 +66,7 @@ final class GoldPriceFactoryTest extends KernelTestCase
         $form = $this->buildForm(null, new DateTimeImmutable(), 16800.0);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Form data is incomplete or has unexpected types.');
+        $this->expectExceptionMessage('goldAsset is required.');
 
         $this->factory->createFromForm($form);
     }
@@ -77,7 +77,7 @@ final class GoldPriceFactoryTest extends KernelTestCase
         $form = $this->buildForm($asset, null, 16800.0);
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Form data is incomplete or has unexpected types.');
+        $this->expectExceptionMessage('priceDate is required.');
 
         $this->factory->createFromForm($form);
     }

@@ -87,7 +87,7 @@ final class FixedExpenseFactoryTest extends KernelTestCase
         $form = $this->buildFormWithInvalidDay();
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Day must be an integer.');
+        $this->expectExceptionMessage('day must be an integer.');
 
         $this->factory->createFromForm($form, $this->createContractor());
     }
