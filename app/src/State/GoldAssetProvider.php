@@ -9,7 +9,6 @@ use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\GoldAssetResource;
 use App\Exception\RecordNotFoundException;
 use App\Repository\GoldAssetRepository;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<GoldAssetResource>
@@ -35,9 +34,7 @@ final readonly class GoldAssetProvider implements ProviderInterface
             $goldAsset = $this->goldAssetRepository->findByIdOrNull($uriVariables['id']);
 
             if (!$goldAsset) {
-                $exception = RecordNotFoundException::goldAsset();
-
-                throw new NotFoundHttpException($exception->getMessage(), $exception);
+                throw RecordNotFoundException::goldAsset()->asHttp();
             }
 
             return GoldAssetResource::fromEntity($goldAsset);

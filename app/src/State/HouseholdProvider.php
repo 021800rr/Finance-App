@@ -9,7 +9,6 @@ use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\HouseholdResource;
 use App\Exception\RecordNotFoundException;
 use App\Repository\HouseholdRepository;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<HouseholdResource>
@@ -35,9 +34,7 @@ final readonly class HouseholdProvider implements ProviderInterface
             $household = $this->householdRepository->findByIdOrNull($uriVariables['id']);
 
             if (!$household) {
-                $exception = RecordNotFoundException::household();
-
-                throw new NotFoundHttpException($exception->getMessage(), $exception);
+                throw RecordNotFoundException::household()->asHttp();
             }
 
             return HouseholdResource::fromEntity($household);

@@ -9,7 +9,6 @@ use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\FixedExpenseResource;
 use App\Exception\RecordNotFoundException;
 use App\Repository\FixedExpenseRepository;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<FixedExpenseResource>
@@ -35,9 +34,7 @@ final readonly class FixedExpenseProvider implements ProviderInterface
             $fixedExpense = $this->fixedExpenseRepository->findByIdOrNull($uriVariables['id']);
 
             if (!$fixedExpense) {
-                $exception = RecordNotFoundException::fixedExpense();
-
-                throw new NotFoundHttpException($exception->getMessage(), $exception);
+                throw RecordNotFoundException::fixedExpense()->asHttp();
             }
 
             return FixedExpenseResource::fromEntity($fixedExpense);

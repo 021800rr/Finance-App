@@ -9,7 +9,6 @@ use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\CurrencyExchangeRateResource;
 use App\Exception\RecordNotFoundException;
 use App\Repository\CurrencyExchangeRateRepository;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<CurrencyExchangeRateResource>
@@ -35,9 +34,7 @@ final readonly class CurrencyExchangeRateProvider implements ProviderInterface
             $rate = $this->currencyExchangeRateRepository->findByIdOrNull($uriVariables['id']);
 
             if (!$rate) {
-                $exception = RecordNotFoundException::currencyExchangeRate();
-
-                throw new NotFoundHttpException($exception->getMessage(), $exception);
+                throw RecordNotFoundException::currencyExchangeRate()->asHttp();
             }
 
             return CurrencyExchangeRateResource::fromEntity($rate);

@@ -9,7 +9,6 @@ use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\AccountTypeResource;
 use App\Exception\RecordNotFoundException;
 use App\Repository\AccountTypeRepository;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<AccountTypeResource>
@@ -35,9 +34,7 @@ final readonly class AccountTypeProvider implements ProviderInterface
             $accountType = $this->accountTypeRepository->findByIdOrNull($uriVariables['id']);
 
             if (!$accountType) {
-                $exception = RecordNotFoundException::accountType();
-
-                throw new NotFoundHttpException($exception->getMessage(), $exception);
+                throw RecordNotFoundException::accountType()->asHttp();
             }
 
             return AccountTypeResource::fromEntity($accountType);

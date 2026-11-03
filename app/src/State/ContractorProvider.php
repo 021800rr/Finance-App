@@ -9,7 +9,6 @@ use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\ContractorResource;
 use App\Exception\RecordNotFoundException;
 use App\Repository\ContractorRepository;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<ContractorResource>
@@ -35,9 +34,7 @@ final readonly class ContractorProvider implements ProviderInterface
             $contractor = $this->contractorRepository->findByIdOrNull($uriVariables['id']);
 
             if (!$contractor) {
-                $exception = RecordNotFoundException::contractor();
-
-                throw new NotFoundHttpException($exception->getMessage(), $exception);
+                throw RecordNotFoundException::contractor()->asHttp();
             }
 
             return ContractorResource::fromEntity($contractor);

@@ -9,7 +9,6 @@ use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\BankResource;
 use App\Exception\RecordNotFoundException;
 use App\Repository\BankRepository;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<BankResource>
@@ -32,9 +31,7 @@ final readonly class BankProvider implements ProviderInterface
             $bank = $this->bankRepository->findByIdOrNull($uriVariables['id']);
 
             if (!$bank) {
-                $exception = RecordNotFoundException::bank();
-
-                throw new NotFoundHttpException($exception->getMessage(), $exception);
+                throw RecordNotFoundException::bank()->asHttp();
             }
 
             return BankResource::fromEntity($bank);

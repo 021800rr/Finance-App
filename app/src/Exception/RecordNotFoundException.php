@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Exception;
 
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+
 /**
  * The record named in the address does not exist. Unlike an unknown address ("http.not_found"), a client can expect
  * this at any time, e.g. after someone deleted the record, so each kind of record has its own code.
@@ -68,6 +70,15 @@ final class RecordNotFoundException extends \RuntimeException implements Busines
     public static function household(): self
     {
         return new self('Household not found.', 'household.not_found');
+    }
+
+    /**
+     * What a provider throws: API Platform answers it with 404, and ProblemNormalizer finds this exception in its
+     * previous chain, so the response still carries the record's errorCode.
+     */
+    public function asHttp(): NotFoundHttpException
+    {
+        return new NotFoundHttpException($this->getMessage(), $this);
     }
 
     public function getErrorCode(): string

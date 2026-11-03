@@ -17,7 +17,6 @@ use App\Service\Paginator;
 use App\State\Pagination\OffsetPaginator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -58,9 +57,7 @@ final readonly class AccountOperationProvider implements ProviderInterface
         $accountOperation = $this->accountOperationRepository->findByIdOrNull($uriVariables['id'] ?? null);
 
         if (!$accountOperation) {
-            $exception = RecordNotFoundException::accountOperation();
-
-            throw new NotFoundHttpException($exception->getMessage(), $exception);
+            throw RecordNotFoundException::accountOperation()->asHttp();
         }
 
         return AccountOperationResource::fromEntity($accountOperation);
@@ -76,9 +73,7 @@ final readonly class AccountOperationProvider implements ProviderInterface
     {
         $account = $this->accountRepository->findByIdOrNull($rawAccountId);
         if (null === $account) {
-            $exception = RecordNotFoundException::account();
-
-            throw new NotFoundHttpException($exception->getMessage(), $exception);
+            throw RecordNotFoundException::account()->asHttp();
         }
 
         $page = $this->requestedPage($this->requestStack->getCurrentRequest());

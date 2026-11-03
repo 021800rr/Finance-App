@@ -9,7 +9,6 @@ use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\GoldFormResource;
 use App\Exception\RecordNotFoundException;
 use App\Repository\GoldFormRepository;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<GoldFormResource>
@@ -32,9 +31,7 @@ final readonly class GoldFormProvider implements ProviderInterface
             $goldForm = $this->goldFormRepository->findByIdOrNull($uriVariables['id']);
 
             if (!$goldForm) {
-                $exception = RecordNotFoundException::goldForm();
-
-                throw new NotFoundHttpException($exception->getMessage(), $exception);
+                throw RecordNotFoundException::goldForm()->asHttp();
             }
 
             return GoldFormResource::fromEntity($goldForm);

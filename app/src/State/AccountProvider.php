@@ -13,7 +13,6 @@ use App\Entity\Account;
 use App\Exception\RecordNotFoundException;
 use App\Repository\AccountRepository;
 use App\Service\AccountOperationSummaryService;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @implements ProviderInterface<AccountResource>
@@ -43,9 +42,7 @@ final readonly class AccountProvider implements ProviderInterface
 
         $account = $this->accountRepository->findByIdOrNull($uriVariables['id'] ?? null);
         if (null === $account) {
-            $exception = RecordNotFoundException::account();
-
-            throw new NotFoundHttpException($exception->getMessage(), $exception);
+            throw RecordNotFoundException::account()->asHttp();
         }
 
         $resource = AccountResource::fromEntity($account);
