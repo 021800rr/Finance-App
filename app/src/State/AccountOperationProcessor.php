@@ -156,7 +156,7 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
             throw new UnprocessableEntityHttpException('Amount is required.');
         }
 
-        $minorUnits = Money::fromDecimalString($amount, $currencyCode)->getMinorUnits();
+        $minorUnits = Money::fromDecimalString(trim($amount), $currencyCode)->getMinorUnits();
         AccountOperation::assertValidAmount($minorUnits);
 
         return $minorUnits;

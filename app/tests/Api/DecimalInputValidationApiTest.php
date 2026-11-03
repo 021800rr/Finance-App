@@ -110,7 +110,8 @@ final class DecimalInputValidationApiTest extends WebTestCase
             'amountTo' => 'inAmount',
             default => $field,
         };
-        self::assertSame('amountFrom' === $field ? '-'.$value : $value, self::stringAt($data, $responseField));
+        $expected = trim($value);
+        self::assertSame('amountFrom' === $field ? '-'.$expected : $expected, self::stringAt($data, $responseField));
     }
 
     /**
@@ -140,6 +141,7 @@ final class DecimalInputValidationApiTest extends WebTestCase
         foreach (self::fields() as [$uri, $field, $min, $max]) {
             yield $uri.' '.$field.' minimum' => [$uri, $field, $min];
             yield $uri.' '.$field.' maximum' => [$uri, $field, $max];
+            yield $uri.' '.$field.' surrounded by spaces' => [$uri, $field, '  '.$max.' '];
         }
     }
 
