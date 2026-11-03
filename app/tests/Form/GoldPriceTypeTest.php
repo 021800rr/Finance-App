@@ -4,40 +4,80 @@ declare(strict_types=1);
 
 namespace App\Tests\Form;
 
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
-use Symfony\Component\Form\Extension\Core\Type\NumberType;
-use Symfony\Component\Validator\Constraints\Range;
+use App\Form\GoldPriceType;
+use App\Tests\DatabaseTestTrait;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Form\FormError;
+use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Component\Form\FormInterface;
 
-#[AllowMockObjectsWithoutExpectations]
-final class GoldPriceTypeTest extends ValidatedTypeTestCase
+/**
+ * Submits the real GoldPriceType, so a changed or removed limit in the form fails here.
+ */
+final class GoldPriceTypeTest extends KernelTestCase
 {
-    public function testPricePlnRejectsZero(): void
-    {
-        $form = $this->factory->create(NumberType::class, null, [
-            'constraints' => [new Range(min: 0.01, max: 1000000)],
-        ]);
-        $form->submit('0');
+    use DatabaseTestTrait;
 
-        self::assertFalse($form->isValid());
+    protected function setUp(): void
+    {
+        $this->initEntityManager(self::bootKernel());
     }
 
-    public function testPricePlnRejectsValueAboveUpperBound(): void
+    protected function tearDown(): void
     {
-        $form = $this->factory->create(NumberType::class, null, [
-            'constraints' => [new Range(min: 0.01, max: 1000000)],
-        ]);
-        $form->submit('2000000');
-
-        self::assertFalse($form->isValid());
+        parent::tearDown();
+        $this->closeEntityManager();
     }
 
-    public function testPricePlnAcceptsValidValue(): void
+    #[DataProvider('validPrices')]
+    public function testPriceWithinTheLimitsIsAccepted(string $submitted, string $expected): void
     {
-        $form = $this->factory->create(NumberType::class, null, [
-            'constraints' => [new Range(min: 0.01, max: 1000000)],
-        ]);
-        $form->submit('16800.99');
+        $field = $this->submit($submitted);
 
-        self::assertTrue($form->isValid());
+        self::assertTrue($field->isValid(), (string) $field->getErrors());
+        self::assertSame($expected, $field->getData());
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function validPrices(): iterable
+    {
+        yield 'minimum' => ['0.01', '0.01'];
+        yield 'maximum' => ['999999.99', '999999.99'];
+        yield 'ordinary' => ['16800.99', '16800.99'];
+    }
+
+    #[DataProvider('invalidPrices')]
+    public function testPriceOutsideTheLimitsIsRefusedWithItsMessage(string $submitted, string $message): void
+    {
+        $errors = iterator_to_array($this->submit($submitted)->getErrors());
+
+        self::assertCount(1, $errors);
+        self::assertInstanceOf(FormError::class, $errors[0]);
+        self::assertSame($message, $errors[0]->getMessageTemplate());
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function invalidPrices(): iterable
+    {
+        yield 'zero' => ['0', 'gold_price.price_out_of_range'];
+        yield 'above the maximum' => ['1000000', 'gold_price.price_out_of_range'];
+        yield 'negative' => ['-1', 'gold_price.price_out_of_range'];
+        yield 'empty' => ['', 'gold_price.price_not_blank'];
+        yield 'not a number' => ['abc', 'common.numeric_invalid'];
+    }
+
+    private function submit(string $value): FormInterface
+    {
+        /** @var FormFactoryInterface $factory */
+        $factory = self::getContainer()->get('form.factory');
+        $form = $factory->create(GoldPriceType::class, null, ['csrf_protection' => false]);
+        $form->submit(['pricePln' => $value]);
+
+        return $form->get('pricePln');
     }
 }
