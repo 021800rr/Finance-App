@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\EventSubscriber;
 
+use App\Http\ApiPath;
 use App\Http\ProblemResponse;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -36,7 +37,7 @@ final readonly class ApiExceptionProblemSubscriber implements EventSubscriberInt
     {
         $request = $event->getRequest();
         $path = $request->getPathInfo();
-        $isApiPath = '/api' === $path || str_starts_with($path, '/api/');
+        $isApiPath = ApiPath::matches($path);
         if (!$isApiPath || $request->attributes->has('_api_resource_class')) {
             return;
         }

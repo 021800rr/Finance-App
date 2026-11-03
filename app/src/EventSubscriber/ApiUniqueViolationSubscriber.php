@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\EventSubscriber;
 
+use App\Http\ApiPath;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
@@ -25,7 +26,7 @@ final readonly class ApiUniqueViolationSubscriber implements EventSubscriberInte
     public function onException(ExceptionEvent $event): void
     {
         $path = $event->getRequest()->getPathInfo();
-        $isApiPath = '/api' === $path || str_starts_with($path, '/api/');
+        $isApiPath = ApiPath::matches($path);
         $exception = $event->getThrowable();
 
         if ($isApiPath && $exception instanceof UniqueConstraintViolationException) {
