@@ -1,0 +1,12 @@
+# Without Monolog, Symfony's own logger writes every exception to the console, also the 4xx responses the tests
+# provoke on purpose, so a passing run printed hundreds of "[error]" lines. They go to a file instead:
+# var/cache/test/test.log, which always exists for the test container and is emptied by every cache:clear.
+services:
+    logger:
+        class: Symfony\Component\HttpKernel\Log\Logger
+        arguments:
+            $minLevel: 'error'
+            $output: '%kernel.cache_dir%/test.log'
+            $requestStack: '@request_stack'
+        tags:
+            - { name: kernel.reset, method: clear, on_invalid: ignore }
