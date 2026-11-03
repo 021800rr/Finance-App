@@ -15,6 +15,7 @@ use App\OpenApi\ErrorResponseContent;
 use App\State\TransferProcessor;
 use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
+use App\Validator\DecimalString;
 use App\Validator\NoNullCharacter;
 use App\Validator\RecordExists;
 use App\Validator\SelectableAccount;
@@ -79,6 +80,7 @@ final class TransferResource
     )]
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'transfer.amount_from_required', normalizer: 'trim'),
+        new DecimalString(),
         new Assert\Range(
             notInRangeMessage: 'transfer.amount_out_of_range',
             invalidMessage: 'common.numeric_invalid',

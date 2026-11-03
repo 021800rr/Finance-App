@@ -23,6 +23,7 @@ use App\State\AccountOperationProvider;
 use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
 use App\Validator\ContractorGiven;
+use App\Validator\DecimalString;
 use App\Validator\NoNullCharacter;
 use App\Validator\NonZeroAmount;
 use App\Validator\RecordExists;
@@ -153,6 +154,7 @@ final class AccountOperationResource
     )]
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'operation.amount_not_blank', normalizer: 'trim'),
+        new DecimalString(),
         new Assert\Range(
             notInRangeMessage: 'common.amount_out_of_range',
             invalidMessage: 'common.numeric_invalid',

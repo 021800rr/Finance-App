@@ -19,6 +19,7 @@ use App\State\GoldPriceProcessor;
 use App\State\GoldPriceProvider;
 use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
+use App\Validator\DecimalString;
 use App\Validator\RecordExists;
 use App\ValueObject\Money;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -91,6 +92,7 @@ final class GoldPriceResource
     )]
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'gold_price.price_not_blank', normalizer: 'trim'),
+        new DecimalString(),
         new Assert\Range(
             min: 0.01,
             max: 999999.99,

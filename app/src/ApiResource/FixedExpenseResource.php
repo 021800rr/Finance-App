@@ -17,6 +17,7 @@ use App\Entity\FixedExpense;
 use App\State\FixedExpenseProcessor;
 use App\State\FixedExpenseProvider;
 use App\Validator\ContractorGiven;
+use App\Validator\DecimalString;
 use App\Validator\NoNullCharacter;
 use App\Validator\RecordExists;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -93,6 +94,7 @@ final class FixedExpenseResource
     )]
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'fixed_expense.amount_not_blank', normalizer: 'trim'),
+        new DecimalString(),
         new Assert\Range(
             notInRangeMessage: 'fixed_expense.amount_out_of_range',
             invalidMessage: 'common.numeric_invalid',

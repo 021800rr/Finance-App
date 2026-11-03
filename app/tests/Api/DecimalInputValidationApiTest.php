@@ -56,6 +56,45 @@ final class DecimalInputValidationApiTest extends WebTestCase
         self::assertSame($countsBefore, $this->recordCounts());
     }
 
+    /**
+     * Money and Quantity parse only digits with an optional minus and fraction. These pass Range, because PHP calls
+     * them numeric, so without the format check they failed later with a generic error that named no field.
+     */
+    #[DataProvider('notDecimalFormats')]
+    public function testPostRejectsANumberNotInDecimalFormatAtTheFieldWithoutSaving(
+        string $uri,
+        string $field,
+        string $value,
+    ): void {
+        $payload = $this->payloadFor($uri);
+        $payload[$field] = $value;
+        $countsBefore = $this->recordCounts();
+
+        $this->post($uri, $payload);
+
+        self::assertResponseStatusCodeSame(422);
+        $error = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame('validation.failed', self::stringAt($error, 'errorCode'));
+        self::assertSame(
+            [$field => 'common.numeric_invalid'],
+            array_column(self::rowsAt($error, 'violations'), 'code', 'propertyPath'),
+        );
+        self::assertSame($countsBefore, $this->recordCounts());
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string}>
+     */
+    public static function notDecimalFormats(): iterable
+    {
+        foreach (self::fields() as [$uri, $field]) {
+            foreach (['plus sign' => '+5', 'no digit before the dot' => '.5', 'no digit after the dot' => '5.',
+                'exponent' => '1e2', 'comma' => '1,5'] as $case => $value) {
+                yield $uri.' '.$field.' '.$case => [$uri, $field, $value];
+            }
+        }
+    }
+
     #[DataProvider('validValues')]
     public function testPostAcceptsValuesAtTheLimits(string $uri, string $field, string $value): void
     {

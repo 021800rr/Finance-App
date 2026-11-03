@@ -16,6 +16,7 @@ use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\State\GoldAssetProcessor;
 use App\State\GoldAssetProvider;
+use App\Validator\DecimalString;
 use App\Validator\NoNullCharacter;
 use App\Validator\RecordExists;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -83,6 +84,7 @@ final class GoldAssetResource
     )]
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'gold_asset.ounces_not_blank', normalizer: 'trim'),
+        new DecimalString(),
         new Assert\Range(
             notInRangeMessage: 'gold_asset.ounces_out_of_range',
             invalidMessage: 'common.numeric_invalid',

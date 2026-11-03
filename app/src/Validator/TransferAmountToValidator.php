@@ -54,6 +54,7 @@ final class TransferAmountToValidator extends ConstraintValidator
 
         $this->context->getValidator()->inContext($this->context)->validate($value, new Sequentially([
             new Type('string'),
+            new DecimalString(),
             new Range(
                 notInRangeMessage: $constraint->outOfRangeMessage,
                 invalidMessage: $constraint->invalidMessage,

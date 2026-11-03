@@ -21,6 +21,7 @@ use App\State\CurrencyExchangeRateProcessor;
 use App\State\CurrencyExchangeRateProvider;
 use App\Util\BusinessDateRange;
 use App\Validator\BusinessDate;
+use App\Validator\DecimalString;
 use App\Validator\RateBank;
 use App\Validator\RecordExists;
 use App\ValueObject\Money;
@@ -121,6 +122,7 @@ final class CurrencyExchangeRateResource
     )]
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'currency_exchange_rate.rate_not_blank', normalizer: 'trim'),
+        new DecimalString(),
         new Assert\Range(
             min: 0.0001,
             max: 99.9999,
