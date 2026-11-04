@@ -98,9 +98,8 @@ final class BusinessDateTest extends TestCase
      */
     private function createEntity(
         string $entityClass,
-        \DateTimeImmutable $date
-    ): AccountOperation|GoldPrice|CurrencyExchangeRate
-    {
+        \DateTimeImmutable $date,
+    ): AccountOperation|GoldPrice|CurrencyExchangeRate {
         $currency = new Currency('PLN');
         $bank = new Bank('Test Bank');
 

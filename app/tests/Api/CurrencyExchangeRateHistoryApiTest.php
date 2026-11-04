@@ -9,7 +9,6 @@ use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\Tests\Controller\LogsInTrait;
 use App\Tests\DatabaseTestTrait;
-use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -143,7 +142,7 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
         $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
 
         if (!is_array($data) || !isset($data['token']) || !is_string($data['token'])) {
-            throw new RuntimeException('Could not obtain a JWT token in the test.');
+            throw new \RuntimeException('Could not obtain a JWT token in the test.');
         }
 
         return $data['token'];

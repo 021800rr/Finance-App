@@ -8,8 +8,6 @@ use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\Service\GoldPriceFactory;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
-use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
@@ -49,7 +47,7 @@ final class GoldPriceFactoryTest extends KernelTestCase
     public function testCreateFromFormBuildsPriceWithCorrectMinorUnits(): void
     {
         $asset = $this->createGoldAsset();
-        $date = new DateTimeImmutable('2026-01-15');
+        $date = new \DateTimeImmutable('2026-01-15');
 
         $form = $this->buildForm($asset, $date, 16800.99);
 
@@ -63,9 +61,9 @@ final class GoldPriceFactoryTest extends KernelTestCase
 
     public function testCreateFromFormThrowsWhenGoldAssetIsMissing(): void
     {
-        $form = $this->buildForm(null, new DateTimeImmutable(), 16800.0);
+        $form = $this->buildForm(null, new \DateTimeImmutable(), 16800.0);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('goldAsset is required.');
 
         $this->factory->createFromForm($form);
@@ -76,7 +74,7 @@ final class GoldPriceFactoryTest extends KernelTestCase
         $asset = $this->createGoldAsset();
         $form = $this->buildForm($asset, null, 16800.0);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('priceDate is required.');
 
         $this->factory->createFromForm($form);
@@ -85,9 +83,9 @@ final class GoldPriceFactoryTest extends KernelTestCase
     public function testCreateFromFormDelegatesNonPositivePriceRejectionToEntity(): void
     {
         $asset = $this->createGoldAsset();
-        $form = $this->buildForm($asset, new DateTimeImmutable(), 0.0);
+        $form = $this->buildForm($asset, new \DateTimeImmutable(), 0.0);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Price must be between 1 and 99999999.');
 
         $this->factory->createFromForm($form);
@@ -96,15 +94,15 @@ final class GoldPriceFactoryTest extends KernelTestCase
     public function testCreateFromFormDelegatesOutOfRangePriceRejectionToEntity(): void
     {
         $asset = $this->createGoldAsset();
-        $form = $this->buildForm($asset, new DateTimeImmutable(), 2000000.0);
+        $form = $this->buildForm($asset, new \DateTimeImmutable(), 2000000.0);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Price must be between 1 and 99999999.');
 
         $this->factory->createFromForm($form);
     }
 
-    private function buildForm(?GoldAsset $goldAsset, ?DateTimeImmutable $priceDate, float $price): FormInterface
+    private function buildForm(?GoldAsset $goldAsset, ?\DateTimeImmutable $priceDate, float $price): FormInterface
     {
         $form = $this->formFactory->createNamed('', FormType::class, null, ['csrf_protection' => false]);
         $form->add('goldAsset', HiddenType::class, ['mapped' => false]);
@@ -120,7 +118,7 @@ final class GoldPriceFactoryTest extends KernelTestCase
 
     private function createGoldAsset(): GoldAsset
     {
-        $goldForm = new GoldForm('Test Form ' . uniqid());
+        $goldForm = new GoldForm('Test Form '.uniqid());
         $this->em()->persist($goldForm);
 
         $asset = new GoldAsset($goldForm, 10000, 'Test');

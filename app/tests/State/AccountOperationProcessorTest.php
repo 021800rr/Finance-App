@@ -18,7 +18,6 @@ use App\Entity\Household;
 use App\Repository\ContractorRepository;
 use App\State\AccountOperationProcessor;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Events;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -77,7 +76,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
     public function testProcessCreatesContractorFromNameWhenNotFound(): void
     {
         $account = $this->createAccount();
-        $newName = 'Brand New Contractor ' . uniqid();
+        $newName = 'Brand New Contractor '.uniqid();
 
         $resource = $this->buildResource(
             accountId: $account->getId(),
@@ -96,7 +95,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
     public function testProcessReusesExistingContractorFoundByName(): void
     {
         $account = $this->createAccount();
-        $contractor = $this->createContractor('Reused Contractor ' . uniqid());
+        $contractor = $this->createContractor('Reused Contractor '.uniqid());
 
         $resource = $this->buildResource(
             accountId: $account->getId(),
@@ -481,7 +480,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $result = $this->processor->process(null, new Delete(), ['id' => $created->id]);
 
         self::assertNull($result);
-        self::assertNull($this->em()->getRepository(\App\Entity\AccountOperation::class)->find($created->id));
+        self::assertNull($this->em()->getRepository(AccountOperation::class)->find($created->id));
     }
 
     public function testProcessThrowsNotFoundOnDeleteWhenOperationMissing(): void
@@ -518,7 +517,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $resource->contractorName = $contractorName;
         $resource->amount = $amount;
         $resource->operationDate = self::AUTO_DATE === $operationDate
-            ? (new DateTimeImmutable())->format('Y-m-d')
+            ? (new \DateTimeImmutable())->format('Y-m-d')
             : $operationDate;
         $resource->description = $description;
 
@@ -527,7 +526,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
 
     private function createAccount(string $currencyCode = 'PLN'): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
@@ -537,7 +536,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
             $this->em()->persist($currency);
         }
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -545,7 +544,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
         $this->em()->flush();
 

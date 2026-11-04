@@ -13,8 +13,6 @@ use App\Entity\Currency;
 use App\Entity\Household;
 use App\Service\AccountOperationFactory;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
-use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
@@ -94,7 +92,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $contractor = $this->createContractor();
         $form = $this->buildSubmittedFormWithoutAccount();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('account is required.');
 
         $this->factory->createOrUpdateAndPersist(null, $form, $contractor);
@@ -117,7 +115,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $contractor = $this->createContractor();
         $form = $this->buildSubmittedFormWithoutOperationDate($account);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('operationDate is required.');
 
         $this->factory->createOrUpdateAndPersist(null, $form, $contractor);
@@ -145,7 +143,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $builder->add('confirmed', HiddenType::class, ['mapped' => false]);
         $form = $builder->getForm();
         $form->get('account')->setData($account);
-        $form->get('operationDate')->setData(new DateTimeImmutable());
+        $form->get('operationDate')->setData(new \DateTimeImmutable());
         $form->get('amount')->setData($invalidAmount ? [] : (string) $amount);
         $form->get('description')->setData($description);
         $form->get('confirmed')->setData(false);
@@ -160,7 +158,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
 
     private function createExistingOperation(Account $account, Contractor $contractor, int $amount): AccountOperation
     {
-        $operation = new AccountOperation($account, $contractor, new DateTimeImmutable(), $amount, $account->getCurrency());
+        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable(), $amount, $account->getCurrency());
         $this->em()->persist($operation);
         $this->em()->flush();
 
@@ -169,7 +167,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
 
     private function createAccount(string $currencyCode = 'PLN'): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
@@ -179,7 +177,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
             $this->em()->persist($currency);
         }
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -187,7 +185,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
         $this->em()->flush();
 
@@ -196,7 +194,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
 
     private function createContractor(): Contractor
     {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
         $this->em()->flush();
 

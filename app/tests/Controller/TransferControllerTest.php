@@ -82,7 +82,7 @@ final class TransferControllerTest extends WebTestCase
 
         self::assertResponseRedirects();
         self::assertStringStartsWith(
-            '/account/' . $fromAccount->getId() . '/operations',
+            '/account/'.$fromAccount->getId().'/operations',
             (string) $this->client->getResponse()->headers->get('Location')
         );
         self::assertSame($countBefore + 2, $repository->count([]));
@@ -483,17 +483,17 @@ final class TransferControllerTest extends WebTestCase
 
     private function createAccount(string $currencyCode): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
         $currency = $currencyRepository->find($currencyCode);
-        if ($currency === null) {
+        if (null === $currency) {
             $currency = new Currency($currencyCode);
             $this->em()->persist($currency);
         }
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -501,7 +501,7 @@ final class TransferControllerTest extends WebTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
         $this->em()->flush();
 

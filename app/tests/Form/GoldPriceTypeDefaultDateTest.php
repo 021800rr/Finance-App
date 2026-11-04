@@ -8,7 +8,6 @@ use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\Form\GoldPriceType;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\FormFactoryInterface;
 
@@ -30,10 +29,10 @@ final class GoldPriceTypeDefaultDateTest extends KernelTestCase
 
     public function testPriceDateDefaultsToToday(): void
     {
-        $form = new GoldForm('Test Form ' . uniqid());
+        $form = new GoldForm('Test Form '.uniqid());
         $this->em()->persist($form);
 
-        $goldAsset = new GoldAsset($form, 1, 'Test Asset ' . uniqid());
+        $goldAsset = new GoldAsset($form, 1, 'Test Asset '.uniqid());
         $this->em()->persist($goldAsset);
         $this->em()->flush();
 
@@ -44,7 +43,7 @@ final class GoldPriceTypeDefaultDateTest extends KernelTestCase
 
         $priceDate = $goldPriceForm->get('priceDate')->getData();
 
-        self::assertInstanceOf(DateTimeImmutable::class, $priceDate);
-        self::assertSame(new DateTimeImmutable()->format('Y-m-d'), $priceDate->format('Y-m-d'));
+        self::assertInstanceOf(\DateTimeImmutable::class, $priceDate);
+        self::assertSame(new \DateTimeImmutable()->format('Y-m-d'), $priceDate->format('Y-m-d'));
     }
 }

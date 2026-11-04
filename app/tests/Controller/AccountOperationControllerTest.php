@@ -13,11 +13,10 @@ use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Uid\Uuid;
 
 final class AccountOperationControllerTest extends WebTestCase
@@ -51,7 +50,7 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $account = $this->createAccount();
 
-        $this->client->request('GET', '/operation/new?account=' . $account->getId());
+        $this->client->request('GET', '/operation/new?account='.$account->getId());
 
         self::assertResponseIsSuccessful();
     }
@@ -60,7 +59,7 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $account = $this->createAccount();
 
-        $crawler = $this->client->request('GET', '/operation/new?account=' . $account->getId());
+        $crawler = $this->client->request('GET', '/operation/new?account='.$account->getId());
         $form = $crawler->filter('#operation_form button[type="submit"]')->form();
 
         $this->client->submit($form, [
@@ -76,11 +75,11 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $account = $this->createAccount();
 
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
         $this->em()->flush();
 
-        $crawler = $this->client->request('GET', '/operation/new?account=' . $account->getId());
+        $crawler = $this->client->request('GET', '/operation/new?account='.$account->getId());
         $form = $crawler->filter('#operation_form button[type="submit"]')->form();
 
         $this->client->submit($form, [
@@ -91,7 +90,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
         self::assertResponseRedirects();
         self::assertStringStartsWith(
-            '/account/' . $account->getId() . '/operations?highlight=',
+            '/account/'.$account->getId().'/operations?highlight=',
             (string) $this->client->getResponse()->headers->get('Location')
         );
     }
@@ -460,11 +459,11 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $operation = $this->createOperationInDatabase();
 
-        $newContractor = new Contractor('New Contractor ' . uniqid());
+        $newContractor = new Contractor('New Contractor '.uniqid());
         $this->em()->persist($newContractor);
         $this->em()->flush();
 
-        $crawler = $this->client->request('GET', '/operation/' . $operation->getId() . '/edit');
+        $crawler = $this->client->request('GET', '/operation/'.$operation->getId().'/edit');
         $form = $crawler->filter('#operation_form button[type="submit"]')->form();
 
         $this->client->submit($form, [
@@ -475,9 +474,9 @@ final class AccountOperationControllerTest extends WebTestCase
 
         self::assertResponseRedirects(
             '/account/'
-            . $operation->getAccount()->getId()
-            . '/operations?highlight='
-            . $operation->getId()
+            .$operation->getAccount()->getId()
+            .'/operations?highlight='
+            .$operation->getId()
         );
 
         /** @var EntityManagerInterface $freshEm */
@@ -494,7 +493,7 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $operation = $this->createOperationInDatabase();
 
-        $crawler = $this->client->request('GET', '/operation/' . $operation->getId() . '/edit');
+        $crawler = $this->client->request('GET', '/operation/'.$operation->getId().'/edit');
         $form = $crawler->filter('#operation_form button[type="submit"]')->form();
 
         $this->client->submit($form, [
@@ -584,7 +583,7 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $operation = $this->createOperationInDatabase();
 
-        $this->client->request('POST', '/operation/' . $operation->getId() . '/delete', [
+        $this->client->request('POST', '/operation/'.$operation->getId().'/delete', [
             '_token' => 'invalid-token',
         ]);
 
@@ -597,14 +596,14 @@ final class AccountOperationControllerTest extends WebTestCase
         $operationId = $operation->getId();
         $accountId = $operation->getAccount()->getId();
 
-        $crawler = $this->client->request('GET', '/account/' . $accountId . '/operations');
-        $csrfToken = $crawler->filter('form[action*="' . $operationId . '/delete"] input[name="_token"]')->attr('value');
+        $crawler = $this->client->request('GET', '/account/'.$accountId.'/operations');
+        $csrfToken = $crawler->filter('form[action*="'.$operationId.'/delete"] input[name="_token"]')->attr('value');
 
-        $this->client->request('POST', '/operation/' . $operationId . '/delete', [
+        $this->client->request('POST', '/operation/'.$operationId.'/delete', [
             '_token' => $csrfToken,
         ]);
 
-        self::assertResponseRedirects('/account/' . $operation->getAccount()->getId() . '/operations');
+        self::assertResponseRedirects('/account/'.$operation->getAccount()->getId().'/operations');
 
         /** @var EntityManagerInterface $freshEm */
         $freshEm = static::getContainer()->get(EntityManagerInterface::class);
@@ -633,7 +632,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
         $this->client->request(
             'POST',
-            '/operation/' . $operation->getId() . '/toggle-confirmed',
+            '/operation/'.$operation->getId().'/toggle-confirmed',
             [],
             [],
             ['HTTP_X-CSRF-Token' => 'invalid-token']
@@ -652,7 +651,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
         $this->client->request(
             'POST',
-            '/operation/' . $operation->getId() . '/toggle-confirmed',
+            '/operation/'.$operation->getId().'/toggle-confirmed',
             [],
             [],
             ['HTTP_X-CSRF-Token' => $csrfToken]
@@ -693,7 +692,7 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $operation = $this->createOperationInDatabase();
 
-        $this->client->request('GET', '/operation/' . $operation->getId() . '/go-to-other-side');
+        $this->client->request('GET', '/operation/'.$operation->getId().'/go-to-other-side');
 
         self::assertResponseRedirects();
         $this->client->followRedirect();
@@ -705,7 +704,7 @@ final class AccountOperationControllerTest extends WebTestCase
         $account = $this->createAccount();
         $otherAccount = $this->createAccount();
 
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
         $uuid = Uuid::v7();
@@ -713,7 +712,7 @@ final class AccountOperationControllerTest extends WebTestCase
         $pln = $this->em()->getRepository(Currency::class)->find(Currencies::SETTLEMENT_CURRENCY_CODE);
         self::assertNotNull($pln, 'PLN currency must exist in fixtures.');
 
-        $today = new DateTimeImmutable();
+        $today = new \DateTimeImmutable();
         $opOut = new AccountOperation($account, $contractor, $today, -10000, $pln, transactionUuid: $uuid);
         $this->em()->persist($opOut);
 
@@ -722,7 +721,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
         $this->em()->flush();
 
-        $this->client->request('GET', '/operation/' . $opOut->getId() . '/go-to-other-side');
+        $this->client->request('GET', '/operation/'.$opOut->getId().'/go-to-other-side');
 
         self::assertResponseRedirects('/account/'.$otherAccount->getId().'/operations?highlight='.$opIn->getId());
     }
@@ -738,17 +737,17 @@ final class AccountOperationControllerTest extends WebTestCase
 
     private function createAccount(): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
         $currency = $currencyRepository->findOneBy(['code' => 'PLN']);
-        if ($currency === null) {
+        if (null === $currency) {
             $currency = new Currency('PLN');
             $this->em()->persist($currency);
         }
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -756,7 +755,7 @@ final class AccountOperationControllerTest extends WebTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
 
         $this->em()->flush();
@@ -768,13 +767,13 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $account = $this->createAccount();
 
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
         $pln = $this->em()->getRepository(Currency::class)->find(Currencies::SETTLEMENT_CURRENCY_CODE);
         self::assertNotNull($pln, 'PLN currency must exist in fixtures.');
 
-        $operation = new AccountOperation($account, $contractor, new DateTimeImmutable(), 10000, $pln);
+        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable(), 10000, $pln);
         $this->em()->persist($operation);
 
         $this->em()->flush();

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\User;
-use LogicException;
 
 /**
  * Logs in the test user from the fixtures, so requests pass through the Security firewall.
@@ -17,7 +16,7 @@ trait LogsInTrait
     {
         $user = $this->em()->getRepository(User::class)->findOneBy(['email' => 'test@example.com']);
         if (null === $user) {
-            throw new LogicException('The test user "test@example.com" does not exist — check AppFixtures.');
+            throw new \LogicException('The test user "test@example.com" does not exist — check AppFixtures.');
         }
 
         $this->client->loginUser($user);

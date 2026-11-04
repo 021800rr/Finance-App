@@ -13,7 +13,6 @@ use App\Entity\Currency;
 use App\Entity\Household;
 use App\Service\Paginator;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -55,7 +54,7 @@ final class SearchControllerTest extends WebTestCase
     public function testIndexFindsMatchingOperationByDescription(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 15000, 'Unique test description ' . uniqid());
+        $this->createOperation($account, 15000, 'Unique test description '.uniqid());
 
         $crawler = $this->client->request('GET', '/search?q=Unique+test+description');
 
@@ -104,17 +103,17 @@ final class SearchControllerTest extends WebTestCase
 
     private function createAccount(): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
         $currency = $currencyRepository->findOneBy(['code' => 'PLN']);
-        if ($currency === null) {
+        if (null === $currency) {
             $currency = new Currency('PLN');
             $this->em()->persist($currency);
         }
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -122,7 +121,7 @@ final class SearchControllerTest extends WebTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
         $this->em()->flush();
 
@@ -131,13 +130,13 @@ final class SearchControllerTest extends WebTestCase
 
     private function createOperation(Account $account, int $amountMinorUnits, string $description): void
     {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
         $operation = new AccountOperation(
             $account,
             $contractor,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             $amountMinorUnits,
             $account->getCurrency(),
             description: $description

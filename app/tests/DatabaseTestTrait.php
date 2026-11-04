@@ -6,7 +6,6 @@ namespace App\Tests;
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\Persistence\ManagerRegistry;
-use LogicException;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 trait DatabaseTestTrait
@@ -32,7 +31,7 @@ trait DatabaseTestTrait
     protected function em(): EntityManager
     {
         if (null === $this->entityManager) {
-            throw new LogicException('EntityManager is not initialized.');
+            throw new \LogicException('EntityManager is not initialized.');
         }
 
         return $this->entityManager;

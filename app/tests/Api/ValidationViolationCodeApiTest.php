@@ -466,7 +466,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     }
 
     /**
-     * @param array<string, mixed> $contractor
+     * @param array<string, mixed>  $contractor
      * @param array<string, string> $expected
      */
     #[DataProvider('refusedContractorsOnCreate')]
@@ -567,7 +567,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     }
 
     /**
-     * @param array<string, mixed> $contractor
+     * @param array<string, mixed>  $contractor
      * @param array<string, string> $expected
      */
     #[DataProvider('refusedContractorsOnUpdate')]
@@ -982,9 +982,9 @@ final class ValidationViolationCodeApiTest extends WebTestCase
                     'params' => [
                         'max' => '255',
                         'limit' => '1',
-                        'min' => '1'
-                    ]
-                ]
+                        'min' => '1',
+                    ],
+                ],
             ],
             $this->codesAndParams(),
         );

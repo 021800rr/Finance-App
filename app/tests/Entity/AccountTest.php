@@ -5,13 +5,10 @@ declare(strict_types=1);
 namespace App\Tests\Entity;
 
 use App\Entity\Account;
-use App\Entity\AccountOperation;
 use App\Entity\AccountType;
 use App\Entity\Bank;
-use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class AccountTest extends TestCase
@@ -34,7 +31,7 @@ final class AccountTest extends TestCase
 
     public function testConstructorRejectsBlankAccountNumber(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Account number cannot be blank.');
 
         new Account(new Bank('Test Bank'), new Currency('PLN'), new AccountType('Test Type'), '   ', new Household('Test Household'));

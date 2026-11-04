@@ -7,7 +7,6 @@ namespace App\Tests\Service;
 use App\Entity\Contractor;
 use App\Service\FixedExpenseFactory;
 use App\Tests\DatabaseTestTrait;
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
@@ -86,7 +85,7 @@ final class FixedExpenseFactoryTest extends KernelTestCase
     {
         $form = $this->buildFormWithInvalidDay();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('day must be an integer.');
 
         $this->factory->createFromForm($form, $this->createContractor());
@@ -132,14 +131,14 @@ final class FixedExpenseFactoryTest extends KernelTestCase
     {
         $form = $this->buildForm(day: 1, amount: $amount, description: null);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         $this->factory->createFromForm($form, $this->createContractor());
     }
 
     private function createContractor(): Contractor
     {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
         $this->em()->flush();
 

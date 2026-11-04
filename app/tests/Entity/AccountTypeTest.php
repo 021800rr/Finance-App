@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Entity;
 
 use App\Entity\AccountType;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class AccountTypeTest extends TestCase
@@ -14,7 +13,7 @@ final class AccountTypeTest extends TestCase
     {
         $accountType = new AccountType('Valid Name');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Account type name cannot be blank.');
 
         $accountType->setName('   ');
@@ -37,7 +36,7 @@ final class AccountTypeTest extends TestCase
 
     public function testConstructorRejectsBlankName(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Account type name cannot be blank.');
 
         new AccountType('   ');

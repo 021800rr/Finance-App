@@ -12,7 +12,6 @@ use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Doctrine\ORM\EntityManagerInterface;
 
 final class ContractorFormHandlerTest extends KernelTestCase
 {
@@ -81,7 +80,7 @@ final class ContractorFormHandlerTest extends KernelTestCase
 
     public function testResolveReturnsContractorWhenIdIsValid(): void
     {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
         $this->em()->flush();
 

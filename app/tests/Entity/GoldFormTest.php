@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Entity;
 
 use App\Entity\GoldForm;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class GoldFormTest extends TestCase
@@ -14,7 +13,7 @@ final class GoldFormTest extends TestCase
     {
         $goldForm = new GoldForm('Valid Name');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Gold form name cannot be blank.');
 
         $goldForm->setName('   ');
@@ -29,7 +28,7 @@ final class GoldFormTest extends TestCase
 
     public function testConstructorRejectsBlankName(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Gold form name cannot be blank.');
 
         new GoldForm('   ');

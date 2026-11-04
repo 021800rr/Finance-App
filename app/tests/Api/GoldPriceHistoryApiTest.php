@@ -10,7 +10,6 @@ use App\Entity\GoldForm;
 use App\Entity\GoldPrice;
 use App\Tests\Controller\LogsInTrait;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -127,7 +126,7 @@ final class GoldPriceHistoryApiTest extends WebTestCase
 
         $pricePaths = $paths
                 |> array_keys(...)
-                |> (fn($x) => array_filter($x, static fn(string $path): bool => str_starts_with($path, '/api/gold_prices'),))
+                |> (fn ($x) => array_filter($x, static fn (string $path): bool => str_starts_with($path, '/api/gold_prices')))
                 |> array_values(...);
         self::assertSame([
             '/api/gold_prices',
@@ -197,7 +196,7 @@ final class GoldPriceHistoryApiTest extends WebTestCase
         $currency = $this->em()->getRepository(Currency::class)->find('PLN');
         self::assertNotNull($currency);
 
-        $price = new GoldPrice($asset, new DateTimeImmutable($date), $minorUnits, $currency);
+        $price = new GoldPrice($asset, new \DateTimeImmutable($date), $minorUnits, $currency);
         $this->em()->persist($price);
         $this->em()->flush();
 

@@ -78,7 +78,7 @@ final class FixedExpenseRepositoryTest extends KernelTestCase
 
     private function createFixedExpense(int $day, int $amount): FixedExpense
     {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);

@@ -43,9 +43,8 @@ final class BusinessDateTest extends KernelTestCase
         string $field,
         bool $editing,
         string $date,
-        bool $valid
-    ): void
-    {
+        bool $valid,
+    ): void {
         /** @var FormFactoryInterface $factory */
         $factory = self::getContainer()->get('form.factory');
         $options = ['csrf_protection' => false];
@@ -103,6 +102,7 @@ final class BusinessDateTest extends KernelTestCase
 
     /**
      * @param class-string<FormTypeInterface> $formClass
+     *
      * @return array<string, string>
      */
     private function payloadFor(string $formClass): array

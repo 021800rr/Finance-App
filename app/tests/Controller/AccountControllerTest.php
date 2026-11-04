@@ -14,7 +14,6 @@ use App\Entity\Household;
 use App\Repository\AccountRepository;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\LosesMainAccountRaceTrait;
-use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -41,17 +40,17 @@ final class AccountControllerTest extends WebTestCase
 
     private function createTestAccount(): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
         $currency = $currencyRepository->findOneBy(['code' => 'PLN']);
-        if ($currency === null) {
+        if (null === $currency) {
             $currency = new Currency('PLN');
             $this->em()->persist($currency);
         }
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -59,7 +58,7 @@ final class AccountControllerTest extends WebTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
         $this->em()->flush();
 
@@ -70,7 +69,7 @@ final class AccountControllerTest extends WebTestCase
     {
         $account = $this->createTestAccount();
 
-        $this->client->request('POST', '/account/' . $account->getId() . '/toggle-hidden', [
+        $this->client->request('POST', '/account/'.$account->getId().'/toggle-hidden', [
             '_token' => 'invalid-token',
         ]);
 
@@ -85,10 +84,10 @@ final class AccountControllerTest extends WebTestCase
 
         $crawler = $this->client->request('GET', '/');
         $csrfToken = $crawler
-            ->filter('form[action*="' . $accountId . '/toggle-hidden"] input[name="_token"]')
+            ->filter('form[action*="'.$accountId.'/toggle-hidden"] input[name="_token"]')
             ->attr('value');
 
-        $this->client->request('POST', '/account/' . $accountId . '/toggle-hidden', [
+        $this->client->request('POST', '/account/'.$accountId.'/toggle-hidden', [
             '_token' => $csrfToken,
         ]);
 
@@ -125,7 +124,7 @@ final class AccountControllerTest extends WebTestCase
     {
         $account = $this->createTestAccount();
 
-        $this->client->request('GET', '/account/' . $account->getId() . '/operations');
+        $this->client->request('GET', '/account/'.$account->getId().'/operations');
 
         self::assertResponseIsSuccessful();
     }
@@ -166,10 +165,10 @@ final class AccountControllerTest extends WebTestCase
 
         $crawler = $this->client->request('GET', '/?show_hidden=1');
         $csrfToken = $crawler
-            ->filter('form[action*="' . $accountId . '/toggle-hidden"] input[name="_token"]')
+            ->filter('form[action*="'.$accountId.'/toggle-hidden"] input[name="_token"]')
             ->attr('value');
 
-        $this->client->request('POST', '/account/' . $accountId . '/toggle-hidden?show_hidden=1', [
+        $this->client->request('POST', '/account/'.$accountId.'/toggle-hidden?show_hidden=1', [
             '_token' => $csrfToken,
         ]);
 
@@ -180,7 +179,7 @@ final class AccountControllerTest extends WebTestCase
     {
         $account = $this->createTestAccount();
 
-        $this->client->request('POST', '/account/' . $account->getId() . '/set-main', [
+        $this->client->request('POST', '/account/'.$account->getId().'/set-main', [
             '_token' => 'invalid-token',
         ]);
 
@@ -200,10 +199,10 @@ final class AccountControllerTest extends WebTestCase
 
         $crawler = $this->client->request('GET', '/');
         $csrfToken = $crawler
-            ->filter('form[action*="' . $newMainId . '/set-main"] input[name="_token"]')
+            ->filter('form[action*="'.$newMainId.'/set-main"] input[name="_token"]')
             ->attr('value');
 
-        $this->client->request('POST', '/account/' . $newMainId . '/set-main', [
+        $this->client->request('POST', '/account/'.$newMainId.'/set-main', [
             '_token' => $csrfToken,
         ]);
 
@@ -256,14 +255,14 @@ final class AccountControllerTest extends WebTestCase
     {
         $account = $this->createTestAccount();
 
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
-        $operation = new AccountOperation($account, $contractor, new DateTimeImmutable(), 15000, $account->getCurrency());
+        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable(), 15000, $account->getCurrency());
         $this->em()->persist($operation);
         $this->em()->flush();
 
-        $crawler = $this->client->request('GET', '/account/' . $account->getId() . '/operations');
+        $crawler = $this->client->request('GET', '/account/'.$account->getId().'/operations');
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('150,00', $crawler->text());

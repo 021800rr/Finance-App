@@ -8,8 +8,6 @@ use App\Entity\Currency;
 use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\Entity\GoldPrice;
-use DateTimeImmutable;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class GoldPriceTest extends TestCase
@@ -19,10 +17,10 @@ final class GoldPriceTest extends TestCase
         $asset = $this->createGoldAsset();
         $currency = new Currency('PLN');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Price must be between 1 and 99999999.');
 
-        new GoldPrice($asset, new DateTimeImmutable(), 0, $currency);
+        new GoldPrice($asset, new \DateTimeImmutable(), 0, $currency);
     }
 
     public function testConstructorRejectsPriceAboveUpperBound(): void
@@ -30,15 +28,15 @@ final class GoldPriceTest extends TestCase
         $asset = $this->createGoldAsset();
         $currency = new Currency('PLN');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Price must be between 1 and 99999999.');
 
-        new GoldPrice($asset, new DateTimeImmutable(), 100000000, $currency);
+        new GoldPrice($asset, new \DateTimeImmutable(), 100000000, $currency);
     }
 
     public function testGetPricePlnAsMoneyUsesOwnCurrency(): void
     {
-        $goldPrice = new GoldPrice($this->createGoldAsset(), new DateTimeImmutable(), 500000, new Currency('PLN'));
+        $goldPrice = new GoldPrice($this->createGoldAsset(), new \DateTimeImmutable(), 500000, new Currency('PLN'));
 
         $money = $goldPrice->getPricePlnAsMoney();
 

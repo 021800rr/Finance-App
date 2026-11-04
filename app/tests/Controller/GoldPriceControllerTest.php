@@ -10,7 +10,6 @@ use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\Entity\GoldPrice;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -85,7 +84,7 @@ final class GoldPriceControllerTest extends WebTestCase
 
         $this->client->submit($form, [
             'gold_price[goldAsset]' => (string) $asset->getId(),
-            'gold_price[priceDate]' => new DateTimeImmutable()->format('Y-m-d'),
+            'gold_price[priceDate]' => new \DateTimeImmutable()->format('Y-m-d'),
             'gold_price[pricePln]' => '8000',
         ]);
 
@@ -106,7 +105,7 @@ final class GoldPriceControllerTest extends WebTestCase
 
         $this->client->submit($form, [
             'gold_price[goldAsset]' => (string) $asset->getId(),
-            'gold_price[priceDate]' => new DateTimeImmutable()->format('Y-m-d'),
+            'gold_price[priceDate]' => new \DateTimeImmutable()->format('Y-m-d'),
             'gold_price[pricePln]' => '0',
         ]);
 
@@ -128,7 +127,7 @@ final class GoldPriceControllerTest extends WebTestCase
         $this->client->request('POST', '/gold-prices', [
             'gold_price' => [
                 '_token' => $token,
-                'priceDate' => new DateTimeImmutable()->format('Y-m-d'),
+                'priceDate' => new \DateTimeImmutable()->format('Y-m-d'),
                 'pricePln' => '8000',
             ] + $asset,
         ]);
@@ -165,7 +164,7 @@ final class GoldPriceControllerTest extends WebTestCase
             'gold_price' => [
                 '_token' => $token,
                 'goldAsset' => $assetId,
-                'priceDate' => new DateTimeImmutable()->format('Y-m-d'),
+                'priceDate' => new \DateTimeImmutable()->format('Y-m-d'),
                 'pricePln' => '8000',
             ],
         ]);
@@ -198,7 +197,7 @@ final class GoldPriceControllerTest extends WebTestCase
     {
         $price = $this->createPriceInDatabase();
 
-        $this->client->request('POST', '/gold-prices/' . $price->getId() . '/delete', [
+        $this->client->request('POST', '/gold-prices/'.$price->getId().'/delete', [
             '_token' => 'invalid-token',
         ]);
 
@@ -211,9 +210,9 @@ final class GoldPriceControllerTest extends WebTestCase
         $priceId = $price->getId();
 
         $crawler = $this->client->request('GET', '/gold-prices');
-        $csrfToken = $crawler->filter('form[action*="' . $priceId . '/delete"] input[name="_token"]')->attr('value');
+        $csrfToken = $crawler->filter('form[action*="'.$priceId.'/delete"] input[name="_token"]')->attr('value');
 
-        $this->client->request('POST', '/gold-prices/' . $priceId . '/delete', [
+        $this->client->request('POST', '/gold-prices/'.$priceId.'/delete', [
             '_token' => $csrfToken,
         ]);
 
@@ -247,7 +246,7 @@ final class GoldPriceControllerTest extends WebTestCase
         $pln = $this->em()->getRepository(Currency::class)->find(Currencies::SETTLEMENT_CURRENCY_CODE);
         self::assertNotNull($pln, 'PLN currency must exist in fixtures.');
 
-        $price = new GoldPrice($asset, new DateTimeImmutable(), $priceMinorUnits, $pln);
+        $price = new GoldPrice($asset, new \DateTimeImmutable(), $priceMinorUnits, $pln);
         $this->em()->persist($price);
         $this->em()->flush();
 

@@ -11,7 +11,6 @@ use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\Entity\Household;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -65,7 +64,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
             [$bankA, $eur, '2026-10-26', 48000],
             [$bankA, $chf, '2026-10-25', 91000],
         ] as [$bank, $currency, $date, $minorUnits]) {
-            $rate = new CurrencyExchangeRate($bank, $currency, new DateTimeImmutable($date), $minorUnits);
+            $rate = new CurrencyExchangeRate($bank, $currency, new \DateTimeImmutable($date), $minorUnits);
             $this->em()->persist($rate);
         }
         $this->em()->flush();
@@ -92,7 +91,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
         $this->client->submit($form, [
             'currency_exchange_rate[bank]' => (string) $bank->getId(),
             'currency_exchange_rate[currency]' => $chf->getCode(),
-            'currency_exchange_rate[rateDate]' => new DateTimeImmutable()->format('Y-m-d'),
+            'currency_exchange_rate[rateDate]' => new \DateTimeImmutable()->format('Y-m-d'),
             'currency_exchange_rate[rateToPln]' => '4.5',
         ]);
 
@@ -115,7 +114,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
         $this->client->submit($form, [
             'currency_exchange_rate[bank]' => (string) $bank->getId(),
             'currency_exchange_rate[currency]' => $chf->getCode(),
-            'currency_exchange_rate[rateDate]' => (new DateTimeImmutable())->format('Y-m-d'),
+            'currency_exchange_rate[rateDate]' => (new \DateTimeImmutable())->format('Y-m-d'),
             'currency_exchange_rate[rateToPln]' => '0',
         ]);
 
@@ -138,7 +137,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
             '_token' => $token,
             'bank' => (string) $bank->getId(),
             'currency' => 'CHF',
-            'rateDate' => new DateTimeImmutable()->format('Y-m-d'),
+            'rateDate' => new \DateTimeImmutable()->format('Y-m-d'),
             'rateToPln' => '4.5',
         ];
         if (null === $value) {
@@ -194,7 +193,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
         $data = [
             'bank' => (string) $this->createBankWithForeignCurrencyAccount()->getId(),
             'currency' => 'CHF',
-            'rateDate' => new DateTimeImmutable()->format('Y-m-d'),
+            'rateDate' => new \DateTimeImmutable()->format('Y-m-d'),
             'rateToPln' => '4.5',
         ];
         $data[$field] = $value ?? (string) $this->createBankWithAccount('CHF', hidden: true)->getId();
@@ -237,7 +236,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
     {
         $rate = $this->createRateInDatabase();
 
-        $this->client->request('POST', '/rate/' . $rate->getId() . '/delete', [
+        $this->client->request('POST', '/rate/'.$rate->getId().'/delete', [
             '_token' => 'invalid-token',
         ]);
 
@@ -250,9 +249,9 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
         $rateId = $rate->getId();
 
         $crawler = $this->client->request('GET', '/rate');
-        $csrfToken = $crawler->filter('form[action*="' . $rateId . '/delete"] input[name="_token"]')->attr('value');
+        $csrfToken = $crawler->filter('form[action*="'.$rateId.'/delete"] input[name="_token"]')->attr('value');
 
-        $this->client->request('POST', '/rate/' . $rateId . '/delete', [
+        $this->client->request('POST', '/rate/'.$rateId.'/delete', [
             '_token' => $csrfToken,
         ]);
 
@@ -265,7 +264,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
 
     private function createBank(): Bank
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
         $this->em()->flush();
 
@@ -290,7 +289,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
         $bank = $this->createBank();
         $chf = $this->getOrCreateCurrency('CHF');
 
-        $rate = new CurrencyExchangeRate($bank, $chf, new DateTimeImmutable(), 45000);
+        $rate = new CurrencyExchangeRate($bank, $chf, new \DateTimeImmutable(), 45000);
         $this->em()->persist($rate);
         $this->em()->flush();
 
@@ -304,18 +303,18 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
 
     private function createBankWithAccount(string $currencyCode, bool $hidden = false): Bank
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currency = $this->getOrCreateCurrency($currencyCode);
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
-        $household = new Household('Test Household ' . uniqid());
+        $household = new Household('Test Household '.uniqid());
         $this->em()->persist($household);
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $account->setHidden($hidden);
         $this->em()->persist($account);
 

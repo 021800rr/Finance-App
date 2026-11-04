@@ -49,20 +49,13 @@ final class ConstraintTest extends KernelTestCase
      */
     public static function acceptedChanges(): iterable
     {
-        yield 'operation amount at the maximum'
-            => ['UPDATE account_operation SET amount_minor_units = 99999999 WHERE id = :operation'];
-        yield 'operation amount at the minimum'
-            => ['UPDATE account_operation SET amount_minor_units = -99999999 WHERE id = :operation'];
-        yield 'operation on the first business day'
-            => ["UPDATE account_operation SET operation_date = '2025-01-01' WHERE id = :operation"];
-        yield 'gold price on the last business day'
-            => ["UPDATE gold_price SET price_date = '2070-12-31' WHERE id = :price"];
-        yield 'exchange rate on the last business day'
-            => ["UPDATE currency_exchange_rate SET rate_date = '2070-12-31' WHERE id = :rate"];
-        yield 'operation moved to another account in the same currency'
-            => ['UPDATE account_operation SET account_id = :otherPlnAccount WHERE id = :operation'];
-        yield 'currency of an account without operations'
-            => ["UPDATE account SET currency_code = 'CHF' WHERE id = :emptyAccount"];
+        yield 'operation amount at the maximum' => ['UPDATE account_operation SET amount_minor_units = 99999999 WHERE id = :operation'];
+        yield 'operation amount at the minimum' => ['UPDATE account_operation SET amount_minor_units = -99999999 WHERE id = :operation'];
+        yield 'operation on the first business day' => ["UPDATE account_operation SET operation_date = '2025-01-01' WHERE id = :operation"];
+        yield 'gold price on the last business day' => ["UPDATE gold_price SET price_date = '2070-12-31' WHERE id = :price"];
+        yield 'exchange rate on the last business day' => ["UPDATE currency_exchange_rate SET rate_date = '2070-12-31' WHERE id = :rate"];
+        yield 'operation moved to another account in the same currency' => ['UPDATE account_operation SET account_id = :otherPlnAccount WHERE id = :operation'];
+        yield 'currency of an account without operations' => ["UPDATE account SET currency_code = 'CHF' WHERE id = :emptyAccount"];
     }
 
     /**

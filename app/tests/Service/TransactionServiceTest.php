@@ -13,10 +13,7 @@ use App\Entity\Currency;
 use App\Entity\Household;
 use App\Service\TransactionService;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
-use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class TransactionServiceTest extends KernelTestCase
@@ -48,7 +45,7 @@ final class TransactionServiceTest extends KernelTestCase
             $this->createAccount('PLN'),
             $this->createAccount('PLN'),
             $this->createContractor(),
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             '100.00',
             $amountTo,
             null,
@@ -79,7 +76,7 @@ final class TransactionServiceTest extends KernelTestCase
             $from,
             $to,
             $contractor,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             '100.00',
             null,
             'test transfer'
@@ -103,7 +100,7 @@ final class TransactionServiceTest extends KernelTestCase
             $from,
             $to,
             $contractor,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             '100.00',
             '25.00',
             null
@@ -125,7 +122,7 @@ final class TransactionServiceTest extends KernelTestCase
             $from,
             $to,
             $contractor,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             '50.00',
             '215.00',
             null
@@ -152,7 +149,7 @@ final class TransactionServiceTest extends KernelTestCase
             $from,
             $to,
             $contractor,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             $amountFrom,
             $amountTo,
             null
@@ -186,7 +183,7 @@ final class TransactionServiceTest extends KernelTestCase
             $from,
             $to,
             $contractor,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             '50.00',
             null,
             null
@@ -202,13 +199,13 @@ final class TransactionServiceTest extends KernelTestCase
         $to = $this->createAccount('PLN');
         $contractor = $this->createContractor();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         $this->transactionService->transferBetweenAccounts(
             $from,
             $to,
             $contractor,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             'not-a-number',
             null,
             null
@@ -221,13 +218,13 @@ final class TransactionServiceTest extends KernelTestCase
         $to = $this->createAccount('CHF');
         $contractor = $this->createContractor();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         $this->transactionService->transferBetweenAccounts(
             $from,
             $to,
             $contractor,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             '100.00',
             'not-a-number',
             null
@@ -240,14 +237,14 @@ final class TransactionServiceTest extends KernelTestCase
         $to = $this->createAccount('CHF');
         $contractor = $this->createContractor();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('For different currencies amountTo is required.');
 
         $this->transactionService->transferBetweenAccounts(
             $from,
             $to,
             $contractor,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             '100.00',
             null,
             null
@@ -259,14 +256,14 @@ final class TransactionServiceTest extends KernelTestCase
         $account = $this->createAccount('PLN');
         $contractor = $this->createContractor();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Cannot transfer between the same account.');
 
         $this->transactionService->transferBetweenAccounts(
             $account,
             $account,
             $contractor,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             '100.00',
             null,
             null
@@ -279,13 +276,13 @@ final class TransactionServiceTest extends KernelTestCase
         $to = $this->createAccount('PLN');
         $contractor = $this->createContractor();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         $this->transactionService->transferBetweenAccounts(
             $from,
             $to,
             $contractor,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             '0.00',
             null,
             null
@@ -303,16 +300,16 @@ final class TransactionServiceTest extends KernelTestCase
                 $from,
                 $to,
                 $contractor,
-                new DateTimeImmutable(),
+                new \DateTimeImmutable(),
                 '0.00',
                 null,
                 null
             );
-        } catch (InvalidArgumentException) {
+        } catch (\InvalidArgumentException) {
             // expected
         }
 
-        $operations = $this->em()->getRepository(\App\Entity\AccountOperation::class)->findAll();
+        $operations = $this->em()->getRepository(AccountOperation::class)->findAll();
         self::assertCount(0, $operations, 'No operation should be persisted when the transfer fails.');
     }
 
@@ -326,7 +323,7 @@ final class TransactionServiceTest extends KernelTestCase
             $from,
             $to,
             $contractor,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             '10.00',
             null,
             null
@@ -350,10 +347,10 @@ final class TransactionServiceTest extends KernelTestCase
 
         try {
             $this->transactionService->transferBetweenAccounts(
-                $from, $to, $contractor, new DateTimeImmutable(), $amountFrom, $amountTo, null
+                $from, $to, $contractor, new \DateTimeImmutable(), $amountFrom, $amountTo, null
             );
             self::fail('A non-positive transfer amount must be rejected.');
-        } catch (InvalidArgumentException $exception) {
+        } catch (\InvalidArgumentException $exception) {
             self::assertSame('Transfer amounts must be positive.', $exception->getMessage());
         }
 
@@ -385,25 +382,25 @@ final class TransactionServiceTest extends KernelTestCase
 
     private function createAccount(string $currencyCode): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
         $currency = $currencyRepository->findOneBy(['code' => $currencyCode]);
-        if ($currency === null) {
+        if (null === $currency) {
             $currency = new Currency($currencyCode);
             $this->em()->persist($currency);
         }
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
         if (null === $household) {
-            throw new RuntimeException('Fixtures must provide exactly one own-funds household.');
+            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
 
         $this->em()->flush();
@@ -413,7 +410,7 @@ final class TransactionServiceTest extends KernelTestCase
 
     private function createContractor(): Contractor
     {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
         $this->em()->flush();
 

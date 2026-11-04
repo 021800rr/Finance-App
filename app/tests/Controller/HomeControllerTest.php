@@ -12,7 +12,6 @@ use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -50,7 +49,7 @@ final class HomeControllerTest extends WebTestCase
         $this->client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
-        self::assertSelectorNotExists('form[action*="' . $account->getId() . '/toggle-hidden"]');
+        self::assertSelectorNotExists('form[action*="'.$account->getId().'/toggle-hidden"]');
     }
 
     public function testIndexShowsHiddenAccountsWhenRequested(): void
@@ -59,7 +58,7 @@ final class HomeControllerTest extends WebTestCase
 
         $this->client->request('GET', '/?show_hidden=1');
 
-        self::assertSelectorExists('form[action*="' . $account->getId() . '/toggle-hidden"]');
+        self::assertSelectorExists('form[action*="'.$account->getId().'/toggle-hidden"]');
     }
 
     public function testIndexDisplaysAccountBalance(): void
@@ -74,17 +73,17 @@ final class HomeControllerTest extends WebTestCase
 
     private function createAccount(bool $hidden = false): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
         $currency = $currencyRepository->findOneBy(['code' => 'PLN']);
-        if ($currency === null) {
+        if (null === $currency) {
             $currency = new Currency('PLN');
             $this->em()->persist($currency);
         }
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -92,7 +91,7 @@ final class HomeControllerTest extends WebTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $account->setHidden($hidden);
         $this->em()->persist($account);
         $this->em()->flush();
@@ -102,10 +101,10 @@ final class HomeControllerTest extends WebTestCase
 
     private function createOperationForAccount(Account $account, int $amountMinorUnits): void
     {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
-        $operation = new AccountOperation($account, $contractor, new DateTimeImmutable(), $amountMinorUnits, $account->getCurrency());
+        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable(), $amountMinorUnits, $account->getCurrency());
         $this->em()->persist($operation);
         $this->em()->flush();
     }

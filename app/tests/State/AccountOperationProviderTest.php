@@ -253,7 +253,7 @@ final class AccountOperationProviderTest extends KernelTestCase
     {
         return $paginator
                 |> iterator_to_array(...)
-                |> (fn($x) => array_map(static fn(AccountOperationResource $r): ?int => $r->id, $x))
+                |> (fn ($x) => array_map(static fn (AccountOperationResource $r): ?int => $r->id, $x))
                 |> array_values(...);
     }
 
@@ -296,9 +296,8 @@ final class AccountOperationProviderTest extends KernelTestCase
         Account $account,
         string $amount,
         ?\DateTimeImmutable $date = null,
-        ?string $description = null
-    ): AccountOperation
-    {
+        ?string $description = null,
+    ): AccountOperation {
         $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 

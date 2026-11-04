@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Entity;
 
 use App\Entity\Household;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class HouseholdTest extends TestCase
@@ -27,7 +26,7 @@ final class HouseholdTest extends TestCase
 
     public function testConstructorRejectsBlankName(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Household name cannot be blank.');
 
         new Household('   ');

@@ -36,7 +36,7 @@ final class NavbarTest extends WebTestCase
 
         $toggle->text()
             |> trim(...)
-            |> (fn($x) => self::assertStringNotContainsString('test@example.com', $x));
+            |> (fn ($x) => self::assertStringNotContainsString('test@example.com', $x));
         self::assertSelectorExists('.navbar .dropdown-toggle svg');
     }
 

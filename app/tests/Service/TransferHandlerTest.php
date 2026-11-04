@@ -12,7 +12,6 @@ use App\Entity\Currency;
 use App\Entity\Household;
 use App\Service\TransferHandler;
 use App\Tests\DatabaseTestTrait;
-use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
@@ -104,7 +103,7 @@ final class TransferHandlerTest extends KernelTestCase
             null
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('fromAccount is required.');
 
         $this->handler->handle($form);
@@ -121,7 +120,7 @@ final class TransferHandlerTest extends KernelTestCase
             null
         );
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('date is required.');
 
         $this->handler->handle($form);
@@ -131,7 +130,7 @@ final class TransferHandlerTest extends KernelTestCase
     {
         $form = $this->buildFormWithRawAmounts(rawAmountFrom: 'not-a-number', rawAmountTo: null);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid decimal string: not-a-number');
 
         $this->handler->handle($form);
@@ -141,7 +140,7 @@ final class TransferHandlerTest extends KernelTestCase
     {
         $form = $this->buildFormWithRawAmounts(rawAmountFrom: '50.0', rawAmountTo: 'not-a-number', toCurrency: 'CHF');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid decimal string: not-a-number');
 
         $this->handler->handle($form);
@@ -182,8 +181,7 @@ final class TransferHandlerTest extends KernelTestCase
         mixed $rawAmountFrom,
         mixed $rawAmountTo,
         string $toCurrency = 'PLN',
-    ): FormInterface
-    {
+    ): FormInterface {
         $form = $this->formFactory->createNamed('', FormType::class, null, ['csrf_protection' => false]);
         $form->add('fromAccount', HiddenType::class, ['mapped' => false]);
         $form->add('toAccount', HiddenType::class, ['mapped' => false]);
@@ -204,12 +202,12 @@ final class TransferHandlerTest extends KernelTestCase
 
     private function createAccount(string $currencyCode): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currency = $this->findOrCreateCurrency($currencyCode);
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -217,7 +215,7 @@ final class TransferHandlerTest extends KernelTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
         $this->em()->flush();
 

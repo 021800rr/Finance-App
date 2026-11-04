@@ -17,7 +17,6 @@ use App\Entity\Household;
 use App\Repository\ContractorRepository;
 use App\State\TransferProcessor;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -329,7 +328,7 @@ final class TransferProcessorTest extends KernelTestCase
         $resource->amountFrom = $amountFrom;
         $resource->amountTo = $amountTo;
         $resource->operationDate = self::AUTO_DATE === $operationDate
-            ? (new DateTimeImmutable())->format('Y-m-d')
+            ? (new \DateTimeImmutable())->format('Y-m-d')
             : $operationDate;
         $resource->description = $description;
 
@@ -352,7 +351,7 @@ final class TransferProcessorTest extends KernelTestCase
 
     private function createAccount(string $currencyCode): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
@@ -362,7 +361,7 @@ final class TransferProcessorTest extends KernelTestCase
             $this->em()->persist($currency);
         }
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -370,7 +369,7 @@ final class TransferProcessorTest extends KernelTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
         $this->em()->flush();
 

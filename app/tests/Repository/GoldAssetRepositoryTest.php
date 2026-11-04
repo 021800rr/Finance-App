@@ -64,7 +64,7 @@ final class GoldAssetRepositoryTest extends KernelTestCase
 
     private function createGoldAsset(string $description): GoldAsset
     {
-        $goldForm = new GoldForm('Test Form ' . uniqid());
+        $goldForm = new GoldForm('Test Form '.uniqid());
         $this->em()->persist($goldForm);
 
         $asset = new GoldAsset($goldForm, 10000, $description);

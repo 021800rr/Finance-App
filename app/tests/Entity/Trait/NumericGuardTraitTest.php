@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Entity\Trait;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class NumericGuardTraitTest extends TestCase
@@ -23,7 +22,7 @@ final class NumericGuardTraitTest extends TestCase
 
     public function testAssertNotZeroRejectsZero(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Test cannot be zero.');
 
         NumericGuardTraitFixture::notZero(0, 'Test');
@@ -49,7 +48,7 @@ final class NumericGuardTraitTest extends TestCase
 
     public function testAssertInRangeRejectsValueBelowMinimum(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Test must be between 1 and 28.');
 
         NumericGuardTraitFixture::inRange(0, 1, 28, 'Test');
@@ -57,7 +56,7 @@ final class NumericGuardTraitTest extends TestCase
 
     public function testAssertInRangeRejectsValueAboveMaximum(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         NumericGuardTraitFixture::inRange(29, 1, 28, 'Test');
     }

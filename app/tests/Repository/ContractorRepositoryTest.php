@@ -33,7 +33,7 @@ final class ContractorRepositoryTest extends KernelTestCase
 
     public function testFindOneByNameReturnsMatchingContractor(): void
     {
-        $contractor = $this->createContractor('Unique Name ' . uniqid());
+        $contractor = $this->createContractor('Unique Name '.uniqid());
 
         $result = $this->repository->findOneByName($contractor->getName());
 
@@ -43,14 +43,14 @@ final class ContractorRepositoryTest extends KernelTestCase
 
     public function testFindOneByNameReturnsNullForNonExistentName(): void
     {
-        $result = $this->repository->findOneByName('Nonexistent ' . uniqid());
+        $result = $this->repository->findOneByName('Nonexistent '.uniqid());
 
         self::assertNull($result);
     }
 
     public function testSearchByNameFindsPartialMatch(): void
     {
-        $contractor = $this->createContractor('Écolier Unique ' . uniqid());
+        $contractor = $this->createContractor('Écolier Unique '.uniqid());
 
         $ids = array_column($this->repository->searchByName('Écolier', 1000), 'id');
 
@@ -59,7 +59,7 @@ final class ContractorRepositoryTest extends KernelTestCase
 
     public function testSearchByNameIsCaseInsensitive(): void
     {
-        $contractor = $this->createContractor('CaseTest Unique ' . uniqid());
+        $contractor = $this->createContractor('CaseTest Unique '.uniqid());
 
         $ids = array_column($this->repository->searchByName('casetest', 1000), 'id');
 
@@ -68,7 +68,7 @@ final class ContractorRepositoryTest extends KernelTestCase
 
     public function testSearchByNameReturnsEmptyForBlankQuery(): void
     {
-        $this->createContractor('Any Name ' . uniqid());
+        $this->createContractor('Any Name '.uniqid());
 
         $result = $this->repository->searchByName('');
 
@@ -77,7 +77,7 @@ final class ContractorRepositoryTest extends KernelTestCase
 
     public function testSearchByNameReturnsEmptyForWhitespaceOnlyQuery(): void
     {
-        $this->createContractor('Any Name ' . uniqid());
+        $this->createContractor('Any Name '.uniqid());
 
         $result = $this->repository->searchByName('   ');
 
@@ -132,16 +132,16 @@ final class ContractorRepositoryTest extends KernelTestCase
 
     public function testSearchByNameReturnsEmptyForNonMatchingQuery(): void
     {
-        $this->createContractor('Something ' . uniqid());
+        $this->createContractor('Something '.uniqid());
 
-        $result = $this->repository->searchByName('nonexistent' . uniqid());
+        $result = $this->repository->searchByName('nonexistent'.uniqid());
 
         self::assertSame([], $result);
     }
 
     public function testSearchByNameRespectsLimit(): void
     {
-        $prefix = 'LimitTest' . uniqid();
+        $prefix = 'LimitTest'.uniqid();
         for ($i = 0; $i < 5; ++$i) {
             $this->createContractor("{$prefix}-{$i}");
         }
@@ -166,7 +166,7 @@ final class ContractorRepositoryTest extends KernelTestCase
 
     public function testSearchByNameReturnsCorrectShape(): void
     {
-        $contractor = $this->createContractor('ShapeTest ' . uniqid());
+        $contractor = $this->createContractor('ShapeTest '.uniqid());
 
         $result = $this->repository->searchByName($contractor->getName());
 

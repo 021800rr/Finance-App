@@ -7,7 +7,6 @@ namespace App\Tests\Service;
 use App\Entity\GoldForm;
 use App\Service\GoldAssetFactory;
 use App\Tests\DatabaseTestTrait;
-use InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
@@ -75,7 +74,7 @@ final class GoldAssetFactoryTest extends KernelTestCase
     {
         $form = $this->buildFormWithoutGoldForm();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('form is required.');
 
         $this->factory->createFromForm($form);
@@ -86,7 +85,7 @@ final class GoldAssetFactoryTest extends KernelTestCase
         $goldForm = $this->createGoldForm();
         $form = $this->buildForm($goldForm, 1.5, '   ');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Description is required.');
 
         $this->factory->createFromForm($form);
@@ -97,7 +96,7 @@ final class GoldAssetFactoryTest extends KernelTestCase
         $goldForm = $this->createGoldForm();
         $form = $this->buildForm($goldForm, 1.5, null);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Description is required.');
 
         $this->factory->createFromForm($form);
@@ -133,7 +132,7 @@ final class GoldAssetFactoryTest extends KernelTestCase
 
     private function createGoldForm(): GoldForm
     {
-        $goldForm = new GoldForm('Test Form ' . uniqid());
+        $goldForm = new GoldForm('Test Form '.uniqid());
         $this->em()->persist($goldForm);
         $this->em()->flush();
 

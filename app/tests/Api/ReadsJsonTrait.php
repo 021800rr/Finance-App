@@ -88,7 +88,7 @@ trait ReadsJsonTrait
     }
 
     /**
-     * @param array<mixed> $data
+     * @param array<mixed>  $data
      * @param array<string> $path
      */
     private static function valueAt(array $data, array $path): mixed

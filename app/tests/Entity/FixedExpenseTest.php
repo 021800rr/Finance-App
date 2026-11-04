@@ -7,7 +7,6 @@ namespace App\Tests\Entity;
 use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\FixedExpense;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class FixedExpenseTest extends TestCase
@@ -16,7 +15,7 @@ final class FixedExpenseTest extends TestCase
     {
         $fixedExpense = $this->createFixedExpense();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Day must be between 1 and 28.');
 
         $fixedExpense->setDay(0);
@@ -26,7 +25,7 @@ final class FixedExpenseTest extends TestCase
     {
         $fixedExpense = $this->createFixedExpense();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Day must be between 1 and 28.');
 
         $fixedExpense->setDay(29);
@@ -36,7 +35,7 @@ final class FixedExpenseTest extends TestCase
     {
         $fixedExpense = $this->createFixedExpense();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Fixed expense amount must be between -99999999 and -1.');
 
         $fixedExpense->setAmount(100);
@@ -46,7 +45,7 @@ final class FixedExpenseTest extends TestCase
     {
         $fixedExpense = $this->createFixedExpense();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Fixed expense amount must be between -99999999 and -1.');
 
         $fixedExpense->setAmount(0);
@@ -56,7 +55,7 @@ final class FixedExpenseTest extends TestCase
     {
         $fixedExpense = $this->createFixedExpense();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Fixed expense amount must be between -99999999 and -1.');
 
         $fixedExpense->setAmount(-100000000);

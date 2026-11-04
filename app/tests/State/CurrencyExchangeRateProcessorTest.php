@@ -12,7 +12,6 @@ use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\State\CurrencyExchangeRateProcessor;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -228,7 +227,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
         $resource->currencyCode = $currencyCode;
         $resource->rateToPln = $rateToPln;
         $resource->rateDate = self::AUTO_DATE === $rateDate
-            ? (new DateTimeImmutable())->format('Y-m-d')
+            ? (new \DateTimeImmutable())->format('Y-m-d')
             : $rateDate;
 
         return $resource;
@@ -236,7 +235,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
 
     private function createBank(): Bank
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
         $this->em()->flush();
 

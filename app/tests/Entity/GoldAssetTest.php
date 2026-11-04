@@ -6,7 +6,6 @@ namespace App\Tests\Entity;
 
 use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class GoldAssetTest extends TestCase
@@ -15,7 +14,7 @@ final class GoldAssetTest extends TestCase
     {
         $asset = $this->createGoldAsset();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Description cannot be blank.');
 
         $asset->setDescription('   ');
@@ -25,7 +24,7 @@ final class GoldAssetTest extends TestCase
     {
         $asset = $this->createGoldAsset();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Ounces must be between 1 and 9999999.');
 
         $asset->setOunces(0);
@@ -35,7 +34,7 @@ final class GoldAssetTest extends TestCase
     {
         $asset = $this->createGoldAsset();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Ounces must be between 1 and 9999999.');
 
         $asset->setOunces(10000000);
@@ -54,7 +53,7 @@ final class GoldAssetTest extends TestCase
 
     public function testConstructorRejectsBlankDescription(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Description cannot be blank.');
 
         new GoldAsset(new GoldForm('sztabka'), 10000, '   ');
@@ -62,7 +61,7 @@ final class GoldAssetTest extends TestCase
 
     public function testConstructorRejectsZeroOunces(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Ounces must be between 1 and 9999999.');
 
         new GoldAsset(new GoldForm('sztabka'), 0, 'Test description');

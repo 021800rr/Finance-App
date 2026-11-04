@@ -48,8 +48,8 @@ final class SummaryProviderTest extends KernelTestCase
 
     public function testProvideExcludesHiddenAccountsByDefault(): void
     {
-        $visibleNumber = 'VIS-' . uniqid();
-        $hiddenNumber = 'HID-' . uniqid();
+        $visibleNumber = 'VIS-'.uniqid();
+        $hiddenNumber = 'HID-'.uniqid();
         $this->createAccount($visibleNumber, hidden: false);
         $this->createAccount($hiddenNumber, hidden: true);
 
@@ -64,8 +64,8 @@ final class SummaryProviderTest extends KernelTestCase
 
     public function testProvideIncludesHiddenAccountsWhenShowHiddenTrue(): void
     {
-        $visibleNumber = 'VIS-' . uniqid();
-        $hiddenNumber = 'HID-' . uniqid();
+        $visibleNumber = 'VIS-'.uniqid();
+        $hiddenNumber = 'HID-'.uniqid();
         $this->createAccount($visibleNumber, hidden: false);
         $this->createAccount($hiddenNumber, hidden: true);
 
@@ -85,7 +85,7 @@ final class SummaryProviderTest extends KernelTestCase
 
     public function testProvideTreatsShowHiddenFalseSameAsOmitted(): void
     {
-        $hiddenNumber = 'HID-' . uniqid();
+        $hiddenNumber = 'HID-'.uniqid();
         $this->createAccount($hiddenNumber, hidden: true);
 
         $this->pushRequest(['showHidden' => 'false']);
@@ -99,7 +99,7 @@ final class SummaryProviderTest extends KernelTestCase
     public function testProvideReturnsTheLatestRateOfTheBankForForeignCurrencyAccounts(): void
     {
         $bank = $this->createBank();
-        $accountNumber = 'CHF-' . uniqid();
+        $accountNumber = 'CHF-'.uniqid();
         $this->createAccount($accountNumber, hidden: false, bank: $bank, currencyCode: 'CHF');
         $this->createRate($bank, 'CHF', new \DateTimeImmutable('-10 days'), 40000);
         $this->createRate($bank, 'CHF', new \DateTimeImmutable('-1 day'), 41234);
@@ -117,7 +117,7 @@ final class SummaryProviderTest extends KernelTestCase
 
     public function testProvideReturnsNoRateForPlnAccounts(): void
     {
-        $accountNumber = 'PLN-' . uniqid();
+        $accountNumber = 'PLN-'.uniqid();
         $this->createAccount($accountNumber, hidden: false);
 
         $this->pushRequest([]);
@@ -133,7 +133,7 @@ final class SummaryProviderTest extends KernelTestCase
 
     public function testProvideReturnsNoRateAndFlagsMissingRateWhenTheBankHasNone(): void
     {
-        $accountNumber = 'CHF-' . uniqid();
+        $accountNumber = 'CHF-'.uniqid();
         $this->createAccount($accountNumber, hidden: false, currencyCode: 'CHF');
 
         $this->pushRequest([]);
@@ -149,8 +149,8 @@ final class SummaryProviderTest extends KernelTestCase
 
     public function testProvideMarksOnlyTheMainAccountAsMain(): void
     {
-        $mainNumber = 'MAIN-' . uniqid();
-        $otherNumber = 'OTHER-' . uniqid();
+        $mainNumber = 'MAIN-'.uniqid();
+        $otherNumber = 'OTHER-'.uniqid();
         $main = $this->createAccount($mainNumber, hidden: false);
         $this->createAccount($otherNumber, hidden: false);
 
@@ -201,7 +201,7 @@ final class SummaryProviderTest extends KernelTestCase
     {
         foreach ($resource->accounts as $account) {
             if ($account['account_number'] === $accountNumber) {
-                /** @var array{
+                /* @var array{
                  *     id: int,
                  *     bank: string,
                  *     type: string,
@@ -226,7 +226,7 @@ final class SummaryProviderTest extends KernelTestCase
 
     private function createBank(): Bank
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
         $this->em()->flush();
 
@@ -252,12 +252,12 @@ final class SummaryProviderTest extends KernelTestCase
 
     private function createAccount(string $accountNumber, bool $hidden, ?Bank $bank = null, string $currencyCode = 'PLN'): Account
     {
-        $bank ??= new Bank('Test Bank ' . uniqid());
+        $bank ??= new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currency = $this->findOrCreateCurrency($currencyCode);
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);

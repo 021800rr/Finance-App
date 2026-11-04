@@ -68,7 +68,7 @@ final class FixedExpenseProcessorTest extends KernelTestCase
 
     public function testProcessCreatesContractorFromNameWhenNotFound(): void
     {
-        $newName = 'Brand New Contractor ' . uniqid();
+        $newName = 'Brand New Contractor '.uniqid();
 
         $resource = $this->buildResource(contractorName: $newName, day: 5, amount: '-30.00');
 
@@ -82,7 +82,7 @@ final class FixedExpenseProcessorTest extends KernelTestCase
 
     public function testProcessReusesExistingContractorFoundByName(): void
     {
-        $contractor = $this->createContractor('Reused Contractor ' . uniqid());
+        $contractor = $this->createContractor('Reused Contractor '.uniqid());
 
         $resource = $this->buildResource(contractorName: $contractor->getName(), day: 5, amount: '-30.00');
 

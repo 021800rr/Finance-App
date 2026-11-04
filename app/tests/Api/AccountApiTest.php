@@ -6,7 +6,6 @@ namespace App\Tests\Api;
 
 use App\Entity\Account;
 use App\Tests\DatabaseTestTrait;
-use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -35,7 +34,7 @@ final class AccountApiTest extends WebTestCase
     {
         $account = $this->firstAccount();
 
-        $this->client->request('GET', '/api/accounts/' . $account->getId());
+        $this->client->request('GET', '/api/accounts/'.$account->getId());
 
         self::assertResponseStatusCodeSame(401);
     }
@@ -52,7 +51,7 @@ final class AccountApiTest extends WebTestCase
         $token = $this->obtainJwtToken();
 
         $this->client->request('GET', '/api/accounts', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token,
         ]);
 
         self::assertResponseIsSuccessful();
@@ -67,8 +66,8 @@ final class AccountApiTest extends WebTestCase
         $account = $this->firstAccount();
         $token = $this->obtainJwtToken();
 
-        $this->client->request('GET', '/api/accounts/' . $account->getId(), server: [
-            'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+        $this->client->request('GET', '/api/accounts/'.$account->getId(), server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$token,
         ]);
 
         self::assertResponseIsSuccessful();
@@ -87,7 +86,7 @@ final class AccountApiTest extends WebTestCase
         $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
 
         if (!is_array($data) || !isset($data['token']) || !is_string($data['token'])) {
-            throw new RuntimeException('Could not obtain a JWT token in the test.');
+            throw new \RuntimeException('Could not obtain a JWT token in the test.');
         }
 
         return $data['token'];
@@ -98,7 +97,7 @@ final class AccountApiTest extends WebTestCase
         $account = $this->em()->getRepository(Account::class)->findOneBy([]);
 
         if (null === $account) {
-            throw new RuntimeException('Fixtures must provide at least one account.');
+            throw new \RuntimeException('Fixtures must provide at least one account.');
         }
 
         return $account;

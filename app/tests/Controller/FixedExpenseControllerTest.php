@@ -61,7 +61,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testSubmittingWithValidContractorCreatesFixedExpenseAndRedirects(): void
     {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
         $this->em()->flush();
 
@@ -290,7 +290,7 @@ final class FixedExpenseControllerTest extends WebTestCase
     {
         $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
 
-        $this->client->request('GET', '/fixed-expense/' . $fixedExpense->getId() . '/edit');
+        $this->client->request('GET', '/fixed-expense/'.$fixedExpense->getId().'/edit');
 
         self::assertResponseIsSuccessful();
         self::assertInputValueSame('fixed_expense[day]', '15');
@@ -307,7 +307,7 @@ final class FixedExpenseControllerTest extends WebTestCase
         $contractorId = $fixedExpense->getContractor()->getId();
         $countBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
 
-        $crawler = $this->client->request('GET', '/fixed-expense/' . $fixedExpenseId . '/edit');
+        $crawler = $this->client->request('GET', '/fixed-expense/'.$fixedExpenseId.'/edit');
         $form = $crawler->filter('#fixed_expense_form button[type="submit"]')->form();
         $this->client->submit($form);
 
@@ -330,7 +330,7 @@ final class FixedExpenseControllerTest extends WebTestCase
         $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
         $fixedExpenseId = $fixedExpense->getId();
 
-        $crawler = $this->client->request('GET', '/fixed-expense/' . $fixedExpenseId . '/edit');
+        $crawler = $this->client->request('GET', '/fixed-expense/'.$fixedExpenseId.'/edit');
         $form = $crawler->filter('#fixed_expense_form button[type="submit"]')->form();
         $this->client->submit($form, ['fixed_expense[day]' => '20']);
 
@@ -350,7 +350,7 @@ final class FixedExpenseControllerTest extends WebTestCase
         $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
         $fixedExpenseId = $fixedExpense->getId();
 
-        $crawler = $this->client->request('GET', '/fixed-expense/' . $fixedExpenseId . '/edit');
+        $crawler = $this->client->request('GET', '/fixed-expense/'.$fixedExpenseId.'/edit');
         $form = $crawler->filter('#fixed_expense_form button[type="submit"]')->form();
         $this->client->submit($form, [
             'fixed_expense[day]' => '20',
@@ -418,11 +418,11 @@ final class FixedExpenseControllerTest extends WebTestCase
     {
         $fixedExpense = $this->createFixedExpenseInDatabase();
 
-        $newContractor = new Contractor('New Contractor ' . uniqid());
+        $newContractor = new Contractor('New Contractor '.uniqid());
         $this->em()->persist($newContractor);
         $this->em()->flush();
 
-        $crawler = $this->client->request('GET', '/fixed-expense/' . $fixedExpense->getId() . '/edit');
+        $crawler = $this->client->request('GET', '/fixed-expense/'.$fixedExpense->getId().'/edit');
         $form = $crawler->filter('#fixed_expense_form button[type="submit"]')->form();
 
         $this->client->submit($form, [
@@ -453,7 +453,7 @@ final class FixedExpenseControllerTest extends WebTestCase
     {
         $fixedExpense = $this->createFixedExpenseInDatabase();
 
-        $this->client->request('POST', '/fixed-expense/' . $fixedExpense->getId() . '/delete', [
+        $this->client->request('POST', '/fixed-expense/'.$fixedExpense->getId().'/delete', [
             '_token' => 'invalid-token',
         ]);
 
@@ -466,9 +466,9 @@ final class FixedExpenseControllerTest extends WebTestCase
         $fixedExpenseId = $fixedExpense->getId();
 
         $crawler = $this->client->request('GET', '/fixed-expense');
-        $csrfToken = $crawler->filter('form[action*="' . $fixedExpenseId . '/delete"] input[name="_token"]')->attr('value');
+        $csrfToken = $crawler->filter('form[action*="'.$fixedExpenseId.'/delete"] input[name="_token"]')->attr('value');
 
-        $this->client->request('POST', '/fixed-expense/' . $fixedExpenseId . '/delete', [
+        $this->client->request('POST', '/fixed-expense/'.$fixedExpenseId.'/delete', [
             '_token' => $csrfToken,
         ]);
 
@@ -546,7 +546,7 @@ final class FixedExpenseControllerTest extends WebTestCase
             '_token' => $csrfToken,
         ]);
 
-        self::assertResponseRedirects('/account/' . $mainAccountId . '/operations');
+        self::assertResponseRedirects('/account/'.$mainAccountId.'/operations');
 
         $this->client->followRedirect();
         self::assertSelectorTextContains('body', 'Suspected duplicate');
@@ -567,7 +567,7 @@ final class FixedExpenseControllerTest extends WebTestCase
             $reference->getBank(),
             $chf,
             $reference->getType(),
-            'CHF-MAIN-' . uniqid(),
+            'CHF-MAIN-'.uniqid(),
             $household
         );
         $this->em()->persist($foreignAccount);
@@ -635,7 +635,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     private function createFixedExpenseInDatabase(int $day = 10, int $amount = -5000, ?string $description = null): FixedExpense
     {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
         $pln = $this->em()->getRepository(Currency::class)->find(Currencies::SETTLEMENT_CURRENCY_CODE);

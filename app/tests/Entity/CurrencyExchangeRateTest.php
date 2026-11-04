@@ -7,7 +7,6 @@ namespace App\Tests\Entity;
 use App\Entity\Bank;
 use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class CurrencyExchangeRateTest extends TestCase
@@ -16,7 +15,7 @@ final class CurrencyExchangeRateTest extends TestCase
     {
         $rate = $this->createRate();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Rate must be between 1 and 999999.');
 
         $rate->setRateToPln(0);
@@ -26,7 +25,7 @@ final class CurrencyExchangeRateTest extends TestCase
     {
         $rate = $this->createRate();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Rate must be between 1 and 999999.');
 
         $rate->setRateToPln(1000000);

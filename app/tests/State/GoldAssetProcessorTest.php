@@ -15,7 +15,6 @@ use App\Entity\GoldPrice;
 use App\Repository\GoldAssetRepository;
 use App\State\GoldAssetProcessor;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -146,7 +145,7 @@ final class GoldAssetProcessorTest extends KernelTestCase
 
     private function createGoldForm(): GoldForm
     {
-        $form = new GoldForm('Test Form ' . uniqid());
+        $form = new GoldForm('Test Form '.uniqid());
         $this->em()->persist($form);
         $this->em()->flush();
 
@@ -157,7 +156,7 @@ final class GoldAssetProcessorTest extends KernelTestCase
     {
         $resource = new GoldAssetResource();
         $resource->formId = $form->getId();
-        $resource->description = 'Asset ' . uniqid();
+        $resource->description = 'Asset '.uniqid();
         $resource->ounces = $ounces;
 
         return $resource;
@@ -165,11 +164,11 @@ final class GoldAssetProcessorTest extends KernelTestCase
 
     private function createGoldAsset(): GoldAsset
     {
-        $form = new GoldForm('Test Form ' . uniqid());
+        $form = new GoldForm('Test Form '.uniqid());
         $this->em()->persist($form);
         $this->em()->flush();
 
-        $goldAsset = new GoldAsset($form, 1, 'Test asset ' . uniqid());
+        $goldAsset = new GoldAsset($form, 1, 'Test asset '.uniqid());
         $this->em()->persist($goldAsset);
         $this->em()->flush();
 
@@ -185,7 +184,7 @@ final class GoldAssetProcessorTest extends KernelTestCase
             $this->em()->persist($currency);
         }
 
-        $goldPrice = new GoldPrice($goldAsset, new DateTimeImmutable(), 100000, $currency);
+        $goldPrice = new GoldPrice($goldAsset, new \DateTimeImmutable(), 100000, $currency);
         $this->em()->persist($goldPrice);
         $this->em()->flush();
 

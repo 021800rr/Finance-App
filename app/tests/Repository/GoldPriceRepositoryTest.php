@@ -11,7 +11,6 @@ use App\Entity\GoldPrice;
 use App\Repository\GoldPriceRepository;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\Util\QueryCounter;
-use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class GoldPriceRepositoryTest extends KernelTestCase
@@ -40,8 +39,8 @@ final class GoldPriceRepositoryTest extends KernelTestCase
     {
         $asset = $this->createGoldAsset();
 
-        $this->createGoldPrice($asset, new DateTimeImmutable('-5 days'), 800000);
-        $this->createGoldPrice($asset, new DateTimeImmutable('-1 day'), 850000);
+        $this->createGoldPrice($asset, new \DateTimeImmutable('-5 days'), 800000);
+        $this->createGoldPrice($asset, new \DateTimeImmutable('-1 day'), 850000);
 
         $total = $this->repository->fetchSummary();
 
@@ -53,8 +52,8 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         $assetA = $this->createGoldAsset();
         $assetB = $this->createGoldAsset();
 
-        $this->createGoldPrice($assetA, new DateTimeImmutable('-1 day'), 800000);
-        $this->createGoldPrice($assetB, new DateTimeImmutable('-1 day'), 500000);
+        $this->createGoldPrice($assetA, new \DateTimeImmutable('-1 day'), 800000);
+        $this->createGoldPrice($assetB, new \DateTimeImmutable('-1 day'), 500000);
 
         $total = $this->repository->fetchSummary();
 
@@ -65,8 +64,8 @@ final class GoldPriceRepositoryTest extends KernelTestCase
     {
         $assetA = $this->createGoldAsset();
         $assetB = $this->createGoldAsset();
-        $latestDateA = new DateTimeImmutable('2026-10-20');
-        $latestDateB = new DateTimeImmutable('2026-10-19');
+        $latestDateA = new \DateTimeImmutable('2026-10-20');
+        $latestDateB = new \DateTimeImmutable('2026-10-19');
 
         // The last price wins a date tie, even when it is lower than the previous price.
         $this->createGoldPrice($assetA, $latestDateA, 1100000);
@@ -75,8 +74,8 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         $this->createGoldPrice($assetB, $latestDateB, 300000);
 
         // Older prices inserted later must not win just because they have higher IDs.
-        $this->createGoldPrice($assetA, new DateTimeImmutable('2026-10-01'), 9000000);
-        $this->createGoldPrice($assetB, new DateTimeImmutable('2026-09-01'), 8000000);
+        $this->createGoldPrice($assetA, new \DateTimeImmutable('2026-10-01'), 9000000);
+        $this->createGoldPrice($assetB, new \DateTimeImmutable('2026-09-01'), 8000000);
 
         self::assertSame(1300000, $this->repository->fetchSummary());
     }
@@ -95,8 +94,8 @@ final class GoldPriceRepositoryTest extends KernelTestCase
     {
         $asset = $this->createGoldAsset();
 
-        $older = $this->createGoldPrice($asset, new DateTimeImmutable('-5 days'), 800000);
-        $newer = $this->createGoldPrice($asset, new DateTimeImmutable('-1 day'), 850000);
+        $older = $this->createGoldPrice($asset, new \DateTimeImmutable('-5 days'), 800000);
+        $newer = $this->createGoldPrice($asset, new \DateTimeImmutable('-1 day'), 850000);
 
         $result = $this->repository->findDataForList();
 
@@ -108,10 +107,10 @@ final class GoldPriceRepositoryTest extends KernelTestCase
     {
         $assetA = $this->createGoldAsset();
         $assetB = $this->createGoldAsset();
-        $day = new DateTimeImmutable('2026-10-26');
+        $day = new \DateTimeImmutable('2026-10-26');
         $first = $this->createGoldPrice($assetA, $day, 1100000);
         $second = $this->createGoldPrice($assetB, $day, 1000000);
-        $backfilled = $this->createGoldPrice($assetA, new DateTimeImmutable('2026-10-25'), 900000);
+        $backfilled = $this->createGoldPrice($assetA, new \DateTimeImmutable('2026-10-25'), 900000);
 
         $result = $this->repository->findDataForList();
 
@@ -126,7 +125,7 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         $asset = $this->createGoldAsset();
 
         for ($i = 0; $i < 25; ++$i) {
-            $this->createGoldPrice($asset, new DateTimeImmutable("-{$i} days"), 800000 + $i);
+            $this->createGoldPrice($asset, new \DateTimeImmutable("-{$i} days"), 800000 + $i);
         }
 
         $result = $this->repository->findDataForList();
@@ -139,7 +138,7 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         $asset = $this->createGoldAsset();
 
         for ($i = 0; $i < 15; ++$i) {
-            $this->createGoldPrice($asset, new DateTimeImmutable("-{$i} days"), 800000 + $i);
+            $this->createGoldPrice($asset, new \DateTimeImmutable("-{$i} days"), 800000 + $i);
         }
 
         $result = $this->repository->findDataForList(10);
@@ -153,7 +152,7 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         // addSelect, reading goldAsset.description (as the Twig list does) would trigger one
         // lazy-load query per distinct asset instead of zero.
         for ($i = 0; $i < 3; ++$i) {
-            $this->createGoldPrice($this->createGoldAsset(), new DateTimeImmutable("-{$i} days"), 800000 + $i);
+            $this->createGoldPrice($this->createGoldAsset(), new \DateTimeImmutable("-{$i} days"), 800000 + $i);
         }
         $this->em()->clear();
 
@@ -173,7 +172,7 @@ final class GoldPriceRepositoryTest extends KernelTestCase
     public function testFindDataForChartReturnsScalarRowsWithMinorUnits(): void
     {
         $asset = $this->createGoldAsset();
-        $date = new DateTimeImmutable('-1 day');
+        $date = new \DateTimeImmutable('-1 day');
 
         $price = $this->createGoldPrice($asset, $date, 1680000);
 
@@ -198,13 +197,13 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         $assetB = new GoldAsset($assetA->getForm(), $assetA->getOunces(), $assetA->getDescription());
         $this->em()->persist($assetB);
         $this->em()->flush();
-        $day = new DateTimeImmutable('2026-10-26');
+        $day = new \DateTimeImmutable('2026-10-26');
 
         $this->createGoldPrice($assetA, $day, 1100000);
         $latestA = $this->createGoldPrice($assetA, $day, 1000000);
         $this->createGoldPrice($assetB, $day, 1200000);
         $latestB = $this->createGoldPrice($assetB, $day, 1300000);
-        $historical = $this->createGoldPrice($assetA, new DateTimeImmutable('2026-10-25'), 9000000);
+        $historical = $this->createGoldPrice($assetA, new \DateTimeImmutable('2026-10-25'), 9000000);
 
         $prices = $this->repository->findDataForChart();
 
@@ -220,7 +219,7 @@ final class GoldPriceRepositoryTest extends KernelTestCase
     public function testDeletingTheLatestDailyPriceRevealsThePreviousQuote(): void
     {
         $asset = $this->createGoldAsset();
-        $day = new DateTimeImmutable('2026-09-15');
+        $day = new \DateTimeImmutable('2026-09-15');
         $this->createGoldPrice($asset, $day, 850000);
         $latest = $this->createGoldPrice($asset, $day, 860000);
 
@@ -240,7 +239,7 @@ final class GoldPriceRepositoryTest extends KernelTestCase
     {
         $price = $this->createGoldPrice(
             $this->createGoldAsset(),
-            new DateTimeImmutable('2026-10-26 12:34:56'),
+            new \DateTimeImmutable('2026-10-26 12:34:56'),
             500000,
         );
         $id = $price->getId();
@@ -260,7 +259,7 @@ final class GoldPriceRepositoryTest extends KernelTestCase
 
     private function createGoldAsset(): GoldAsset
     {
-        $goldForm = new GoldForm('Test Form ' . uniqid());
+        $goldForm = new GoldForm('Test Form '.uniqid());
         $this->em()->persist($goldForm);
 
         $asset = new GoldAsset($goldForm, 10000, 'Test');
@@ -270,7 +269,7 @@ final class GoldPriceRepositoryTest extends KernelTestCase
         return $asset;
     }
 
-    private function createGoldPrice(GoldAsset $asset, DateTimeImmutable $date, int $pricePln): GoldPrice
+    private function createGoldPrice(GoldAsset $asset, \DateTimeImmutable $date, int $pricePln): GoldPrice
     {
         $currencyRepository = $this->em()->getRepository(Currency::class);
         $currency = $currencyRepository->find('PLN');

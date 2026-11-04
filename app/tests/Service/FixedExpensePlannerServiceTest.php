@@ -17,8 +17,6 @@ use App\Repository\AccountRepository;
 use App\Repository\FixedExpenseRepository;
 use App\Service\FixedExpensePlannerService;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
-use RuntimeException;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class FixedExpensePlannerServiceTest extends KernelTestCase
@@ -57,7 +55,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
 
         self::assertSame(2, $result->createdCount);
         self::assertSame(
-            new DateTimeImmutable('first day of this month')->modify('+1 month')->format('Y-m'),
+            new \DateTimeImmutable('first day of this month')->modify('+1 month')->format('Y-m'),
             $result->month->format('Y-m'),
         );
     }
@@ -68,7 +66,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
 
         $this->planner->planNextMonth();
 
-        $targetMonth = new DateTimeImmutable('first day of this month')->modify('+1 month');
+        $targetMonth = new \DateTimeImmutable('first day of this month')->modify('+1 month');
         $expectedDate = $this->buildExpectedDate((int) $targetMonth->format('Y'), (int) $targetMonth->format('m'), 15);
 
         $operations = $this->em()->getRepository(AccountOperation::class)->findAll();
@@ -87,7 +85,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         $this->mainAccount->setMain(false);
         $this->em()->flush();
 
-        $this->expectException(RuntimeException::class);
+        $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('No account is marked as the main account. Mark one account as main first.');
 
         $this->planner->planNextMonth();
@@ -95,7 +93,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
 
     public function testPlanNextMonthThrowsAndCreatesNothingWhenDuplicateExists(): void
     {
-        $targetMonth = new DateTimeImmutable('first day of this month')->modify('+1 month');
+        $targetMonth = new \DateTimeImmutable('first day of this month')->modify('+1 month');
         $year = (int) $targetMonth->format('Y');
         $month = (int) $targetMonth->format('m');
 
@@ -114,7 +112,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
 
     public function testPlanNextMonthCreatesNothingWhenOnlyALaterExpenseIsADuplicate(): void
     {
-        $targetMonth = new DateTimeImmutable('first day of next month');
+        $targetMonth = new \DateTimeImmutable('first day of next month');
         $contractor = $this->createContractor();
         $duplicateDate = $this->buildExpectedDate((int) $targetMonth->format('Y'), (int) $targetMonth->format('m'), 20);
         $this->em()->persist(
@@ -165,14 +163,14 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         );
     }
 
-    private function buildExpectedDate(int $year, int $month, int $day): DateTimeImmutable
+    private function buildExpectedDate(int $year, int $month, int $day): \DateTimeImmutable
     {
-        $date = DateTimeImmutable::createFromFormat(
+        $date = \DateTimeImmutable::createFromFormat(
             'Y-m-d H:i:s',
             sprintf('%04d-%02d-%02d 00:00:00', $year, $month, $day)
         );
         if (false === $date) {
-            throw new RuntimeException('Failed to build expected date in test.');
+            throw new \RuntimeException('Failed to build expected date in test.');
         }
 
         return $date;
@@ -199,7 +197,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
 
     private function createContractor(): Contractor
     {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
         $this->em()->flush();
 
@@ -237,7 +235,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         try {
             $this->planner->planNextMonth();
             self::fail('Planning should have been refused.');
-        } catch (RuntimeException $exception) {
+        } catch (\RuntimeException $exception) {
             self::assertMatchesRegularExpression($messagePattern, $exception->getMessage());
         }
 
@@ -246,20 +244,20 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
 
     private function createAccount(string $currencyCode = 'PLN', bool $ownFunds = true): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currency = $this->findOrCreateCurrency($currencyCode);
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => $ownFunds]);
         if (null === $household) {
-            throw new RuntimeException('Fixtures must provide the household for this test.');
+            throw new \RuntimeException('Fixtures must provide the household for this test.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
         $this->em()->flush();
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Util;
 
 use Psr\Log\AbstractLogger;
-use Stringable;
 
 /**
  * Counts SQL statements executed on the default Doctrine DBAL connection, via Doctrine's own public
@@ -23,7 +22,7 @@ final class QueryCounter extends AbstractLogger
 
     private bool $dumping = false;
 
-    public function log($level, string|Stringable $message, array $context = []): void
+    public function log($level, string|\Stringable $message, array $context = []): void
     {
         if ($this->dumping) {
             var_dump($level, (string) $message, $context);

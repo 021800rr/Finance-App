@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Entity;
 
 use App\Entity\Contractor;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class ContractorTest extends TestCase
@@ -14,7 +13,7 @@ final class ContractorTest extends TestCase
     {
         $contractor = new Contractor('Valid Name');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Contractor name cannot be blank.');
 
         $contractor->setName('   ');
@@ -29,7 +28,7 @@ final class ContractorTest extends TestCase
 
     public function testConstructorRejectsBlankName(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Contractor name cannot be blank.');
 
         new Contractor('   ');

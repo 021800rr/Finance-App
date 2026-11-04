@@ -13,7 +13,6 @@ use App\Entity\Currency;
 use App\Entity\Household;
 use App\Repository\AccountBalanceReportRepository;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class AccountBalanceReportRepositoryTest extends KernelTestCase
@@ -43,7 +42,7 @@ final class AccountBalanceReportRepositoryTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor();
 
-        $operation = new AccountOperation($account, $contractor, new DateTimeImmutable(), 25050, $account->getCurrency());
+        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable(), 25050, $account->getCurrency());
         $this->em()->persist($operation);
         $this->em()->flush();
 
@@ -64,10 +63,10 @@ final class AccountBalanceReportRepositoryTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor();
 
-        $incoming = new AccountOperation($account, $contractor, new DateTimeImmutable(), 100000, $account->getCurrency());
+        $incoming = new AccountOperation($account, $contractor, new \DateTimeImmutable(), 100000, $account->getCurrency());
         $this->em()->persist($incoming);
 
-        $outgoing = new AccountOperation($account, $contractor, new DateTimeImmutable(), -30025, $account->getCurrency());
+        $outgoing = new AccountOperation($account, $contractor, new \DateTimeImmutable(), -30025, $account->getCurrency());
         $this->em()->persist($outgoing);
 
         $this->em()->flush();
@@ -106,12 +105,12 @@ final class AccountBalanceReportRepositoryTest extends KernelTestCase
 
     private function createAccount(): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currency = $this->findOrCreateCurrency('PLN');
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -119,7 +118,7 @@ final class AccountBalanceReportRepositoryTest extends KernelTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
         $this->em()->flush();
 
@@ -128,7 +127,7 @@ final class AccountBalanceReportRepositoryTest extends KernelTestCase
 
     private function createContractor(): Contractor
     {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
         $this->em()->flush();
 

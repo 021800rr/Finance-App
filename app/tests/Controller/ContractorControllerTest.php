@@ -108,11 +108,11 @@ final class ContractorControllerTest extends WebTestCase
     public function testSearchReturnsMatchingContractors(): void
     {
         $uniquePart = uniqid();
-        $contractor = new Contractor('Findable ' . $uniquePart);
+        $contractor = new Contractor('Findable '.$uniquePart);
         $this->em()->persist($contractor);
         $this->em()->flush();
 
-        $this->client->request('GET', '/contractor/search?q=' . $uniquePart);
+        $this->client->request('GET', '/contractor/search?q='.$uniquePart);
 
         self::assertResponseIsSuccessful();
 
@@ -128,7 +128,7 @@ final class ContractorControllerTest extends WebTestCase
 
     public function testSearchReturnsEmptyArrayWhenNoMatchFound(): void
     {
-        $this->client->request('GET', '/contractor/search?q=nonexistent-' . uniqid());
+        $this->client->request('GET', '/contractor/search?q=nonexistent-'.uniqid());
 
         self::assertResponseIsSuccessful();
         self::assertSame('[]', $this->client->getResponse()->getContent());

@@ -11,7 +11,6 @@ use App\Entity\Bank;
 use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Uid\Uuid;
 
@@ -21,7 +20,7 @@ final class AccountOperationTest extends TestCase
     {
         $operation = $this->createOperation();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Amount cannot be zero.');
 
         $operation->setAmount(0);
@@ -31,7 +30,7 @@ final class AccountOperationTest extends TestCase
     {
         $operation = $this->createOperation();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Amount must be between -99999999 and 99999999.');
 
         $operation->setAmount(100000000);
@@ -41,7 +40,7 @@ final class AccountOperationTest extends TestCase
     {
         $operation = $this->createOperation();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Amount must be between -99999999 and 99999999.');
 
         $operation->setAmount(-100000000);
@@ -121,7 +120,7 @@ final class AccountOperationTest extends TestCase
 
     public function testConstructorRejectsCurrencyOtherThanTheAccountCurrency(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Operation currency (CHF) must match the account currency (PLN).');
 
         new AccountOperation(
@@ -150,7 +149,7 @@ final class AccountOperationTest extends TestCase
             new Bank('Test Bank'),
             new Currency($currencyCode),
             new AccountType('Test Type'),
-            'ACC-TEST-' . uniqid(),
+            'ACC-TEST-'.uniqid(),
             new Household('Test Household')
         );
     }

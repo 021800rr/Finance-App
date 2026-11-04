@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Entity\Trait;
 
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class BlankStringGuardTraitTest extends TestCase
@@ -17,7 +16,7 @@ final class BlankStringGuardTraitTest extends TestCase
 
     public function testAssertNotBlankRejectsEmptyString(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Test cannot be blank.');
 
         BlankStringGuardTraitFixture::notBlank('', 'Test');
@@ -25,7 +24,7 @@ final class BlankStringGuardTraitTest extends TestCase
 
     public function testAssertNotBlankRejectsWhitespaceOnlyString(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Test cannot be blank.');
 
         BlankStringGuardTraitFixture::notBlank('   ', 'Test');
@@ -33,7 +32,7 @@ final class BlankStringGuardTraitTest extends TestCase
 
     public function testAssertNotBlankRejectsTabsAndNewlines(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         BlankStringGuardTraitFixture::notBlank("\t\n  \t", 'Test');
     }

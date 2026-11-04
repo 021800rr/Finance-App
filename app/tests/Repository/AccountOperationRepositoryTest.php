@@ -13,7 +13,6 @@ use App\Entity\Currency;
 use App\Entity\Household;
 use App\Repository\AccountOperationRepository;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Uid\Uuid;
@@ -45,8 +44,8 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $accountA = $this->createAccount();
         $accountB = $this->createAccount();
 
-        $this->createOperation($accountA, 10000, new DateTimeImmutable('-1 day'), 'A1');
-        $this->createOperation($accountB, 20000, new DateTimeImmutable(), 'B1');
+        $this->createOperation($accountA, 10000, new \DateTimeImmutable('-1 day'), 'A1');
+        $this->createOperation($accountB, 20000, new \DateTimeImmutable(), 'B1');
 
         $result = $this->repository->findByAccountOrderedPaged($accountA, 20, 0);
 
@@ -58,8 +57,8 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     {
         $account = $this->createAccount();
 
-        $this->createOperation($account, 1000, new DateTimeImmutable('-3 days'), 'oldest');
-        $this->createOperation($account, 2000, new DateTimeImmutable('-1 day'), 'newest');
+        $this->createOperation($account, 1000, new \DateTimeImmutable('-3 days'), 'oldest');
+        $this->createOperation($account, 2000, new \DateTimeImmutable('-1 day'), 'newest');
 
         $result = $this->repository->findByAccountOrderedPaged($account, 20, 0);
 
@@ -72,7 +71,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $account = $this->createAccount();
 
         for ($i = 0; $i < 5; ++$i) {
-            $this->createOperation($account, 1000, new DateTimeImmutable("-{$i} days"), "op{$i}");
+            $this->createOperation($account, 1000, new \DateTimeImmutable("-{$i} days"), "op{$i}");
         }
 
         $result = $this->repository->findByAccountOrderedPaged($account, 2, 1);
@@ -86,8 +85,8 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     {
         $account = $this->createAccount();
 
-        $this->createOperation($account, 1000, new DateTimeImmutable(), 'a');
-        $this->createOperation($account, 2000, new DateTimeImmutable(), 'b');
+        $this->createOperation($account, 1000, new \DateTimeImmutable(), 'a');
+        $this->createOperation($account, 2000, new \DateTimeImmutable(), 'b');
 
         self::assertSame(2, $this->repository->countByAccount($account));
     }
@@ -95,7 +94,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testSearchByQueryPagedFindsMatchByDescription(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 1000, new DateTimeImmutable(), 'Unique searchable text');
+        $this->createOperation($account, 1000, new \DateTimeImmutable(), 'Unique searchable text');
 
         $result = $this->repository->searchByQueryPaged('searchable', 10, 0);
 
@@ -106,7 +105,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     {
         $account = $this->createAccount();
         $contractor = $this->createContractorWithName('Écolier Unique');
-        $this->createOperationWithContractor($account, 1000, new DateTimeImmutable(), $contractor);
+        $this->createOperationWithContractor($account, 1000, new \DateTimeImmutable(), $contractor);
 
         $result = $this->repository->searchByQueryPaged('Écolier', 10, 0);
 
@@ -116,7 +115,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testSearchByQueryPagedFindsMatchByExactAmount(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 15050, new DateTimeImmutable(), 'irrelevant text');
+        $this->createOperation($account, 15050, new \DateTimeImmutable(), 'irrelevant text');
 
         $result = $this->repository->searchByQueryPaged('150.5', 10, 0);
 
@@ -126,7 +125,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testSearchByQueryPagedFindsMatchByExactAmountWithoutDecimalPart(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 15000, new DateTimeImmutable(), 'irrelevant text');
+        $this->createOperation($account, 15000, new \DateTimeImmutable(), 'irrelevant text');
 
         $result = $this->repository->searchByQueryPaged('150', 10, 0);
 
@@ -136,7 +135,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testSearchByQueryPagedFindsMatchByExactNegativeAmount(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, -15050, new DateTimeImmutable(), 'irrelevant text');
+        $this->createOperation($account, -15050, new \DateTimeImmutable(), 'irrelevant text');
 
         $result = $this->repository->searchByQueryPaged('-150.50', 10, 0);
 
@@ -146,7 +145,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testSearchByQueryPagedIgnoresAmountSearchForNonNumericQuery(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 100, new DateTimeImmutable(), 'completely unrelated text');
+        $this->createOperation($account, 100, new \DateTimeImmutable(), 'completely unrelated text');
 
         $result = $this->repository->searchByQueryPaged('not-a-number', 10, 0);
 
@@ -156,7 +155,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testSearchByQueryPagedHandlesQueryWithLeadingAndTrailingWhitespace(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 15050, new DateTimeImmutable(), 'irrelevant text');
+        $this->createOperation($account, 15050, new \DateTimeImmutable(), 'irrelevant text');
 
         $result = $this->repository->searchByQueryPaged('  150.50  ', 10, 0);
 
@@ -166,7 +165,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testSearchByQueryPagedDoesNotMatchDifferentAmount(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 20000, new DateTimeImmutable(), 'no match by text either');
+        $this->createOperation($account, 20000, new \DateTimeImmutable(), 'no match by text either');
 
         $result = $this->repository->searchByQueryPaged('150.50', 10, 0);
 
@@ -176,7 +175,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testSearchByQueryPagedFindsMatchByExactAmountWithCommaSeparator(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 15050, new DateTimeImmutable(), 'irrelevant text');
+        $this->createOperation($account, 15050, new \DateTimeImmutable(), 'irrelevant text');
 
         $result = $this->repository->searchByQueryPaged('150,5', 10, 0);
 
@@ -186,9 +185,9 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testSearchByQueryPagedReturnsEmptyForNonMatchingQuery(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 1000, new DateTimeImmutable(), 'something');
+        $this->createOperation($account, 1000, new \DateTimeImmutable(), 'something');
 
-        $result = $this->repository->searchByQueryPaged('nonexistent' . uniqid(), 10, 0);
+        $result = $this->repository->searchByQueryPaged('nonexistent'.uniqid(), 10, 0);
 
         self::assertCount(0, $result);
     }
@@ -196,7 +195,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testCountByQueryMatchesSearchByQueryPagedCount(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 1000, new DateTimeImmutable(), 'countable match');
+        $this->createOperation($account, 1000, new \DateTimeImmutable(), 'countable match');
 
         self::assertSame(1, $this->repository->countByQuery('countable'));
     }
@@ -205,8 +204,8 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     {
         $marker = uniqid();
         $account = $this->createAccount();
-        $withPercent = $this->createOperation($account, 1000, new DateTimeImmutable(), "Discount 100% {$marker}");
-        $plain = $this->createOperation($account, 1000, new DateTimeImmutable(), "Discount 1000 {$marker}");
+        $withPercent = $this->createOperation($account, 1000, new \DateTimeImmutable(), "Discount 100% {$marker}");
+        $plain = $this->createOperation($account, 1000, new \DateTimeImmutable(), "Discount 1000 {$marker}");
 
         $ids = $this->idsOf($this->repository->searchByQueryPaged('100%', 100, 0));
 
@@ -218,8 +217,8 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     {
         $marker = uniqid();
         $account = $this->createAccount();
-        $withUnderscore = $this->createOperation($account, 1000, new DateTimeImmutable(), "snake_case {$marker}");
-        $plain = $this->createOperation($account, 1000, new DateTimeImmutable(), "snakeXcase {$marker}");
+        $withUnderscore = $this->createOperation($account, 1000, new \DateTimeImmutable(), "snake_case {$marker}");
+        $plain = $this->createOperation($account, 1000, new \DateTimeImmutable(), "snakeXcase {$marker}");
 
         $ids = $this->idsOf($this->repository->searchByQueryPaged("snake_case {$marker}", 100, 0));
 
@@ -231,8 +230,8 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     {
         $marker = uniqid();
         $account = $this->createAccount();
-        $withBackslash = $this->createOperation($account, 1000, new DateTimeImmutable(), 'Path a\\b '.$marker);
-        $plain = $this->createOperation($account, 1000, new DateTimeImmutable(), 'Path ab '.$marker);
+        $withBackslash = $this->createOperation($account, 1000, new \DateTimeImmutable(), 'Path a\\b '.$marker);
+        $plain = $this->createOperation($account, 1000, new \DateTimeImmutable(), 'Path ab '.$marker);
 
         $ids = $this->idsOf($this->repository->searchByQueryPaged('a\\b '.$marker, 100, 0));
 
@@ -244,7 +243,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     {
         $marker = uniqid();
         $account = $this->createAccount();
-        $operation = $this->createOperation($account, 1000, new DateTimeImmutable(), "Dir {$marker}\\");
+        $operation = $this->createOperation($account, 1000, new \DateTimeImmutable(), "Dir {$marker}\\");
 
         $ids = $this->idsOf($this->repository->searchByQueryPaged("{$marker}\\", 100, 0));
 
@@ -255,8 +254,8 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     {
         $marker = uniqid();
         $account = $this->createAccount();
-        $this->createOperation($account, 1000, new DateTimeImmutable(), "Rate 5% {$marker}");
-        $this->createOperation($account, 1000, new DateTimeImmutable(), "Rate 50 {$marker}");
+        $this->createOperation($account, 1000, new \DateTimeImmutable(), "Rate 5% {$marker}");
+        $this->createOperation($account, 1000, new \DateTimeImmutable(), "Rate 50 {$marker}");
 
         self::assertSame(1, $this->repository->countByQuery("5% {$marker}"));
     }
@@ -264,7 +263,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testFindOtherSideReturnsNullWhenNoTransactionUuid(): void
     {
         $account = $this->createAccount();
-        $operation = $this->createOperation($account, 1000, new DateTimeImmutable(), 'no uuid');
+        $operation = $this->createOperation($account, 1000, new \DateTimeImmutable(), 'no uuid');
 
         self::assertNull($this->repository->findOtherSide($operation));
     }
@@ -275,8 +274,8 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $accountB = $this->createAccount();
         $uuid = Uuid::v7();
 
-        $opOut = $this->createOperation($accountA, -10000, new DateTimeImmutable(), 'out', $uuid);
-        $opIn = $this->createOperation($accountB, 10000, new DateTimeImmutable(), 'in', $uuid);
+        $opOut = $this->createOperation($accountA, -10000, new \DateTimeImmutable(), 'out', $uuid);
+        $opIn = $this->createOperation($accountB, 10000, new \DateTimeImmutable(), 'in', $uuid);
 
         $result = $this->repository->findOtherSide($opOut);
 
@@ -288,11 +287,11 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testOutOfRangeAmountQuerySearchesDescriptionsAndContractorNames(string $query): void
     {
         $account = $this->createAccount();
-        $descriptionMatch = $this->createOperation($account, 100, new DateTimeImmutable(), 'Reference '.$query);
+        $descriptionMatch = $this->createOperation($account, 100, new \DateTimeImmutable(), 'Reference '.$query);
         $contractor = $this->createContractorWithName('Contractor '.$query);
-        $contractorMatch = $this->createOperationWithContractor($account, 200, new DateTimeImmutable(), $contractor);
-        $this->createOperation($account, 99999999, new DateTimeImmutable(), 'Unrelated maximum amount');
-        $this->createOperation($account, -99999999, new DateTimeImmutable(), 'Unrelated minimum amount');
+        $contractorMatch = $this->createOperationWithContractor($account, 200, new \DateTimeImmutable(), $contractor);
+        $this->createOperation($account, 99999999, new \DateTimeImmutable(), 'Unrelated maximum amount');
+        $this->createOperation($account, -99999999, new \DateTimeImmutable(), 'Unrelated minimum amount');
 
         self::assertSame(2, $this->repository->countByQuery($query));
         self::assertEqualsCanonicalizing(
@@ -322,7 +321,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $operation = $this->createOperation(
             $this->createAccount(),
             $minorUnits,
-            new DateTimeImmutable(),
+            new \DateTimeImmutable(),
             'Boundary amount',
         );
 
@@ -343,7 +342,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
 
     private function createAccount(): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
@@ -353,7 +352,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
             $this->em()->persist($currency);
         }
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -361,7 +360,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
         $this->em()->flush();
 
@@ -380,7 +379,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
 
     private function createContractorWithName(string $name): Contractor
     {
-        $contractor = new Contractor($name . ' ' . uniqid());
+        $contractor = new Contractor($name.' '.uniqid());
         $this->em()->persist($contractor);
         $this->em()->flush();
 
@@ -390,11 +389,11 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     private function createOperation(
         Account $account,
         int $amount,
-        DateTimeImmutable $date,
+        \DateTimeImmutable $date,
         string $description,
         ?Uuid $transactionUuid = null,
     ): AccountOperation {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
         return $this->createOperationWithContractor($account, $amount, $date, $contractor, $description, $transactionUuid);
@@ -403,7 +402,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     private function createOperationWithContractor(
         Account $account,
         int $amount,
-        DateTimeImmutable $date,
+        \DateTimeImmutable $date,
         Contractor $contractor,
         string $description = 'test',
         ?Uuid $transactionUuid = null,
@@ -427,7 +426,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     {
         $account = $this->createAccount();
         $contractor = $this->createContractorWithName('Rent');
-        $date = new DateTimeImmutable('2026-03-15');
+        $date = new \DateTimeImmutable('2026-03-15');
 
         $this->createOperationWithContractor($account, 15050, $date, $contractor, 'Rent');
 
@@ -443,14 +442,14 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $this->createOperationWithContractor(
             $account,
             15050,
-            new DateTimeImmutable('2026-03-15 12:00:00'),
+            new \DateTimeImmutable('2026-03-15 12:00:00'),
             $contractor,
         );
 
         $result = $this->repository->existsForContractorAndDate(
             $account,
             $contractor,
-            new DateTimeImmutable('2026-03-15 23:59:59'),
+            new \DateTimeImmutable('2026-03-15 23:59:59'),
             15050,
         );
 
@@ -461,7 +460,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     {
         $account = $this->createAccount();
         $contractor = $this->createContractorWithName('Rent');
-        $date = new DateTimeImmutable('2026-03-15');
+        $date = new \DateTimeImmutable('2026-03-15');
 
         $this->createOperationWithContractor($account, 15050, $date, $contractor, 'Rent');
 
@@ -475,9 +474,9 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractorWithName('Rent');
 
-        $this->createOperationWithContractor($account, 15050, new DateTimeImmutable('2026-03-15'), $contractor, 'Rent');
+        $this->createOperationWithContractor($account, 15050, new \DateTimeImmutable('2026-03-15'), $contractor, 'Rent');
 
-        $result = $this->repository->existsForContractorAndDate($account, $contractor, new DateTimeImmutable('2026-03-16'), 15050);
+        $result = $this->repository->existsForContractorAndDate($account, $contractor, new \DateTimeImmutable('2026-03-16'), 15050);
 
         self::assertFalse($result);
     }
@@ -487,7 +486,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractorWithName('Rent');
         $otherContractor = $this->createContractorWithName('Electricity');
-        $date = new DateTimeImmutable('2026-03-15');
+        $date = new \DateTimeImmutable('2026-03-15');
 
         $this->createOperationWithContractor($account, 15050, $date, $contractor, 'Rent');
 
@@ -501,7 +500,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $account = $this->createAccount();
         $otherAccount = $this->createAccount();
         $contractor = $this->createContractorWithName('Rent');
-        $date = new DateTimeImmutable('2026-03-15');
+        $date = new \DateTimeImmutable('2026-03-15');
 
         $this->createOperationWithContractor($account, 15050, $date, $contractor, 'Rent');
 
@@ -515,7 +514,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractorWithName('Rent');
 
-        $result = $this->repository->existsForContractorAndDate($account, $contractor, new DateTimeImmutable(), 15050);
+        $result = $this->repository->existsForContractorAndDate($account, $contractor, new \DateTimeImmutable(), 15050);
 
         self::assertFalse($result);
     }
@@ -523,11 +522,11 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testSumBalancesForAccountSplitsTotalAndUpToToday(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 100000, new DateTimeImmutable('-5 days'), 'past');
-        $this->createOperation($account, -20050, new DateTimeImmutable('today'), 'today');
-        $this->createOperation($account, 30000, new DateTimeImmutable('+5 days'), 'future');
+        $this->createOperation($account, 100000, new \DateTimeImmutable('-5 days'), 'past');
+        $this->createOperation($account, -20050, new \DateTimeImmutable('today'), 'today');
+        $this->createOperation($account, 30000, new \DateTimeImmutable('+5 days'), 'future');
 
-        $sums = $this->repository->sumBalancesForAccount($account, new DateTimeImmutable('today'));
+        $sums = $this->repository->sumBalancesForAccount($account, new \DateTimeImmutable('today'));
 
         self::assertSame(109950, $sums['total']);
         self::assertSame(79950, $sums['upToToday']);
@@ -535,7 +534,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
 
     public function testSumBalancesForAccountIsZeroWithoutOperations(): void
     {
-        $sums = $this->repository->sumBalancesForAccount($this->createAccount(), new DateTimeImmutable('today'));
+        $sums = $this->repository->sumBalancesForAccount($this->createAccount(), new \DateTimeImmutable('today'));
 
         self::assertSame(['total' => 0, 'upToToday' => 0], $sums);
     }
@@ -543,12 +542,12 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     public function testSumBalancesForAccountIncludesTheWholeDayAndExcludesTomorrow(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 1000, new DateTimeImmutable('2026-10-26 00:00:00'), 'midnight');
-        $this->createOperation($account, 12345, new DateTimeImmutable('2026-10-26 12:00:00'), 'noon');
-        $this->createOperation($account, -2345, new DateTimeImmutable('2026-10-26 23:59:59'), 'end of day');
-        $this->createOperation($account, 5000, new DateTimeImmutable('2026-10-27 00:00:00'), 'tomorrow');
+        $this->createOperation($account, 1000, new \DateTimeImmutable('2026-10-26 00:00:00'), 'midnight');
+        $this->createOperation($account, 12345, new \DateTimeImmutable('2026-10-26 12:00:00'), 'noon');
+        $this->createOperation($account, -2345, new \DateTimeImmutable('2026-10-26 23:59:59'), 'end of day');
+        $this->createOperation($account, 5000, new \DateTimeImmutable('2026-10-27 00:00:00'), 'tomorrow');
 
-        $sums = $this->repository->sumBalancesForAccount($account, new DateTimeImmutable('2026-10-26'));
+        $sums = $this->repository->sumBalancesForAccount($account, new \DateTimeImmutable('2026-10-26'));
 
         self::assertSame(['total' => 16000, 'upToToday' => 11000], $sums);
     }
@@ -558,7 +557,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $operation = $this->createOperation(
             $this->createAccount(),
             12345,
-            new DateTimeImmutable('2026-10-26 12:34:56'),
+            new \DateTimeImmutable('2026-10-26 12:34:56'),
             'date without time',
         );
         $id = $operation->getId();
@@ -580,10 +579,10 @@ final class AccountOperationRepositoryTest extends KernelTestCase
     {
         $accountA = $this->createAccount();
         $accountB = $this->createAccount();
-        $this->createOperation($accountA, 10000, new DateTimeImmutable('today'), 'A');
-        $this->createOperation($accountB, 999900, new DateTimeImmutable('today'), 'B');
+        $this->createOperation($accountA, 10000, new \DateTimeImmutable('today'), 'A');
+        $this->createOperation($accountB, 999900, new \DateTimeImmutable('today'), 'B');
 
-        $sums = $this->repository->sumBalancesForAccount($accountA, new DateTimeImmutable('today'));
+        $sums = $this->repository->sumBalancesForAccount($accountA, new \DateTimeImmutable('today'));
 
         self::assertSame(10000, $sums['total']);
     }

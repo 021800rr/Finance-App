@@ -37,7 +37,7 @@ final class ContractorProcessorTest extends KernelTestCase
 
     public function testProcessCreatesContractorSuccessfully(): void
     {
-        $resource = $this->buildResource('New Contractor ' . uniqid());
+        $resource = $this->buildResource('New Contractor '.uniqid());
 
         $result = $this->processor->process($resource, new Post());
 
@@ -48,7 +48,7 @@ final class ContractorProcessorTest extends KernelTestCase
 
     public function testProcessThrowsConflictOnDuplicateName(): void
     {
-        $name = 'Duplicate Contractor ' . uniqid();
+        $name = 'Duplicate Contractor '.uniqid();
         $this->processor->process($this->buildResource($name), new Post());
 
         $this->expectException(ConflictHttpException::class);

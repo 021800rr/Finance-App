@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Entity;
 
 use App\Entity\User;
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -41,7 +40,7 @@ final class UserTest extends TestCase
     #[DataProvider('invalidEmails')]
     public function testConstructorRejectsAnInvalidEmail(string $email): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(\InvalidArgumentException::class);
 
         new User($email, 'hash');
     }

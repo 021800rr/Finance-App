@@ -11,7 +11,6 @@ use App\Entity\Currency;
 use App\Entity\Household;
 use App\Form\TransferType;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -81,7 +80,7 @@ final class TransferTypeTest extends KernelTestCase
             'fromAccount' => (string) $fromAccount->getId(),
             'toAccount' => (string) $toAccount->getId(),
             'amountFrom' => '100',
-            'date' => new DateTimeImmutable()->format('Y-m-d'),
+            'date' => new \DateTimeImmutable()->format('Y-m-d'),
         ]);
 
         self::assertTrue($form->isValid());
@@ -97,7 +96,7 @@ final class TransferTypeTest extends KernelTestCase
             'fromAccount' => (string) $fromAccount->getId(),
             'toAccount' => (string) $toAccount->getId(),
             'amountFrom' => '100',
-            'date' => new DateTimeImmutable()->format('Y-m-d'),
+            'date' => new \DateTimeImmutable()->format('Y-m-d'),
         ]);
 
         self::assertFalse($form->isValid());
@@ -115,7 +114,7 @@ final class TransferTypeTest extends KernelTestCase
             'toAccount' => (string) $toAccount->getId(),
             'amountFrom' => '100',
             'amountTo' => '23',
-            'date' => new DateTimeImmutable()->format('Y-m-d'),
+            'date' => new \DateTimeImmutable()->format('Y-m-d'),
         ]);
 
         self::assertTrue($form->isValid());
@@ -131,7 +130,7 @@ final class TransferTypeTest extends KernelTestCase
 
     private function createAccount(string $currencyCode): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
@@ -141,7 +140,7 @@ final class TransferTypeTest extends KernelTestCase
             $this->em()->persist($currency);
         }
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -149,7 +148,7 @@ final class TransferTypeTest extends KernelTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
         $this->em()->flush();
 

@@ -69,7 +69,7 @@ final class ProblemNormalizerTest extends TestCase
         $normalized = $this->normalizer(['status' => $status, 'title' => 'An error occurred'])->normalize($error);
         self::assertIsArray($normalized);
 
-        /** @var array<string, mixed> $normalized */
+        /* @var array<string, mixed> $normalized */
         return $normalized;
     }
 

@@ -156,7 +156,7 @@ final class GoldAssetControllerTest extends WebTestCase
         $newGoldForm = $this->getOrCreateGoldForm('moneta');
         $description = 'Updated description '.uniqid();
 
-        $crawler = $this->client->request('GET', '/gold-assets/' . $asset->getId() . '/edit');
+        $crawler = $this->client->request('GET', '/gold-assets/'.$asset->getId().'/edit');
         $form = $crawler->filter('#gold_asset_form button[type="submit"]')->form();
 
         $this->client->submit($form, [
@@ -387,7 +387,7 @@ final class GoldAssetControllerTest extends WebTestCase
     {
         $asset = $this->createAssetInDatabase();
 
-        $this->client->request('POST', '/gold-assets/' . $asset->getId() . '/delete', [
+        $this->client->request('POST', '/gold-assets/'.$asset->getId().'/delete', [
             '_token' => 'invalid-token',
         ]);
 
@@ -400,9 +400,9 @@ final class GoldAssetControllerTest extends WebTestCase
         $assetId = $asset->getId();
 
         $crawler = $this->client->request('GET', '/gold-assets');
-        $csrfToken = $crawler->filter('form[action*="' . $assetId . '/delete"] input[name="_token"]')->attr('value');
+        $csrfToken = $crawler->filter('form[action*="'.$assetId.'/delete"] input[name="_token"]')->attr('value');
 
-        $this->client->request('POST', '/gold-assets/' . $assetId . '/delete', [
+        $this->client->request('POST', '/gold-assets/'.$assetId.'/delete', [
             '_token' => $csrfToken,
         ]);
 

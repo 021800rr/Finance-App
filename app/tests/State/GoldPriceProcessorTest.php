@@ -61,11 +61,11 @@ final class GoldPriceProcessorTest extends KernelTestCase
 
     private function createGoldAsset(): GoldAsset
     {
-        $form = new GoldForm('Test Form ' . uniqid());
+        $form = new GoldForm('Test Form '.uniqid());
         $this->em()->persist($form);
         $this->em()->flush();
 
-        $goldAsset = new GoldAsset($form, 1, 'Test asset ' . uniqid());
+        $goldAsset = new GoldAsset($form, 1, 'Test asset '.uniqid());
         $this->em()->persist($goldAsset);
         $this->em()->flush();
 

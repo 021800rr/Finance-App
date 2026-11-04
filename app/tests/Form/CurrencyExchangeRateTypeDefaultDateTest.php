@@ -6,7 +6,6 @@ namespace App\Tests\Form;
 
 use App\Form\CurrencyExchangeRateType;
 use App\Tests\DatabaseTestTrait;
-use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\FormFactoryInterface;
 
@@ -35,7 +34,7 @@ final class CurrencyExchangeRateTypeDefaultDateTest extends KernelTestCase
 
         $rateDate = $form->get('rateDate')->getData();
 
-        self::assertInstanceOf(DateTimeImmutable::class, $rateDate);
-        self::assertSame(new DateTimeImmutable()->format('Y-m-d'), $rateDate->format('Y-m-d'));
+        self::assertInstanceOf(\DateTimeImmutable::class, $rateDate);
+        self::assertSame(new \DateTimeImmutable()->format('Y-m-d'), $rateDate->format('Y-m-d'));
     }
 }

@@ -14,7 +14,6 @@ use App\Entity\Household;
 use App\Service\AccountOperationSummaryService;
 use App\Tests\DatabaseTestTrait;
 use App\ValueObject\Money;
-use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class AccountOperationSummaryServiceTest extends KernelTestCase
@@ -41,17 +40,17 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
 
     private function createAccount(string $currencyCode = 'PLN'): Account
     {
-        $bank = new Bank('Test Bank ' . uniqid());
+        $bank = new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 
         $currencyRepository = $this->em()->getRepository(Currency::class);
         $currency = $currencyRepository->findOneBy(['code' => $currencyCode]);
-        if ($currency === null) {
+        if (null === $currency) {
             $currency = new Currency($currencyCode);
             $this->em()->persist($currency);
         }
 
-        $accountType = new AccountType('Test Type ' . uniqid());
+        $accountType = new AccountType('Test Type '.uniqid());
         $this->em()->persist($accountType);
 
         $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
@@ -59,7 +58,7 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
             throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
         }
 
-        $account = new Account($bank, $currency, $accountType, 'ACC-' . uniqid(), $household);
+        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
         $this->em()->persist($account);
 
         $this->em()->flush();
@@ -67,9 +66,9 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
         return $account;
     }
 
-    private function createOperation(Account $account, int $amountMinorUnits, DateTimeImmutable $date): AccountOperation
+    private function createOperation(Account $account, int $amountMinorUnits, \DateTimeImmutable $date): AccountOperation
     {
-        $contractor = new Contractor('Test Contractor ' . uniqid());
+        $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
         $operation = new AccountOperation($account, $contractor, $date, $amountMinorUnits, $account->getCurrency());
@@ -83,9 +82,9 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
     {
         $account = $this->createAccount();
 
-        $this->createOperation($account, 100000, new DateTimeImmutable('-5 days'));
-        $this->createOperation($account, -20050, new DateTimeImmutable('today'));
-        $this->createOperation($account, 30000, new DateTimeImmutable('+5 days'));
+        $this->createOperation($account, 100000, new \DateTimeImmutable('-5 days'));
+        $this->createOperation($account, -20050, new \DateTimeImmutable('today'));
+        $this->createOperation($account, 30000, new \DateTimeImmutable('+5 days'));
 
         $this->em()->flush();
 
@@ -98,9 +97,9 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
     {
         $account = $this->createAccount();
 
-        $this->createOperation($account, 100000, new DateTimeImmutable('-5 days'));
-        $this->createOperation($account, -20050, new DateTimeImmutable('today'));
-        $this->createOperation($account, 30000, new DateTimeImmutable('+5 days'));
+        $this->createOperation($account, 100000, new \DateTimeImmutable('-5 days'));
+        $this->createOperation($account, -20050, new \DateTimeImmutable('today'));
+        $this->createOperation($account, 30000, new \DateTimeImmutable('+5 days'));
 
         $this->em()->flush();
 
@@ -113,8 +112,8 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
     {
         $account = $this->createAccount();
 
-        $this->createOperation($account, 10000, new DateTimeImmutable('-1 day'));
-        $this->createOperation($account, 5000, new DateTimeImmutable('today'));
+        $this->createOperation($account, 10000, new \DateTimeImmutable('-1 day'));
+        $this->createOperation($account, 5000, new \DateTimeImmutable('today'));
 
         $this->em()->flush();
 
@@ -128,8 +127,8 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
     {
         $account = $this->createAccount();
 
-        $this->createOperation($account, 10000, new DateTimeImmutable('today'));
-        $this->createOperation($account, 5000, new DateTimeImmutable('+3 days'));
+        $this->createOperation($account, 10000, new \DateTimeImmutable('today'));
+        $this->createOperation($account, 5000, new \DateTimeImmutable('+3 days'));
 
         $this->em()->flush();
 
@@ -154,8 +153,8 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
         $accountA = $this->createAccount();
         $accountB = $this->createAccount();
 
-        $this->createOperation($accountA, 10000, new DateTimeImmutable('today'));
-        $this->createOperation($accountB, 999900, new DateTimeImmutable('today'));
+        $this->createOperation($accountA, 10000, new \DateTimeImmutable('today'));
+        $this->createOperation($accountB, 999900, new \DateTimeImmutable('today'));
 
         $this->em()->flush();
 
@@ -174,7 +173,7 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
         }
 
         $account = $this->createAccount(currencyCode: 'CHF');
-        $this->createOperation($account, 100000, new DateTimeImmutable('today'));
+        $this->createOperation($account, 100000, new \DateTimeImmutable('today'));
 
         $summary = $this->summaryService->getBalances($account);
 
