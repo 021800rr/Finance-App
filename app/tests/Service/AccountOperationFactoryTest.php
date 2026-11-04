@@ -11,7 +11,6 @@ use App\Entity\Bank;
 use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
-use App\Repository\AccountOperationRepository;
 use App\Service\AccountOperationFactory;
 use App\Tests\DatabaseTestTrait;
 use DateTimeImmutable;
@@ -27,7 +26,6 @@ final class AccountOperationFactoryTest extends KernelTestCase
     use DatabaseTestTrait;
 
     private AccountOperationFactory $factory;
-    private AccountOperationRepository $repository;
 
     protected function setUp(): void
     {
@@ -37,10 +35,6 @@ final class AccountOperationFactoryTest extends KernelTestCase
         /** @var AccountOperationFactory $factory */
         $factory = self::getContainer()->get(AccountOperationFactory::class);
         $this->factory = $factory;
-
-        /** @var AccountOperationRepository $repository */
-        $repository = $this->em()->getRepository(AccountOperation::class);
-        $this->repository = $repository;
     }
 
     protected function tearDown(): void
@@ -55,7 +49,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $contractor = $this->createContractor();
 
         $form = $this->buildSubmittedForm($account, 150.50);
-        $operation = $this->factory->createOrUpdateAndPersist(null, $form, $contractor, $this->repository);
+        $operation = $this->factory->createOrUpdateAndPersist(null, $form, $contractor);
 
         self::assertSame(15050, $operation->getAmount());
         self::assertSame($account->getId(), $operation->getAccount()->getId());
@@ -73,7 +67,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $newContractor = $this->createContractor();
         $form = $this->buildSubmittedForm($account, 75.00);
 
-        $updated = $this->factory->createOrUpdateAndPersist($existing, $form, $newContractor, $this->repository);
+        $updated = $this->factory->createOrUpdateAndPersist($existing, $form, $newContractor);
 
         self::assertSame($existing->getId(), $updated->getId());
         self::assertSame(7500, $updated->getAmount());
@@ -88,7 +82,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $existing = $this->createExistingOperation($plnAccount, $contractor, 10000);
 
         $form = $this->buildSubmittedForm($chfAccount, 20.00);
-        $updated = $this->factory->createOrUpdateAndPersist($existing, $form, $contractor, $this->repository);
+        $updated = $this->factory->createOrUpdateAndPersist($existing, $form, $contractor);
 
         self::assertSame($plnAccount->getId(), $updated->getAccount()->getId());
         self::assertSame('PLN', $updated->getCurrency()->getCode());
@@ -103,7 +97,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('account is required.');
 
-        $this->factory->createOrUpdateAndPersist(null, $form, $contractor, $this->repository);
+        $this->factory->createOrUpdateAndPersist(null, $form, $contractor);
     }
 
     public function testCreateOrUpdateAndPersistTurnsABlankDescriptionIntoNull(): void
@@ -112,7 +106,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $contractor = $this->createContractor();
         $form = $this->buildSubmittedForm($account, 50.00, description: '');
 
-        $operation = $this->factory->createOrUpdateAndPersist(null, $form, $contractor, $this->repository);
+        $operation = $this->factory->createOrUpdateAndPersist(null, $form, $contractor);
 
         self::assertNull($operation->getDescription());
     }
@@ -126,7 +120,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('operationDate is required.');
 
-        $this->factory->createOrUpdateAndPersist(null, $form, $contractor, $this->repository);
+        $this->factory->createOrUpdateAndPersist(null, $form, $contractor);
     }
 
     private function buildSubmittedForm(

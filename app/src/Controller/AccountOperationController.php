@@ -31,11 +31,8 @@ class AccountOperationController extends AbstractController
     }
 
     #[Route(path: '/new', name: 'operation_new', methods: ['GET', 'POST'])]
-    public function new(
-        Request $request,
-        AccountOperationRepository $accountOperationRepository,
-        AccountRepository $accountRepository,
-    ): Response {
+    public function new(Request $request, AccountRepository $accountRepository): Response
+    {
         $preselectedAccount = null;
         $rawAccountId = $request->query->get('account');
 
@@ -54,7 +51,6 @@ class AccountOperationController extends AbstractController
         $result = $this->handleOperationForm(
             existingOperation: null,
             request: $request,
-            accountOperationRepository: $accountOperationRepository,
             contractorName: '',
             preselectedAccount: $preselectedAccount
         );
@@ -75,17 +71,13 @@ class AccountOperationController extends AbstractController
         methods: ['GET', 'POST'],
         condition: "params['id'] <= ".DatabaseLimits::POSTGRES_INT4_MAX
     )]
-    public function edit(
-        AccountOperation $operation,
-        Request $request,
-        AccountOperationRepository $accountOperationRepository,
-    ): Response {
+    public function edit(AccountOperation $operation, Request $request): Response
+    {
         $contractorName = $operation->getContractor()->getName();
         $contractorId = (string) $operation->getContractor()->getId();
         $result = $this->handleOperationForm(
             $operation,
             $request,
-            $accountOperationRepository,
             $contractorName,
             $operation->getAccount(),
         );
@@ -182,7 +174,6 @@ class AccountOperationController extends AbstractController
     private function handleOperationForm(
         ?AccountOperation $existingOperation,
         Request $request,
-        AccountOperationRepository $accountOperationRepository,
         string $contractorName,
         ?Account $preselectedAccount = null,
     ): ContractorFormResult|Response {
@@ -206,7 +197,6 @@ class AccountOperationController extends AbstractController
                     $existingOperation,
                     $form,
                     $resolution->contractor,
-                    $accountOperationRepository,
                 );
 
                 return $this->redirectToRoute('account_operations', [

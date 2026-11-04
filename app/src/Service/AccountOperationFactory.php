@@ -14,17 +14,20 @@ use Symfony\Component\Form\FormInterface;
 
 final readonly class AccountOperationFactory
 {
+    public function __construct(private AccountOperationRepository $repository)
+    {
+    }
+
     public function createOrUpdateAndPersist(
         ?AccountOperation $existingOperation,
         FormInterface $form,
         Contractor $contractor,
-        AccountOperationRepository $repository,
     ): AccountOperation {
         $operation = null === $existingOperation
             ? $this->createFromForm($form, $contractor)
             : $this->updateFromForm($existingOperation, $form, $contractor);
 
-        $repository->save($operation, flush: true);
+        $this->repository->save($operation, flush: true);
 
         return $operation;
     }
