@@ -19,6 +19,7 @@ contractor:
     required: 'Please select a contractor from the list.'
 
 contractor_autocomplete:
+    add: '➕ Add "%name%"'
     confirm_create: 'Add the new contractor "%name%"?'
     create_failed: 'Failed to create the contractor.'
     created: 'Contractor added: %name%'

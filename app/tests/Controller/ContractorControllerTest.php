@@ -42,6 +42,16 @@ final class ContractorControllerTest extends WebTestCase
         );
     }
 
+    public function testAutocompleteReceivesTheTextOfTheAddOption(): void
+    {
+        $crawler = $this->client->request('GET', '/fixed-expense');
+
+        self::assertSame(
+            '➕ Add "{name}"',
+            $crawler->filter('[data-controller~="contractor-autocomplete"]')->attr('data-msg-add'),
+        );
+    }
+
     public function testCreateWithoutASessionRedirectsToTheLoginPage(): void
     {
         $this->client->getCookieJar()->clear();

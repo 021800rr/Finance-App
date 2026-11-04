@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     title: {
                         display: true,
-                        text: 'Data'
+                        text: chartContainer.dataset.xAxisTitle ?? ''
                     }
                 }
             },

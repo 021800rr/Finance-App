@@ -42,6 +42,14 @@ final class GoldPriceControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
     }
 
+    public function testTheChartReceivesTranslatedAxisTitles(): void
+    {
+        $chart = $this->client->request('GET', '/gold-prices')->filter('#goldPricesChart');
+
+        self::assertSame('Date', $chart->attr('data-x-axis-title'));
+        self::assertSame('Price (PLN)', $chart->attr('data-y-axis-title'));
+    }
+
     public function testIndexProvidesSeparateChartSeriesForAssetsWithTheSameDescription(): void
     {
         $first = $this->createPriceInDatabase();

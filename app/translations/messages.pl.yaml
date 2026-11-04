@@ -19,6 +19,7 @@ contractor:
     required: 'Wybierz kontrahenta z listy.'
 
 contractor_autocomplete:
+    add: '➕ Dodaj „%name%”'
     confirm_create: 'Dodać nowego kontrahenta „%name%”?'
     create_failed: 'Błąd przy tworzeniu kontrahenta.'
     created: 'Dodano kontrahenta: %name%'

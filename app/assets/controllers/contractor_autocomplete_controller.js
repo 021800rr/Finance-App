@@ -101,7 +101,7 @@ export default class extends Controller {
             addLi.className = 'add';
             addLi.style.padding = '8px';
             addLi.style.cursor = 'pointer';
-            addLi.innerHTML = `➕ Dodaj „${this.escapeHtml(query)}”`;
+            addLi.textContent = this.message('msgAdd', query);
             addLi.addEventListener('click', () => this.confirmAndCreate(query));
             ul.appendChild(addLi);
         } else {
@@ -120,7 +120,7 @@ export default class extends Controller {
                 const addLi = document.createElement('li');
                 addLi.style.padding = '8px';
                 addLi.style.cursor = 'pointer';
-                addLi.innerHTML = `➕ Dodaj „${this.escapeHtml(query)}”`;
+                addLi.textContent = this.message('msgAdd', query);
                 addLi.addEventListener('click', () => this.confirmAndCreate(query));
                 ul.appendChild(addLi);
             }
@@ -157,13 +157,6 @@ export default class extends Controller {
     message(key, name = '') {
         // A replacer function, so "$" sequences in a contractor name are not treated as replacement patterns.
         return (this.element.dataset[key] ?? '').replace('{name}', () => name);
-    }
-
-    escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>"']/g, function (m) {
-            return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m];
-        });
     }
 
     getCsrfToken() {

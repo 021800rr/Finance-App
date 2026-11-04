@@ -271,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: false,
                     title: {
                         display: true,
-                        text: 'Cena (PLN)'
+                        text: chartContainer.dataset.yAxisTitle ?? ''
                     }
                 },
                 x: {
@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     title: {
                         display: true,
-                        text: 'Data'
+                        text: chartContainer.dataset.xAxisTitle ?? ''
                     }
                 }
             },

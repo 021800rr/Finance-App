@@ -6,7 +6,12 @@
             <div class="card-body">
                 <h2 class="h5 mb-3">{{ 'gold_price.chart_title'|trans }}</h2>
                 <div class="chart-container">
-                    <canvas id="goldPricesChart" data-chart="{{ chartData|json_encode|e('html_attr') }}"></canvas>
+                    <canvas
+                        id="goldPricesChart"
+                        data-x-axis-title="{{ 'form.date'|trans }}"
+                        data-y-axis-title="{{ 'gold_price.price_pln'|trans }}"
+                        data-chart="{{ chartData|json_encode|e('html_attr') }}"
+                    ></canvas>
                 </div>
             </div>
         </div>

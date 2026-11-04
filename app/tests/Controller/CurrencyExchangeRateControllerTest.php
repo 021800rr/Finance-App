@@ -43,6 +43,14 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
     }
 
+    public function testTheChartReceivesTranslatedAxisTitles(): void
+    {
+        $chart = $this->client->request('GET', '/rate')->filter('#ratesChart');
+
+        self::assertSame('Date', $chart->attr('data-x-axis-title'));
+        self::assertSame('CHF rate (sell)', $chart->attr('data-y-axis-title'));
+    }
+
     public function testChartGroupsDailyRatesByBankAndDateAndConvertsMinorUnits(): void
     {
         $bankA = $this->createBank();

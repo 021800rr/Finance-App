@@ -2,6 +2,7 @@
     data-controller="contractor-autocomplete"
     data-search-url="{{ path('contractor_search') }}"
     data-create-url="{{ path('contractor_create') }}"
+    data-msg-add="{{ 'contractor_autocomplete.add'|trans({'%name%': '{name}'}) }}"
     data-msg-no-name="{{ 'contractor_autocomplete.no_name'|trans }}"
     data-msg-selected="{{ 'contractor_autocomplete.selected'|trans({'%name%': '{name}'}) }}"
     data-msg-confirm-create="{{ 'contractor_autocomplete.confirm_create'|trans({'%name%': '{name}'}) }}"

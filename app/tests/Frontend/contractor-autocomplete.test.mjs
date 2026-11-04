@@ -8,6 +8,7 @@ function prepareController(t) {
         value: {
             dataset: {
                 createUrl: '/contractor/create',
+                msgAdd: '➕ Add "{name}"',
                 msgCreateFailed: 'Błąd przy tworzeniu kontrahenta.',
                 msgCreated: 'Dodano kontrahenta: {name}',
                 msgSessionExpired: 'Sesja wygasła. Zaloguj się ponownie.',
@@ -159,8 +160,8 @@ function fakeDocument() {
 
 function addOptions(controller) {
     return controller.resultsTarget.children[0].children
-        .filter(li => li.innerHTML.startsWith('➕'))
-        .map(li => li.innerHTML);
+        .filter(li => li.textContent.startsWith('➕'))
+        .map(li => li.textContent);
 }
 
 function prepareResults(t) {
@@ -179,7 +180,7 @@ test('a name differing only in letter case can still be added, as the server acc
 
     controller.renderResults([{ id: 6, name: 'Netflix' }], 'netflix');
 
-    assert.deepEqual(addOptions(controller), ['➕ Dodaj „netflix”']);
+    assert.deepEqual(addOptions(controller), ['➕ Add "netflix"']);
 });
 
 test('the exact name of a listed contractor is not offered to be added again', t => {
@@ -195,7 +196,7 @@ test('with no suggestions, the typed name is offered to be added', t => {
 
     controller.renderResults([], 'Nowy kontrahent');
 
-    assert.deepEqual(addOptions(controller), ['➕ Dodaj „Nowy kontrahent”']);
+    assert.deepEqual(addOptions(controller), ['➕ Add "Nowy kontrahent"']);
 });
 
 function prepareSearch(t, typed) {
