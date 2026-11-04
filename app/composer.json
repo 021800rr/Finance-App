@@ -5,7 +5,6 @@
     "prefer-stable": true,
     "require": {
         "php": ">=8.5",
-        "ext-bcmath": "*",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "api-platform/core": "^5.0.5",

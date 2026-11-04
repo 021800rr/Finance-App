@@ -86,7 +86,6 @@ home:
     category_kasa: 'Kasa'
     category_not_found: 'Brak danych — sprawdź konfigurację'
     category_ror: 'ROR'
-    category_total: 'Suma'
     category_wakacje: 'Wakacje'
     currency_pln: 'PLN'
     hide: 'Ukryj'
@@ -103,7 +102,6 @@ home:
 
 login:
     email: 'Adres e-mail'
-    invalid_credentials: 'Nieprawidłowy e-mail lub hasło.'
     password: 'Hasło'
     submit: 'Zaloguj się'
     title: 'Logowanie'
@@ -129,7 +127,6 @@ operation:
     description: 'Opis'
     edit: 'Edytuj'
     edit_title: 'Edycja operacji'
-    id: '#'
     new_title: 'Nowa operacja'
     none_found: 'Brak operacji'
     related_not_found: 'Nie znaleziono powiązanej operacji.'

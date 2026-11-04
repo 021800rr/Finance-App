@@ -60,7 +60,6 @@ gold_asset:
     description_max_length: 'Opis może mieć najwyżej 255 znaków.'
     description_not_blank: 'Podaj opis.'
     form_not_null: 'Wybierz formę.'
-    ounces_must_be_positive: 'Ilość uncji musi być większa od zera.'
     ounces_not_blank: 'Podaj liczbę uncji.'
     ounces_out_of_range: 'Ilość uncji musi być z zakresu 0,0001-999,9999.'
 
@@ -82,7 +81,6 @@ operation:
     date_not_blank: 'Podaj datę.'
 
 rate:
-    value_not_blank: 'Podaj kurs.'
 
 transfer:
     amount_out_of_range: 'Kwota przelewu musi być z zakresu od 0,01 do 999 999,99.'

@@ -86,7 +86,6 @@ home:
     category_kasa: 'Cash'
     category_not_found: 'No data — check configuration'
     category_ror: 'Checking'
-    category_total: 'Total'
     category_wakacje: 'Savings'
     currency_pln: 'PLN'
     hide: 'Hide'
@@ -103,7 +102,6 @@ home:
 
 login:
     email: 'E-mail address'
-    invalid_credentials: 'Invalid e-mail or password.'
     password: 'Password'
     submit: 'Log in'
     title: 'Log in'
@@ -129,7 +127,6 @@ operation:
     description: 'Description'
     edit: 'Edit'
     edit_title: 'Edit operation'
-    id: '#'
     new_title: 'New operation'
     none_found: 'No operations found'
     related_not_found: 'Related operation not found.'
