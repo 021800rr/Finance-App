@@ -78,6 +78,8 @@ export default class extends Controller {
             }
 
             const data = await res.json().catch(() => []);
+            // A slower answer to an earlier query must not replace the list for what is typed now.
+            if (q !== this.inputTarget.value.trim()) return;
             this.renderResults(Array.isArray(data) ? data : [], q);
         } catch (err) {
             console.error(err);

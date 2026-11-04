@@ -197,3 +197,30 @@ test('with no suggestions, the typed name is offered to be added', t => {
 
     assert.deepEqual(addOptions(controller), ['➕ Dodaj „Nowy kontrahent”']);
 });
+
+function prepareSearch(t, typed) {
+    const controller = prepareController(t);
+    controller.element.dataset.searchUrl = '/contractor/search';
+    controller.inputTarget.value = typed;
+    t.mock.method(controller, 'renderResults', () => {});
+    t.mock.method(globalThis, 'fetch', async () => Response.json([{ id: 6, name: 'Netflix' }]));
+
+    return controller;
+}
+
+test('an answer to an earlier query does not replace the list for what is typed now', async t => {
+    const controller = prepareSearch(t, 'net');
+
+    // prepareController() replaces search() with a mock, so the real one is called directly.
+    await ContractorAutocompleteController.prototype.search.call(controller, 'ne');
+
+    assert.equal(controller.renderResults.mock.calls.length, 0);
+});
+
+test('the answer to what is typed now is shown', async t => {
+    const controller = prepareSearch(t, ' net ');
+
+    await ContractorAutocompleteController.prototype.search.call(controller, 'net');
+
+    assert.deepEqual(controller.renderResults.mock.calls[0].arguments, [[{ id: 6, name: 'Netflix' }], 'net']);
+});
