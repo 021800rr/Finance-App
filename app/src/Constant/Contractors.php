@@ -8,9 +8,7 @@ final class Contractors
 {
     /**
      * System contractor used as the counterparty for transfers between the
-     * user's own accounts. Seeded by migrations/Version202609301900.php so
-     * it exists on every environment, including production (fixtures are
-     * dev/test-only and never run there).
+     * user's own accounts.
      */
     public const string SELF_TRANSFER_NAME = 'Przelew własny';
 }

@@ -4,14 +4,6 @@
 # Files in the packages/ subdirectory configure your dependencies.
 # See also https://symfony.com/doc/current/service_container/import.html
 
-# Put parameters here that don't need to change on each machine where the app is deployed
-# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
-#
-# There used to be an app.main_account_id parameter here (a hardcoded PK).
-# It's gone — the main account is now Account::isMain (a DB column, see
-# AccountRepository::findMain()/setAsMainAccount()), not a config value that
-# assumed the "right" account would always get id 1.
-
 services:
     # default configuration for services in *this* file
     _defaults:
