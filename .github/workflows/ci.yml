@@ -107,4 +107,4 @@ jobs:
         run: vendor/bin/phpstan analyse --memory-limit 1G --no-progress
 
       - name: PHP CS Fixer (dry run)
-        run: vendor/bin/php-cs-fixer fix --dry-run --diff src
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff

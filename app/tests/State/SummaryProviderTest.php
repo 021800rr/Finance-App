@@ -201,7 +201,7 @@ final class SummaryProviderTest extends KernelTestCase
     {
         foreach ($resource->accounts as $account) {
             if ($account['account_number'] === $accountNumber) {
-                /* @var array{
+                /** @var array{
                  *     id: int,
                  *     bank: string,
                  *     type: string,
@@ -215,9 +215,11 @@ final class SummaryProviderTest extends KernelTestCase
                  *     saldo: mixed,
                  *     rate: mixed,
                  *     missing_rate: bool
-                 * } $account
+                 * } $row
                  */
-                return $account;
+                $row = $account;
+
+                return $row;
             }
         }
 
