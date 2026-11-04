@@ -7,6 +7,7 @@ namespace App\Tests\Api;
 use App\Entity\Account;
 use App\Entity\Contractor;
 use App\Exception\BusinessError;
+use App\OpenApi\ProblemDetailsDecorator;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\LosesMainAccountRaceTrait;
 use Doctrine\DBAL\Driver\Exception as DriverException;
@@ -268,6 +269,76 @@ final class ProblemDetailsApiTest extends WebTestCase
         yield 'changed fixed expense' => ['/api/fixed_expenses/{id}', 'patch', 'contractor.name_not_unique'];
         yield 'main account' => ['/api/accounts/{id}', 'patch', 'account.main_changed_concurrently'];
         yield 'planning' => ['/api/fixed_expenses/plan', 'post', 'fixed_expense.plan_'];
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function listsWithValidatedFilters(): iterable
+    {
+        yield 'search' => ['/api/account_operations'];
+        yield 'account history' => ['/api/accounts/{accountId}/operations'];
+        yield 'contractors' => ['/api/contractors'];
+    }
+
+    #[DataProvider('listsWithValidatedFilters')]
+    public function testOpenApiDocumentsThatAListRefusesAnInvalidFilter(string $path): void
+    {
+        $invalid = self::objectAt($this->openApiDocs(), 'paths', $path, 'get', 'responses', '422');
+        $schema = self::objectAt($invalid, 'content', 'application/ld+json', 'schema', 'allOf', '0');
+
+        self::assertStringContainsString('validation.failed', self::stringAt($invalid, 'description'));
+        self::assertSame('#/components/schemas/ConstraintViolation.jsonld', $schema['$ref'] ?? null);
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string}>
+     */
+    public static function authenticationExamples(): iterable
+    {
+        yield 'login' => ['/api/login_check', 'post', 'auth.invalid_credentials'];
+        yield 'protected address' => ['/api/accounts', 'get', 'auth.token_missing'];
+    }
+
+    #[DataProvider('authenticationExamples')]
+    public function testOpenApiShowsTheAuthenticationErrorThatFitsTheAddress(
+        string $path,
+        string $method,
+        string $errorCode,
+    ): void {
+        $schema = self::objectAt(
+            $this->openApiDocs(),
+            'paths', $path, $method, 'responses', '401', 'content', 'application/json', 'schema',
+        );
+
+        $example = self::objectAt($schema, 'allOf', '1', 'properties', 'errorCode');
+        self::assertSame([$errorCode], $example['examples'] ?? null);
+    }
+
+    public function testErrorAddressExampleDoesNotDependOnOneServer(): void
+    {
+        $description = self::stringAt($this->openApiDocs(), 'paths', '/api/errors/{status}', 'get', 'description');
+
+        self::assertStringContainsString('curl "$BASE_URL/api/errors/409"', $description);
+    }
+
+    /**
+     * The decorator names operations as text, so a renamed route would quietly lose its note without this.
+     */
+    public function testEveryOperationTheDocumentationDecoratorNamesExists(): void
+    {
+        $docs = $this->openApiDocs();
+        $named = [];
+        foreach (['CONFLICTS', 'INVALID_QUERIES'] as $constant) {
+            $routes = (new \ReflectionClassConstant(ProblemDetailsDecorator::class, $constant))->getValue();
+            self::assertIsArray($routes);
+            $named = [...$named, ...array_keys($routes)];
+        }
+
+        foreach (array_unique($named) as $route) {
+            [$method, $path] = explode(' ', (string) $route, 2);
+            self::assertIsArray(self::objectAt($docs, 'paths', $path)[strtolower($method)] ?? null, $route);
+        }
     }
 
     #[DataProvider('operationsWithAConflict')]

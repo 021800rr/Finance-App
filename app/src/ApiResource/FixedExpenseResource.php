@@ -69,7 +69,7 @@ final class FixedExpenseResource
     #[ApiProperty(
         description: 'Id of an existing contractor. Send it alone, or with the name of the same contractor. '
         .'Null is allowed only on update, together with contractorName, to replace the contractor.',
-        example: null,
+        example: 10,
     )]
     #[RecordExists(Contractor::class, message: 'contractor.not_found')]
     public ?int $contractorId = null;
@@ -77,7 +77,7 @@ final class FixedExpenseResource
     #[ApiProperty(
         description: 'Contractor name, trimmed; letter case matters. Alone, it finds the contractor or creates a new '
         .'one. With contractorId, it must be the name of that contractor. Null and a blank name are rejected.',
-        example: 'Rent',
+        example: 'Example contractor',
     )]
     #[Assert\Length(max: 255, maxMessage: 'contractor.name_max_length')]
     #[NoNullCharacter]

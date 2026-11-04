@@ -97,7 +97,8 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         Send your JWT token, as for every other address:
 
         ```bash
-        curl http://localhost:8081/api/errors/409 \
+        BASE_URL=http://localhost:8081 # the address of your instance
+        curl "$BASE_URL/api/errors/409" \
           -H "Authorization: Bearer $TOKEN" \
           -H 'Accept: application/ld+json'
         ```
@@ -125,6 +126,16 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
             .'(errorCode account.main_changed_concurrently).',
         'POST /api/fixed_expenses/plan' => 'The expenses cannot be planned (errorCode fixed_expense.plan_*; '
             .'see "Errors" in the API description). Nothing was created.',
+    ];
+
+    /** "METHOD path" => which query parameters it refuses with 422 */
+    private const array INVALID_QUERIES = [
+        'GET /api/account_operations' => 'Validation failed: q is missing, blank, too long or contains a NUL '
+            .'character, or page is not a positive whole number (errorCode validation.failed).',
+        'GET /api/accounts/{accountId}/operations' => 'Validation failed: page is not a positive whole number '
+            .'(errorCode validation.failed).',
+        'GET /api/contractors' => 'Validation failed: name is blank, too long or contains a NUL character '
+            .'(errorCode validation.failed).',
     ];
 
     public function __construct(private OpenApiFactoryInterface $decorated)
@@ -167,7 +178,8 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
 
         foreach ($openApi->getPaths()->getPaths() as $path => $pathItem) {
             if ($pathItem instanceof PathItem) {
-                $openApi->getPaths()->addPath($path, $this->withStatusExamples($this->withErrors($pathItem, $path)));
+                $pathItem = $this->withErrors($pathItem, $path);
+                $openApi->getPaths()->addPath($path, $this->withStatusExamples($pathItem, $path));
             }
         }
 
@@ -177,7 +189,8 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     }
 
     /**
-     * Errors that API Platform cannot know about: 401 comes from the firewall, 409 from the processors.
+     * Errors that API Platform cannot know about: 401 comes from the firewall, 409 from the processors, and 422 of
+     * a GET from the query parameters, which API Platform validates without documenting it.
      */
     private function withErrors(PathItem $pathItem, string $path): PathItem
     {
@@ -204,9 +217,21 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         if (isset(self::CONFLICTS[$route])) {
             $responses['409'] = $this->errorResponse(self::CONFLICTS[$route]);
         }
+        if (isset(self::INVALID_QUERIES[$route])) {
+            $responses['422'] = $this->violationResponse(self::INVALID_QUERIES[$route]);
+        }
         ksort($responses);
 
         return $operation->withResponses($responses);
+    }
+
+    private function violationResponse(string $description): Response
+    {
+        return new Response($description, new \ArrayObject([
+            'application/ld+json' => ['schema' => ['$ref' => '#/components/schemas/ConstraintViolation.jsonld']],
+            'application/problem+json' => ['schema' => ['$ref' => '#/components/schemas/ConstraintViolation']],
+            'application/json' => ['schema' => ['$ref' => '#/components/schemas/ConstraintViolation']],
+        ]));
     }
 
     private function errorResponse(string $description): Response
@@ -222,17 +247,17 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
      * All error responses share one schema, so Swagger UI would show the same example ("status": 404) for every
      * one of them. Each error response gets its own status and a matching example errorCode instead.
      */
-    private function withStatusExamples(PathItem $pathItem): PathItem
+    private function withStatusExamples(PathItem $pathItem, string $path): PathItem
     {
         return $pathItem
-            ->withGet($this->withOperationExamples($pathItem->getGet()))
-            ->withPost($this->withOperationExamples($pathItem->getPost()))
-            ->withPut($this->withOperationExamples($pathItem->getPut()))
-            ->withPatch($this->withOperationExamples($pathItem->getPatch()))
-            ->withDelete($this->withOperationExamples($pathItem->getDelete()));
+            ->withGet($this->withOperationExamples($pathItem->getGet(), 'GET '.$path))
+            ->withPost($this->withOperationExamples($pathItem->getPost(), 'POST '.$path))
+            ->withPut($this->withOperationExamples($pathItem->getPut(), 'PUT '.$path))
+            ->withPatch($this->withOperationExamples($pathItem->getPatch(), 'PATCH '.$path))
+            ->withDelete($this->withOperationExamples($pathItem->getDelete(), 'DELETE '.$path));
     }
 
-    private function withOperationExamples(?Operation $operation): ?Operation
+    private function withOperationExamples(?Operation $operation, string $route): ?Operation
     {
         if (null === $operation || null === $operation->getResponses()) {
             return $operation;
@@ -241,14 +266,14 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         $responses = [];
         foreach ($operation->getResponses() as $status => $response) {
             $responses[$status] = $response instanceof Response && (int) $status >= 400
-                ? $this->withStatusExample($response, (int) $status)
+                ? $this->withStatusExample($response, (int) $status, $route)
                 : $response;
         }
 
         return $operation->withResponses($responses);
     }
 
-    private function withStatusExample(Response $response, int $status): Response
+    private function withStatusExample(Response $response, int $status, string $route): Response
     {
         $content = $response->getContent();
         if (null === $content) {
@@ -272,7 +297,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
                 $schema,
                 ['type' => 'object', 'properties' => [
                     'status' => ['type' => 'integer', 'const' => $status, 'examples' => [$status]],
-                    'errorCode' => ['type' => 'string', 'examples' => [$this->exampleErrorCode($status)]],
+                    'errorCode' => ['type' => 'string', 'examples' => [$this->exampleErrorCode($status, $route)]],
                 ]],
             ]];
             $documented[(string) $mediaType] = $media instanceof MediaType
@@ -305,11 +330,12 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         return true;
     }
 
-    private function exampleErrorCode(int $status): string
+    private function exampleErrorCode(int $status, string $route): string
     {
-        return match ($status) {
-            401 => 'auth.token_missing',
-            422 => 'validation.failed',
+        return match (true) {
+            401 === $status && 'POST /api/login_check' === $route => 'auth.invalid_credentials',
+            401 === $status => 'auth.token_missing',
+            422 === $status => 'validation.failed',
             default => ProblemResponse::httpErrorCode($status),
         };
     }
