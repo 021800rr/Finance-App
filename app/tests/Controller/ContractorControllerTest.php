@@ -222,6 +222,24 @@ final class ContractorControllerTest extends WebTestCase
         self::assertSame('[]', $this->client->getResponse()->getContent());
     }
 
+    /**
+     * Contractors differing only in letter case are separate (decision D5), so the autocomplete offers to add one.
+     */
+    public function testCreateAcceptsANameThatDiffersOnlyInLetterCase(): void
+    {
+        $name = 'Case contractor '.uniqid();
+        $this->em()->persist(new Contractor($name));
+        $this->em()->flush();
+        $crawler = $this->client->request('GET', '/');
+        $token = (string) $crawler->filter('meta[name="csrf-token-contractor-create"]')->attr('content');
+
+        $this->postContractor(strtolower($name), $token);
+
+        self::assertResponseIsSuccessful();
+        $sameNameInAnyCase = 'SELECT COUNT(*) FROM contractor WHERE LOWER(name) = LOWER(?)';
+        self::assertSame(2, $this->em()->getConnection()->fetchOne($sameNameInAnyCase, [$name]));
+    }
+
     #[DataProvider('duplicateNameWhitespace')]
     public function testCreateReturns422ForDuplicateName(string $whitespace): void
     {

@@ -113,7 +113,7 @@ export default class extends Controller {
                 ul.appendChild(li);
             });
 
-            const exact = items.some(it => (it.name || '').toLowerCase() === query.toLowerCase());
+            const exact = items.some(it => (it.name || '') === query);
             if (!exact) {
                 const addLi = document.createElement('li');
                 addLi.style.padding = '8px';

@@ -139,3 +139,61 @@ test('other failures retain the general error message', async t => {
     assert.equal(controller.search.mock.calls.length, 0);
     assert.equal(controller.hiddenTarget.value, '');
 });
+
+/**
+ * The smallest DOM renderResults() needs: elements that keep their children, text and markup.
+ */
+function fakeDocument() {
+    const element = () => ({
+        children: [],
+        style: {},
+        dataset: {},
+        innerHTML: '',
+        textContent: '',
+        appendChild(child) { this.children.push(child); },
+        addEventListener() {},
+    });
+
+    return { createElement: element };
+}
+
+function addOptions(controller) {
+    return controller.resultsTarget.children[0].children
+        .filter(li => li.innerHTML.startsWith('➕'))
+        .map(li => li.innerHTML);
+}
+
+function prepareResults(t) {
+    const controller = prepareController(t);
+    controller.hasResultsTarget = true;
+    controller.resultsTarget = fakeDocument().createElement('div');
+    // Node has no DOM, so the fake exists only for this test.
+    globalThis.document = fakeDocument();
+    t.after(() => { delete globalThis.document; });
+
+    return controller;
+}
+
+test('a name differing only in letter case can still be added, as the server accepts it', t => {
+    const controller = prepareResults(t);
+
+    controller.renderResults([{ id: 6, name: 'Netflix' }], 'netflix');
+
+    assert.deepEqual(addOptions(controller), ['➕ Dodaj „netflix”']);
+});
+
+test('the exact name of a listed contractor is not offered to be added again', t => {
+    const controller = prepareResults(t);
+
+    controller.renderResults([{ id: 6, name: 'Netflix' }, { id: 7, name: 'Netflix Kids' }], 'Netflix');
+
+    assert.deepEqual(addOptions(controller), []);
+});
+
+test('with no suggestions, the typed name is offered to be added', t => {
+    const controller = prepareResults(t);
+
+    controller.renderResults([], 'Nowy kontrahent');
+
+    assert.deepEqual(addOptions(controller), ['➕ Dodaj „Nowy kontrahent”']);
+});
