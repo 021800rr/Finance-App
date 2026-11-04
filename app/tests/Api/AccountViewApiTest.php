@@ -69,7 +69,10 @@ final class AccountViewApiTest extends WebTestCase
 
         self::assertTrue($api['hasFutureOperations']);
         self::assertStringContainsString($this->asWebAmount(self::stringAt($api, 'saldo', 'amount')), $balanceLine);
-        self::assertStringContainsString($this->asWebAmount(self::stringAt($api, 'saldoToday', 'amount')), $balanceLine);
+        self::assertStringContainsString(
+            $this->asWebAmount(self::stringAt($api, 'saldoToday', 'amount')),
+            $balanceLine,
+        );
         self::assertNotSame(self::stringAt($api, 'saldo', 'amount'), self::stringAt($api, 'saldoToday', 'amount'));
     }
 
@@ -79,7 +82,10 @@ final class AccountViewApiTest extends WebTestCase
 
         foreach ([1, 2] as $page) {
             $webRows = $this->webRows($this->webPage($account, $page));
-            $apiRows = self::rowsAt($this->getJson('/api/accounts/'.$account->getId().'/operations?page='.$page), 'member');
+            $apiRows = self::rowsAt(
+                $this->getJson('/api/accounts/'.$account->getId().'/operations?page='.$page),
+                'member',
+            );
 
             self::assertNotEmpty($webRows);
             self::assertCount(count($webRows), $apiRows, "page {$page}: number of rows");
@@ -89,9 +95,17 @@ final class AccountViewApiTest extends WebTestCase
                 self::assertSame($web['date'], $api['operationDate'], "page {$page}, row {$i}: date");
                 self::assertSame($web['contractor'], $api['contractorName'], "page {$page}, row {$i}: contractor");
                 self::assertSame($web['description'], $api['description'] ?? '', "page {$page}, row {$i}: description");
-                self::assertSame($web['amount'], $this->asWebAmount(self::stringAt($api, 'amount')), "page {$page}, row {$i}: amount");
+                self::assertSame(
+                    $web['amount'],
+                    $this->asWebAmount(self::stringAt($api, 'amount')),
+                    "page {$page}, row {$i}: amount",
+                );
                 self::assertSame($web['confirmed'], $api['confirmed'], "page {$page}, row {$i}: confirmed");
-                self::assertSame($web['linked'], isset($api['transactionUuid']), "page {$page}, row {$i}: transfer link");
+                self::assertSame(
+                    $web['linked'],
+                    isset($api['transactionUuid']),
+                    "page {$page}, row {$i}: transfer link",
+                );
             }
         }
     }
@@ -108,7 +122,10 @@ final class AccountViewApiTest extends WebTestCase
 
         self::assertSame(self::OPERATIONS, $totalItems);
         self::assertSame(2, $totalPages);
-        self::assertStringContainsString('1 / '.$totalPages, $this->normalizedWithSpaces($webPage->filter('.pagination')->text()));
+        self::assertStringContainsString(
+            '1 / '.$totalPages,
+            $this->normalizedWithSpaces($webPage->filter('.pagination')->text()),
+        );
         self::assertStringEndsWith('page='.$totalPages, self::stringAt($api, 'view', 'last'));
     }
 
@@ -117,7 +134,11 @@ final class AccountViewApiTest extends WebTestCase
      */
     private function getJson(string $uri): array
     {
-        $this->client->request('GET', $uri, server: ['HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(), 'HTTP_ACCEPT' => 'application/ld+json']);
+        $this->client->request(
+            'GET',
+            $uri,
+            server: ['HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(), 'HTTP_ACCEPT' => 'application/ld+json'],
+        );
         self::assertResponseIsSuccessful();
 
         $data = self::decodeObject((string) $this->client->getResponse()->getContent());
@@ -152,7 +173,15 @@ final class AccountViewApiTest extends WebTestCase
     }
 
     /**
-     * @return list<array{id: int, date: string, contractor: string, description: string, amount: string, confirmed: bool, linked: bool}>
+     * @return list<array{
+     *     id: int,
+     *     date: string,
+     *     contractor: string,
+     *     description: string,
+     *     amount: string,
+     *     confirmed: bool,
+     *     linked: bool
+     * }>
      */
     private function webRows(Crawler $page): array
     {

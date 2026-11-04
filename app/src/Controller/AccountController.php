@@ -96,7 +96,11 @@ class AccountController extends AbstractController
         $total = $accountOperationRepository->countByAccount($account);
         $paginator = Paginator::create((int) $request->query->get('page', 1), $total, Paginator::DEFAULT_PER_PAGE);
 
-        $operations = $accountOperationRepository->findByAccountOrderedPaged($account, $paginator->perPage, $paginator->offset);
+        $operations = $accountOperationRepository->findByAccountOrderedPaged(
+            $account,
+            $paginator->perPage,
+            $paginator->offset,
+        );
 
         return $this->render('account/operations.html.twig', [
             'account' => $account,

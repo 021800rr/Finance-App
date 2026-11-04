@@ -108,8 +108,16 @@ final class TransactionServiceTest extends KernelTestCase
 
         self::assertSame(-10000, $result['out']->getAmount());
         self::assertSame(2500, $result['in']->getAmount());
-        self::assertSame('PLN', $result['out']->getCurrency()->getCode(), 'Debit side must stay in the source account currency.');
-        self::assertSame('CHF', $result['in']->getCurrency()->getCode(), 'Credit side must be in the destination account currency, not the source.');
+        self::assertSame(
+            'PLN',
+            $result['out']->getCurrency()->getCode(),
+            'Debit side must stay in the source account currency.',
+        );
+        self::assertSame(
+            'CHF',
+            $result['in']->getCurrency()->getCode(),
+            'Credit side must be in the destination account currency, not the source.',
+        );
     }
 
     public function testTransferReverseDirectionChfToPlnAssignsCorrectCurrenciesAndAmounts(): void

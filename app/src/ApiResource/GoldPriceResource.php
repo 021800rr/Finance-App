@@ -102,7 +102,11 @@ final class GoldPriceResource
     ])]
     public ?string $pricePln = null;
 
-    #[ApiProperty(description: 'Currency code. Always PLN. Read-only, ignored on write.', writable: false, example: 'PLN')]
+    #[ApiProperty(
+        description: 'Currency code. Always PLN. Read-only, ignored on write.',
+        writable: false,
+        example: 'PLN',
+    )]
     public ?string $currencyCode = null;
 
     public static function fromEntity(GoldPrice $goldPrice): self

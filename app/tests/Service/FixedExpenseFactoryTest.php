@@ -92,8 +92,10 @@ final class FixedExpenseFactoryTest extends KernelTestCase
     }
 
     #[DataProvider('provideBoundaryAmounts')]
-    public function testCreateFromFormConvertsBoundaryAmountsToCorrectMinorUnits(float $amount, int $expectedMinorUnits): void
-    {
+    public function testCreateFromFormConvertsBoundaryAmountsToCorrectMinorUnits(
+        float $amount,
+        int $expectedMinorUnits,
+    ): void {
         $form = $this->buildForm(day: 1, amount: $amount, description: null);
 
         $fixedExpense = $this->factory->createFromForm($form, $this->createContractor());

@@ -82,7 +82,13 @@ final readonly class Money
         }
 
         if (Currencies::MINOR_UNIT_SCALE !== $this->scale) {
-            throw new \LogicException('convertToPln() assumes a source scale of '.Currencies::MINOR_UNIT_SCALE.", got scale $this->scale.");
+            $message = sprintf(
+                'convertToPln() assumes a source scale of %d, got scale %d.',
+                Currencies::MINOR_UNIT_SCALE,
+                $this->scale,
+            );
+
+            throw new \LogicException($message);
         }
 
         $rateMinorUnits = self::parseSignedDecimalToMinorUnits($exchangeRateDecimal, $rateScale);
@@ -198,7 +204,13 @@ final readonly class Money
     private function assertSameCurrency(self $other): void
     {
         if ($this->currencyCode !== $other->currencyCode) {
-            throw new \InvalidArgumentException("Cannot operate on Money with different currencies: $this->currencyCode vs $other->currencyCode.");
+            $message = sprintf(
+                'Cannot operate on Money with different currencies: %s vs %s.',
+                $this->currencyCode,
+                $other->currencyCode,
+            );
+
+            throw new \InvalidArgumentException($message);
         }
     }
 
@@ -209,7 +221,9 @@ final readonly class Money
     private function assertSameScale(self $other): void
     {
         if ($this->scale !== $other->scale) {
-            throw new \InvalidArgumentException("Cannot operate on Money with different scales: $this->scale vs $other->scale.");
+            $message = "Cannot operate on Money with different scales: $this->scale vs $other->scale.";
+
+            throw new \InvalidArgumentException($message);
         }
     }
 }

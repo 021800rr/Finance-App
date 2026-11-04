@@ -31,8 +31,12 @@ final readonly class AccountProcessor implements ProcessorInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      */
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): AccountResource
-    {
+    public function process(
+        mixed $data,
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): AccountResource {
         if (!$data instanceof AccountResource) {
             throw new \InvalidArgumentException('Expected instance of AccountResource.');
         }

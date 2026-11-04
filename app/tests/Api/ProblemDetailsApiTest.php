@@ -195,12 +195,17 @@ final class ProblemDetailsApiTest extends WebTestCase
         $entityManager->getEventManager()->addEventListener(Events::preFlush, new class {
             public function preFlush(): void
             {
-                throw new UniqueConstraintViolationException(new class('SQLSTATE[23505]: uniq_secret_index') extends \Exception implements DriverException {
+                $message = 'SQLSTATE[23505]: uniq_secret_index';
+                $driverException = new class($message) extends \Exception implements DriverException {
                     public function getSQLState(): string
                     {
                         return '23505';
                     }
-                }, new Query('INSERT INTO secret_table', [], []));
+                };
+
+                $query = new Query('INSERT INTO secret_table', [], []);
+
+                throw new UniqueConstraintViolationException($driverException, $query);
             }
         });
         $contractor = $this->em()->getRepository(Contractor::class)->findOneBy([]);

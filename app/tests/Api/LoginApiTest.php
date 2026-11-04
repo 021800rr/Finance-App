@@ -62,7 +62,8 @@ final class LoginApiTest extends WebTestCase
     }
 
     /**
-     * The limiter keeps its counters in a persistent cache pool: reset it so this test neither inherits nor leaves behind failed attempts.
+     * The limiter keeps its counters in a persistent cache pool: reset it so this test neither inherits nor leaves
+     * behind failed attempts.
      */
     private function clearLoginThrottle(): void
     {

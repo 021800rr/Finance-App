@@ -392,7 +392,10 @@ final class AccountOperationApiTest extends WebTestCase
         );
 
         self::assertResponseStatusCodeSame(422);
-        $violations = self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'violations');
+        $violations = self::rowsAt(
+            self::decodeObject((string) $this->client->getResponse()->getContent()),
+            'violations',
+        );
         $messages = array_column($violations, 'message', 'propertyPath');
         self::assertSame('Please enter a date.', $messages['operationDate'] ?? null);
         self::assertSame('Please enter an amount.', $messages['amount'] ?? null);
@@ -418,7 +421,10 @@ final class AccountOperationApiTest extends WebTestCase
         );
 
         self::assertResponseStatusCodeSame(422);
-        $violations = self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'violations');
+        $violations = self::rowsAt(
+            self::decodeObject((string) $this->client->getResponse()->getContent()),
+            'violations',
+        );
         $messages = array_column($violations, 'message', 'propertyPath');
         self::assertSame(
             'This account is hidden. Please select an account that is not hidden.',

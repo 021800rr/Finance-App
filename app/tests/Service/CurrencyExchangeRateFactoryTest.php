@@ -104,8 +104,12 @@ final class CurrencyExchangeRateFactoryTest extends KernelTestCase
         self::assertSame(41234, $rate->getRateToPln());
     }
 
-    private function buildForm(?Bank $bank, ?Currency $currency, ?\DateTimeImmutable $rateDate, float $rate): FormInterface
-    {
+    private function buildForm(
+        ?Bank $bank,
+        ?Currency $currency,
+        ?\DateTimeImmutable $rateDate,
+        float $rate,
+    ): FormInterface {
         $form = $this->formFactory->createNamed('', FormType::class, null, ['csrf_protection' => false]);
         $form->add('bank', HiddenType::class, ['mapped' => false]);
         $form->add('currency', HiddenType::class, ['mapped' => false]);

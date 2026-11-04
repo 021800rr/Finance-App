@@ -109,13 +109,21 @@ final class TransferResource
     #[NoNullCharacter]
     public ?string $description = null;
 
-    #[ApiProperty(description: 'Shared id linking the debit and credit operations. Read-only.', writable: false, example: null)]
+    #[ApiProperty(
+        description: 'Shared id linking the debit and credit operations. Read-only.',
+        writable: false,
+        example: null,
+    )]
     public ?string $transactionUuid = null;
 
     #[ApiProperty(description: 'Id of the created debit (out) operation. Read-only.', writable: false, example: null)]
     public ?int $outOperationId = null;
 
-    #[ApiProperty(description: 'Debited amount as recorded, negative decimal string. Read-only.', writable: false, example: null)]
+    #[ApiProperty(
+        description: 'Debited amount as recorded, negative decimal string. Read-only.',
+        writable: false,
+        example: null,
+    )]
     public ?string $outAmount = null;
 
     #[ApiProperty(description: 'Currency of the debit operation. Read-only.', writable: false, example: null)]
@@ -124,7 +132,11 @@ final class TransferResource
     #[ApiProperty(description: 'Id of the created credit (in) operation. Read-only.', writable: false, example: null)]
     public ?int $inOperationId = null;
 
-    #[ApiProperty(description: 'Credited amount as recorded, positive decimal string. Read-only.', writable: false, example: null)]
+    #[ApiProperty(
+        description: 'Credited amount as recorded, positive decimal string. Read-only.',
+        writable: false,
+        example: null,
+    )]
     public ?string $inAmount = null;
 
     #[ApiProperty(description: 'Currency of the credit operation. Read-only.', writable: false, example: null)]

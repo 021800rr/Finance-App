@@ -55,7 +55,10 @@ final class FixedExpensePlanApiTest extends WebTestCase
         self::assertResponseStatusCodeSame(201);
         $data = self::decodeObject((string) $this->client->getResponse()->getContent());
         self::assertSame($main->getId(), self::intAt($data, 'accountId'));
-        self::assertSame(new \DateTimeImmutable('first day of next month')->format('Y-m'), self::stringAt($data, 'month'));
+        self::assertSame(
+            new \DateTimeImmutable('first day of next month')->format('Y-m'),
+            self::stringAt($data, 'month'),
+        );
         self::assertSame($expectedCount, self::intAt($data, 'createdCount'));
 
         $this->em()->clear();

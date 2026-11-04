@@ -28,7 +28,8 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Get(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Retrieves a single account by id, including its balance ("saldo") and the balance as of '
-            .'today ("saldoToday", which leaves out operations dated in the future), as on the web account history page.',
+            .'today ("saldoToday", which leaves out operations dated in the future), '
+            .'as on the web account history page.',
             provider: AccountProvider::class,
         ),
         new Patch(
@@ -136,7 +137,8 @@ final class AccountResource
     public ?array $saldoToday = null;
 
     #[ApiProperty(
-        description: 'True when saldo and saldoToday differ, i.e. future-dated operations exist. Read-only, returned only by GET.',
+        description: 'True when saldo and saldoToday differ, i.e. future-dated operations exist. '
+        .'Read-only, returned only by GET.',
         writable: false,
         example: true,
     )]

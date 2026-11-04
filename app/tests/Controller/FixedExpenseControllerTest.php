@@ -527,7 +527,12 @@ final class FixedExpenseControllerTest extends WebTestCase
         $targetMonth = new \DateTimeImmutable('first day of this month')->modify('+1 month');
         $duplicateDate = \DateTimeImmutable::createFromFormat(
             'Y-m-d H:i:s',
-            sprintf('%04d-%02d-%02d 00:00:00', (int) $targetMonth->format('Y'), (int) $targetMonth->format('m'), $fixedExpense->getDay())
+            sprintf(
+                '%04d-%02d-%02d 00:00:00',
+                (int) $targetMonth->format('Y'),
+                (int) $targetMonth->format('m'),
+                $fixedExpense->getDay(),
+            )
         );
         self::assertNotFalse($duplicateDate);
 
@@ -535,7 +540,13 @@ final class FixedExpenseControllerTest extends WebTestCase
         $currency = $currencyRepository->find(Currencies::SETTLEMENT_CURRENCY_CODE);
         self::assertNotNull($currency);
 
-        $existingOperation = new AccountOperation($mainAccount, $fixedExpense->getContractor(), $duplicateDate, $fixedExpense->getAmount(), $currency);
+        $existingOperation = new AccountOperation(
+            $mainAccount,
+            $fixedExpense->getContractor(),
+            $duplicateDate,
+            $fixedExpense->getAmount(),
+            $currency,
+        );
         $this->em()->persist($existingOperation);
         $this->em()->flush();
 
@@ -633,8 +644,11 @@ final class FixedExpenseControllerTest extends WebTestCase
         );
     }
 
-    private function createFixedExpenseInDatabase(int $day = 10, int $amount = -5000, ?string $description = null): FixedExpense
-    {
+    private function createFixedExpenseInDatabase(
+        int $day = 10,
+        int $amount = -5000,
+        ?string $description = null,
+    ): FixedExpense {
         $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 

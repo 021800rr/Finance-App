@@ -15,7 +15,8 @@ final readonly class AccountOperationSummaryService
     }
 
     /**
-     * Account balances with and without operations dated in the future. "showSaldoToday" is true only when the two differ.
+     * Account balances with and without operations dated in the future. "showSaldoToday" is true only when the two
+     * differ.
      *
      * @return array{saldoAll: Money, saldoToday: Money, showSaldoToday: bool}
      */

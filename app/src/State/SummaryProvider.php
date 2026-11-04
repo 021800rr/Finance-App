@@ -45,7 +45,8 @@ final readonly class SummaryProvider implements ProviderInterface
                 ...$account,
                 'is_main' => $account['id'] === $mainAccountId,
                 'saldo' => $account['saldo']->toArray(),
-                // The bank's latest rate to PLN (the web app's "Rate" column); null for PLN accounts and when no rate is stored.
+                // The bank's latest rate to PLN (the web app's "Rate" column); null for PLN accounts and when no rate
+                // is stored.
                 'rate' => ($ratesByBank[$account['bank']][$account['currency']] ?? null)?->toArray(),
             ],
             $summary['accounts']

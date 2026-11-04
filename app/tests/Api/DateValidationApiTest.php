@@ -175,7 +175,12 @@ final class DateValidationApiTest extends WebTestCase
     }
 
     /**
-     * @return iterable<string, array{string, string, class-string<AccountOperation|GoldPrice|CurrencyExchangeRate>, string}>
+     * @return iterable<string, array{
+     *     string,
+     *     string,
+     *     class-string<AccountOperation|GoldPrice|CurrencyExchangeRate>,
+     *     string
+     * }>
      */
     public static function validPostDates(): iterable
     {

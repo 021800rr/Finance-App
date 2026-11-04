@@ -42,7 +42,13 @@ final class AccountBalanceReportRepositoryTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor();
 
-        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable(), 25050, $account->getCurrency());
+        $operation = new AccountOperation(
+            $account,
+            $contractor,
+            new \DateTimeImmutable(),
+            25050,
+            $account->getCurrency(),
+        );
         $this->em()->persist($operation);
         $this->em()->flush();
 
@@ -63,10 +69,22 @@ final class AccountBalanceReportRepositoryTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor();
 
-        $incoming = new AccountOperation($account, $contractor, new \DateTimeImmutable(), 100000, $account->getCurrency());
+        $incoming = new AccountOperation(
+            $account,
+            $contractor,
+            new \DateTimeImmutable(),
+            100000,
+            $account->getCurrency(),
+        );
         $this->em()->persist($incoming);
 
-        $outgoing = new AccountOperation($account, $contractor, new \DateTimeImmutable(), -30025, $account->getCurrency());
+        $outgoing = new AccountOperation(
+            $account,
+            $contractor,
+            new \DateTimeImmutable(),
+            -30025,
+            $account->getCurrency(),
+        );
         $this->em()->persist($outgoing);
 
         $this->em()->flush();
@@ -88,7 +106,18 @@ final class AccountBalanceReportRepositoryTest extends KernelTestCase
     }
 
     /**
-     * @return array{id: int, bank: string, type: string, currency: string, account_number: string, hidden: bool, household: string, is_own_funds: bool, is_retirement: bool, saldo: string}|null
+     * @return array{
+     *     id: int,
+     *     bank: string,
+     *     type: string,
+     *     currency: string,
+     *     account_number: string,
+     *     hidden: bool,
+     *     household: string,
+     *     is_own_funds: bool,
+     *     is_retirement: bool,
+     *     saldo: string
+     * }|null
      */
     private function findBalanceRow(string $accountNumber): ?array
     {

@@ -23,7 +23,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     shortName: 'GoldAsset',
-    description: 'A physical gold holding (form, ounces, description). Its value over time is tracked by GoldPrice entries.',
+    description: 'A physical gold holding (form, ounces, description). '
+    .'Its value over time is tracked by GoldPrice entries.',
     operations: [
         new GetCollection(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
@@ -79,7 +80,8 @@ final class GoldAssetResource
     public ?string $description = null;
 
     #[ApiProperty(
-        description: 'Weight in ounces as a decimal string, up to 4 decimal places, e.g. "1.5000". Required, 0.0001-999.9999.',
+        description: 'Weight in ounces as a decimal string, up to 4 decimal places, e.g. "1.5000". '
+        .'Required, 0.0001-999.9999.',
         example: '1.0000',
     )]
     #[Assert\Sequentially([

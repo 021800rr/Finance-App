@@ -168,7 +168,13 @@ class AccountOperation
     private static function assertSameCurrency(Currency $currency, Account $account): void
     {
         if ($currency->getCode() !== $account->getCurrencyCode()) {
-            throw new \InvalidArgumentException("Operation currency ({$currency->getCode()}) must match the account currency ({$account->getCurrencyCode()}).");
+            $message = sprintf(
+                'Operation currency (%s) must match the account currency (%s).',
+                $currency->getCode(),
+                $account->getCurrencyCode(),
+            );
+
+            throw new \InvalidArgumentException($message);
         }
     }
 }

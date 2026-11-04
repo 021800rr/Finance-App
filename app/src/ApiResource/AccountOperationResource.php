@@ -37,8 +37,8 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Searches the operations of all accounts, newest first, '.Paginator::DEFAULT_PER_PAGE.' per page. '
-            .'The search text q is required; page must be a positive whole number. '
+            description: 'Searches the operations of all accounts, newest first, '.Paginator::DEFAULT_PER_PAGE
+            .' per page. The search text q is required; page must be a positive whole number. '
             .'To list the operations of one account use /accounts/{accountId}/operations.',
             provider: AccountOperationProvider::class,
             parameters: ['q' => new QueryParameter(

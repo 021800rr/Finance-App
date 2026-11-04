@@ -158,7 +158,13 @@ final class AccountOperationFactoryTest extends KernelTestCase
 
     private function createExistingOperation(Account $account, Contractor $contractor, int $amount): AccountOperation
     {
-        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable(), $amount, $account->getCurrency());
+        $operation = new AccountOperation(
+            $account,
+            $contractor,
+            new \DateTimeImmutable(),
+            $amount,
+            $account->getCurrency(),
+        );
         $this->em()->persist($operation);
         $this->em()->flush();
 

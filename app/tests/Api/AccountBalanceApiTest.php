@@ -77,7 +77,10 @@ final class AccountBalanceApiTest extends WebTestCase
         $this->client->request(
             'PATCH',
             '/api/accounts/'.$account->getId(),
-            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/merge-patch+json', 'HTTP_ACCEPT' => 'application/ld+json'],
+            server: $this->authHeaders() + [
+                'CONTENT_TYPE' => 'application/merge-patch+json',
+                'HTTP_ACCEPT' => 'application/ld+json',
+            ],
             content: json_encode(['hidden' => true], JSON_THROW_ON_ERROR),
         );
 
@@ -96,8 +99,14 @@ final class AccountBalanceApiTest extends WebTestCase
         $this->client->request(
             'PATCH',
             '/api/accounts/'.$account->getId(),
-            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/merge-patch+json', 'HTTP_ACCEPT' => 'application/ld+json'],
-            content: json_encode(['hidden' => false, 'saldo' => ['amount' => '999999.00', 'currency' => 'PLN']], JSON_THROW_ON_ERROR),
+            server: $this->authHeaders() + [
+                'CONTENT_TYPE' => 'application/merge-patch+json',
+                'HTTP_ACCEPT' => 'application/ld+json',
+            ],
+            content: json_encode(
+                ['hidden' => false, 'saldo' => ['amount' => '999999.00', 'currency' => 'PLN']],
+                JSON_THROW_ON_ERROR,
+            ),
         );
         self::assertResponseIsSuccessful();
 
@@ -112,7 +121,10 @@ final class AccountBalanceApiTest extends WebTestCase
         $properties = self::objectAt($document, 'components', 'schemas', 'Account.jsonMergePatch', 'properties');
 
         foreach (['saldo', 'saldoToday', 'hasFutureOperations'] as $field) {
-            self::assertTrue(self::objectAt($properties, $field)['readOnly'] ?? false, "{$field} must be read-only in the PATCH request schema.");
+            self::assertTrue(
+                self::objectAt($properties, $field)['readOnly'] ?? false,
+                "{$field} must be read-only in the PATCH request schema.",
+            );
         }
         self::assertArrayNotHasKey('readOnly', self::objectAt($properties, 'hidden'));
         self::assertArrayNotHasKey('readOnly', self::objectAt($properties, 'isMain'));
@@ -123,14 +135,22 @@ final class AccountBalanceApiTest extends WebTestCase
 
     public function testUnknownAccountReturns404(): void
     {
-        $this->client->request('GET', '/api/accounts/2147483647', server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json']);
+        $this->client->request(
+            'GET',
+            '/api/accounts/2147483647',
+            server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json'],
+        );
 
         self::assertResponseStatusCodeSame(404);
     }
 
     public function testAccountIdAboveInt4MaxReturns404(): void
     {
-        $this->client->request('GET', '/api/accounts/'.PHP_INT_MAX, server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json']);
+        $this->client->request(
+            'GET',
+            '/api/accounts/'.PHP_INT_MAX,
+            server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json'],
+        );
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -139,7 +159,11 @@ final class AccountBalanceApiTest extends WebTestCase
     {
         $account = $this->createAccount();
 
-        $this->client->request('GET', '/api/accounts/'.$account->getId(), server: ['HTTP_ACCEPT' => 'application/ld+json']);
+        $this->client->request(
+            'GET',
+            '/api/accounts/'.$account->getId(),
+            server: ['HTTP_ACCEPT' => 'application/ld+json'],
+        );
 
         self::assertResponseStatusCodeSame(401);
     }
@@ -149,7 +173,11 @@ final class AccountBalanceApiTest extends WebTestCase
      */
     private function getBalance(string $accountId): array
     {
-        $this->client->request('GET', '/api/accounts/'.$accountId, server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json']);
+        $this->client->request(
+            'GET',
+            '/api/accounts/'.$accountId,
+            server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json'],
+        );
         self::assertResponseIsSuccessful();
 
         return self::decodeObject((string) $this->client->getResponse()->getContent());
@@ -211,7 +239,13 @@ final class AccountBalanceApiTest extends WebTestCase
         $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
-        $this->em()->persist(new AccountOperation($account, $contractor, new \DateTimeImmutable($relativeDate), $amount, $account->getCurrency()));
+        $this->em()->persist(new AccountOperation(
+            $account,
+            $contractor,
+            new \DateTimeImmutable($relativeDate),
+            $amount,
+            $account->getCurrency(),
+        ));
         $this->em()->flush();
     }
 }

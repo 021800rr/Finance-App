@@ -158,7 +158,11 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
             $rate->getCurrency()->getCode();
         }
 
-        self::assertSame(1, $queryCounter->count, 'Expected exactly one query; bank/currency access triggered extra lazy-load queries.');
+        self::assertSame(
+            1,
+            $queryCounter->count,
+            'Expected exactly one query; bank/currency access triggered extra lazy-load queries.',
+        );
     }
 
     public function testFindAllHistoricalRatesReturnsOnlyChfRates(): void
@@ -261,8 +265,12 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         return $currency;
     }
 
-    private function createRate(Bank $bank, Currency $currency, \DateTimeImmutable $date, int $rateToPln): CurrencyExchangeRate
-    {
+    private function createRate(
+        Bank $bank,
+        Currency $currency,
+        \DateTimeImmutable $date,
+        int $rateToPln,
+    ): CurrencyExchangeRate {
         $rate = new CurrencyExchangeRate($bank, $currency, $date, $rateToPln);
         $this->em()->persist($rate);
         $this->em()->flush();

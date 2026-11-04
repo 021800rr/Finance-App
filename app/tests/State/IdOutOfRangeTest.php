@@ -88,7 +88,11 @@ final class IdOutOfRangeTest extends KernelTestCase
     public static function processorsLoadingByUriId(): iterable
     {
         yield 'account operation delete' => [AccountOperationProcessor::class, new Delete(), null];
-        yield 'account operation patch' => [AccountOperationProcessor::class, new Patch(), new AccountOperationResource()];
+        yield 'account operation patch' => [
+            AccountOperationProcessor::class,
+            new Patch(),
+            new AccountOperationResource(),
+        ];
         yield 'account patch' => [AccountProcessor::class, new Patch(), new AccountResource()];
         yield 'currency exchange rate delete' => [CurrencyExchangeRateProcessor::class, new Delete(), null];
         yield 'fixed expense delete' => [FixedExpenseProcessor::class, new Delete(), null];
@@ -101,8 +105,11 @@ final class IdOutOfRangeTest extends KernelTestCase
      * @param class-string $processorClass
      */
     #[DataProvider('processorsLoadingByUriId')]
-    public function testProcessorThrowsNotFoundForUriIdAboveInt4Max(string $processorClass, Operation $operation, ?object $data): void
-    {
+    public function testProcessorThrowsNotFoundForUriIdAboveInt4Max(
+        string $processorClass,
+        Operation $operation,
+        ?object $data,
+    ): void {
         self::bootKernel();
         $processor = self::getContainer()->get($processorClass);
         self::assertInstanceOf(ProcessorInterface::class, $processor);

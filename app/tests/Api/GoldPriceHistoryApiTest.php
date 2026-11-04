@@ -126,7 +126,10 @@ final class GoldPriceHistoryApiTest extends WebTestCase
 
         $pricePaths = $paths
                 |> array_keys(...)
-                |> (fn ($x) => array_filter($x, static fn (string $path): bool => str_starts_with($path, '/api/gold_prices')))
+                |> (fn ($x) => array_filter(
+                    $x,
+                    static fn (string $path): bool => str_starts_with($path, '/api/gold_prices'),
+                ))
                 |> array_values(...);
         self::assertSame([
             '/api/gold_prices',

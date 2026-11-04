@@ -159,7 +159,11 @@ final class TransferHandlerTest extends KernelTestCase
         $form->add('toAccount', HiddenType::class, ['mapped' => false]);
         $form->add('date', HiddenType::class, ['mapped' => false]);
         $form->add('amountFrom', MoneyType::class, ['mapped' => false, 'currency' => false, 'input' => 'string']);
-        $form->add('amountTo', MoneyType::class, ['mapped' => false, 'currency' => false, 'required' => false, 'input' => 'string']);
+        $form->add(
+            'amountTo',
+            MoneyType::class,
+            ['mapped' => false, 'currency' => false, 'required' => false, 'input' => 'string'],
+        );
         $form->add('description', HiddenType::class, ['mapped' => false, 'required' => false]);
 
         $form->get('fromAccount')->setData($fromAccount);

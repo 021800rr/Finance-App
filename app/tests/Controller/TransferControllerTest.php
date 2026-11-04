@@ -319,7 +319,10 @@ final class TransferControllerTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         self::assertSelectorExists('#transfer_date.is-invalid');
-        self::assertSelectorTextContains('#transfer_date + .invalid-feedback.d-block', 'Date must be between 2025-01-01 and 2070-12-31 (inclusive).');
+        self::assertSelectorTextContains(
+            '#transfer_date + .invalid-feedback.d-block',
+            'Date must be between 2025-01-01 and 2070-12-31 (inclusive).',
+        );
     }
 
     public function testNewSubmittingDifferentCurrencyWithoutAmountToShowsError(): void
@@ -361,7 +364,10 @@ final class TransferControllerTest extends WebTestCase
         ]);
 
         self::assertResponseStatusCodeSame(422);
-        self::assertSelectorTextContains('#transfer_'.$field.'_error1', 'The transfer amount must be greater than zero.');
+        self::assertSelectorTextContains(
+            '#transfer_'.$field.'_error1',
+            'The transfer amount must be greater than zero.',
+        );
         self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 

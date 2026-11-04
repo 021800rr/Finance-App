@@ -39,8 +39,12 @@ final readonly class CurrencyExchangeRateProcessor implements ProcessorInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      */
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): ?CurrencyExchangeRateResource
-    {
+    public function process(
+        mixed $data,
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): ?CurrencyExchangeRateResource {
         if ($operation instanceof Delete) {
             $this->currencyExchangeRateRepository->remove($this->loadExisting($uriVariables), flush: true);
 
@@ -120,8 +124,11 @@ final readonly class CurrencyExchangeRateProcessor implements ProcessorInterface
         }
 
         try {
-            return Money::fromDecimalString($trimmed, Currencies::SETTLEMENT_CURRENCY_CODE, Currencies::EXCHANGE_RATE_SCALE)
-                ->getMinorUnits();
+            return Money::fromDecimalString(
+                $trimmed,
+                Currencies::SETTLEMENT_CURRENCY_CODE,
+                Currencies::EXCHANGE_RATE_SCALE,
+            )->getMinorUnits();
         } catch (\InvalidArgumentException $exception) {
             throw new UnprocessableEntityHttpException($exception->getMessage(), $exception);
         }

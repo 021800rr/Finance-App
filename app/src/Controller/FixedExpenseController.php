@@ -36,7 +36,12 @@ class FixedExpenseController extends AbstractController
         Request $request,
         FixedExpenseRepository $fixedExpenseRepository,
     ): Response {
-        $result = $this->handleFixedExpenseForm($request, $fixedExpenseRepository, contractorName: '', existingFixedExpense: null);
+        $result = $this->handleFixedExpenseForm(
+            $request,
+            $fixedExpenseRepository,
+            contractorName: '',
+            existingFixedExpense: null,
+        );
         if ($result instanceof Response) {
             return $result;
         }

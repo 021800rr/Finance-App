@@ -258,7 +258,13 @@ final class AccountControllerTest extends WebTestCase
         $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
-        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable(), 15000, $account->getCurrency());
+        $operation = new AccountOperation(
+            $account,
+            $contractor,
+            new \DateTimeImmutable(),
+            15000,
+            $account->getCurrency(),
+        );
         $this->em()->persist($operation);
         $this->em()->flush();
 

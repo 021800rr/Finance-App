@@ -104,7 +104,13 @@ final class HomeControllerTest extends WebTestCase
         $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
-        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable(), $amountMinorUnits, $account->getCurrency());
+        $operation = new AccountOperation(
+            $account,
+            $contractor,
+            new \DateTimeImmutable(),
+            $amountMinorUnits,
+            $account->getCurrency(),
+        );
         $this->em()->persist($operation);
         $this->em()->flush();
     }

@@ -65,12 +65,22 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
         $this->createCurrency('CHF');
 
         $first = $this->processor->process(
-            $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateDate: '2026-09-29', rateToPln: '4.3210'),
+            $this->buildResource(
+                bankId: $bank->getId(),
+                currencyCode: 'CHF',
+                rateDate: '2026-09-29',
+                rateToPln: '4.3210',
+            ),
             new Post(),
         );
 
         $second = $this->processor->process(
-            $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateDate: '2026-09-29', rateToPln: '4.4000'),
+            $this->buildResource(
+                bankId: $bank->getId(),
+                currencyCode: 'CHF',
+                rateDate: '2026-09-29',
+                rateToPln: '4.4000',
+            ),
             new Post(),
         );
 
@@ -127,7 +137,12 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     {
         $bank = $this->createBank();
         $this->createCurrency('CHF');
-        $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '4.3210', rateDate: null);
+        $resource = $this->buildResource(
+            bankId: $bank->getId(),
+            currencyCode: 'CHF',
+            rateToPln: '4.3210',
+            rateDate: null,
+        );
 
         // The API validates the date first (NotBlank + BusinessDate), so reaching here is a bug.
         $this->expectException(\LogicException::class);
@@ -139,7 +154,12 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     {
         $bank = $this->createBank();
         $this->createCurrency('CHF');
-        $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '4.3210', rateDate: 'not-a-date');
+        $resource = $this->buildResource(
+            bankId: $bank->getId(),
+            currencyCode: 'CHF',
+            rateToPln: '4.3210',
+            rateDate: 'not-a-date',
+        );
 
         // The API validates the date first (NotBlank + BusinessDate), so reaching here is a bug.
         $this->expectException(\LogicException::class);

@@ -66,8 +66,11 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
         return $account;
     }
 
-    private function createOperation(Account $account, int $amountMinorUnits, \DateTimeImmutable $date): AccountOperation
-    {
+    private function createOperation(
+        Account $account,
+        int $amountMinorUnits,
+        \DateTimeImmutable $date,
+    ): AccountOperation {
         $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 

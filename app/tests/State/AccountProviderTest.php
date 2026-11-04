@@ -61,7 +61,10 @@ final class AccountProviderTest extends KernelTestCase
 
         self::assertIsArray($result);
         self::assertCount($this->em()->getRepository(Account::class)->count([]), $result);
-        self::assertContains($account->getId(), array_map(static fn (AccountResource $resource): ?int => $resource->id, $result));
+        self::assertContains(
+            $account->getId(),
+            array_map(static fn (AccountResource $resource): ?int => $resource->id, $result),
+        );
     }
 
     public function testProvideThrowsNotFoundForNonExistentId(): void

@@ -75,8 +75,11 @@ final class FixedExpensePlanningException extends \RuntimeException implements B
         );
     }
 
-    public static function currencyMismatch(string $expenseCurrency, string $accountNumber, string $accountCurrency): self
-    {
+    public static function currencyMismatch(
+        string $expenseCurrency,
+        string $accountNumber,
+        string $accountCurrency,
+    ): self {
         return new self(
             sprintf(
                 'Fixed expenses are in %s, but the main account "%s" is in %s. Mark a %s account as main first.',

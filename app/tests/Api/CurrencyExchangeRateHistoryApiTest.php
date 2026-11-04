@@ -136,7 +136,10 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
             'POST',
             '/api/login_check',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => self::VALID_EMAIL, 'password' => self::VALID_PASSWORD], \JSON_THROW_ON_ERROR),
+            content: json_encode(
+                ['email' => self::VALID_EMAIL, 'password' => self::VALID_PASSWORD],
+                \JSON_THROW_ON_ERROR,
+            ),
         );
 
         $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);

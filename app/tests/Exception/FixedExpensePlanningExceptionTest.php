@@ -20,7 +20,11 @@ final class FixedExpensePlanningExceptionTest extends KernelTestCase
         yield 'main account not ours' => [FixedExpensePlanningException::mainAccountNotOwn('ACC-1', 'Matka')];
         yield 'main account hidden' => [FixedExpensePlanningException::mainAccountHidden('ACC-1')];
         yield 'currency mismatch' => [FixedExpensePlanningException::currencyMismatch('PLN', 'ACC-1', 'CHF')];
-        yield 'suspected duplicate' => [FixedExpensePlanningException::suspectedDuplicate('Rent', '-150.00', '2026-11-10')];
+        yield 'suspected duplicate' => [FixedExpensePlanningException::suspectedDuplicate(
+            'Rent',
+            '-150.00',
+            '2026-11-10',
+        )];
     }
 
     /**
@@ -39,8 +43,9 @@ final class FixedExpensePlanningExceptionTest extends KernelTestCase
     }
 
     #[DataProvider('exceptions')]
-    public function testPolishTranslationExistsAndHasNoUnreplacedPlaceholders(FixedExpensePlanningException $exception): void
-    {
+    public function testPolishTranslationExistsAndHasNoUnreplacedPlaceholders(
+        FixedExpensePlanningException $exception,
+    ): void {
         /** @var TranslatorInterface $translator */
         $translator = self::getContainer()->get(TranslatorInterface::class);
 

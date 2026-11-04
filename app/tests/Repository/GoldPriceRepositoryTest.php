@@ -166,7 +166,11 @@ final class GoldPriceRepositoryTest extends KernelTestCase
             $price->getGoldAsset()->getDescription();
         }
 
-        self::assertSame(1, $queryCounter->count, 'Expected exactly one query; goldAsset access triggered extra lazy-load queries.');
+        self::assertSame(
+            1,
+            $queryCounter->count,
+            'Expected exactly one query; goldAsset access triggered extra lazy-load queries.',
+        );
     }
 
     public function testFindDataForChartReturnsScalarRowsWithMinorUnits(): void

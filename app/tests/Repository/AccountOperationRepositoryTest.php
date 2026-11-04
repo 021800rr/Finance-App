@@ -396,7 +396,14 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $contractor = new Contractor('Test Contractor '.uniqid());
         $this->em()->persist($contractor);
 
-        return $this->createOperationWithContractor($account, $amount, $date, $contractor, $description, $transactionUuid);
+        return $this->createOperationWithContractor(
+            $account,
+            $amount,
+            $date,
+            $contractor,
+            $description,
+            $transactionUuid,
+        );
     }
 
     private function createOperationWithContractor(
@@ -474,9 +481,20 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractorWithName('Rent');
 
-        $this->createOperationWithContractor($account, 15050, new \DateTimeImmutable('2026-03-15'), $contractor, 'Rent');
+        $this->createOperationWithContractor(
+            $account,
+            15050,
+            new \DateTimeImmutable('2026-03-15'),
+            $contractor,
+            'Rent',
+        );
 
-        $result = $this->repository->existsForContractorAndDate($account, $contractor, new \DateTimeImmutable('2026-03-16'), 15050);
+        $result = $this->repository->existsForContractorAndDate(
+            $account,
+            $contractor,
+            new \DateTimeImmutable('2026-03-16'),
+            15050,
+        );
 
         self::assertFalse($result);
     }

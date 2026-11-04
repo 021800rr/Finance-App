@@ -84,7 +84,14 @@ class AppFixtures extends Fixture
         $this->addReference(self::REF_ACCOUNT_BANK1_WAK_CHF, $accountBank1WakChf);
 
         $accountBank2MatkaRor = $this->account($manager, $bank2, $pln, $ror, $matka, 'Bank2-MATKA-ROR');
-        $accountBank2MatkaOszczednosci = $this->account($manager, $bank2, $pln, $oszczednosci, $matka, 'Bank2-MATKA-OSZCZĘDNOŚCI');
+        $accountBank2MatkaOszczednosci = $this->account(
+            $manager,
+            $bank2,
+            $pln,
+            $oszczednosci,
+            $matka,
+            'Bank2-MATKA-OSZCZĘDNOŚCI',
+        );
         $this->addReference(self::REF_ACCOUNT_BANK2_MATKA_ROR, $accountBank2MatkaRor);
         $this->addReference(self::REF_ACCOUNT_BANK2_MATKA_OSZCZEDNOSCI, $accountBank2MatkaOszczednosci);
 

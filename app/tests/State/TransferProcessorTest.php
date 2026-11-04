@@ -103,7 +103,11 @@ final class TransferProcessorTest extends KernelTestCase
         $from = $this->createAccount('PLN');
         $to = $this->createAccount('EUR');
 
-        $resource = $this->buildResource(fromAccountId: $from->getId(), toAccountId: $to->getId(), amountFrom: '100.00');
+        $resource = $this->buildResource(
+            fromAccountId: $from->getId(),
+            toAccountId: $to->getId(),
+            amountFrom: '100.00',
+        );
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
@@ -115,7 +119,11 @@ final class TransferProcessorTest extends KernelTestCase
         $this->ensureFixedContractor();
         $account = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(fromAccountId: $account->getId(), toAccountId: $account->getId(), amountFrom: '100.00');
+        $resource = $this->buildResource(
+            fromAccountId: $account->getId(),
+            toAccountId: $account->getId(),
+            amountFrom: '100.00',
+        );
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
@@ -136,8 +144,10 @@ final class TransferProcessorTest extends KernelTestCase
     }
 
     #[DataProvider('provideNonPositiveAmounts')]
-    public function testProcessRejectsNonPositiveAmountsWith422AndNoOperations(string $amountFrom, string $amountTo): void
-    {
+    public function testProcessRejectsNonPositiveAmountsWith422AndNoOperations(
+        string $amountFrom,
+        string $amountTo,
+    ): void {
         $this->ensureFixedContractor();
         $from = $this->createAccount('PLN');
         $to = $this->createAccount('CHF');

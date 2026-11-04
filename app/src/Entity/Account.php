@@ -59,8 +59,13 @@ class Account
     #[ORM\JoinColumn(name: 'household_id', nullable: false, onDelete: 'RESTRICT')]
     private Household $household;
 
-    public function __construct(Bank $bank, Currency $currency, AccountType $type, string $accountNumber, Household $household)
-    {
+    public function __construct(
+        Bank $bank,
+        Currency $currency,
+        AccountType $type,
+        string $accountNumber,
+        Household $household,
+    ) {
         $this->bank = $bank;
         $this->currency = $currency;
         $this->type = $type;

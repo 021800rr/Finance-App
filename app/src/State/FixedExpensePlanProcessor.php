@@ -27,8 +27,12 @@ final readonly class FixedExpensePlanProcessor implements ProcessorInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      */
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): FixedExpensePlanResource
-    {
+    public function process(
+        mixed $data,
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): FixedExpensePlanResource {
         try {
             $result = $this->planner->planNextMonth();
         } catch (FixedExpensePlanningException $exception) {

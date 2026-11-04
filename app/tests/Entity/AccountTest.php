@@ -34,7 +34,13 @@ final class AccountTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Account number cannot be blank.');
 
-        new Account(new Bank('Test Bank'), new Currency('PLN'), new AccountType('Test Type'), '   ', new Household('Test Household'));
+        new Account(
+            new Bank('Test Bank'),
+            new Currency('PLN'),
+            new AccountType('Test Type'),
+            '   ',
+            new Household('Test Household'),
+        );
     }
 
     public function testGetDisplayLabelCombinesBankTypeCurrencyAndAccountNumber(): void

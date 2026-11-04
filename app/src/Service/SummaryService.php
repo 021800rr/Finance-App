@@ -148,7 +148,12 @@ final readonly class SummaryService
                 return [
                     ...$account,
                     'saldoMoney' => $saldoMoney,
-                    'plnValue' => $this->convertToPln($saldoMoney, $account['currency'], $account['bank'], $ratesByBank),
+                    'plnValue' => $this->convertToPln(
+                        $saldoMoney,
+                        $account['currency'],
+                        $account['bank'],
+                        $ratesByBank,
+                    ),
                 ];
             },
             $accounts
@@ -172,8 +177,11 @@ final readonly class SummaryService
      *
      * @return array<string, Money>
      */
-    private function summarizeByHousehold(array $enrichedAccounts, Money $goldValue, string $ownFundsHouseholdName): array
-    {
+    private function summarizeByHousehold(
+        array $enrichedAccounts,
+        Money $goldValue,
+        string $ownFundsHouseholdName,
+    ): array {
         $byHousehold = [];
 
         foreach ($enrichedAccounts as $account) {
@@ -229,8 +237,8 @@ final readonly class SummaryService
                 ($byType[$type]['raw'][$currency] ?? Money::zero($currency))->add($account['saldoMoney']);
 
             if (null !== $account['plnValue']) {
-                $byType[$type]['pln'] =
-                    ($byType[$type]['pln'] ?? Money::zero(Currencies::SETTLEMENT_CURRENCY_CODE))->add($account['plnValue']);
+                $byType[$type]['pln'] = ($byType[$type]['pln'] ?? Money::zero(Currencies::SETTLEMENT_CURRENCY_CODE))
+                    ->add($account['plnValue']);
             }
         }
 

@@ -58,7 +58,10 @@ final class AccountApiTest extends WebTestCase
         $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
         self::assertIsArray($data);
         self::assertSame($this->em()->getRepository(Account::class)->count([]), $data['totalItems']);
-        self::assertStringContainsString($this->firstAccount()->getAccountNumber(), (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString(
+            $this->firstAccount()->getAccountNumber(),
+            (string) $this->client->getResponse()->getContent(),
+        );
     }
 
     public function testGetSingleAccountWithValidTokenReturnsAccount(): void
@@ -71,7 +74,10 @@ final class AccountApiTest extends WebTestCase
         ]);
 
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString($account->getAccountNumber(), (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString(
+            $account->getAccountNumber(),
+            (string) $this->client->getResponse()->getContent(),
+        );
     }
 
     private function obtainJwtToken(): string
@@ -80,7 +86,10 @@ final class AccountApiTest extends WebTestCase
             'POST',
             '/api/login_check',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => self::VALID_EMAIL, 'password' => self::VALID_PASSWORD], JSON_THROW_ON_ERROR),
+            content: json_encode(
+                ['email' => self::VALID_EMAIL, 'password' => self::VALID_PASSWORD],
+                JSON_THROW_ON_ERROR,
+            ),
         );
 
         $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);

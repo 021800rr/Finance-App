@@ -289,7 +289,10 @@ final class FixedExpenseApiTest extends WebTestCase
         $this->client->request(
             'PATCH',
             '/api/fixed_expenses/'.$fixedExpense->getId(),
-            server: ['HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(), 'CONTENT_TYPE' => 'application/merge-patch+json'],
+            server: [
+                'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+                'CONTENT_TYPE' => 'application/merge-patch+json',
+            ],
             content: json_encode($body, JSON_THROW_ON_ERROR),
         );
     }

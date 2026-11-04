@@ -38,8 +38,12 @@ final readonly class GoldPriceProcessor implements ProcessorInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      */
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): ?GoldPriceResource
-    {
+    public function process(
+        mixed $data,
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): ?GoldPriceResource {
         if ($operation instanceof Delete) {
             $this->goldPriceRepository->remove($this->loadExisting($uriVariables), flush: true);
 
@@ -57,7 +61,12 @@ final readonly class GoldPriceProcessor implements ProcessorInterface
         try {
             // Always PLN: the entity's own naming (price_pln_minor_units) and this resource's
             // description both assume it, so the currency isn't a client-supplied field.
-            $goldPrice = new GoldPrice($goldAsset, $priceDate, $pricePlnMinorUnits, $this->currencyRepository->findPlnOrThrow());
+            $goldPrice = new GoldPrice(
+                $goldAsset,
+                $priceDate,
+                $pricePlnMinorUnits,
+                $this->currencyRepository->findPlnOrThrow(),
+            );
         } catch (\InvalidArgumentException $exception) {
             throw new UnprocessableEntityHttpException($exception->getMessage(), $exception);
         }
@@ -104,8 +113,11 @@ final readonly class GoldPriceProcessor implements ProcessorInterface
         }
 
         try {
-            return Money::fromDecimalString($trimmed, Currencies::SETTLEMENT_CURRENCY_CODE, Currencies::MINOR_UNIT_SCALE)
-                ->getMinorUnits();
+            return Money::fromDecimalString(
+                $trimmed,
+                Currencies::SETTLEMENT_CURRENCY_CODE,
+                Currencies::MINOR_UNIT_SCALE,
+            )->getMinorUnits();
         } catch (\InvalidArgumentException $exception) {
             throw new UnprocessableEntityHttpException($exception->getMessage(), $exception);
         }

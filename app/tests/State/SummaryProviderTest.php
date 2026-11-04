@@ -169,7 +169,10 @@ final class SummaryProviderTest extends KernelTestCase
         self::assertNotNull($otherRow);
         self::assertTrue($mainRow['is_main']);
         self::assertFalse($otherRow['is_main']);
-        self::assertCount(1, array_filter($result->accounts, static fn (array $account): bool => true === $account['is_main']));
+        self::assertCount(
+            1,
+            array_filter($result->accounts, static fn (array $account): bool => true === $account['is_main']),
+        );
     }
 
     /**
@@ -252,8 +255,12 @@ final class SummaryProviderTest extends KernelTestCase
         $this->em()->flush();
     }
 
-    private function createAccount(string $accountNumber, bool $hidden, ?Bank $bank = null, string $currencyCode = 'PLN'): Account
-    {
+    private function createAccount(
+        string $accountNumber,
+        bool $hidden,
+        ?Bank $bank = null,
+        string $currencyCode = 'PLN',
+    ): Account {
         $bank ??= new Bank('Test Bank '.uniqid());
         $this->em()->persist($bank);
 

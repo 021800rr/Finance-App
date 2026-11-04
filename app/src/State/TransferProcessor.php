@@ -37,8 +37,12 @@ final readonly class TransferProcessor implements ProcessorInterface
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      */
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): TransferResource
-    {
+    public function process(
+        mixed $data,
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): TransferResource {
         if (!$data instanceof TransferResource) {
             throw new \InvalidArgumentException('Expected instance of TransferResource.');
         }

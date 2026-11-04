@@ -460,7 +460,11 @@ final class AccountOperationProcessorTest extends KernelTestCase
     {
         $account = $this->createAccount();
         $contractor = $this->createContractor('Contractor');
-        $resource = $this->buildResource(accountId: $account->getId(), contractorId: $contractor->getId(), amount: '10.00');
+        $resource = $this->buildResource(
+            accountId: $account->getId(),
+            contractorId: $contractor->getId(),
+            amount: '10.00',
+        );
 
         $this->expectException(NotFoundHttpException::class);
 
