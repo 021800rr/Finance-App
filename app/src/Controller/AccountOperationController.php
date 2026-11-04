@@ -62,6 +62,7 @@ class AccountOperationController extends AbstractController
             'form' => $result->form->createView(),
             'contractorErrorMessage' => $result->contractorErrorMessage,
             'contractorName' => $result->contractorName,
+            'contractorId' => $result->contractorId,
         ]);
     }
 

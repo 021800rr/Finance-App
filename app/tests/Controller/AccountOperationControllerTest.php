@@ -131,6 +131,33 @@ final class AccountOperationControllerTest extends WebTestCase
         self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
+    public function testNewKeepsTheChosenContractorWhenAnotherFieldIsWrong(): void
+    {
+        $account = $this->createAccount();
+        $contractor = new Contractor('Kept contractor '.uniqid());
+        $this->em()->persist($contractor);
+        $this->em()->flush();
+        $crawler = $this->client->request('GET', '/operation/new');
+        $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/operation/new', [
+            'account_operation' => [
+                '_token' => $token,
+                'account' => (string) $account->getId(),
+                'contractor' => (string) $contractor->getId(),
+                'operationDate' => '2026-01-15',
+                'amount' => '',
+            ],
+            'contractor_input' => $contractor->getName(),
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#account_operation_amount.is-invalid');
+        self::assertInputValueSame('contractor_input', $contractor->getName());
+        self::assertInputValueSame('account_operation[contractor]', (string) $contractor->getId());
+    }
+
     /**
      * @param array<string, string> $account
      */
