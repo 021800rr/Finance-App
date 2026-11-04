@@ -303,6 +303,25 @@ final class TransferControllerTest extends WebTestCase
         self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
+    public function testDateOutsideTheRangeIsShownAtTheField(): void
+    {
+        $crawler = $this->client->request('GET', '/transfer/new');
+        $token = $crawler->filter('#transfer_form input[name="transfer[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', '/transfer/new', ['transfer' => [
+            '_token' => $token,
+            'fromAccount' => (string) $this->createAccount('PLN')->getId(),
+            'toAccount' => (string) $this->createAccount('PLN')->getId(),
+            'amountFrom' => '100',
+            'date' => '2099-05-05',
+        ]]);
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorExists('#transfer_date.is-invalid');
+        self::assertSelectorTextContains('#transfer_date + .invalid-feedback.d-block', 'Date must be between 2025-01-01 and 2070-12-31 (inclusive).');
+    }
+
     public function testNewSubmittingDifferentCurrencyWithoutAmountToShowsError(): void
     {
         $fromAccount = $this->createAccount('PLN');

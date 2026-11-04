@@ -131,6 +131,43 @@ final class AccountOperationControllerTest extends WebTestCase
         self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
+    #[DataProvider('operationForms')]
+    public function testDateOutsideTheRangeIsShownAtTheField(bool $edit): void
+    {
+        $operation = $this->createOperationInDatabase();
+        $uri = $edit ? '/operation/'.$operation->getId().'/edit' : '/operation/new';
+        $crawler = $this->client->request('GET', $uri);
+        $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
+        self::assertIsString($token);
+
+        $this->client->request('POST', $uri, [
+            'account_operation' => [
+                '_token' => $token,
+                'account' => (string) $operation->getAccount()->getId(),
+                'contractor' => (string) $operation->getContractor()->getId(),
+                'operationDate' => '2099-05-05',
+                'amount' => '20.00',
+            ],
+            'contractor_input' => $operation->getContractor()->getName(),
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('#account_operation_operationDate.is-invalid');
+        self::assertSelectorTextContains(
+            '#account_operation_operationDate + .invalid-feedback.d-block',
+            'Date must be between 2025-01-01 and 2070-12-31 (inclusive).',
+        );
+    }
+
+    /**
+     * @return iterable<string, array{bool}>
+     */
+    public static function operationForms(): iterable
+    {
+        yield 'new' => [false];
+        yield 'edit' => [true];
+    }
+
     public function testNewKeepsTheChosenContractorWhenAnotherFieldIsWrong(): void
     {
         $account = $this->createAccount();

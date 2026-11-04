@@ -14,6 +14,7 @@
                 {% set accountHasError = form.account.vars.errors|length > 0 %}
                 {% set contractorHasError = form.contractor.vars.errors|length > 0 %}
                 {% set amountHasError = form.amount.vars.errors|length > 0 %}
+                {% set dateHasError = form.operationDate.vars.errors|length > 0 %}
                 {% set descriptionHasError = form.description.vars.errors|length > 0 %}
                 {{ form_start(form, {attr: {id: 'operation_form'}}) }}
                 <table class="table table-borderless align-middle w-auto">
@@ -47,7 +48,15 @@
                     <tr>
                         <th class="pe-3 text-end">{{ 'form.date'|trans }}</th>
                         <td>
-                            {{ form_widget(form.operationDate) }}
+                            {{ form_widget(form.operationDate, {
+                                attr: {
+                                    class: (form.operationDate.vars.attr.class|default(''))
+                                        ~ (dateHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if dateHasError %} d-block{% endif %}">
+                                {{ form_errors(form.operationDate) }}
+                            </div>
                         </td>
                     </tr>
                     <tr>

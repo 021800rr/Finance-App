@@ -10,6 +10,7 @@
                 {% set fromAccountHasError = form.fromAccount.vars.errors|length > 0 %}
                 {% set toAccountHasError = form.toAccount.vars.errors|length > 0 %}
                 {% set descriptionHasError = form.description.vars.errors|length > 0 %}
+                {% set dateHasError = form.date.vars.errors|length > 0 %}
                 {{ form_start(form, {attr: {
                     id: 'transfer_form',
                     'data-controller': 'transfer-amounts',
@@ -71,7 +72,15 @@
                     <tr>
                         <th class="pe-3 text-end">{{ 'form.date'|trans }}</th>
                         <td>
-                            {{ form_widget(form.date) }}
+                            {{ form_widget(form.date, {
+                                attr: {
+                                    class: (form.date.vars.attr.class|default(''))
+                                        ~ (dateHasError ? ' is-invalid' : '')
+                                }
+                            }) }}
+                            <div class="invalid-feedback{% if dateHasError %} d-block{% endif %}">
+                                {{ form_errors(form.date) }}
+                            </div>
                         </td>
                     </tr>
                     <tr>
