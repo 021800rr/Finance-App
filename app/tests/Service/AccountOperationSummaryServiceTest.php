@@ -41,8 +41,6 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
         $this->createOperation($account, -20050, new \DateTimeImmutable('today'));
         $this->createOperation($account, 30000, new \DateTimeImmutable('+5 days'));
 
-        $this->em()->flush();
-
         $summary = $this->summaryService->getBalances($account);
 
         self::assertTrue(Money::fromDecimalString('1099.50', 'PLN')->equals($summary['saldoAll']));
@@ -56,8 +54,6 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
         $this->createOperation($account, -20050, new \DateTimeImmutable('today'));
         $this->createOperation($account, 30000, new \DateTimeImmutable('+5 days'));
 
-        $this->em()->flush();
-
         $summary = $this->summaryService->getBalances($account);
 
         self::assertTrue(Money::fromDecimalString('799.50', 'PLN')->equals($summary['saldoToday']));
@@ -69,8 +65,6 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
 
         $this->createOperation($account, 10000, new \DateTimeImmutable('-1 day'));
         $this->createOperation($account, 5000, new \DateTimeImmutable('today'));
-
-        $this->em()->flush();
 
         $summary = $this->summaryService->getBalances($account);
 
@@ -84,8 +78,6 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
 
         $this->createOperation($account, 10000, new \DateTimeImmutable('today'));
         $this->createOperation($account, 5000, new \DateTimeImmutable('+3 days'));
-
-        $this->em()->flush();
 
         $summary = $this->summaryService->getBalances($account);
 
@@ -110,8 +102,6 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
 
         $this->createOperation($accountA, 10000, new \DateTimeImmutable('today'));
         $this->createOperation($accountB, 999900, new \DateTimeImmutable('today'));
-
-        $this->em()->flush();
 
         $summary = $this->summaryService->getBalances($accountA);
 

@@ -71,7 +71,6 @@ final class AccountOperationControllerTest extends WebTestCase
         $account = $this->createAccount();
 
         $contractor = $this->createContractor();
-        $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/operation/new?account='.$account->getId());
         $form = $crawler->filter('#operation_form button[type="submit"]')->form();
@@ -97,7 +96,6 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $account = $this->createAccount();
         $contractor = $this->createContractor('Blank amount test '.uniqid());
-        $this->em()->flush();
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
         $crawler = $this->client->request('GET', '/operation/new');
         $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
@@ -164,7 +162,6 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $account = $this->createAccount();
         $contractor = $this->createContractor('Kept contractor '.uniqid());
-        $this->em()->flush();
         $crawler = $this->client->request('GET', '/operation/new');
         $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
         self::assertIsString($token);
@@ -193,7 +190,6 @@ final class AccountOperationControllerTest extends WebTestCase
     public function testNewWithBlankAccountShowsFieldErrorWithoutSaving(array $account): void
     {
         $contractor = $this->createContractor('Blank account test '.uniqid());
-        $this->em()->flush();
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
         $crawler = $this->client->request('GET', '/operation/new');
         $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
@@ -233,7 +229,6 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $account = $this->createAccount();
         $contractor = $this->createContractor('Long description test '.uniqid());
-        $this->em()->flush();
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
         $crawler = $this->client->request('GET', '/operation/new');
         $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
@@ -264,7 +259,6 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $account = $this->createAccount();
         $contractor = $this->createContractor('Long description test '.uniqid());
-        $this->em()->flush();
         $description = str_repeat('ą', 255);
         $crawler = $this->client->request('GET', '/operation/new');
         $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
@@ -305,7 +299,6 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $accountId ??= (string) $this->createAccount(hidden: true)->getId();
         $contractor = $this->createContractor('Unavailable account test '.uniqid());
-        $this->em()->flush();
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
         $crawler = $this->client->request('GET', '/operation/new');
         $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
@@ -448,7 +441,6 @@ final class AccountOperationControllerTest extends WebTestCase
         $operation = $this->createOperation($this->createAccount(), 10000);
 
         $newContractor = $this->createContractor('New Contractor '.uniqid());
-        $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/operation/'.$operation->getId().'/edit');
         $form = $crawler->filter('#operation_form button[type="submit"]')->form();

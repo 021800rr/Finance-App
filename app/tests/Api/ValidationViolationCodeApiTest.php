@@ -636,7 +636,6 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     {
         $existing = $this->createContractor('Contractor rules test');
         $other = $this->createContractor('Other rules contractor');
-        $this->em()->flush();
         $contractor = $this->withExistingId($contractor, $other);
 
         foreach ($this->recordsWithContractor($existing) as $uri) {

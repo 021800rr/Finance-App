@@ -62,7 +62,6 @@ final class FixedExpenseControllerTest extends WebTestCase
     public function testSubmittingWithValidContractorCreatesFixedExpenseAndRedirects(): void
     {
         $contractor = $this->createContractor();
-        $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/fixed-expense');
         $form = $crawler->selectButton('Add')->form();
@@ -85,7 +84,6 @@ final class FixedExpenseControllerTest extends WebTestCase
     public function testCreateWithInvalidDayShowsFieldErrorWithoutSaving(string $day, string $message): void
     {
         $contractor = $this->createContractor('Invalid day test '.uniqid());
-        $this->em()->flush();
         $countBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
 
         $crawler = $this->client->request('GET', '/fixed-expense');
@@ -111,7 +109,6 @@ final class FixedExpenseControllerTest extends WebTestCase
     public function testCreateWithBlankAmountShowsFieldErrorWithoutSaving(array $amount): void
     {
         $contractor = $this->createContractor('Blank amount test '.uniqid());
-        $this->em()->flush();
         $expensesBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
         $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
         $crawler = $this->client->request('GET', '/fixed-expense');
@@ -143,7 +140,6 @@ final class FixedExpenseControllerTest extends WebTestCase
         $id = $expense->getId();
         $contractorId = $expense->getContractor()->getId();
         $otherContractor = $this->createContractor('Unapplied contractor '.uniqid());
-        $this->em()->flush();
         $expensesBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
         $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
         $uri = '/fixed-expense/'.$id.'/edit';
@@ -190,7 +186,6 @@ final class FixedExpenseControllerTest extends WebTestCase
     public function testCreateWithTooLongDescriptionShowsFieldErrorWithoutSaving(): void
     {
         $contractor = $this->createContractor('Long description test '.uniqid());
-        $this->em()->flush();
         $expensesBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
         $crawler = $this->client->request('GET', '/fixed-expense');
         $token = $crawler->filter('#fixed_expense_form input[name="fixed_expense[_token]"]')->attr('value');
@@ -214,7 +209,6 @@ final class FixedExpenseControllerTest extends WebTestCase
     public function testCreateSavesDescriptionOfMaximumLengthAfterTrimming(): void
     {
         $contractor = $this->createContractor('Long description test '.uniqid());
-        $this->em()->flush();
         $description = str_repeat('ą', 255);
         $crawler = $this->client->request('GET', '/fixed-expense');
         $token = $crawler->filter('#fixed_expense_form input[name="fixed_expense[_token]"]')->attr('value');
@@ -413,7 +407,6 @@ final class FixedExpenseControllerTest extends WebTestCase
         $fixedExpense = $this->createFixedExpense(amount: -5000);
 
         $newContractor = $this->createContractor('New Contractor '.uniqid());
-        $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/fixed-expense/'.$fixedExpense->getId().'/edit');
         $form = $crawler->filter('#fixed_expense_form button[type="submit"]')->form();

@@ -29,7 +29,7 @@ final class GoldPriceTypeDefaultDateTest extends KernelTestCase
 
     public function testPriceDateDefaultsToToday(): void
     {
-        $goldAsset = $this->createGoldAsset(ounces: 1, description: 'Test Asset '.uniqid());
+        $this->createGoldAsset(ounces: 1, description: 'Test Asset '.uniqid());
 
         /** @var FormFactoryInterface $formFactory */
         $formFactory = static::getContainer()->get('form.factory');

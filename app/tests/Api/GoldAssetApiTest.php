@@ -21,13 +21,13 @@ final class GoldAssetApiTest extends WebTestCase
     use JwtTrait;
 
     private KernelBrowser $client;
-    private GoldForm $goldForm;
+    private GoldForm $sztabka;
 
     protected function setUp(): void
     {
         $this->client = self::createClient();
         $this->initEntityManager($this->client->getKernel());
-        $this->goldForm = $this->goldForm('sztabka');
+        $this->sztabka = $this->goldForm('sztabka');
     }
 
     protected function tearDown(): void
@@ -69,13 +69,13 @@ final class GoldAssetApiTest extends WebTestCase
         self::assertNotNull($stored);
         self::assertSame('Sztabka 1oz', $stored->getDescription());
         self::assertSame(10000, $stored->getOunces());
-        self::assertSame($this->goldForm->getId(), $stored->getForm()->getId());
+        self::assertSame($this->sztabka->getId(), $stored->getForm()->getId());
         self::assertSame($countBefore + 1, $this->em()->getRepository(GoldAsset::class)->count([]));
     }
 
     public function testPatchDescriptionKeepsOuncesAndForm(): void
     {
-        $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
+        $asset = $this->createGoldAsset($this->sztabka, description: 'Original asset');
         $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
 
         $this->patch($asset->getId(), ['description' => 'Updated description']);
@@ -85,19 +85,19 @@ final class GoldAssetApiTest extends WebTestCase
         self::assertSame($asset->getId(), self::intAt($data, 'id'));
         self::assertSame('Updated description', self::stringAt($data, 'description'));
         self::assertSame('1.0000', self::stringAt($data, 'ounces'));
-        self::assertSame($this->goldForm->getId(), self::intAt($data, 'formId'));
+        self::assertSame($this->sztabka->getId(), self::intAt($data, 'formId'));
         $this->em()->clear();
         $stored = $this->em()->find(GoldAsset::class, $asset->getId());
         self::assertNotNull($stored);
         self::assertSame('Updated description', $stored->getDescription());
         self::assertSame(10000, $stored->getOunces());
-        self::assertSame($this->goldForm->getId(), $stored->getForm()->getId());
+        self::assertSame($this->sztabka->getId(), $stored->getForm()->getId());
         self::assertSame($countBefore, $this->em()->getRepository(GoldAsset::class)->count([]));
     }
 
     public function testPatchUpdatesAllEditableFieldsAndPreservesPriceHistory(): void
     {
-        $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
+        $asset = $this->createGoldAsset($this->sztabka, description: 'Original asset');
         $otherForm = $this->goldForm('moneta');
         $this->createGoldPrice($asset, new \DateTimeImmutable('2026-01-15'), 123456);
         $pricesBefore = $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM gold_price ORDER BY id');
@@ -133,7 +133,7 @@ final class GoldAssetApiTest extends WebTestCase
 
     public function testPatchOnlyFormKeepsDescriptionAndOunces(): void
     {
-        $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
+        $asset = $this->createGoldAsset($this->sztabka, description: 'Original asset');
         $otherForm = $this->goldForm('moneta');
 
         $this->patch($asset->getId(), ['formId' => $otherForm->getId()]);
@@ -149,7 +149,7 @@ final class GoldAssetApiTest extends WebTestCase
 
     public function testEmptyPatchKeepsAllEditableFields(): void
     {
-        $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
+        $asset = $this->createGoldAsset($this->sztabka, description: 'Original asset');
         $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
 
         $this->patch($asset->getId(), []);
@@ -158,7 +158,7 @@ final class GoldAssetApiTest extends WebTestCase
         $this->em()->clear();
         $stored = $this->em()->find(GoldAsset::class, $asset->getId());
         self::assertNotNull($stored);
-        self::assertSame($this->goldForm->getId(), $stored->getForm()->getId());
+        self::assertSame($this->sztabka->getId(), $stored->getForm()->getId());
         self::assertSame('Original asset', $stored->getDescription());
         self::assertSame(10000, $stored->getOunces());
         self::assertSame($countBefore, $this->em()->getRepository(GoldAsset::class)->count([]));
@@ -167,7 +167,7 @@ final class GoldAssetApiTest extends WebTestCase
     #[DataProvider('validOunces')]
     public function testPatchOnlyOuncesAcceptsBoundsAndKeepsOtherFields(string $ounces, int $storedOunces): void
     {
-        $asset = $this->createGoldAsset($this->goldForm, description: '  Original asset  ');
+        $asset = $this->createGoldAsset($this->sztabka, description: '  Original asset  ');
 
         $this->patch($asset->getId(), ['ounces' => $ounces]);
 
@@ -176,7 +176,7 @@ final class GoldAssetApiTest extends WebTestCase
         $stored = $this->em()->find(GoldAsset::class, $asset->getId());
         self::assertNotNull($stored);
         self::assertSame($storedOunces, $stored->getOunces());
-        self::assertSame($this->goldForm->getId(), $stored->getForm()->getId());
+        self::assertSame($this->sztabka->getId(), $stored->getForm()->getId());
         self::assertSame('  Original asset  ', $stored->getDescription());
     }
 
@@ -199,10 +199,10 @@ final class GoldAssetApiTest extends WebTestCase
         array $invalid,
         string $field,
     ): void {
-        $asset = $patch ? $this->createGoldAsset($this->goldForm, description: 'Original asset') : null;
+        $asset = $patch ? $this->createGoldAsset($this->sztabka, description: 'Original asset') : null;
         $before = $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM gold_asset ORDER BY id');
         $body = $invalid + [
-            'formId' => $this->goldForm->getId(),
+            'formId' => $this->sztabka->getId(),
             'ounces' => '2.2500',
             'description' => 'Must not be saved',
         ];
@@ -255,7 +255,7 @@ final class GoldAssetApiTest extends WebTestCase
     #[DataProvider('writeOperations')]
     public function testDescriptionAllows255CharactersAfterTrimming(bool $patch): void
     {
-        $asset = $patch ? $this->createGoldAsset($this->goldForm, description: 'Original asset') : null;
+        $asset = $patch ? $this->createGoldAsset($this->sztabka, description: 'Original asset') : null;
         $description = str_repeat('ą', 255);
         if (null !== $asset) {
             $this->patch($asset->getId(), ['description' => '  '.$description.'  ']);
@@ -284,7 +284,7 @@ final class GoldAssetApiTest extends WebTestCase
     #[DataProvider('invalidFormIds')]
     public function testPatchRejectsUnknownFormWithoutChangingAsset(int $formId): void
     {
-        $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
+        $asset = $this->createGoldAsset($this->sztabka, description: 'Original asset');
         $before = $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM gold_asset ORDER BY id');
 
         $this->patch($asset->getId(), ['formId' => $formId, 'description' => 'Must not be saved']);
@@ -322,7 +322,7 @@ final class GoldAssetApiTest extends WebTestCase
 
     public function testPatchRequiresAuthentication(): void
     {
-        $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
+        $asset = $this->createGoldAsset($this->sztabka, description: 'Original asset');
         $this->client->request('PATCH', '/api/gold_assets/'.$asset->getId(), server: [
             'CONTENT_TYPE' => 'application/merge-patch+json',
         ], content: '{"description":"Must not be saved"}');
@@ -367,7 +367,7 @@ final class GoldAssetApiTest extends WebTestCase
     private function post(array $description): void
     {
         $this->writePost([
-            'formId' => $this->goldForm->getId(),
+            'formId' => $this->sztabka->getId(),
             'ounces' => '1.0000',
         ] + $description);
     }

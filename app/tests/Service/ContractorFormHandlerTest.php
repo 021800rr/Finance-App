@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
-use App\Entity\Contractor;
 use App\Service\ContractorFormHandler;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 final class ContractorFormHandlerTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private ContractorFormHandler $handler;
     private FormFactoryInterface $formFactory;
@@ -80,9 +81,7 @@ final class ContractorFormHandlerTest extends KernelTestCase
 
     public function testResolveReturnsContractorWhenIdIsValid(): void
     {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-        $this->em()->flush();
+        $contractor = $this->createContractor();
 
         $field = $this->buildContractorField();
         $field->submit((string) $contractor->getId());
@@ -138,9 +137,7 @@ final class ContractorFormHandlerTest extends KernelTestCase
 
     public function testResolveOverridesTypedNameWithDatabaseNameOnSuccess(): void
     {
-        $contractor = new Contractor('Prawdziwa nazwa z bazy');
-        $this->em()->persist($contractor);
-        $this->em()->flush();
+        $contractor = $this->createContractor('Prawdziwa nazwa z bazy');
 
         $field = $this->buildContractorField();
         $field->submit((string) $contractor->getId());

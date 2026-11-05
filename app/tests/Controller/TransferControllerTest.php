@@ -106,7 +106,6 @@ final class TransferControllerTest extends WebTestCase
     public function testSubmittedContractorIsRejectedWithoutCreatingOperations(): void
     {
         $other = $this->createContractor('Other contractor '.uniqid());
-        $this->em()->flush();
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
         $crawler = $this->client->request('GET', '/transfer/new');
         $token = $crawler->filter('#transfer_form input[name="transfer[_token]"]')->attr('value');

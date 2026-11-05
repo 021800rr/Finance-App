@@ -7,6 +7,7 @@ namespace App\Tests\Controller;
 use App\Entity\Contractor;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\LosesContractorRaceTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -16,6 +17,7 @@ final class ContractorControllerTest extends WebTestCase
     use DatabaseTestTrait;
     use LosesContractorRaceTrait;
     use LogsInTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -93,8 +95,7 @@ final class ContractorControllerTest extends WebTestCase
 
     public function testSearchWorksFromOneCharacter(): void
     {
-        $this->em()->persist(new Contractor('X'));
-        $this->em()->flush();
+        $this->createContractor('X');
 
         $this->client->request('GET', '/contractor/search?q=x');
 
@@ -108,9 +109,7 @@ final class ContractorControllerTest extends WebTestCase
     public function testSearchReturnsMatchingContractors(): void
     {
         $uniquePart = uniqid();
-        $contractor = new Contractor('Findable '.$uniquePart);
-        $this->em()->persist($contractor);
-        $this->em()->flush();
+        $contractor = $this->createContractor('Findable '.$uniquePart);
 
         $this->client->request('GET', '/contractor/search?q='.$uniquePart);
 
@@ -238,8 +237,7 @@ final class ContractorControllerTest extends WebTestCase
     public function testCreateAcceptsANameThatDiffersOnlyInLetterCase(): void
     {
         $name = 'Case contractor '.uniqid();
-        $this->em()->persist(new Contractor($name));
-        $this->em()->flush();
+        $this->createContractor($name);
         $crawler = $this->client->request('GET', '/');
         $token = (string) $crawler->filter('meta[name="csrf-token-contractor-create"]')->attr('content');
 
@@ -254,9 +252,7 @@ final class ContractorControllerTest extends WebTestCase
     public function testCreateReturns422ForDuplicateName(string $whitespace): void
     {
         $name = 'Duplicate contractor '.uniqid();
-        $contractor = new Contractor($name);
-        $this->em()->persist($contractor);
-        $this->em()->flush();
+        $contractor = $this->createContractor($name);
         $id = $contractor->getId();
         $countBefore = $this->em()->getRepository(Contractor::class)->count([]);
         $crawler = $this->client->request('GET', '/');

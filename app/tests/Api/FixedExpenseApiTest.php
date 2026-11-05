@@ -37,7 +37,6 @@ final class FixedExpenseApiTest extends WebTestCase
     public function testPostRejectsDay29WithoutSavingExpense(): void
     {
         $contractor = $this->createContractor('Invalid day API test '.uniqid());
-        $this->em()->flush();
         $countBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
 
         $this->client->request('POST', '/api/fixed_expenses', server: [
@@ -169,7 +168,6 @@ final class FixedExpenseApiTest extends WebTestCase
         }
 
         $contractor = $this->createContractor('Description API test '.uniqid());
-        $this->em()->flush();
         $this->client->request('POST', '/api/fixed_expenses', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
@@ -198,7 +196,6 @@ final class FixedExpenseApiTest extends WebTestCase
     {
         $fixedExpense = $this->createFixedExpense();
         $existing = $this->createContractor('Existing '.uniqid());
-        $this->em()->flush();
         $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
 
         $this->patch($fixedExpense, ['contractorName' => $existing->getName()]);
@@ -214,7 +211,6 @@ final class FixedExpenseApiTest extends WebTestCase
     {
         $fixedExpense = $this->createFixedExpense();
         $other = $this->createContractor('Other '.uniqid());
-        $this->em()->flush();
 
         $this->patch($fixedExpense, ['contractorId' => $other->getId()]);
 

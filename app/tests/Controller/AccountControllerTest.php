@@ -224,7 +224,7 @@ final class AccountControllerTest extends WebTestCase
     {
         $account = $this->createAccount();
 
-        $operation = $this->createOperation($account, 15000);
+        $this->createOperation($account, 15000);
 
         $crawler = $this->client->request('GET', '/account/'.$account->getId().'/operations');
 

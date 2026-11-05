@@ -6,7 +6,6 @@ namespace App\Tests\State;
 
 use ApiPlatform\Metadata\GetCollection;
 use App\ApiResource\CurrencyResource;
-use App\Entity\Currency;
 use App\State\CurrencyProvider;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -35,9 +34,6 @@ final class CurrencyProviderTest extends KernelTestCase
 
     public function testProvideCollectionOrdersByCodeAscending(): void
     {
-        $this->ensureCurrency('PLN');
-        $this->ensureCurrency('CHF');
-
         $result = $this->provider->provide(new GetCollection());
 
         $codes = array_map(static fn (CurrencyResource $r): ?string => $r->code, $result);
@@ -47,18 +43,5 @@ final class CurrencyProviderTest extends KernelTestCase
         self::assertIsInt($positionOfChf);
         self::assertIsInt($positionOfPln);
         self::assertLessThan($positionOfPln, $positionOfChf);
-    }
-
-    private function ensureCurrency(string $code): Currency
-    {
-        $repository = $this->em()->getRepository(Currency::class);
-        $currency = $repository->find($code);
-        if (null === $currency) {
-            $currency = new Currency($code);
-            $this->em()->persist($currency);
-            $this->em()->flush();
-        }
-
-        return $currency;
     }
 }

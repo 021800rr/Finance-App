@@ -41,7 +41,6 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessCreatesRateSuccessfully(): void
     {
         $bank = $this->createBank();
-        $currency = $this->currency('CHF');
 
         $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '4.3210');
 
@@ -57,7 +56,6 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessAllowsMultipleRatesForSameBankCurrencyAndDate(): void
     {
         $bank = $this->createBank();
-        $this->currency('CHF');
 
         $first = $this->processor->process(
             $this->buildResource(
@@ -90,7 +88,6 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
 
     public function testProcessThrowsUnprocessableWhenBankIdMissing(): void
     {
-        $this->currency('CHF');
         $resource = $this->buildResource(bankId: null, currencyCode: 'CHF', rateToPln: '4.3210');
 
         $this->expectException(UnprocessableEntityHttpException::class);
@@ -100,7 +97,6 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
 
     public function testProcessThrowsNotFoundWhenBankDoesNotExist(): void
     {
-        $this->currency('CHF');
         $resource = $this->buildResource(bankId: 999999999, currencyCode: 'CHF', rateToPln: '4.3210');
 
         $this->expectException(NotFoundHttpException::class);
@@ -131,7 +127,6 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessTreatsAMissingRateDateAsABug(): void
     {
         $bank = $this->createBank();
-        $this->currency('CHF');
         $resource = $this->buildResource(
             bankId: $bank->getId(),
             currencyCode: 'CHF',
@@ -148,7 +143,6 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessTreatsAnUnvalidatedRateDateAsABug(): void
     {
         $bank = $this->createBank();
-        $this->currency('CHF');
         $resource = $this->buildResource(
             bankId: $bank->getId(),
             currencyCode: 'CHF',
@@ -165,7 +159,6 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessThrowsUnprocessableWhenRateToPlnMissing(): void
     {
         $bank = $this->createBank();
-        $this->currency('CHF');
         $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: null);
 
         $this->expectException(UnprocessableEntityHttpException::class);
@@ -176,7 +169,6 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessThrowsUnprocessableWhenRateToPlnNotDecimal(): void
     {
         $bank = $this->createBank();
-        $this->currency('CHF');
         $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: 'string');
 
         $this->expectException(UnprocessableEntityHttpException::class);
@@ -187,7 +179,6 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessThrowsUnprocessableWhenRateToPlnOutOfRange(): void
     {
         $bank = $this->createBank();
-        $this->currency('CHF');
         $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '150.0000');
 
         $this->expectException(UnprocessableEntityHttpException::class);
@@ -205,7 +196,6 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessDeletesExistingRateOnDelete(): void
     {
         $bank = $this->createBank();
-        $this->currency('CHF');
         $created = $this->processor->process(
             $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '4.3210'),
             new Post(),
