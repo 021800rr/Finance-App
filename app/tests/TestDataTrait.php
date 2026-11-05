@@ -21,7 +21,8 @@ use App\Repository\AccountRepository;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * Creates the records a test needs on top of the fixtures. Every create* method persists and flushes, so the record
+ * Reads the fixtures and creates the records a test needs on top of them. A lookup (currency(), household(),
+ * account(), goldForm()) throws when the record is missing. Every create* method persists and flushes, so the record
  * already has its id, and gives a unique name to whatever is not passed. The test transaction rolls it all back.
  * Requires DatabaseTestTrait (the em() method).
  */
