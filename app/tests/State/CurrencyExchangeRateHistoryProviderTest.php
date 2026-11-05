@@ -73,7 +73,7 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
     public function testProvideExcludesUntrackedCurrencies(): void
     {
         $tracked = $this->createRate(date: new \DateTimeImmutable(), currency: 'CHF');
-        $untracked = $this->createRate(date: new \DateTimeImmutable(), currency: 'DKK');
+        $untracked = $this->createRate(date: new \DateTimeImmutable(), currency: $this->createCurrency('DKK'));
 
         /** @var list<CurrencyExchangeRateResource> $result */
         $result = $this->provider->provide(new GetCollection());

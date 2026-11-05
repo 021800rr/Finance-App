@@ -56,7 +56,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
         $bankA = $this->createBank();
         $bankB = $this->createBank();
         $chf = $this->currency('CHF');
-        $eur = $this->currency('EUR');
+        $eur = $this->createCurrency('EUR');
 
         foreach ([
             [$bankA, $chf, '2026-10-26', 45000],

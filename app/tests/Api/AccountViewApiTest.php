@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Api;
 
 use App\Entity\Account;
-use App\Entity\AccountOperation;
 use App\Entity\Contractor;
 use App\Service\Paginator;
 use App\Tests\Controller\LogsInTrait;
@@ -198,24 +197,19 @@ final class AccountViewApiTest extends WebTestCase
     private function createAccountWithHistory(): Account
     {
         $account = $this->createAccount();
-        $currency = $account->getCurrency();
         $contractor = $this->createContractor();
         for ($i = 0; $i < self::OPERATIONS; ++$i) {
-            // The two newest operations are dated in the future ("balance today" must differ from "balance").
-            $date = new \DateTimeImmutable(sprintf('%+d days', 2 - $i));
-            $operation = new AccountOperation(
+            $this->createOperation(
                 $account,
-                $contractor,
-                $date,
                 100000 + $i * 111 - ($i % 3) * 250000,
-                $currency,
+                // The two newest operations are dated in the future ("balance today" must differ from "balance").
+                new \DateTimeImmutable(sprintf('%+d days', 2 - $i)),
+                $contractor,
                 description: 0 === $i % 4 ? null : "Operation {$i}",
                 confirmed: 0 === $i % 2,
                 transactionUuid: 0 === $i % 5 ? Uuid::v4() : null,
             );
-            $this->em()->persist($operation);
         }
-        $this->em()->flush();
 
         return $account;
     }

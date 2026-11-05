@@ -5,20 +5,14 @@ declare(strict_types=1);
 namespace App\Tests\Smoke;
 
 use App\Entity\Account;
-use App\Entity\AccountOperation;
 use App\Entity\AccountType;
 use App\Entity\Bank;
-use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\CurrencyExchangeRate;
-use App\Entity\FixedExpense;
-use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
-use App\Entity\GoldPrice;
 use App\Entity\Household;
 use App\Tests\Controller\LogsInTrait;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
@@ -33,6 +27,7 @@ final class AllRoutesSmokeTest extends WebTestCase
     use DatabaseTestTrait;
     use LogsInTrait;
     use JwtTrait;
+    use TestDataTrait;
 
     /**
      * Query parameters a route needs before its provider runs at all.
@@ -128,17 +123,12 @@ final class AllRoutesSmokeTest extends WebTestCase
     private function createOneRecordOfEachKind(): array
     {
         $account = $this->first(Account::class);
-        $contractor = new Contractor('Smoke test contractor');
-        $today = new \DateTimeImmutable();
-        $operation = new AccountOperation($account, $contractor, $today, -1000, $account->getCurrency());
-        $fixedExpense = new FixedExpense($contractor, 10, -1000, $this->find(Currency::class, 'PLN'));
-        $goldAsset = new GoldAsset($this->first(GoldForm::class), 10000, 'Smoke test gold');
-        $goldPrice = new GoldPrice($goldAsset, $today, 100000, $this->find(Currency::class, 'PLN'));
-        $rate = new CurrencyExchangeRate($this->first(Bank::class), $this->find(Currency::class, 'CHF'), $today, 43210);
-        foreach ([$contractor, $operation, $fixedExpense, $goldAsset, $goldPrice, $rate] as $entity) {
-            $this->em()->persist($entity);
-        }
-        $this->em()->flush();
+        $contractor = $this->createContractor('Smoke test contractor');
+        $operation = $this->createOperation($account, -1000, contractor: $contractor);
+        $fixedExpense = $this->createFixedExpense(amount: -1000, contractor: $contractor);
+        $goldAsset = $this->createGoldAsset($this->first(GoldForm::class), description: 'Smoke test gold');
+        $goldPrice = $this->createGoldPrice($goldAsset);
+        $rate = $this->createRate($this->first(Bank::class));
 
         return [
             '/account' => $account->getId(),
@@ -173,21 +163,6 @@ final class AllRoutesSmokeTest extends WebTestCase
     {
         $entity = $this->em()->getRepository($class)->findOneBy([]);
         self::assertNotNull($entity, sprintf('Fixtures must provide a %s.', $class));
-
-        return $entity;
-    }
-
-    /**
-     * @template T of object
-     *
-     * @param class-string<T> $class
-     *
-     * @return T
-     */
-    private function find(string $class, string $id): object
-    {
-        $entity = $this->em()->find($class, $id);
-        self::assertNotNull($entity, sprintf('Fixtures must provide %s "%s".', $class, $id));
 
         return $entity;
     }

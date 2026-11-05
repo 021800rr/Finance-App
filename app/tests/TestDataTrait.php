@@ -27,11 +27,12 @@ use Symfony\Component\Uid\Uuid;
 trait TestDataTrait
 {
     /**
-     * A currency from the fixtures (PLN, CHF); any other code, e.g. EUR, is created.
+     * A currency from the fixtures (PLN or CHF).
      */
     private function currency(string $code = Currencies::SETTLEMENT_CURRENCY_CODE): Currency
     {
-        return $this->em()->find(Currency::class, $code) ?? $this->saved(new Currency($code));
+        return $this->em()->find(Currency::class, $code)
+            ?? throw new \LogicException(sprintf('The fixtures have no %s currency.', $code));
     }
 
     /**
@@ -50,6 +51,14 @@ trait TestDataTrait
     {
         return $this->em()->getRepository(GoldForm::class)->findOneBy(['name' => $name])
             ?? throw new \LogicException(sprintf('The fixtures have no gold form "%s".', $name));
+    }
+
+    /**
+     * A currency the fixtures do not have, e.g. EUR.
+     */
+    private function createCurrency(string $code): Currency
+    {
+        return $this->saved(new Currency($code));
     }
 
     private function createBank(?string $name = null): Bank
@@ -99,6 +108,7 @@ trait TestDataTrait
         ?\DateTimeImmutable $date = null,
         ?Contractor $contractor = null,
         ?string $description = null,
+        bool $confirmed = false,
         ?Uuid $transactionUuid = null,
     ): AccountOperation {
         return $this->saved(new AccountOperation(
@@ -108,6 +118,7 @@ trait TestDataTrait
             $amount,
             $account->getCurrency(),
             description: $description,
+            confirmed: $confirmed,
             transactionUuid: $transactionUuid,
         ));
     }

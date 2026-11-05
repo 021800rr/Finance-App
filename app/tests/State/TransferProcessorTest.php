@@ -77,7 +77,7 @@ final class TransferProcessorTest extends KernelTestCase
     {
         $this->ensureFixedContractor();
         $from = $this->createAccount('PLN');
-        $to = $this->createAccount('EUR');
+        $to = $this->createAccount($this->createCurrency('EUR'));
 
         $resource = $this->buildResource(
             fromAccountId: $from->getId(),
@@ -98,7 +98,7 @@ final class TransferProcessorTest extends KernelTestCase
     {
         $this->ensureFixedContractor();
         $from = $this->createAccount('PLN');
-        $to = $this->createAccount('EUR');
+        $to = $this->createAccount($this->createCurrency('EUR'));
 
         $resource = $this->buildResource(
             fromAccountId: $from->getId(),

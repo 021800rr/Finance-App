@@ -76,7 +76,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         $bankA = $this->createBank();
         $bankB = $this->createBank();
         $chf = $this->currency('CHF');
-        $eur = $this->currency('EUR');
+        $eur = $this->createCurrency('EUR');
         $day = new \DateTimeImmutable('2026-10-26');
 
         $this->createRate($bankA, $chf, $day, 45000);
@@ -160,7 +160,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
     {
         $bank = $this->createBank();
         $chf = $this->currency('CHF');
-        $eur = $this->currency('EUR');
+        $eur = $this->createCurrency('EUR');
 
         $tracked = $this->createRate($bank, $chf, new \DateTimeImmutable('-1 day'), 45500);
         $this->createRate($bank, $eur, new \DateTimeImmutable('-1 day'), 42000);
