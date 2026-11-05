@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use App\Entity\Bank;
-use App\Entity\CurrencyExchangeRate;
-use App\Entity\Household;
 use App\Service\SummaryService;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\TestDataTrait;
@@ -38,11 +36,9 @@ final class SummaryServiceTest extends KernelTestCase
 
     public function testOwnFundsHouseholdNeverIncludesExcludedHouseholdMoneyAcrossMultipleBanksAndAccounts(): void
     {
-        $ownHousehold = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        self::assertNotNull($ownHousehold, 'Fixtures must provide exactly one own-funds household.');
+        $ownHousehold = $this->household();
 
-        $excludedHousehold = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => false]);
-        self::assertNotNull($excludedHousehold, 'Fixtures must provide exactly one non-own-funds household.');
+        $excludedHousehold = $this->household(false);
 
         $ownFundsBefore = $this->summaryService->getSummary()['byHousehold'][$ownHousehold->getName()];
 
@@ -100,8 +96,7 @@ final class SummaryServiceTest extends KernelTestCase
 
     public function testByHouseholdGroupsAccountsByHouseholdName(): void
     {
-        $excludedHousehold = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => false]);
-        self::assertNotNull($excludedHousehold, 'Fixtures must provide exactly one non-own-funds household.');
+        $excludedHousehold = $this->household(false);
 
         $bank = $this->createBank();
         $currency = $this->currency('PLN');
@@ -118,8 +113,7 @@ final class SummaryServiceTest extends KernelTestCase
 
     public function testRetirementSumsOnlyAccountsFlaggedAsRetirement(): void
     {
-        $ownHousehold = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        self::assertNotNull($ownHousehold, 'Fixtures must provide exactly one own-funds household.');
+        $ownHousehold = $this->household();
 
         $retirementBefore = $this->summaryService->getSummary()['retirementBalanceWithGold'];
 
@@ -152,11 +146,9 @@ final class SummaryServiceTest extends KernelTestCase
 
     public function testByTypeSumsOnlyOwnFundsAccountsEvenWhenTheMotherUsesTheSameAccountType(): void
     {
-        $ownHousehold = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        self::assertNotNull($ownHousehold, 'Fixtures must provide exactly one own-funds household.');
+        $ownHousehold = $this->household();
 
-        $excludedHousehold = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => false]);
-        self::assertNotNull($excludedHousehold, 'Fixtures must provide exactly one non-own-funds household.');
+        $excludedHousehold = $this->household(false);
 
         $bank = $this->createBank();
         $currency = $this->currency('PLN');
@@ -178,8 +170,7 @@ final class SummaryServiceTest extends KernelTestCase
 
     public function testByTypeOmitsTypesUsedOnlyByTheExcludedHousehold(): void
     {
-        $excludedHousehold = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => false]);
-        self::assertNotNull($excludedHousehold, 'Fixtures must provide exactly one non-own-funds household.');
+        $excludedHousehold = $this->household(false);
 
         $bank = $this->createBank();
         $currency = $this->currency('PLN');
@@ -193,8 +184,7 @@ final class SummaryServiceTest extends KernelTestCase
 
     public function testRetirementBalanceExcludesTheExcludedHousehold(): void
     {
-        $excludedHousehold = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => false]);
-        self::assertNotNull($excludedHousehold, 'Fixtures must provide exactly one non-own-funds household.');
+        $excludedHousehold = $this->household(false);
 
         $retirementBefore = $this->summaryService->getSummary()['retirementBalance'];
 
@@ -260,9 +250,7 @@ final class SummaryServiceTest extends KernelTestCase
         $bank = $this->createBank();
         $currency = $this->currency('CHF');
 
-        $rate = new CurrencyExchangeRate($bank, $currency, new \DateTimeImmutable(), 41234); // 4.1234 PLN za 1 CHF
-        $this->em()->persist($rate);
-        $this->em()->flush();
+        $this->createRate($bank, $currency, rateToPln: 41234); // 4.1234 PLN za 1 CHF
 
         $summary = $this->summaryService->getSummary();
 

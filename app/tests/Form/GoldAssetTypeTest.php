@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Form;
 
-use App\Entity\GoldForm;
 use App\Form\GoldAssetType;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -15,6 +15,7 @@ use Symfony\Component\Form\FormInterface;
 final class GoldAssetTypeTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     protected function setUp(): void
     {
@@ -104,8 +105,7 @@ final class GoldAssetTypeTest extends KernelTestCase
      */
     private function submitOunces(array $ounces): FormInterface
     {
-        $goldForm = $this->em()->getRepository(GoldForm::class)->findOneBy(['name' => 'sztabka']);
-        self::assertNotNull($goldForm);
+        $goldForm = $this->goldForm('sztabka');
         /** @var FormFactoryInterface $factory */
         $factory = self::getContainer()->get('form.factory');
         $form = $factory->create(GoldAssetType::class, null, ['csrf_protection' => false]);

@@ -8,11 +8,10 @@ use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
 use App\Entity\CurrencyExchangeRate;
-use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
 use App\Entity\GoldPrice;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -22,6 +21,7 @@ final class DateValidationApiTest extends WebTestCase
     use DatabaseTestTrait;
     use ReadsJsonTrait;
     use JwtTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -62,7 +62,7 @@ final class DateValidationApiTest extends WebTestCase
     #[DataProvider('invalidDates')]
     public function testPatchRejectsInvalidDatesWithoutChangingTheOperation(string $date, string $code): void
     {
-        $operation = $this->createOperation();
+        $operation = $this->createOriginalOperation();
         $id = $operation->getId();
         $contractorId = $operation->getContractor()->getId();
         $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
@@ -122,7 +122,7 @@ final class DateValidationApiTest extends WebTestCase
     #[DataProvider('validDates')]
     public function testPatchPreservesValidDates(string $date): void
     {
-        $operation = $this->createOperation();
+        $operation = $this->createOriginalOperation();
         $id = $operation->getId();
 
         $this->requestJson('PATCH', '/api/account_operations/'.$id, ['operationDate' => $date]);
@@ -213,11 +213,7 @@ final class DateValidationApiTest extends WebTestCase
     private function payloadFor(string $uri): array
     {
         if ('/api/gold_prices' === $uri) {
-            $form = $this->em()->getRepository(GoldForm::class)->findOneBy([]);
-            self::assertNotNull($form);
-            $asset = new GoldAsset($form, 10000, 'Date validation gold');
-            $this->em()->persist($asset);
-            $this->em()->flush();
+            $asset = $this->createGoldAsset(description: 'Date validation gold');
 
             return ['goldAssetId' => $asset->getId(), 'pricePln' => '10000.00'];
         }
@@ -275,23 +271,15 @@ final class DateValidationApiTest extends WebTestCase
         return $account;
     }
 
-    private function createOperation(): AccountOperation
+    private function createOriginalOperation(): AccountOperation
     {
-        $account = $this->account('Bank1-ROR-PLN');
-        $contractor = new Contractor('Original contractor '.uniqid());
-        $operation = new AccountOperation(
-            $account,
-            $contractor,
-            new \DateTimeImmutable('2026-01-15'),
+        return $this->createOperation(
+            $this->account('Bank1-ROR-PLN'),
             1000,
-            $account->getCurrency(),
-            description: 'Original',
+            new \DateTimeImmutable('2026-01-15'),
+            $this->createContractor('Original contractor '.uniqid()),
+            'Original',
         );
-        $this->em()->persist($contractor);
-        $this->em()->persist($operation);
-        $this->em()->flush();
-
-        return $operation;
     }
 
     /**

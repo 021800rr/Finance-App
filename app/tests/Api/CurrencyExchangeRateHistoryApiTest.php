@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use App\Entity\CurrencyExchangeRate;
 use App\Tests\Controller\LogsInTrait;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\JwtTrait;
@@ -41,13 +40,9 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
         $chf = $this->currency('CHF');
 
         // The daily winner has a lower rate but a higher ID; selection must match the web chart.
-        $rateOne = new CurrencyExchangeRate($bankA, $chf, new \DateTimeImmutable('2026-01-05'), 47000);
-        $rateTwo = new CurrencyExchangeRate($bankB, $chf, new \DateTimeImmutable('2026-02-10'), 43999);
-        $sameDayRate = new CurrencyExchangeRate($bankA, $chf, new \DateTimeImmutable('2026-01-05'), 45000);
-        $this->em()->persist($rateOne);
-        $this->em()->persist($rateTwo);
-        $this->em()->persist($sameDayRate);
-        $this->em()->flush();
+        $rateOne = $this->createRate($bankA, $chf, new \DateTimeImmutable('2026-01-05'), 47000);
+        $rateTwo = $this->createRate($bankB, $chf, new \DateTimeImmutable('2026-02-10'), 43999);
+        $sameDayRate = $this->createRate($bankA, $chf, new \DateTimeImmutable('2026-01-05'), 45000);
 
         $expected = [
             [

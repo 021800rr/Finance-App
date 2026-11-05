@@ -8,9 +8,7 @@ use App\Constant\Currencies;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
-use App\Entity\Currency;
 use App\Entity\FixedExpense;
-use App\Entity\Household;
 use App\Repository\AccountRepository;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\TestDataTrait;
@@ -63,7 +61,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testSubmittingWithValidContractorCreatesFixedExpenseAndRedirects(): void
     {
-        $contractor = $this->createContractor('Test Contractor '.uniqid());
+        $contractor = $this->createContractor();
         $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/fixed-expense');
@@ -531,19 +529,12 @@ final class FixedExpenseControllerTest extends WebTestCase
         );
         self::assertNotFalse($duplicateDate);
 
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find(Currencies::SETTLEMENT_CURRENCY_CODE);
-        self::assertNotNull($currency);
-
-        $existingOperation = new AccountOperation(
+        $this->createOperation(
             $mainAccount,
-            $fixedExpense->getContractor(),
-            $duplicateDate,
             $fixedExpense->getAmount(),
-            $currency,
+            $duplicateDate,
+            $fixedExpense->getContractor(),
         );
-        $this->em()->persist($existingOperation);
-        $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/fixed-expense');
         $csrfToken = $crawler->filter('form[action*="/fixed-expense/plan"] input[name="_token"]')->attr('value');
@@ -562,22 +553,14 @@ final class FixedExpenseControllerTest extends WebTestCase
     {
         $this->createFixedExpense(amount: -5000);
 
-        $chf = $this->em()->getRepository(Currency::class)->find('CHF');
-        self::assertNotNull($chf, 'CHF currency must exist in fixtures.');
         $reference = $this->em()->getRepository(Account::class)->findOneBy([]);
         self::assertNotNull($reference);
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        self::assertNotNull($household);
-
-        $foreignAccount = new Account(
+        $foreignAccount = $this->createAccount(
+            'CHF',
             $reference->getBank(),
-            $chf,
             $reference->getType(),
-            'CHF-MAIN-'.uniqid(),
-            $household
+            accountNumber: 'CHF-MAIN-'.uniqid(),
         );
-        $this->em()->persist($foreignAccount);
-        $this->em()->flush();
 
         /** @var AccountRepository $accountRepository */
         $accountRepository = self::getContainer()->get(AccountRepository::class);

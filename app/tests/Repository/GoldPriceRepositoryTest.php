@@ -198,9 +198,7 @@ final class GoldPriceRepositoryTest extends KernelTestCase
     {
         $assetA = $this->createGoldAsset();
         // Same form, weight and description: only the asset ID distinguishes these two assets.
-        $assetB = new GoldAsset($assetA->getForm(), $assetA->getOunces(), $assetA->getDescription());
-        $this->em()->persist($assetB);
-        $this->em()->flush();
+        $assetB = $this->createGoldAsset($assetA->getForm(), $assetA->getOunces(), $assetA->getDescription());
         $day = new \DateTimeImmutable('2026-10-26');
 
         $this->createGoldPrice($assetA, $day, 1100000);

@@ -5,15 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Database;
 
 use App\Entity\Account;
-use App\Entity\AccountOperation;
-use App\Entity\Bank;
-use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\CurrencyExchangeRate;
-use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
-use App\Entity\GoldPrice;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -24,6 +17,7 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 final class ConstraintTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     protected function setUp(): void
     {
@@ -78,32 +72,20 @@ final class ConstraintTest extends KernelTestCase
     private function createRows(): array
     {
         $plnAccount = $this->account('Bank1-ROR-PLN');
-        $pln = $this->em()->find(Currency::class, 'PLN');
-        $chf = $this->em()->find(Currency::class, 'CHF');
-        $bank = $this->em()->getRepository(Bank::class)->findOneBy([]);
-        $form = $this->em()->getRepository(GoldForm::class)->findOneBy([]);
-        self::assertNotNull($pln);
-        self::assertNotNull($chf);
-        self::assertNotNull($bank);
-        self::assertNotNull($form);
-
         $day = new \DateTimeImmutable('2026-01-15');
-        $contractor = new Contractor('Constraint test '.uniqid());
-        $operation = new AccountOperation($plnAccount, $contractor, $day, -1000, $pln);
-        $asset = new GoldAsset($form, 10000, 'Constraint test gold');
-        $price = new GoldPrice($asset, $day, 100000, $pln);
-        $rate = new CurrencyExchangeRate($bank, $chf, $day, 43210);
-        $emptyAccount = new Account(
-            $bank,
-            $pln,
-            $plnAccount->getType(),
-            'CONSTRAINT-'.uniqid(),
-            $plnAccount->getHousehold(),
+        $operation = $this->createOperation(
+            $plnAccount,
+            -1000,
+            $day,
+            $this->createContractor('Constraint test '.uniqid()),
         );
-        foreach ([$contractor, $operation, $asset, $price, $rate, $emptyAccount] as $entity) {
-            $this->em()->persist($entity);
-        }
-        $this->em()->flush();
+        $price = $this->createGoldPrice($this->createGoldAsset(description: 'Constraint test gold'), $day);
+        $rate = $this->createRate(date: $day);
+        $emptyAccount = $this->createAccount(
+            type: $plnAccount->getType(),
+            household: $plnAccount->getHousehold(),
+            accountNumber: 'CONSTRAINT-'.uniqid(),
+        );
 
         return [
             'operation' => $operation->getId(),

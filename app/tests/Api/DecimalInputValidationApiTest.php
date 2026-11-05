@@ -10,10 +10,10 @@ use App\Entity\Contractor;
 use App\Entity\CurrencyExchangeRate;
 use App\Entity\FixedExpense;
 use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
 use App\Entity\GoldPrice;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -23,6 +23,7 @@ final class DecimalInputValidationApiTest extends WebTestCase
     use DatabaseTestTrait;
     use ReadsJsonTrait;
     use JwtTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -169,16 +170,16 @@ final class DecimalInputValidationApiTest extends WebTestCase
     private function payloadFor(string $uri): array
     {
         $account = $this->account('Bank1-ROR-PLN');
-        if ('/api/gold_assets' === $uri || '/api/gold_prices' === $uri) {
-            $form = $this->em()->getRepository(GoldForm::class)->findOneBy([]);
-            self::assertNotNull($form);
-            if ('/api/gold_assets' === $uri) {
-                return ['formId' => $form->getId(), 'description' => 'Decimal validation', 'ounces' => '1.0000'];
-            }
+        if ('/api/gold_assets' === $uri) {
+            return [
+                'formId' => $this->goldForm('moneta')->getId(),
+                'description' => 'Decimal validation',
+                'ounces' => '1.0000',
+            ];
+        }
 
-            $asset = new GoldAsset($form, 10000, 'Decimal validation');
-            $this->em()->persist($asset);
-            $this->em()->flush();
+        if ('/api/gold_prices' === $uri) {
+            $asset = $this->createGoldAsset(description: 'Decimal validation');
 
             return ['goldAssetId' => $asset->getId(), 'priceDate' => '2026-01-15', 'pricePln' => '100.00'];
         }

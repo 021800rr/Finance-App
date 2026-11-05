@@ -65,10 +65,8 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
             [$bankA, $eur, '2026-10-26', 48000],
             [$bankA, $chf, '2026-10-25', 91000],
         ] as [$bank, $currency, $date, $minorUnits]) {
-            $rate = new CurrencyExchangeRate($bank, $currency, new \DateTimeImmutable($date), $minorUnits);
-            $this->em()->persist($rate);
+            $this->createRate($bank, $currency, new \DateTimeImmutable($date), $minorUnits);
         }
-        $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/rate');
 

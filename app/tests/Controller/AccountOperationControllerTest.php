@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
-use App\Constant\Currencies;
 use App\Entity\AccountOperation;
-use App\Entity\Currency;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\TestDataTrait;
 use Doctrine\ORM\EntityManagerInterface;
@@ -72,7 +70,7 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $account = $this->createAccount();
 
-        $contractor = $this->createContractor('Test Contractor '.uniqid());
+        $contractor = $this->createContractor();
         $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/operation/new?account='.$account->getId());
@@ -693,21 +691,13 @@ final class AccountOperationControllerTest extends WebTestCase
         $account = $this->createAccount();
         $otherAccount = $this->createAccount();
 
-        $contractor = $this->createContractor('Test Contractor '.uniqid());
+        $contractor = $this->createContractor();
 
         $uuid = Uuid::v7();
 
-        $pln = $this->em()->getRepository(Currency::class)->find(Currencies::SETTLEMENT_CURRENCY_CODE);
-        self::assertNotNull($pln, 'PLN currency must exist in fixtures.');
-
         $today = new \DateTimeImmutable();
-        $opOut = new AccountOperation($account, $contractor, $today, -10000, $pln, transactionUuid: $uuid);
-        $this->em()->persist($opOut);
-
-        $opIn = new AccountOperation($otherAccount, $contractor, $today, 10000, $pln, transactionUuid: $uuid);
-        $this->em()->persist($opIn);
-
-        $this->em()->flush();
+        $opOut = $this->createOperation($account, -10000, $today, $contractor, transactionUuid: $uuid);
+        $opIn = $this->createOperation($otherAccount, 10000, $today, $contractor, transactionUuid: $uuid);
 
         $this->client->request('GET', '/operation/'.$opOut->getId().'/go-to-other-side');
 

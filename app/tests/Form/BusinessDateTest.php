@@ -7,13 +7,12 @@ namespace App\Tests\Form;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
-use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
 use App\Form\AccountOperationType;
 use App\Form\CurrencyExchangeRateType;
 use App\Form\GoldPriceType;
 use App\Form\TransferType;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -22,6 +21,7 @@ use Symfony\Component\Form\FormTypeInterface;
 final class BusinessDateTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     protected function setUp(): void
     {
@@ -108,11 +108,7 @@ final class BusinessDateTest extends KernelTestCase
     private function payloadFor(string $formClass): array
     {
         if (GoldPriceType::class === $formClass) {
-            $goldForm = $this->em()->getRepository(GoldForm::class)->findOneBy([]);
-            self::assertNotNull($goldForm);
-            $asset = new GoldAsset($goldForm, 10000, 'Date validation gold');
-            $this->em()->persist($asset);
-            $this->em()->flush();
+            $asset = $this->createGoldAsset(description: 'Date validation gold');
 
             return ['goldAsset' => (string) $asset->getId(), 'pricePln' => '10000'];
         }

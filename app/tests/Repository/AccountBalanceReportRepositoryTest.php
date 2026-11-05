@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Repository;
 
-use App\Entity\AccountOperation;
 use App\Entity\Bank;
 use App\Entity\Currency;
 use App\Entity\Household;
@@ -41,15 +40,7 @@ final class AccountBalanceReportRepositoryTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor();
 
-        $operation = new AccountOperation(
-            $account,
-            $contractor,
-            new \DateTimeImmutable(),
-            25050,
-            $account->getCurrency(),
-        );
-        $this->em()->persist($operation);
-        $this->em()->flush();
+        $this->createOperation($account, 25050, contractor: $contractor);
 
         $row = $this->findBalanceRow($account->getAccountNumber());
 
@@ -68,25 +59,8 @@ final class AccountBalanceReportRepositoryTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor();
 
-        $incoming = new AccountOperation(
-            $account,
-            $contractor,
-            new \DateTimeImmutable(),
-            100000,
-            $account->getCurrency(),
-        );
-        $this->em()->persist($incoming);
-
-        $outgoing = new AccountOperation(
-            $account,
-            $contractor,
-            new \DateTimeImmutable(),
-            -30025,
-            $account->getCurrency(),
-        );
-        $this->em()->persist($outgoing);
-
-        $this->em()->flush();
+        $this->createOperation($account, 100000, contractor: $contractor);
+        $this->createOperation($account, -30025, contractor: $contractor);
 
         $row = $this->findBalanceRow($account->getAccountNumber());
 

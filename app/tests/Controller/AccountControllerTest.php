@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\Account;
-use App\Entity\AccountOperation;
 use App\Repository\AccountRepository;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\LosesMainAccountRaceTrait;
@@ -225,17 +224,7 @@ final class AccountControllerTest extends WebTestCase
     {
         $account = $this->createAccount();
 
-        $contractor = $this->createContractor('Test Contractor '.uniqid());
-
-        $operation = new AccountOperation(
-            $account,
-            $contractor,
-            new \DateTimeImmutable(),
-            15000,
-            $account->getCurrency(),
-        );
-        $this->em()->persist($operation);
-        $this->em()->flush();
+        $operation = $this->createOperation($account, 15000);
 
         $crawler = $this->client->request('GET', '/account/'.$account->getId().'/operations');
 

@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use App\Entity\Currency;
 use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
-use App\Entity\GoldPrice;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\JwtTrait;
 use App\Tests\TestDataTrait;
@@ -29,9 +27,7 @@ final class GoldAssetApiTest extends WebTestCase
     {
         $this->client = self::createClient();
         $this->initEntityManager($this->client->getKernel());
-        $goldForm = $this->em()->getRepository(GoldForm::class)->findOneBy(['name' => 'sztabka']);
-        self::assertNotNull($goldForm);
-        $this->goldForm = $goldForm;
+        $this->goldForm = $this->goldForm('sztabka');
     }
 
     protected function tearDown(): void
@@ -102,13 +98,8 @@ final class GoldAssetApiTest extends WebTestCase
     public function testPatchUpdatesAllEditableFieldsAndPreservesPriceHistory(): void
     {
         $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
-        $otherForm = $this->em()->getRepository(GoldForm::class)->findOneBy(['name' => 'moneta']);
-        self::assertNotNull($otherForm);
-        $currency = $this->em()->find(Currency::class, 'PLN');
-        self::assertNotNull($currency);
-        $price = new GoldPrice($asset, new \DateTimeImmutable('2026-01-15'), 123456, $currency);
-        $this->em()->persist($price);
-        $this->em()->flush();
+        $otherForm = $this->goldForm('moneta');
+        $this->createGoldPrice($asset, new \DateTimeImmutable('2026-01-15'), 123456);
         $pricesBefore = $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM gold_price ORDER BY id');
         $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
 
@@ -143,8 +134,7 @@ final class GoldAssetApiTest extends WebTestCase
     public function testPatchOnlyFormKeepsDescriptionAndOunces(): void
     {
         $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
-        $otherForm = $this->em()->getRepository(GoldForm::class)->findOneBy(['name' => 'moneta']);
-        self::assertNotNull($otherForm);
+        $otherForm = $this->goldForm('moneta');
 
         $this->patch($asset->getId(), ['formId' => $otherForm->getId()]);
 

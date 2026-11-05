@@ -7,7 +7,6 @@ namespace App\Tests\State;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use App\ApiResource\GoldAssetResource;
-use App\Entity\GoldAsset;
 use App\State\GoldAssetProvider;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\TestDataTrait;
@@ -51,10 +50,7 @@ final class GoldAssetProviderTest extends KernelTestCase
 
     public function testProvideReturnsOuncesAsDecimalString(): void
     {
-        $form = $this->createGoldForm('Test Form '.uniqid());
-        $goldAsset = new GoldAsset($form, 15000, 'Asset '.uniqid());
-        $this->em()->persist($goldAsset);
-        $this->em()->flush();
+        $goldAsset = $this->createGoldAsset(ounces: 15000, description: 'Asset '.uniqid());
 
         $result = $this->provider->provide(new Get(), ['id' => $goldAsset->getId()]);
 

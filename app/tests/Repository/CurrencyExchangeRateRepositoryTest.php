@@ -43,13 +43,8 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         $testBankName = 'Test Bank '.uniqid();
         $bank = $this->createBank($testBankName);
 
-        $oldRate = new CurrencyExchangeRate($bank, $currency, new \DateTimeImmutable('-2 days'), 400);
-        $this->em()->persist($oldRate);
-
-        $latestRate = new CurrencyExchangeRate($bank, $currency, new \DateTimeImmutable('-1 day'), 455);
-        $this->em()->persist($latestRate);
-
-        $this->em()->flush();
+        $this->createRate($bank, $currency, new \DateTimeImmutable('-2 days'), 400);
+        $this->createRate($bank, $currency, new \DateTimeImmutable('-1 day'), 455);
 
         $result = $this->repository->fetchSummary();
 

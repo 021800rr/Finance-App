@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace App\Tests\Form;
 
-use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
 use App\Form\GoldPriceType;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\FormFactoryInterface;
 
 final class GoldPriceTypeDefaultDateTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     protected function setUp(): void
     {
@@ -29,12 +29,7 @@ final class GoldPriceTypeDefaultDateTest extends KernelTestCase
 
     public function testPriceDateDefaultsToToday(): void
     {
-        $form = new GoldForm('Test Form '.uniqid());
-        $this->em()->persist($form);
-
-        $goldAsset = new GoldAsset($form, 1, 'Test Asset '.uniqid());
-        $this->em()->persist($goldAsset);
-        $this->em()->flush();
+        $goldAsset = $this->createGoldAsset(ounces: 1, description: 'Test Asset '.uniqid());
 
         /** @var FormFactoryInterface $formFactory */
         $formFactory = static::getContainer()->get('form.factory');

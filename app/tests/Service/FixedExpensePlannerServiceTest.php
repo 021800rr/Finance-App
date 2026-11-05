@@ -96,10 +96,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         $contractor = $this->createContractor();
         $duplicateDate = $this->buildExpectedDate($year, $month, 10);
 
-        $currency = $this->currency();
-        $existingOperation = new AccountOperation($this->mainAccount, $contractor, $duplicateDate, -15000, $currency);
-        $this->em()->persist($existingOperation);
-        $this->em()->flush();
+        $this->createOperation($this->mainAccount, -15000, $duplicateDate, $contractor);
 
         $this->createFixedExpense(day: 10, amount: -15000, contractor: $contractor, description: 'Test');
 
@@ -111,10 +108,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         $targetMonth = new \DateTimeImmutable('first day of next month');
         $contractor = $this->createContractor();
         $duplicateDate = $this->buildExpectedDate((int) $targetMonth->format('Y'), (int) $targetMonth->format('m'), 20);
-        $this->em()->persist(
-            new AccountOperation($this->mainAccount, $contractor, $duplicateDate, -15000, $this->currency()),
-        );
-        $this->em()->flush();
+        $this->createOperation($this->mainAccount, -15000, $duplicateDate, $contractor);
         // Checked first, because expenses are planned by day: this one alone could be booked.
         $this->createFixedExpense(day: 5, amount: -5000, description: 'New one');
         $this->createFixedExpense(day: 20, amount: -15000, contractor: $contractor, description: 'Test');
