@@ -32,7 +32,7 @@ final class GoldPriceTypeDefaultDateTest extends KernelTestCase
         $this->createGoldAsset(ounces: 1, description: 'Test Asset '.uniqid());
 
         /** @var FormFactoryInterface $formFactory */
-        $formFactory = static::getContainer()->get('form.factory');
+        $formFactory = self::getContainer()->get('form.factory');
 
         $goldPriceForm = $formFactory->create(GoldPriceType::class, null, ['csrf_protection' => false]);
 

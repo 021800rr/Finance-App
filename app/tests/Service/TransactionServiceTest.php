@@ -379,7 +379,6 @@ final class TransactionServiceTest extends KernelTestCase
             'zero credit in exchange' => ['CHF', '100.00', '0.00'],
             'debit rounded to zero' => ['PLN', '0.004', null],
             'credit rounded to zero' => ['CHF', '100.00', '0.004'],
-            'credit' => ['CHF', '100.00', '0.004'],
             'negative debit rounded to zero' => ['PLN', '-0.004', null],
         ];
     }

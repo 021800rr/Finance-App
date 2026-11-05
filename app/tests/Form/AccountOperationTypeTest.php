@@ -162,7 +162,7 @@ final class AccountOperationTypeTest extends KernelTestCase
         );
 
         /** @var FormFactoryInterface $formFactory */
-        $formFactory = static::getContainer()->get('form.factory');
+        $formFactory = self::getContainer()->get('form.factory');
         $form = $formFactory->create(AccountOperationType::class, options: ['existingOperation' => $operation]);
         $form->submit(['account' => (string) $other->getId(), 'amount' => '10.00']);
 
@@ -173,7 +173,7 @@ final class AccountOperationTypeTest extends KernelTestCase
     private function createOperationForm(): FormInterface
     {
         /** @var FormFactoryInterface $formFactory */
-        $formFactory = static::getContainer()->get('form.factory');
+        $formFactory = self::getContainer()->get('form.factory');
 
         return $formFactory->create(AccountOperationType::class, options: ['csrf_protection' => false]);
     }

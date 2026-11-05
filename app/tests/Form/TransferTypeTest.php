@@ -120,7 +120,7 @@ final class TransferTypeTest extends KernelTestCase
     private function createTransferForm(): FormInterface
     {
         /** @var FormFactoryInterface $formFactory */
-        $formFactory = static::getContainer()->get('form.factory');
+        $formFactory = self::getContainer()->get('form.factory');
 
         return $formFactory->create(TransferType::class, null, ['csrf_protection' => false]);
     }

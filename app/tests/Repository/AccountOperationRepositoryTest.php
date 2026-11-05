@@ -25,7 +25,7 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         $this->initEntityManager($kernel);
 
         /** @var AccountOperationRepository $repository */
-        $repository = AccountOperationRepositoryTest::getContainer()->get(AccountOperationRepository::class);
+        $repository = self::getContainer()->get(AccountOperationRepository::class);
         $this->repository = $repository;
     }
 

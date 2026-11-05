@@ -120,16 +120,14 @@ final class AccountOperationFactoryTest extends KernelTestCase
     private function buildSubmittedForm(
         ?Account $account,
         ?float $amount,
-        bool $invalidAmount = false,
         ?string $description = null,
     ): FormInterface {
         /** @var FormFactoryInterface $formFactory */
-        $formFactory = AccountOperationFactoryTest::getContainer()->get('form.factory');
+        $formFactory = self::getContainer()->get('form.factory');
 
         $builder = $formFactory->createBuilder();
         $builder->add('account', HiddenType::class, ['mapped' => false]);
         $builder->add('operationDate', HiddenType::class, ['mapped' => false]);
-        $builder->add('amount', HiddenType::class, ['mapped' => false]);
         $builder->add('amount', MoneyType::class, [
             'mapped' => false,
             'currency' => false,
@@ -140,7 +138,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $form = $builder->getForm();
         $form->get('account')->setData($account);
         $form->get('operationDate')->setData(new \DateTimeImmutable());
-        $form->get('amount')->setData($invalidAmount ? [] : (string) $amount);
+        $form->get('amount')->setData((string) $amount);
         $form->get('description')->setData($description);
         $form->get('confirmed')->setData(false);
 
@@ -155,7 +153,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
     private function buildSubmittedFormWithoutOperationDate(Account $account): FormInterface
     {
         /** @var FormFactoryInterface $formFactory */
-        $formFactory = AccountOperationFactoryTest::getContainer()->get('form.factory');
+        $formFactory = self::getContainer()->get('form.factory');
 
         $builder = $formFactory->createBuilder();
         $builder->add('account', HiddenType::class, ['mapped' => false]);

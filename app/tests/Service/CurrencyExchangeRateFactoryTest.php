@@ -29,7 +29,7 @@ final class CurrencyExchangeRateFactoryTest extends KernelTestCase
         $kernel = self::bootKernel();
         $this->initEntityManager($kernel);
 
-        $container = CurrencyExchangeRateFactoryTest::getContainer();
+        $container = self::getContainer();
 
         /** @var CurrencyExchangeRateFactory $factory */
         $factory = $container->get(CurrencyExchangeRateFactory::class);

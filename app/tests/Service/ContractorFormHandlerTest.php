@@ -26,7 +26,7 @@ final class ContractorFormHandlerTest extends KernelTestCase
         $kernel = self::bootKernel();
         $this->initEntityManager($kernel);
 
-        $container = ContractorFormHandlerTest::getContainer();
+        $container = self::getContainer();
 
         /** @var ContractorFormHandler $handler */
         $handler = $container->get(ContractorFormHandler::class);

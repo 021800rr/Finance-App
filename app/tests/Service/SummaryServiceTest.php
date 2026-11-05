@@ -250,7 +250,7 @@ final class SummaryServiceTest extends KernelTestCase
         $bank = $this->createBank();
         $currency = $this->currency('CHF');
 
-        $this->createRate($bank, $currency, rateToPln: 41234); // 4.1234 PLN za 1 CHF
+        $this->createRate($bank, $currency, rateToPln: 41234); // 4.1234 PLN per 1 CHF
 
         $summary = $this->summaryService->getSummary();
 

@@ -156,7 +156,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         );
     }
 
-    public function testFindAllHistoricalRatesReturnsOnlyChfRates(): void
+    public function testFindDataForChartReturnsOnlyChfRates(): void
     {
         $bank = $this->createBank();
         $chf = $this->currency('CHF');
@@ -171,7 +171,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         self::assertSame(['CHF'], array_column($result, 'currency_code'));
     }
 
-    public function testFindAllHistoricalRatesReturnsScalarRowsWithMinorUnits(): void
+    public function testFindDataForChartReturnsScalarRowsWithMinorUnits(): void
     {
         $bank = $this->createBank();
         $currency = $this->currency('CHF');
@@ -191,7 +191,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         ]], $result);
     }
 
-    public function testFindAllHistoricalRatesExecutesExactlyOneQuery(): void
+    public function testFindDataForChartExecutesExactlyOneQuery(): void
     {
         // Reading the selected daily rates and bank names must use a single query.
         for ($i = 0; $i < 3; ++$i) {

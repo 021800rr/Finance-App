@@ -459,7 +459,7 @@ final class AccountOperationControllerTest extends WebTestCase
         );
 
         /** @var EntityManagerInterface $freshEm */
-        $freshEm = static::getContainer()->get(EntityManagerInterface::class);
+        $freshEm = self::getContainer()->get(EntityManagerInterface::class);
         $updated = $freshEm->find(AccountOperation::class, $operation->getId());
 
         self::assertNotNull($updated);
@@ -585,7 +585,7 @@ final class AccountOperationControllerTest extends WebTestCase
         self::assertResponseRedirects('/account/'.$operation->getAccount()->getId().'/operations');
 
         /** @var EntityManagerInterface $freshEm */
-        $freshEm = static::getContainer()->get(EntityManagerInterface::class);
+        $freshEm = self::getContainer()->get(EntityManagerInterface::class);
         $deleted = $freshEm->find(AccountOperation::class, $operationId);
 
         self::assertNull($deleted);
@@ -639,7 +639,7 @@ final class AccountOperationControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
 
         /** @var EntityManagerInterface $freshEm */
-        $freshEm = static::getContainer()->get(EntityManagerInterface::class);
+        $freshEm = self::getContainer()->get(EntityManagerInterface::class);
         $updated = $freshEm->find(AccountOperation::class, $operation->getId());
 
         self::assertNotNull($updated);
