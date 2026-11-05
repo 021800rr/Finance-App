@@ -11,8 +11,9 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 /**
  * The account history and the latest-quote queries must read their rows from an index already in the right order,
- * so their cost does not grow with a sort of the whole table. The test data is tiny, so the planner is told to avoid
- * a full scan, as it would on a large table.
+ * so their cost does not grow with a sort of the whole table. The test data is tiny, so the cost of a plan says
+ * little: the planner is told to avoid a full scan and a sort, as it would on a large table. Without an index in
+ * the right order it still has to sort, and the test fails.
  */
 final class IndexTest extends KernelTestCase
 {
@@ -35,6 +36,7 @@ final class IndexTest extends KernelTestCase
         $connection = $this->em()->getConnection();
         // Only for the transaction that wraps this test.
         $connection->executeStatement('SET LOCAL enable_seqscan = off');
+        $connection->executeStatement('SET LOCAL enable_sort = off');
 
         /** @var list<string> $lines */
         $lines = $connection->fetchFirstColumn('EXPLAIN (COSTS OFF) '.$sql);
