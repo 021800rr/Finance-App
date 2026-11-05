@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
-use App\Entity\Contractor;
 use App\Service\FixedExpenseFactory;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
@@ -19,6 +19,7 @@ use Symfony\Component\Form\FormInterface;
 final class FixedExpenseFactoryTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private FixedExpenseFactory $factory;
     private FormFactoryInterface $formFactory;
@@ -136,15 +137,6 @@ final class FixedExpenseFactoryTest extends KernelTestCase
         $this->expectException(\InvalidArgumentException::class);
 
         $this->factory->createFromForm($form, $this->createContractor());
-    }
-
-    private function createContractor(): Contractor
-    {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-        $this->em()->flush();
-
-        return $contractor;
     }
 
     private function buildForm(int $day, float $amount, ?string $description): FormInterface

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\DataFixtures\AppFixtures;
 use App\Tests\DatabaseTestTrait;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -12,9 +13,6 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 final class LoginControllerTest extends WebTestCase
 {
     use DatabaseTestTrait;
-
-    private const VALID_EMAIL = 'test@example.com';
-    private const VALID_PASSWORD = 'test1234';
 
     private KernelBrowser $client;
 
@@ -44,7 +42,7 @@ final class LoginControllerTest extends WebTestCase
 
     public function testLoginWithInvalidCredentialsShowsError(): void
     {
-        $this->submitLoginForm(self::VALID_EMAIL, 'wrongpassword');
+        $this->submitLoginForm(AppFixtures::TEST_USER_EMAIL, 'wrongpassword');
         $crawler = $this->client->followRedirect();
 
         self::assertStringContainsString('Invalid credentials', $crawler->filter('.alert-danger')->text());
@@ -52,7 +50,7 @@ final class LoginControllerTest extends WebTestCase
 
     public function testLoginWithValidCredentialsRedirectsToHome(): void
     {
-        $this->submitLoginForm(self::VALID_EMAIL, self::VALID_PASSWORD);
+        $this->submitLoginForm(AppFixtures::TEST_USER_EMAIL, AppFixtures::TEST_USER_PASSWORD);
 
         self::assertResponseRedirects('/');
     }
@@ -60,10 +58,10 @@ final class LoginControllerTest extends WebTestCase
     public function testLoginThrottlesAfterTooManyFailedAttempts(): void
     {
         for ($i = 0; $i < 5; ++$i) {
-            $this->submitLoginForm(self::VALID_EMAIL, 'wrongpassword');
+            $this->submitLoginForm(AppFixtures::TEST_USER_EMAIL, 'wrongpassword');
         }
 
-        $this->submitLoginForm(self::VALID_EMAIL, 'wrongpassword');
+        $this->submitLoginForm(AppFixtures::TEST_USER_EMAIL, 'wrongpassword');
         $crawler = $this->client->followRedirect();
 
         self::assertStringContainsString('Too many failed login attempts', $crawler->filter('.alert-danger')->text());
@@ -72,10 +70,10 @@ final class LoginControllerTest extends WebTestCase
     public function testLoginThrottlingBlocksEvenValidCredentials(): void
     {
         for ($i = 0; $i < 5; ++$i) {
-            $this->submitLoginForm(self::VALID_EMAIL, 'wrongpassword');
+            $this->submitLoginForm(AppFixtures::TEST_USER_EMAIL, 'wrongpassword');
         }
 
-        $this->submitLoginForm(self::VALID_EMAIL, self::VALID_PASSWORD);
+        $this->submitLoginForm(AppFixtures::TEST_USER_EMAIL, AppFixtures::TEST_USER_PASSWORD);
         $crawler = $this->client->followRedirect();
 
         self::assertStringContainsString('Too many failed login attempts', $crawler->filter('.alert-danger')->text());

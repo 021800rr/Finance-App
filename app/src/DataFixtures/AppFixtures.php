@@ -21,6 +21,8 @@ use Doctrine\Persistence\ObjectManager;
 
 class AppFixtures extends Fixture
 {
+    public const string TEST_USER_EMAIL = 'test@example.com';
+    public const string TEST_USER_PASSWORD = 'test1234';
     public const string REF_USER = 'user';
     public const string REF_CONTRACTOR_SELF_TRANSFER = 'contractor-self-transfer';
     public const string REF_CURRENCY_PLN = 'currency-pln';
@@ -44,7 +46,7 @@ class AppFixtures extends Fixture
     public function load(ObjectManager $manager): void
     {
         /* USER */
-        $user = $this->user($manager, 'test@example.com', 'test1234');
+        $user = $this->user($manager, self::TEST_USER_EMAIL, self::TEST_USER_PASSWORD);
         $this->addReference(self::REF_USER, $user);
 
         /* CONTRACTORS */

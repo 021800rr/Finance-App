@@ -7,12 +7,10 @@ namespace App\Tests\State;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\CurrencyExchangeRateResource;
-use App\Entity\Bank;
-use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\State\CurrencyExchangeRateProcessor;
 use App\Tests\DatabaseTestTrait;
-use Doctrine\ORM\EntityRepository;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -20,10 +18,9 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 final class CurrencyExchangeRateProcessorTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private CurrencyExchangeRateProcessor $processor;
-    /** @var EntityRepository<Currency> */
-    private EntityRepository $currencyRepository;
 
     protected function setUp(): void
     {
@@ -33,8 +30,6 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
         /** @var CurrencyExchangeRateProcessor $processor */
         $processor = self::getContainer()->get(CurrencyExchangeRateProcessor::class);
         $this->processor = $processor;
-
-        $this->currencyRepository = $this->em()->getRepository(Currency::class);
     }
 
     protected function tearDown(): void
@@ -46,7 +41,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessCreatesRateSuccessfully(): void
     {
         $bank = $this->createBank();
-        $currency = $this->createCurrency('CHF');
+        $currency = $this->currency('CHF');
 
         $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '4.3210');
 
@@ -62,7 +57,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessAllowsMultipleRatesForSameBankCurrencyAndDate(): void
     {
         $bank = $this->createBank();
-        $this->createCurrency('CHF');
+        $this->currency('CHF');
 
         $first = $this->processor->process(
             $this->buildResource(
@@ -95,7 +90,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
 
     public function testProcessThrowsUnprocessableWhenBankIdMissing(): void
     {
-        $this->createCurrency('CHF');
+        $this->currency('CHF');
         $resource = $this->buildResource(bankId: null, currencyCode: 'CHF', rateToPln: '4.3210');
 
         $this->expectException(UnprocessableEntityHttpException::class);
@@ -105,7 +100,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
 
     public function testProcessThrowsNotFoundWhenBankDoesNotExist(): void
     {
-        $this->createCurrency('CHF');
+        $this->currency('CHF');
         $resource = $this->buildResource(bankId: 999999999, currencyCode: 'CHF', rateToPln: '4.3210');
 
         $this->expectException(NotFoundHttpException::class);
@@ -136,7 +131,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessTreatsAMissingRateDateAsABug(): void
     {
         $bank = $this->createBank();
-        $this->createCurrency('CHF');
+        $this->currency('CHF');
         $resource = $this->buildResource(
             bankId: $bank->getId(),
             currencyCode: 'CHF',
@@ -153,7 +148,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessTreatsAnUnvalidatedRateDateAsABug(): void
     {
         $bank = $this->createBank();
-        $this->createCurrency('CHF');
+        $this->currency('CHF');
         $resource = $this->buildResource(
             bankId: $bank->getId(),
             currencyCode: 'CHF',
@@ -170,7 +165,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessThrowsUnprocessableWhenRateToPlnMissing(): void
     {
         $bank = $this->createBank();
-        $this->createCurrency('CHF');
+        $this->currency('CHF');
         $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: null);
 
         $this->expectException(UnprocessableEntityHttpException::class);
@@ -181,7 +176,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessThrowsUnprocessableWhenRateToPlnNotDecimal(): void
     {
         $bank = $this->createBank();
-        $this->createCurrency('CHF');
+        $this->currency('CHF');
         $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: 'string');
 
         $this->expectException(UnprocessableEntityHttpException::class);
@@ -192,7 +187,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessThrowsUnprocessableWhenRateToPlnOutOfRange(): void
     {
         $bank = $this->createBank();
-        $this->createCurrency('CHF');
+        $this->currency('CHF');
         $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '150.0000');
 
         $this->expectException(UnprocessableEntityHttpException::class);
@@ -210,7 +205,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     public function testProcessDeletesExistingRateOnDelete(): void
     {
         $bank = $this->createBank();
-        $this->createCurrency('CHF');
+        $this->currency('CHF');
         $created = $this->processor->process(
             $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '4.3210'),
             new Post(),
@@ -251,28 +246,5 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
             : $rateDate;
 
         return $resource;
-    }
-
-    private function createBank(): Bank
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-        $this->em()->flush();
-
-        return $bank;
-    }
-
-    private function createCurrency(string $code): Currency
-    {
-        $existing = $this->currencyRepository->find($code);
-        if ($existing) {
-            return $existing;
-        }
-
-        $currency = new Currency($code);
-        $this->em()->persist($currency);
-        $this->em()->flush();
-
-        return $currency;
     }
 }

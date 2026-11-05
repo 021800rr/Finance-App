@@ -9,20 +9,16 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use App\ApiResource\AccountResource;
 use App\Entity\Account;
-use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\State\AccountProvider;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class AccountProviderTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private AccountProvider $provider;
 
@@ -44,7 +40,7 @@ final class AccountProviderTest extends KernelTestCase
 
     public function testProvideReturnsResourceForExistingId(): void
     {
-        $account = $this->createAccount('AAA-'.uniqid());
+        $account = $this->createAccount(accountNumber: 'AAA-'.uniqid());
 
         $result = $this->provider->provide(new Get(), ['id' => $account->getId()]);
 
@@ -55,7 +51,7 @@ final class AccountProviderTest extends KernelTestCase
 
     public function testProvideForCollectionReturnsAllAccounts(): void
     {
-        $account = $this->createAccount('COL-'.uniqid());
+        $account = $this->createAccount(accountNumber: 'COL-'.uniqid());
 
         $result = $this->provider->provide(new GetCollection());
 
@@ -85,7 +81,7 @@ final class AccountProviderTest extends KernelTestCase
 
     public function testProvideForGetIncludesBalances(): void
     {
-        $account = $this->createAccount('BAL-'.uniqid());
+        $account = $this->createAccount(accountNumber: 'BAL-'.uniqid());
         $this->createOperation($account, 10000, new \DateTimeImmutable('-1 day'));
         $this->createOperation($account, 2500, new \DateTimeImmutable('+3 days'));
 
@@ -99,7 +95,7 @@ final class AccountProviderTest extends KernelTestCase
 
     public function testProvideForPatchSkipsBalances(): void
     {
-        $account = $this->createAccount('BAL-'.uniqid());
+        $account = $this->createAccount(accountNumber: 'BAL-'.uniqid());
         $this->createOperation($account, 10000, new \DateTimeImmutable('-1 day'));
 
         $result = $this->provider->provide(new Patch(), ['id' => $account->getId()]);
@@ -108,55 +104,5 @@ final class AccountProviderTest extends KernelTestCase
         self::assertNull($result->saldo);
         self::assertNull($result->saldoToday);
         self::assertNull($result->hasFutureOperations);
-    }
-
-    private function createAccount(string $accountNumber): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currency = $this->ensurePlnCurrency();
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->ownFundsHousehold();
-
-        $account = new Account($bank, $currency, $accountType, $accountNumber, $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function ensurePlnCurrency(): Currency
-    {
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find('PLN');
-        if (null === $currency) {
-            $currency = new Currency('PLN');
-            $this->em()->persist($currency);
-            $this->em()->flush();
-        }
-
-        return $currency;
-    }
-
-    private function ownFundsHousehold(): Household
-    {
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        return $household;
-    }
-
-    private function createOperation(Account $account, int $amount, \DateTimeImmutable $date): void
-    {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-        $this->em()->persist(new AccountOperation($account, $contractor, $date, $amount, $account->getCurrency()));
-        $this->em()->flush();
     }
 }

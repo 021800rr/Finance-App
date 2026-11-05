@@ -5,14 +5,10 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Constant\Currencies;
-use App\Entity\Account;
 use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Contractor;
 use App\Entity\Currency;
-use App\Entity\Household;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -23,6 +19,7 @@ final class AccountOperationControllerTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use LogsInTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -75,8 +72,7 @@ final class AccountOperationControllerTest extends WebTestCase
     {
         $account = $this->createAccount();
 
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Test Contractor '.uniqid());
         $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/operation/new?account='.$account->getId());
@@ -102,8 +98,7 @@ final class AccountOperationControllerTest extends WebTestCase
     public function testNewWithBlankAmountShowsFieldErrorWithoutSaving(array $amount): void
     {
         $account = $this->createAccount();
-        $contractor = new Contractor('Blank amount test '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Blank amount test '.uniqid());
         $this->em()->flush();
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
         $crawler = $this->client->request('GET', '/operation/new');
@@ -133,7 +128,7 @@ final class AccountOperationControllerTest extends WebTestCase
     #[DataProvider('operationForms')]
     public function testDateOutsideTheRangeIsShownAtTheField(bool $edit): void
     {
-        $operation = $this->createOperationInDatabase();
+        $operation = $this->createOperation($this->createAccount(), 10000);
         $uri = $edit ? '/operation/'.$operation->getId().'/edit' : '/operation/new';
         $crawler = $this->client->request('GET', $uri);
         $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
@@ -170,8 +165,7 @@ final class AccountOperationControllerTest extends WebTestCase
     public function testNewKeepsTheChosenContractorWhenAnotherFieldIsWrong(): void
     {
         $account = $this->createAccount();
-        $contractor = new Contractor('Kept contractor '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Kept contractor '.uniqid());
         $this->em()->flush();
         $crawler = $this->client->request('GET', '/operation/new');
         $token = $crawler->filter('#operation_form input[name="account_operation[_token]"]')->attr('value');
@@ -200,8 +194,7 @@ final class AccountOperationControllerTest extends WebTestCase
     #[DataProvider('blankAccounts')]
     public function testNewWithBlankAccountShowsFieldErrorWithoutSaving(array $account): void
     {
-        $contractor = new Contractor('Blank account test '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Blank account test '.uniqid());
         $this->em()->flush();
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
         $crawler = $this->client->request('GET', '/operation/new');
@@ -241,8 +234,7 @@ final class AccountOperationControllerTest extends WebTestCase
     public function testNewWithTooLongDescriptionShowsFieldErrorWithoutSaving(): void
     {
         $account = $this->createAccount();
-        $contractor = new Contractor('Long description test '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Long description test '.uniqid());
         $this->em()->flush();
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
         $crawler = $this->client->request('GET', '/operation/new');
@@ -273,8 +265,7 @@ final class AccountOperationControllerTest extends WebTestCase
     public function testNewSavesDescriptionOfMaximumLengthAfterTrimming(): void
     {
         $account = $this->createAccount();
-        $contractor = new Contractor('Long description test '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Long description test '.uniqid());
         $this->em()->flush();
         $description = str_repeat('ą', 255);
         $crawler = $this->client->request('GET', '/operation/new');
@@ -302,7 +293,7 @@ final class AccountOperationControllerTest extends WebTestCase
     public function testNewFormOffersOnlyVisibleAccounts(): void
     {
         $visible = $this->createAccount();
-        $hidden = $this->createHiddenAccount();
+        $hidden = $this->createAccount(hidden: true);
 
         $this->client->request('GET', '/operation/new');
 
@@ -314,9 +305,8 @@ final class AccountOperationControllerTest extends WebTestCase
     #[DataProvider('unavailableAccountIds')]
     public function testNewWithUnavailableAccountShowsFieldErrorWithoutSaving(?string $accountId): void
     {
-        $accountId ??= (string) $this->createHiddenAccount()->getId();
-        $contractor = new Contractor('Unavailable account test '.uniqid());
-        $this->em()->persist($contractor);
+        $accountId ??= (string) $this->createAccount(hidden: true)->getId();
+        $contractor = $this->createContractor('Unavailable account test '.uniqid());
         $this->em()->flush();
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
         $crawler = $this->client->request('GET', '/operation/new');
@@ -354,7 +344,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
     public function testNewRedirectsWhenPreselectedAccountIsHidden(): void
     {
-        $hidden = $this->createHiddenAccount();
+        $hidden = $this->createAccount(hidden: true);
 
         $this->client->request('GET', '/operation/new?account='.$hidden->getId());
 
@@ -368,7 +358,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
     public function testEditOfOperationOnHiddenAccountShowsItsOwnAccount(): void
     {
-        $operation = $this->createOperationInDatabase();
+        $operation = $this->createOperation($this->createAccount(), 10000);
         $account = $operation->getAccount();
         $account->setHidden(true);
         $this->em()->flush();
@@ -403,7 +393,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
     public function testEditWithTooLongDescriptionShowsFieldErrorWithoutChangingOperation(): void
     {
-        $operation = $this->createOperationInDatabase();
+        $operation = $this->createOperation($this->createAccount(), 10000);
         $id = $operation->getId();
         $uri = '/operation/'.$id.'/edit';
         $crawler = $this->client->request('GET', $uri);
@@ -457,10 +447,9 @@ final class AccountOperationControllerTest extends WebTestCase
 
     public function testEditUpdatesOperationAndRedirects(): void
     {
-        $operation = $this->createOperationInDatabase();
+        $operation = $this->createOperation($this->createAccount(), 10000);
 
-        $newContractor = new Contractor('New Contractor '.uniqid());
-        $this->em()->persist($newContractor);
+        $newContractor = $this->createContractor('New Contractor '.uniqid());
         $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/operation/'.$operation->getId().'/edit');
@@ -491,7 +480,7 @@ final class AccountOperationControllerTest extends WebTestCase
     #[DataProvider('zeroAmounts')]
     public function testEditShowsATranslatedMessageForAZeroAmount(string $amount): void
     {
-        $operation = $this->createOperationInDatabase();
+        $operation = $this->createOperation($this->createAccount(), 10000);
 
         $crawler = $this->client->request('GET', '/operation/'.$operation->getId().'/edit');
         $form = $crawler->filter('#operation_form button[type="submit"]')->form();
@@ -523,7 +512,7 @@ final class AccountOperationControllerTest extends WebTestCase
     #[DataProvider('blankAmounts')]
     public function testEditWithBlankAmountShowsFieldErrorWithoutChangingOperation(array $amount): void
     {
-        $operation = $this->createOperationInDatabase();
+        $operation = $this->createOperation($this->createAccount(), 10000);
         $id = $operation->getId();
         $originalDate = $operation->getOperationDate()->format('Y-m-d');
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
@@ -581,7 +570,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
     public function testDeleteRejectsInvalidCsrfToken(): void
     {
-        $operation = $this->createOperationInDatabase();
+        $operation = $this->createOperation($this->createAccount(), 10000);
 
         $this->client->request('POST', '/operation/'.$operation->getId().'/delete', [
             '_token' => 'invalid-token',
@@ -592,7 +581,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
     public function testDeleteRemovesOperationWithValidCsrfToken(): void
     {
-        $operation = $this->createOperationInDatabase();
+        $operation = $this->createOperation($this->createAccount(), 10000);
         $operationId = $operation->getId();
         $accountId = $operation->getAccount()->getId();
 
@@ -628,7 +617,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
     public function testToggleConfirmedRejectsInvalidCsrfToken(): void
     {
-        $operation = $this->createOperationInDatabase();
+        $operation = $this->createOperation($this->createAccount(), 10000);
 
         $this->client->request(
             'POST',
@@ -643,7 +632,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
     public function testToggleConfirmedTogglesStateWithValidCsrfToken(): void
     {
-        $operation = $this->createOperationInDatabase();
+        $operation = $this->createOperation($this->createAccount(), 10000);
         self::assertFalse($operation->isConfirmed());
 
         $crawler = $this->client->request('GET', '/');
@@ -690,7 +679,7 @@ final class AccountOperationControllerTest extends WebTestCase
 
     public function testGoToOtherSideShowsFlashWhenNoRelatedOperationExists(): void
     {
-        $operation = $this->createOperationInDatabase();
+        $operation = $this->createOperation($this->createAccount(), 10000);
 
         $this->client->request('GET', '/operation/'.$operation->getId().'/go-to-other-side');
 
@@ -704,8 +693,7 @@ final class AccountOperationControllerTest extends WebTestCase
         $account = $this->createAccount();
         $otherAccount = $this->createAccount();
 
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Test Contractor '.uniqid());
 
         $uuid = Uuid::v7();
 
@@ -724,60 +712,5 @@ final class AccountOperationControllerTest extends WebTestCase
         $this->client->request('GET', '/operation/'.$opOut->getId().'/go-to-other-side');
 
         self::assertResponseRedirects('/account/'.$otherAccount->getId().'/operations?highlight='.$opIn->getId());
-    }
-
-    private function createHiddenAccount(): Account
-    {
-        $account = $this->createAccount();
-        $account->setHidden(true);
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function createAccount(): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->findOneBy(['code' => 'PLN']);
-        if (null === $currency) {
-            $currency = new Currency('PLN');
-            $this->em()->persist($currency);
-        }
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function createOperationInDatabase(): AccountOperation
-    {
-        $account = $this->createAccount();
-
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-
-        $pln = $this->em()->getRepository(Currency::class)->find(Currencies::SETTLEMENT_CURRENCY_CODE);
-        self::assertNotNull($pln, 'PLN currency must exist in fixtures.');
-
-        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable(), 10000, $pln);
-        $this->em()->persist($operation);
-
-        $this->em()->flush();
-
-        return $operation;
     }
 }

@@ -7,6 +7,7 @@ namespace App\Tests\Service;
 use App\Entity\GoldForm;
 use App\Service\GoldAssetFactory;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
@@ -17,6 +18,7 @@ use Symfony\Component\Form\FormInterface;
 final class GoldAssetFactoryTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private GoldAssetFactory $factory;
     private FormFactoryInterface $formFactory;
@@ -128,14 +130,5 @@ final class GoldAssetFactoryTest extends KernelTestCase
         $form->get('description')->setData('Test');
 
         return $form;
-    }
-
-    private function createGoldForm(): GoldForm
-    {
-        $goldForm = new GoldForm('Test Form '.uniqid());
-        $this->em()->persist($goldForm);
-        $this->em()->flush();
-
-        return $goldForm;
     }
 }

@@ -6,15 +6,14 @@ namespace App\Tests\Api;
 
 use App\Entity\Account;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class AccountApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
-
-    private const VALID_EMAIL = 'test@example.com';
-    private const VALID_PASSWORD = 'test1234';
+    use JwtTrait;
 
     private KernelBrowser $client;
 
@@ -48,7 +47,7 @@ final class AccountApiTest extends WebTestCase
 
     public function testGetAccountsCollectionWithValidTokenReturnsAllAccounts(): void
     {
-        $token = $this->obtainJwtToken();
+        $token = $this->jwt();
 
         $this->client->request('GET', '/api/accounts', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$token,
@@ -67,7 +66,7 @@ final class AccountApiTest extends WebTestCase
     public function testGetSingleAccountWithValidTokenReturnsAccount(): void
     {
         $account = $this->firstAccount();
-        $token = $this->obtainJwtToken();
+        $token = $this->jwt();
 
         $this->client->request('GET', '/api/accounts/'.$account->getId(), server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$token,
@@ -78,27 +77,6 @@ final class AccountApiTest extends WebTestCase
             $account->getAccountNumber(),
             (string) $this->client->getResponse()->getContent(),
         );
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $this->client->request(
-            'POST',
-            '/api/login_check',
-            server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(
-                ['email' => self::VALID_EMAIL, 'password' => self::VALID_PASSWORD],
-                JSON_THROW_ON_ERROR,
-            ),
-        );
-
-        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-
-        if (!is_array($data) || !isset($data['token']) || !is_string($data['token'])) {
-            throw new \RuntimeException('Could not obtain a JWT token in the test.');
-        }
-
-        return $data['token'];
     }
 
     private function firstAccount(): Account

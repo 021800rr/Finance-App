@@ -14,6 +14,8 @@ use App\Entity\Contractor;
 use App\Entity\FixedExpense;
 use App\Entity\GoldAsset;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use App\Validator\NoNullCharacter;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -28,6 +30,8 @@ final class ValidationViolationCodeApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use ReadsJsonTrait;
+    use TestDataTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
 
@@ -118,7 +122,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
         $tooLong = str_repeat('x', 256);
         $expected = ['code' => 'contractor.name_max_length', 'params' => ['limit' => '255', 'max' => '255']];
         $headers = [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/ld+json',
         ];
         /** @param array<string, mixed> $payload */
@@ -472,7 +476,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     #[DataProvider('refusedContractorsOnCreate')]
     public function testContractorFieldsRefusedOnCreate(array $contractor, array $expected): void
     {
-        $existing = $this->createContractor();
+        $existing = $this->createContractor('Contractor rules test');
         $contractor = $this->withExistingId($contractor, $existing);
         $countBefore = $this->rowCounts();
 
@@ -525,7 +529,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     #[DataProvider('acceptedContractorsOnCreate')]
     public function testContractorFieldsAcceptedOnCreate(array $contractor, string $expectedName): void
     {
-        $existing = $this->createContractor();
+        $existing = $this->createContractor('Contractor rules test');
         $contractor = $this->withExistingId($contractor, $existing);
 
         foreach ($this->validContractorlessPayloads() as $uri => $valid) {
@@ -573,7 +577,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     #[DataProvider('refusedContractorsOnUpdate')]
     public function testContractorFieldsRefusedOnUpdate(array $contractor, array $expected): void
     {
-        $existing = $this->createContractor();
+        $existing = $this->createContractor('Contractor rules test');
         $contractor = $this->withExistingId($contractor, $existing);
 
         foreach ($this->recordsWithContractor($existing) as $uri) {
@@ -630,9 +634,8 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     #[DataProvider('acceptedContractorsOnUpdate')]
     public function testContractorFieldsAcceptedOnUpdate(array $contractor, string $expectedName): void
     {
-        $existing = $this->createContractor();
-        $other = new Contractor('Other rules contractor');
-        $this->em()->persist($other);
+        $existing = $this->createContractor('Contractor rules test');
+        $other = $this->createContractor('Other rules contractor');
         $this->em()->flush();
         $contractor = $this->withExistingId($contractor, $other);
 
@@ -673,7 +676,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
 
     public function testRecordSentBackAfterReadingItKeepsItsContractor(): void
     {
-        $existing = $this->createContractor();
+        $existing = $this->createContractor('Contractor rules test');
 
         foreach ($this->recordsWithContractor($existing) as $uri) {
             $this->send('PATCH', $uri, [
@@ -699,7 +702,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
         $countBefore = $this->rowCounts();
 
         $this->client->request('POST', $uri, server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/ld+json',
             'CONTENT_TYPE' => 'application/ld+json',
         ], content: json_encode($payload, JSON_THROW_ON_ERROR));
@@ -733,7 +736,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     public function testSearchFiltersRejectInvalidText(string $query, array $expected): void
     {
         $headers = [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/ld+json',
         ];
 
@@ -755,7 +758,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     public function testTooLongSearchTextIsAViolationWithTheLimitsOfEachFilter(): void
     {
         $headers = [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/ld+json',
         ];
         $tooLong = str_repeat('a', 256);
@@ -776,7 +779,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     public function testOneCharacterContractorCanBeCreatedAndFoundFirst(): void
     {
         $headers = [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/ld+json',
         ];
 
@@ -794,7 +797,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     public function testBlankContractorNameIsAViolation(): void
     {
         $this->client->request('POST', '/api/contractors', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/ld+json',
             'CONTENT_TYPE' => 'application/ld+json',
         ], content: json_encode(['name' => ' '], JSON_THROW_ON_ERROR));
@@ -808,7 +811,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     public function testBlankSearchFiltersGetOneViolation(): void
     {
         $headers = [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/ld+json',
         ];
 
@@ -825,7 +828,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     public function testContractorListStillWorksWithoutTheOptionalFilter(): void
     {
         $this->client->request('GET', '/api/contractors', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/ld+json',
         ]);
 
@@ -971,7 +974,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     public function testConstraintWithoutOwnMessageGetsTheSymfonyErrorName(): void
     {
         $this->client->request('GET', '/api/contractors?name=', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/ld+json',
         ]);
 
@@ -1037,7 +1040,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     private function postTransfer(array $payload, string $accept = 'application/ld+json'): void
     {
         $this->client->request('POST', '/api/transfers', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
             'HTTP_ACCEPT' => $accept,
         ], content: json_encode((object) $payload, JSON_THROW_ON_ERROR));
@@ -1050,7 +1053,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     {
         $type = 'PATCH' === $method ? 'application/merge-patch+json' : 'application/ld+json';
         $this->client->request($method, $uri, server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/ld+json',
             'CONTENT_TYPE' => $type,
         ], content: json_encode((object) $payload, JSON_THROW_ON_ERROR));
@@ -1070,15 +1073,6 @@ final class ValidationViolationCodeApiTest extends WebTestCase
             'operationDate' => '2026-05-05',
             'amount' => '-1.00',
         ];
-    }
-
-    private function createContractor(): Contractor
-    {
-        $contractor = new Contractor('Contractor rules test');
-        $this->em()->persist($contractor);
-        $this->em()->flush();
-
-        return $contractor;
     }
 
     /**
@@ -1152,18 +1146,5 @@ final class ValidationViolationCodeApiTest extends WebTestCase
         }
 
         return $counts;
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $this->client->request(
-            'POST',
-            '/api/login_check',
-            server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => 'test@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
-        );
-        self::assertResponseIsSuccessful();
-
-        return self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'token');
     }
 }

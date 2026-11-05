@@ -6,13 +6,11 @@ namespace App\Tests\Api;
 
 use App\Entity\Account;
 use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
 use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\Service\Paginator;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -21,6 +19,8 @@ final class AccountOperationApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use ReadsJsonTrait;
+    use TestDataTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
 
@@ -40,8 +40,8 @@ final class AccountOperationApiTest extends WebTestCase
     {
         $marker = uniqid();
         $account = $this->createAccount();
-        $this->createOperation($account, "Findable {$marker}");
-        $this->createOperation($account, "Other {$marker}");
+        $this->createOperation($account, description: "Findable {$marker}");
+        $this->createOperation($account, description: "Other {$marker}");
 
         $descriptions = $this->collectionDescriptions('/api/account_operations?q='.rawurlencode("Findable {$marker}"));
 
@@ -52,8 +52,8 @@ final class AccountOperationApiTest extends WebTestCase
     {
         $marker = uniqid();
         $account = $this->createAccount();
-        $this->createOperation($account, "Discount 100% {$marker}");
-        $this->createOperation($account, "Discount 1000 {$marker}");
+        $this->createOperation($account, description: "Discount 100% {$marker}");
+        $this->createOperation($account, description: "Discount 1000 {$marker}");
 
         $descriptions = $this->collectionDescriptions('/api/account_operations?q='.rawurlencode('100%'));
 
@@ -65,7 +65,7 @@ final class AccountOperationApiTest extends WebTestCase
     {
         $query = str_repeat('9', 33);
         $description = 'Reference '.$query;
-        $this->createOperation($this->createAccount(), $description);
+        $this->createOperation($this->createAccount(), description: $description);
 
         $descriptions = $this->collectionDescriptions('/api/account_operations?q='.$query);
 
@@ -77,8 +77,8 @@ final class AccountOperationApiTest extends WebTestCase
         $marker = uniqid();
         $accountA = $this->createAccount();
         $accountB = $this->createAccount();
-        $this->createOperation($accountA, "In A {$marker}");
-        $this->createOperation($accountB, "In B {$marker}");
+        $this->createOperation($accountA, description: "In A {$marker}");
+        $this->createOperation($accountB, description: "In B {$marker}");
 
         $descriptions = $this->collectionDescriptions('/api/accounts/'.$accountA->getId().'/operations');
 
@@ -90,9 +90,9 @@ final class AccountOperationApiTest extends WebTestCase
         $account = $this->createAccount();
         $other = $this->createAccount();
         for ($i = 0; $i < Paginator::DEFAULT_PER_PAGE + 2; ++$i) {
-            $this->createOperation($account, "Paged {$i}");
+            $this->createOperation($account, description: "Paged {$i}");
         }
-        $this->createOperation($other, 'Not counted');
+        $this->createOperation($other, description: 'Not counted');
 
         $data = $this->collection('/api/accounts/'.$account->getId().'/operations?page=2');
 
@@ -155,8 +155,8 @@ final class AccountOperationApiTest extends WebTestCase
     public function testSearchSpansAllAccounts(): void
     {
         $marker = uniqid();
-        $this->createOperation($this->createAccount(), "In A {$marker}");
-        $this->createOperation($this->createAccount(), "In B {$marker}");
+        $this->createOperation($this->createAccount(), description: "In A {$marker}");
+        $this->createOperation($this->createAccount(), description: "In B {$marker}");
 
         $descriptions = $this->collectionDescriptions('/api/account_operations?q='.rawurlencode($marker));
 
@@ -168,8 +168,8 @@ final class AccountOperationApiTest extends WebTestCase
     {
         $marker = uniqid();
         $account = $this->createAccount();
-        $this->createOperation($account, "{$matching} {$marker}");
-        $this->createOperation($account, "{$other} {$marker}");
+        $this->createOperation($account, description: "{$matching} {$marker}");
+        $this->createOperation($account, description: "{$other} {$marker}");
 
         $descriptions = $this->collectionDescriptions('/api/account_operations?q='.rawurlencode($query));
 
@@ -302,7 +302,7 @@ final class AccountOperationApiTest extends WebTestCase
     {
         $account = $this->createAccount();
         $other = $this->createAccount();
-        $operation = $this->createOperation($account, 'Stays put '.uniqid());
+        $operation = $this->createOperation($account, description: 'Stays put '.uniqid());
 
         $this->client->request(
             'PATCH',
@@ -322,7 +322,7 @@ final class AccountOperationApiTest extends WebTestCase
     public function testPatchWithANewContractorNameAssignsTheOperationToACreatedContractor(): void
     {
         $account = $this->createAccount();
-        $operation = $this->createOperation($account, 'Keeps its description');
+        $operation = $this->createOperation($account, description: 'Keeps its description');
         $newName = 'Brand new contractor '.uniqid();
 
         $this->client->request(
@@ -345,8 +345,8 @@ final class AccountOperationApiTest extends WebTestCase
     public function testPatchWithTheNameOfAnExistingContractorAssignsThatContractor(): void
     {
         $account = $this->createAccount();
-        $operation = $this->createOperation($account, 'Reassigned');
-        $other = $this->createOperation($account, 'Owner of the other contractor')->getContractor();
+        $operation = $this->createOperation($account, description: 'Reassigned');
+        $other = $this->createOperation($account, description: 'Owner of the other contractor')->getContractor();
 
         $this->client->request(
             'PATCH',
@@ -364,8 +364,8 @@ final class AccountOperationApiTest extends WebTestCase
     public function testPatchWithANewContractorIdAssignsThatContractor(): void
     {
         $account = $this->createAccount();
-        $operation = $this->createOperation($account, 'Reassigned by id');
-        $other = $this->createOperation($account, 'Owner of the other contractor')->getContractor();
+        $operation = $this->createOperation($account, description: 'Reassigned by id');
+        $other = $this->createOperation($account, description: 'Owner of the other contractor')->getContractor();
 
         $this->client->request(
             'PATCH',
@@ -436,7 +436,7 @@ final class AccountOperationApiTest extends WebTestCase
     public function testPatchOfOperationOnHiddenAccountIsStillAllowed(): void
     {
         $account = $this->createAccount();
-        $operation = $this->createOperation($account, 'Before '.uniqid());
+        $operation = $this->createOperation($account, description: 'Before '.uniqid());
         $account->setHidden(true);
         $this->em()->flush();
 
@@ -456,7 +456,7 @@ final class AccountOperationApiTest extends WebTestCase
     public function testDescriptionLongerThan255CharactersIsRejectedWithoutSaving(bool $patch): void
     {
         $account = $this->createAccount();
-        $operation = $patch ? $this->createOperation($account, 'Original') : null;
+        $operation = $patch ? $this->createOperation($account, description: 'Original') : null;
         $before = $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM account_operation ORDER BY id');
 
         $this->writeOperation($account, $operation, ['description' => str_repeat('a', 256)]);
@@ -478,7 +478,7 @@ final class AccountOperationApiTest extends WebTestCase
     public function testDescriptionIsStoredTrimmedAndBlankAsNull(bool $patch, string $sent, ?string $stored): void
     {
         $account = $this->createAccount();
-        $operation = $patch ? $this->createOperation($account, 'Original') : null;
+        $operation = $patch ? $this->createOperation($account, description: 'Original') : null;
 
         $this->writeOperation($account, $operation, ['description' => $sent]);
 
@@ -556,7 +556,7 @@ final class AccountOperationApiTest extends WebTestCase
     public function testPatchWithTheSameAccountIdUpdatesTheOperation(): void
     {
         $account = $this->createAccount();
-        $operation = $this->createOperation($account, 'Before '.uniqid());
+        $operation = $this->createOperation($account, description: 'Before '.uniqid());
 
         $this->client->request(
             'PATCH',
@@ -601,7 +601,7 @@ final class AccountOperationApiTest extends WebTestCase
     #[DataProvider('blankAmounts')]
     public function testPatchWithBlankAmountShowsFieldErrorWithoutChangingOperation(array $amount): void
     {
-        $operation = $this->createOperation($this->createAccount(), 'Original');
+        $operation = $this->createOperation($this->createAccount(), description: 'Original');
         $id = $operation->getId();
         $originalDate = $operation->getOperationDate()->format('Y-m-d');
         $contractorId = $operation->getContractor()->getId();
@@ -724,7 +724,7 @@ final class AccountOperationApiTest extends WebTestCase
     #[DataProvider('invalidAmounts')]
     public function testPatchWithAnInvalidAmountIsUnprocessable(string $amount): void
     {
-        $operation = $this->createOperation($this->createAccount(), 'Keeps its amount');
+        $operation = $this->createOperation($this->createAccount(), description: 'Keeps its amount');
 
         $this->client->request(
             'PATCH',
@@ -763,11 +763,7 @@ final class AccountOperationApiTest extends WebTestCase
         $this->client->request('GET', $uri, server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json']);
         self::assertResponseIsSuccessful();
 
-        $data = self::decodeObject((string) $this->client->getResponse()->getContent());
-        $data['member'] ??= $data['hydra:member'] ?? null;
-        $data['view'] ??= $data['hydra:view'] ?? null;
-
-        return $data;
+        return self::decodeObject((string) $this->client->getResponse()->getContent());
     }
 
     /**
@@ -783,75 +779,5 @@ final class AccountOperationApiTest extends WebTestCase
         }
 
         return $descriptions;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function authHeaders(): array
-    {
-        return ['HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken()];
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $this->client->request(
-            'POST',
-            '/api/login_check',
-            server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => 'test@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
-        );
-
-        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-        if (!is_array($data) || !is_string($data['token'] ?? null)) {
-            throw new \RuntimeException('Could not obtain a JWT token in the test.');
-        }
-
-        return $data['token'];
-    }
-
-    private function createAccount(): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currency = $this->em()->getRepository(Currency::class)->find('PLN');
-        if (null === $currency) {
-            $currency = new Currency('PLN');
-            $this->em()->persist($currency);
-        }
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function createOperation(Account $account, string $description): AccountOperation
-    {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-
-        $operation = new AccountOperation(
-            $account,
-            $contractor,
-            new \DateTimeImmutable(),
-            1000,
-            $account->getCurrency(),
-            description: $description
-        );
-        $this->em()->persist($operation);
-        $this->em()->flush();
-
-        return $operation;
     }
 }

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use App\Entity\Bank;
-use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\Tests\Controller\LogsInTrait;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -16,9 +16,8 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use LogsInTrait;
-
-    private const string VALID_EMAIL = 'test@example.com';
-    private const string VALID_PASSWORD = 'test1234';
+    use TestDataTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
 
@@ -37,17 +36,9 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
 
     public function testChartReturnsDailyWinnersMatchingTheWebChart(): void
     {
-        $bankA = new Bank('History Test Bank A '.uniqid());
-        $bankB = new Bank('History Test Bank B '.uniqid());
-        $this->em()->persist($bankA);
-        $this->em()->persist($bankB);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $chf = $currencyRepository->find('CHF');
-        if (null === $chf) {
-            $chf = new Currency('CHF');
-            $this->em()->persist($chf);
-        }
+        $bankA = $this->createBank('History Test Bank A '.uniqid());
+        $bankB = $this->createBank('History Test Bank B '.uniqid());
+        $chf = $this->currency('CHF');
 
         // The daily winner has a lower rate but a higher ID; selection must match the web chart.
         $rateOne = new CurrencyExchangeRate($bankA, $chf, new \DateTimeImmutable('2026-01-05'), 47000);
@@ -76,7 +67,7 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
         ];
 
         $this->client->request('GET', '/api/currency_exchange_rates/chart', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
         ]);
 
         self::assertResponseIsSuccessful();
@@ -128,26 +119,5 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
         foreach ($bankNames as $bankName) {
             self::assertSame($apiChart[$bankName], $webChart[$bankName]);
         }
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $this->client->request(
-            'POST',
-            '/api/login_check',
-            server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(
-                ['email' => self::VALID_EMAIL, 'password' => self::VALID_PASSWORD],
-                \JSON_THROW_ON_ERROR,
-            ),
-        );
-
-        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
-
-        if (!is_array($data) || !isset($data['token']) || !is_string($data['token'])) {
-            throw new \RuntimeException('Could not obtain a JWT token in the test.');
-        }
-
-        return $data['token'];
     }
 }

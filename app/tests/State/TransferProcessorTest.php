@@ -7,16 +7,12 @@ namespace App\Tests\State;
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\TransferResource;
 use App\Constant\Contractors;
-use App\Entity\Account;
 use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
 use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\Repository\ContractorRepository;
 use App\State\TransferProcessor;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -25,6 +21,7 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 final class TransferProcessorTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private TransferProcessor $processor;
     private ContractorRepository $contractorRepository;
@@ -352,37 +349,6 @@ final class TransferProcessorTest extends KernelTestCase
             return $contractor;
         }
 
-        $contractor = new Contractor(Contractors::SELF_TRANSFER_NAME);
-        $this->em()->persist($contractor);
-        $this->em()->flush();
-
-        return $contractor;
-    }
-
-    private function createAccount(string $currencyCode): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find($currencyCode);
-        if (null === $currency) {
-            $currency = new Currency($currencyCode);
-            $this->em()->persist($currency);
-        }
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
+        return $this->createContractor(Contractors::SELF_TRANSFER_NAME);
     }
 }

@@ -5,14 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use App\Entity\Account;
-use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\Service\AccountOperationFactory;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\MoneyType;
@@ -22,6 +17,7 @@ use Symfony\Component\Form\FormInterface;
 final class AccountOperationFactoryTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private AccountOperationFactory $factory;
 
@@ -60,7 +56,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
     {
         $account = $this->createAccount();
         $contractor = $this->createContractor();
-        $existing = $this->createExistingOperation($account, $contractor, 10000);
+        $existing = $this->createOperation($account, 10000, contractor: $contractor);
 
         $newContractor = $this->createContractor();
         $form = $this->buildSubmittedForm($account, 75.00);
@@ -77,7 +73,7 @@ final class AccountOperationFactoryTest extends KernelTestCase
         $plnAccount = $this->createAccount();
         $chfAccount = $this->createAccount('CHF');
         $contractor = $this->createContractor();
-        $existing = $this->createExistingOperation($plnAccount, $contractor, 10000);
+        $existing = $this->createOperation($plnAccount, 10000, contractor: $contractor);
 
         $form = $this->buildSubmittedForm($chfAccount, 20.00);
         $updated = $this->factory->createOrUpdateAndPersist($existing, $form, $contractor);
@@ -154,57 +150,6 @@ final class AccountOperationFactoryTest extends KernelTestCase
     private function buildSubmittedFormWithoutAccount(): FormInterface
     {
         return $this->buildSubmittedForm(null, 10.00);
-    }
-
-    private function createExistingOperation(Account $account, Contractor $contractor, int $amount): AccountOperation
-    {
-        $operation = new AccountOperation(
-            $account,
-            $contractor,
-            new \DateTimeImmutable(),
-            $amount,
-            $account->getCurrency(),
-        );
-        $this->em()->persist($operation);
-        $this->em()->flush();
-
-        return $operation;
-    }
-
-    private function createAccount(string $currencyCode = 'PLN'): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->findOneBy(['code' => $currencyCode]);
-        if (null === $currency) {
-            $currency = new Currency($currencyCode);
-            $this->em()->persist($currency);
-        }
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function createContractor(): Contractor
-    {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-        $this->em()->flush();
-
-        return $contractor;
     }
 
     private function buildSubmittedFormWithoutOperationDate(Account $account): FormInterface

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
+use App\DataFixtures\AppFixtures;
 use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -40,7 +41,11 @@ final class AuthenticationProblemApiTest extends WebTestCase
     {
         $encoder = self::getContainer()->get('lexik_jwt_authentication.encoder');
         self::assertInstanceOf(JWTEncoderInterface::class, $encoder);
-        $token = $encoder->encode(['username' => 'test@example.com', 'iat' => time() - 7200, 'exp' => time() - 3600]);
+        $token = $encoder->encode([
+            'username' => AppFixtures::TEST_USER_EMAIL,
+            'iat' => time() - 7200,
+            'exp' => time() - 3600,
+        ]);
 
         $this->client->request('GET', '/api/accounts', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
 
@@ -65,7 +70,7 @@ final class AuthenticationProblemApiTest extends WebTestCase
             for ($attempt = 1; $attempt <= 5; ++$attempt) {
                 $this->login('wrong-password-'.$attempt);
             }
-            $this->login('test1234');
+            $this->login(AppFixtures::TEST_USER_PASSWORD);
 
             // The lock lasts 15 minutes, but Symfony's rate limiter rounds the remaining time up to whole seconds
             // from the start of the current second, so a lock set a fraction of a second ago reads 901 s = 16 min.
@@ -124,7 +129,10 @@ final class AuthenticationProblemApiTest extends WebTestCase
             'POST',
             '/api/login_check',
             server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => 'test@example.com', 'password' => $password], JSON_THROW_ON_ERROR),
+            content: json_encode(
+                ['email' => AppFixtures::TEST_USER_EMAIL, 'password' => $password],
+                JSON_THROW_ON_ERROR,
+            ),
         );
     }
 

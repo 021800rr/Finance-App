@@ -13,6 +13,7 @@ use App\Entity\FixedExpense;
 use App\Entity\Household;
 use App\Repository\AccountRepository;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -21,6 +22,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use LogsInTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -61,8 +63,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testSubmittingWithValidContractorCreatesFixedExpenseAndRedirects(): void
     {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Test Contractor '.uniqid());
         $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/fixed-expense');
@@ -85,8 +86,7 @@ final class FixedExpenseControllerTest extends WebTestCase
     #[DataProvider('invalidDays')]
     public function testCreateWithInvalidDayShowsFieldErrorWithoutSaving(string $day, string $message): void
     {
-        $contractor = new Contractor('Invalid day test '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Invalid day test '.uniqid());
         $this->em()->flush();
         $countBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
 
@@ -112,8 +112,7 @@ final class FixedExpenseControllerTest extends WebTestCase
     #[DataProvider('blankAmounts')]
     public function testCreateWithBlankAmountShowsFieldErrorWithoutSaving(array $amount): void
     {
-        $contractor = new Contractor('Blank amount test '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Blank amount test '.uniqid());
         $this->em()->flush();
         $expensesBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
         $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
@@ -142,11 +141,10 @@ final class FixedExpenseControllerTest extends WebTestCase
     #[DataProvider('blankAmounts')]
     public function testEditWithBlankAmountShowsFieldErrorWithoutChangingExpense(array $amount): void
     {
-        $expense = $this->createFixedExpenseInDatabase(15, -12345, 'Original description');
+        $expense = $this->createFixedExpense(15, -12345, description: 'Original description');
         $id = $expense->getId();
         $contractorId = $expense->getContractor()->getId();
-        $otherContractor = new Contractor('Unapplied contractor '.uniqid());
-        $this->em()->persist($otherContractor);
+        $otherContractor = $this->createContractor('Unapplied contractor '.uniqid());
         $this->em()->flush();
         $expensesBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
         $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
@@ -193,8 +191,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testCreateWithTooLongDescriptionShowsFieldErrorWithoutSaving(): void
     {
-        $contractor = new Contractor('Long description test '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Long description test '.uniqid());
         $this->em()->flush();
         $expensesBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
         $crawler = $this->client->request('GET', '/fixed-expense');
@@ -218,8 +215,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testCreateSavesDescriptionOfMaximumLengthAfterTrimming(): void
     {
-        $contractor = new Contractor('Long description test '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Long description test '.uniqid());
         $this->em()->flush();
         $description = str_repeat('ą', 255);
         $crawler = $this->client->request('GET', '/fixed-expense');
@@ -245,7 +241,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testEditWithTooLongDescriptionShowsFieldErrorWithoutChangingExpense(): void
     {
-        $expense = $this->createFixedExpenseInDatabase(15, -12345, 'Original description');
+        $expense = $this->createFixedExpense(15, -12345, description: 'Original description');
         $id = $expense->getId();
         $uri = '/fixed-expense/'.$id.'/edit';
         $crawler = $this->client->request('GET', $uri);
@@ -288,7 +284,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testEditPrefillsExistingValues(): void
     {
-        $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
+        $fixedExpense = $this->createFixedExpense(15, -12345, description: 'Internet subscription');
 
         $this->client->request('GET', '/fixed-expense/'.$fixedExpense->getId().'/edit');
 
@@ -302,7 +298,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testEditWithoutChangesPreservesExistingValues(): void
     {
-        $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
+        $fixedExpense = $this->createFixedExpense(15, -12345, description: 'Internet subscription');
         $fixedExpenseId = $fixedExpense->getId();
         $contractorId = $fixedExpense->getContractor()->getId();
         $countBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
@@ -327,7 +323,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testEditChangingOnlyDayPreservesAmountAndDescription(): void
     {
-        $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
+        $fixedExpense = $this->createFixedExpense(15, -12345, description: 'Internet subscription');
         $fixedExpenseId = $fixedExpense->getId();
 
         $crawler = $this->client->request('GET', '/fixed-expense/'.$fixedExpenseId.'/edit');
@@ -347,7 +343,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testEditInvalidSubmissionKeepsSubmittedValuesAndDoesNotUpdateExpense(): void
     {
-        $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
+        $fixedExpense = $this->createFixedExpense(15, -12345, description: 'Internet subscription');
         $fixedExpenseId = $fixedExpense->getId();
 
         $crawler = $this->client->request('GET', '/fixed-expense/'.$fixedExpenseId.'/edit');
@@ -376,7 +372,7 @@ final class FixedExpenseControllerTest extends WebTestCase
     #[DataProvider('invalidDays')]
     public function testEditWithInvalidDayShowsFieldErrorWithoutChangingExpense(string $day, string $message): void
     {
-        $fixedExpense = $this->createFixedExpenseInDatabase(15, -12345, 'Internet subscription');
+        $fixedExpense = $this->createFixedExpense(15, -12345, description: 'Internet subscription');
         $id = $fixedExpense->getId();
         $countBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
 
@@ -416,10 +412,9 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testEditUpdatesFixedExpenseAndRedirects(): void
     {
-        $fixedExpense = $this->createFixedExpenseInDatabase();
+        $fixedExpense = $this->createFixedExpense(amount: -5000);
 
-        $newContractor = new Contractor('New Contractor '.uniqid());
-        $this->em()->persist($newContractor);
+        $newContractor = $this->createContractor('New Contractor '.uniqid());
         $this->em()->flush();
 
         $crawler = $this->client->request('GET', '/fixed-expense/'.$fixedExpense->getId().'/edit');
@@ -451,7 +446,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testDeleteRejectsInvalidCsrfToken(): void
     {
-        $fixedExpense = $this->createFixedExpenseInDatabase();
+        $fixedExpense = $this->createFixedExpense(amount: -5000);
 
         $this->client->request('POST', '/fixed-expense/'.$fixedExpense->getId().'/delete', [
             '_token' => 'invalid-token',
@@ -462,7 +457,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testDeleteRemovesFixedExpenseWithValidCsrfToken(): void
     {
-        $fixedExpense = $this->createFixedExpenseInDatabase();
+        $fixedExpense = $this->createFixedExpense(amount: -5000);
         $fixedExpenseId = $fixedExpense->getId();
 
         $crawler = $this->client->request('GET', '/fixed-expense');
@@ -490,7 +485,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testPlanCreatesOperationsForNextMonthWithValidCsrfToken(): void
     {
-        $fixedExpense = $this->createFixedExpenseInDatabase();
+        $fixedExpense = $this->createFixedExpense(amount: -5000);
         $mainAccount = $this->em()->getRepository(Account::class)->findOneBy(['isMain' => true]);
         self::assertNotNull($mainAccount, 'Fixtures must provide a main account.');
 
@@ -522,7 +517,7 @@ final class FixedExpenseControllerTest extends WebTestCase
         self::assertNotNull($mainAccount, 'An account must be marked as main in fixtures.');
         $mainAccountId = $mainAccount->getId();
 
-        $fixedExpense = $this->createFixedExpenseInDatabase();
+        $fixedExpense = $this->createFixedExpense(amount: -5000);
 
         $targetMonth = new \DateTimeImmutable('first day of this month')->modify('+1 month');
         $duplicateDate = \DateTimeImmutable::createFromFormat(
@@ -565,7 +560,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testPlanShowsAFlashMessageWhenTheMainAccountIsInAnotherCurrency(): void
     {
-        $this->createFixedExpenseInDatabase();
+        $this->createFixedExpense(amount: -5000);
 
         $chf = $this->em()->getRepository(Currency::class)->find('CHF');
         self::assertNotNull($chf, 'CHF currency must exist in fixtures.');
@@ -599,7 +594,7 @@ final class FixedExpenseControllerTest extends WebTestCase
 
     public function testPlanShowsAFlashMessageAndCreatesNothingWhenTheMainAccountIsHidden(): void
     {
-        $this->createFixedExpenseInDatabase();
+        $this->createFixedExpense(amount: -5000);
 
         $main = $this->em()->getRepository(Account::class)->findOneBy(['isMain' => true]);
         self::assertNotNull($main, 'Fixtures must provide a main account.');
@@ -642,24 +637,5 @@ final class FixedExpenseControllerTest extends WebTestCase
             '#fixed_expense_amount + .invalid-feedback.d-block',
             'Please enter an amount.',
         );
-    }
-
-    private function createFixedExpenseInDatabase(
-        int $day = 10,
-        int $amount = -5000,
-        ?string $description = null,
-    ): FixedExpense {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-
-        $pln = $this->em()->getRepository(Currency::class)->find(Currencies::SETTLEMENT_CURRENCY_CODE);
-        self::assertNotNull($pln, 'PLN currency must exist in fixtures.');
-
-        $fixedExpense = new FixedExpense($contractor, $day, $amount, $pln);
-        $fixedExpense->setDescription($description);
-        $this->em()->persist($fixedExpense);
-        $this->em()->flush();
-
-        return $fixedExpense;
     }
 }

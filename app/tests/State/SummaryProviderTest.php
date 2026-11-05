@@ -6,15 +6,13 @@ namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Get;
 use App\ApiResource\SummaryResource;
-use App\Entity\Account;
-use App\Entity\AccountType;
 use App\Entity\Bank;
 use App\Entity\Currency;
-use App\Entity\CurrencyExchangeRate;
 use App\Entity\Household;
 use App\Repository\AccountRepository;
 use App\State\SummaryProvider;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -22,6 +20,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
 final class SummaryProviderTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private SummaryProvider $provider;
     private RequestStack $requestStack;
@@ -50,8 +49,8 @@ final class SummaryProviderTest extends KernelTestCase
     {
         $visibleNumber = 'VIS-'.uniqid();
         $hiddenNumber = 'HID-'.uniqid();
-        $this->createAccount($visibleNumber, hidden: false);
-        $this->createAccount($hiddenNumber, hidden: true);
+        $this->createAccount(accountNumber: $visibleNumber);
+        $this->createAccount(accountNumber: $hiddenNumber, hidden: true);
 
         $this->pushRequest([]);
 
@@ -66,8 +65,8 @@ final class SummaryProviderTest extends KernelTestCase
     {
         $visibleNumber = 'VIS-'.uniqid();
         $hiddenNumber = 'HID-'.uniqid();
-        $this->createAccount($visibleNumber, hidden: false);
-        $this->createAccount($hiddenNumber, hidden: true);
+        $this->createAccount(accountNumber: $visibleNumber);
+        $this->createAccount(accountNumber: $hiddenNumber, hidden: true);
 
         $this->pushRequest(['showHidden' => 'true']);
 
@@ -86,7 +85,7 @@ final class SummaryProviderTest extends KernelTestCase
     public function testProvideTreatsShowHiddenFalseSameAsOmitted(): void
     {
         $hiddenNumber = 'HID-'.uniqid();
-        $this->createAccount($hiddenNumber, hidden: true);
+        $this->createAccount(accountNumber: $hiddenNumber, hidden: true);
 
         $this->pushRequest(['showHidden' => 'false']);
 
@@ -100,7 +99,7 @@ final class SummaryProviderTest extends KernelTestCase
     {
         $bank = $this->createBank();
         $accountNumber = 'CHF-'.uniqid();
-        $this->createAccount($accountNumber, hidden: false, bank: $bank, currencyCode: 'CHF');
+        $this->createAccount('CHF', bank: $bank, accountNumber: $accountNumber);
         $this->createRate($bank, 'CHF', new \DateTimeImmutable('-10 days'), 40000);
         $this->createRate($bank, 'CHF', new \DateTimeImmutable('-1 day'), 41234);
 
@@ -118,7 +117,7 @@ final class SummaryProviderTest extends KernelTestCase
     public function testProvideReturnsNoRateForPlnAccounts(): void
     {
         $accountNumber = 'PLN-'.uniqid();
-        $this->createAccount($accountNumber, hidden: false);
+        $this->createAccount(accountNumber: $accountNumber);
 
         $this->pushRequest([]);
 
@@ -134,7 +133,7 @@ final class SummaryProviderTest extends KernelTestCase
     public function testProvideReturnsNoRateAndFlagsMissingRateWhenTheBankHasNone(): void
     {
         $accountNumber = 'CHF-'.uniqid();
-        $this->createAccount($accountNumber, hidden: false, currencyCode: 'CHF');
+        $this->createAccount('CHF', accountNumber: $accountNumber);
 
         $this->pushRequest([]);
 
@@ -151,8 +150,8 @@ final class SummaryProviderTest extends KernelTestCase
     {
         $mainNumber = 'MAIN-'.uniqid();
         $otherNumber = 'OTHER-'.uniqid();
-        $main = $this->createAccount($mainNumber, hidden: false);
-        $this->createAccount($otherNumber, hidden: false);
+        $main = $this->createAccount(accountNumber: $mainNumber);
+        $this->createAccount(accountNumber: $otherNumber);
 
         /** @var AccountRepository $accountRepository */
         $accountRepository = self::getContainer()->get(AccountRepository::class);
@@ -227,58 +226,5 @@ final class SummaryProviderTest extends KernelTestCase
         }
 
         return null;
-    }
-
-    private function createBank(): Bank
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-        $this->em()->flush();
-
-        return $bank;
-    }
-
-    private function findOrCreateCurrency(string $code): Currency
-    {
-        $currency = $this->em()->getRepository(Currency::class)->find($code);
-        if (null === $currency) {
-            $currency = new Currency($code);
-            $this->em()->persist($currency);
-        }
-
-        return $currency;
-    }
-
-    private function createRate(Bank $bank, string $currencyCode, \DateTimeImmutable $date, int $rate): void
-    {
-        $this->em()->persist(new CurrencyExchangeRate($bank, $this->findOrCreateCurrency($currencyCode), $date, $rate));
-        $this->em()->flush();
-    }
-
-    private function createAccount(
-        string $accountNumber,
-        bool $hidden,
-        ?Bank $bank = null,
-        string $currencyCode = 'PLN',
-    ): Account {
-        $bank ??= new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currency = $this->findOrCreateCurrency($currencyCode);
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, $accountNumber, $household);
-        $account->setHidden($hidden);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
     }
 }

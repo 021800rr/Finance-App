@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
-use App\Constant\Currencies;
-use App\Entity\Currency;
-use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
 use App\Entity\GoldPrice;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -18,6 +15,7 @@ final class GoldPriceControllerTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use LogsInTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -77,7 +75,7 @@ final class GoldPriceControllerTest extends WebTestCase
 
     public function testIndexSubmittingWithValidDataCreatesPriceAndRedirects(): void
     {
-        $asset = $this->createAssetInDatabase();
+        $asset = $this->createGoldAsset($this->goldForm('sztabka'));
 
         $crawler = $this->client->request('GET', '/gold-prices');
         $form = $crawler->filter('#gold_price_form button[type="submit"]')->form();
@@ -98,7 +96,7 @@ final class GoldPriceControllerTest extends WebTestCase
 
     public function testIndexSubmittingWithNonPositivePriceShowsValidationError(): void
     {
-        $asset = $this->createAssetInDatabase();
+        $asset = $this->createGoldAsset($this->goldForm('sztabka'));
 
         $crawler = $this->client->request('GET', '/gold-prices');
         $form = $crawler->filter('#gold_price_form button[type="submit"]')->form();
@@ -223,33 +221,11 @@ final class GoldPriceControllerTest extends WebTestCase
         self::assertNull($deleted);
     }
 
-    private function createAssetInDatabase(): GoldAsset
-    {
-        $goldFormRepository = $this->em()->getRepository(GoldForm::class);
-        $goldForm = $goldFormRepository->findOneBy(['name' => 'sztabka']);
-        if (null === $goldForm) {
-            $goldForm = new GoldForm('sztabka');
-            $this->em()->persist($goldForm);
-        }
-
-        $asset = new GoldAsset($goldForm, 10000, 'Test');
-        $this->em()->persist($asset);
-        $this->em()->flush();
-
-        return $asset;
-    }
-
     private function createPriceInDatabase(int $priceMinorUnits = 800000): GoldPrice
     {
-        $asset = $this->createAssetInDatabase();
-
-        $pln = $this->em()->getRepository(Currency::class)->find(Currencies::SETTLEMENT_CURRENCY_CODE);
-        self::assertNotNull($pln, 'PLN currency must exist in fixtures.');
-
-        $price = new GoldPrice($asset, new \DateTimeImmutable(), $priceMinorUnits, $pln);
-        $this->em()->persist($price);
-        $this->em()->flush();
-
-        return $price;
+        return $this->createGoldPrice(
+            $this->createGoldAsset($this->goldForm('sztabka')),
+            pricePln: $priceMinorUnits,
+        );
     }
 }

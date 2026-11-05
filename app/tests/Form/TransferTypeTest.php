@@ -4,13 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Form;
 
-use App\Entity\Account;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\Form\TransferType;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -19,6 +15,7 @@ use Symfony\Component\Form\FormInterface;
 final class TransferTypeTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     protected function setUp(): void
     {
@@ -126,32 +123,5 @@ final class TransferTypeTest extends KernelTestCase
         $formFactory = static::getContainer()->get('form.factory');
 
         return $formFactory->create(TransferType::class, null, ['csrf_protection' => false]);
-    }
-
-    private function createAccount(string $currencyCode): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find($currencyCode);
-        if (null === $currency) {
-            $currency = new Currency($currencyCode);
-            $this->em()->persist($currency);
-        }
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
     }
 }

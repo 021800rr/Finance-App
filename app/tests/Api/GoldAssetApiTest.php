@@ -9,6 +9,8 @@ use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\Entity\GoldPrice;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -17,6 +19,8 @@ final class GoldAssetApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use ReadsJsonTrait;
+    use TestDataTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
     private GoldForm $goldForm;
@@ -75,7 +79,7 @@ final class GoldAssetApiTest extends WebTestCase
 
     public function testPatchDescriptionKeepsOuncesAndForm(): void
     {
-        $asset = $this->createAsset();
+        $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
         $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
 
         $this->patch($asset->getId(), ['description' => 'Updated description']);
@@ -97,7 +101,7 @@ final class GoldAssetApiTest extends WebTestCase
 
     public function testPatchUpdatesAllEditableFieldsAndPreservesPriceHistory(): void
     {
-        $asset = $this->createAsset();
+        $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
         $otherForm = $this->em()->getRepository(GoldForm::class)->findOneBy(['name' => 'moneta']);
         self::assertNotNull($otherForm);
         $currency = $this->em()->find(Currency::class, 'PLN');
@@ -138,7 +142,7 @@ final class GoldAssetApiTest extends WebTestCase
 
     public function testPatchOnlyFormKeepsDescriptionAndOunces(): void
     {
-        $asset = $this->createAsset();
+        $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
         $otherForm = $this->em()->getRepository(GoldForm::class)->findOneBy(['name' => 'moneta']);
         self::assertNotNull($otherForm);
 
@@ -155,7 +159,7 @@ final class GoldAssetApiTest extends WebTestCase
 
     public function testEmptyPatchKeepsAllEditableFields(): void
     {
-        $asset = $this->createAsset();
+        $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
         $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
 
         $this->patch($asset->getId(), []);
@@ -173,7 +177,7 @@ final class GoldAssetApiTest extends WebTestCase
     #[DataProvider('validOunces')]
     public function testPatchOnlyOuncesAcceptsBoundsAndKeepsOtherFields(string $ounces, int $storedOunces): void
     {
-        $asset = $this->createAsset('  Original asset  ');
+        $asset = $this->createGoldAsset($this->goldForm, description: '  Original asset  ');
 
         $this->patch($asset->getId(), ['ounces' => $ounces]);
 
@@ -205,7 +209,7 @@ final class GoldAssetApiTest extends WebTestCase
         array $invalid,
         string $field,
     ): void {
-        $asset = $patch ? $this->createAsset() : null;
+        $asset = $patch ? $this->createGoldAsset($this->goldForm, description: 'Original asset') : null;
         $before = $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM gold_asset ORDER BY id');
         $body = $invalid + [
             'formId' => $this->goldForm->getId(),
@@ -261,7 +265,7 @@ final class GoldAssetApiTest extends WebTestCase
     #[DataProvider('writeOperations')]
     public function testDescriptionAllows255CharactersAfterTrimming(bool $patch): void
     {
-        $asset = $patch ? $this->createAsset() : null;
+        $asset = $patch ? $this->createGoldAsset($this->goldForm, description: 'Original asset') : null;
         $description = str_repeat('ą', 255);
         if (null !== $asset) {
             $this->patch($asset->getId(), ['description' => '  '.$description.'  ']);
@@ -290,7 +294,7 @@ final class GoldAssetApiTest extends WebTestCase
     #[DataProvider('invalidFormIds')]
     public function testPatchRejectsUnknownFormWithoutChangingAsset(int $formId): void
     {
-        $asset = $this->createAsset();
+        $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
         $before = $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM gold_asset ORDER BY id');
 
         $this->patch($asset->getId(), ['formId' => $formId, 'description' => 'Must not be saved']);
@@ -328,7 +332,7 @@ final class GoldAssetApiTest extends WebTestCase
 
     public function testPatchRequiresAuthentication(): void
     {
-        $asset = $this->createAsset();
+        $asset = $this->createGoldAsset($this->goldForm, description: 'Original asset');
         $this->client->request('PATCH', '/api/gold_assets/'.$asset->getId(), server: [
             'CONTENT_TYPE' => 'application/merge-patch+json',
         ], content: '{"description":"Must not be saved"}');
@@ -384,7 +388,7 @@ final class GoldAssetApiTest extends WebTestCase
     private function writePost(array $body): void
     {
         $this->client->request('POST', '/api/gold_assets', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
             'HTTP_ACCEPT' => 'application/ld+json',
         ], content: json_encode($body, JSON_THROW_ON_ERROR));
@@ -396,31 +400,9 @@ final class GoldAssetApiTest extends WebTestCase
     private function patch(int $id, array $body): void
     {
         $this->client->request('PATCH', '/api/gold_assets/'.$id, server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/merge-patch+json',
             'HTTP_ACCEPT' => 'application/ld+json',
         ], content: json_encode((object) $body, JSON_THROW_ON_ERROR));
-    }
-
-    private function createAsset(string $description = 'Original asset'): GoldAsset
-    {
-        $asset = new GoldAsset($this->goldForm, 10000, $description);
-        $this->em()->persist($asset);
-        $this->em()->flush();
-
-        return $asset;
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $this->client->request(
-            'POST',
-            '/api/login_check',
-            server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => 'test@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
-        );
-        self::assertResponseIsSuccessful();
-
-        return self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'token');
     }
 }

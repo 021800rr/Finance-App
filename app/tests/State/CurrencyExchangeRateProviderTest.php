@@ -7,17 +7,16 @@ namespace App\Tests\State;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use App\ApiResource\CurrencyExchangeRateResource;
-use App\Entity\Bank;
-use App\Entity\Currency;
-use App\Entity\CurrencyExchangeRate;
 use App\State\CurrencyExchangeRateProvider;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class CurrencyExchangeRateProviderTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private CurrencyExchangeRateProvider $provider;
 
@@ -91,24 +90,5 @@ final class CurrencyExchangeRateProviderTest extends KernelTestCase
         $returnedIds = array_map(static fn (CurrencyExchangeRateResource $r): ?int => $r->id, $result);
         self::assertNotContains($ids[0], $returnedIds);
         self::assertContains($ids[count($ids) - 1], $returnedIds);
-    }
-
-    private function createRate(): CurrencyExchangeRate
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find('CHF');
-        if (null === $currency) {
-            $currency = new Currency('CHF');
-            $this->em()->persist($currency);
-        }
-
-        $rate = new CurrencyExchangeRate($bank, $currency, new \DateTimeImmutable(), 43210);
-        $this->em()->persist($rate);
-        $this->em()->flush();
-
-        return $rate;
     }
 }

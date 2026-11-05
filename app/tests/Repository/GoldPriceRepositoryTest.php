@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace App\Tests\Repository;
 
-use App\Entity\Currency;
 use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
 use App\Entity\GoldPrice;
 use App\Repository\GoldPriceRepository;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use App\Tests\Util\QueryCounter;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class GoldPriceRepositoryTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private GoldPriceRepository $repository;
 
@@ -259,33 +259,5 @@ final class GoldPriceRepositoryTest extends KernelTestCase
 
         self::assertNotNull($reloaded);
         self::assertSame('2026-10-26 00:00:00', $reloaded->getPriceDate()->format('Y-m-d H:i:s'));
-    }
-
-    private function createGoldAsset(): GoldAsset
-    {
-        $goldForm = new GoldForm('Test Form '.uniqid());
-        $this->em()->persist($goldForm);
-
-        $asset = new GoldAsset($goldForm, 10000, 'Test');
-        $this->em()->persist($asset);
-        $this->em()->flush();
-
-        return $asset;
-    }
-
-    private function createGoldPrice(GoldAsset $asset, \DateTimeImmutable $date, int $pricePln): GoldPrice
-    {
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find('PLN');
-        if (null === $currency) {
-            $currency = new Currency('PLN');
-            $this->em()->persist($currency);
-        }
-
-        $price = new GoldPrice($asset, $date, $pricePln, $currency);
-        $this->em()->persist($price);
-        $this->em()->flush();
-
-        return $price;
     }
 }

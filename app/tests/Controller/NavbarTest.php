@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\DataFixtures\AppFixtures;
 use App\Tests\DatabaseTestTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -36,7 +37,7 @@ final class NavbarTest extends WebTestCase
 
         $toggle->text()
             |> trim(...)
-            |> (fn ($x) => self::assertStringNotContainsString('test@example.com', $x));
+            |> (fn ($x) => self::assertStringNotContainsString(AppFixtures::TEST_USER_EMAIL, $x));
         self::assertSelectorExists('.navbar .dropdown-toggle svg');
     }
 
@@ -46,7 +47,7 @@ final class NavbarTest extends WebTestCase
 
         $toggle = $crawler->filter('.navbar .dropdown-toggle');
 
-        self::assertSame('test@example.com', $toggle->attr('aria-label'));
+        self::assertSame(AppFixtures::TEST_USER_EMAIL, $toggle->attr('aria-label'));
     }
 
     public function testUserMenuStillOffersLogout(): void

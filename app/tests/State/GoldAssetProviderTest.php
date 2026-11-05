@@ -8,15 +8,16 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use App\ApiResource\GoldAssetResource;
 use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
 use App\State\GoldAssetProvider;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class GoldAssetProviderTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private GoldAssetProvider $provider;
 
@@ -38,7 +39,7 @@ final class GoldAssetProviderTest extends KernelTestCase
 
     public function testProvideReturnsResourceForExistingId(): void
     {
-        $goldAsset = $this->createGoldAsset('First asset '.uniqid());
+        $goldAsset = $this->createGoldAsset(description: 'First asset '.uniqid());
 
         $result = $this->provider->provide(new Get(), ['id' => $goldAsset->getId()]);
 
@@ -50,8 +51,7 @@ final class GoldAssetProviderTest extends KernelTestCase
 
     public function testProvideReturnsOuncesAsDecimalString(): void
     {
-        $form = new GoldForm('Test Form '.uniqid());
-        $this->em()->persist($form);
+        $form = $this->createGoldForm('Test Form '.uniqid());
         $goldAsset = new GoldAsset($form, 15000, 'Asset '.uniqid());
         $this->em()->persist($goldAsset);
         $this->em()->flush();
@@ -72,8 +72,8 @@ final class GoldAssetProviderTest extends KernelTestCase
 
     public function testProvideCollectionOrdersByIdAscending(): void
     {
-        $first = $this->createGoldAsset('First asset '.uniqid());
-        $second = $this->createGoldAsset('Second asset '.uniqid());
+        $first = $this->createGoldAsset(description: 'First asset '.uniqid());
+        $second = $this->createGoldAsset(description: 'Second asset '.uniqid());
 
         /** @var list<GoldAssetResource> $result */
         $result = $this->provider->provide(new GetCollection());
@@ -85,18 +85,5 @@ final class GoldAssetProviderTest extends KernelTestCase
         self::assertIsInt($positionOfFirst);
         self::assertIsInt($positionOfSecond);
         self::assertLessThan($positionOfSecond, $positionOfFirst);
-    }
-
-    private function createGoldAsset(string $description): GoldAsset
-    {
-        $form = new GoldForm('Test Form '.uniqid());
-        $this->em()->persist($form);
-        $this->em()->flush();
-
-        $goldAsset = new GoldAsset($form, 1, $description);
-        $this->em()->persist($goldAsset);
-        $this->em()->flush();
-
-        return $goldAsset;
     }
 }

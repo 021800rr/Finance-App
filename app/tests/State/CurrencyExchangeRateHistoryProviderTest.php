@@ -6,17 +6,16 @@ namespace App\Tests\State;
 
 use ApiPlatform\Metadata\GetCollection;
 use App\ApiResource\CurrencyExchangeRateResource;
-use App\Entity\Bank;
-use App\Entity\Currency;
-use App\Entity\CurrencyExchangeRate;
 use App\State\CurrencyExchangeRateHistoryProvider;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use App\Tests\Util\QueryCounter;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private CurrencyExchangeRateHistoryProvider $provider;
 
@@ -42,7 +41,7 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
         // One more than findDataForList()'s default limit (Paginator::DEFAULT_PER_PAGE, 20),
         // to prove this provider is not bound by that limit.
         for ($i = 0; $i < 21; ++$i) {
-            $ids[] = $this->createRate(new \DateTimeImmutable("2026-01-{$this->twoDigit($i + 1)}"))->getId();
+            $ids[] = $this->createRate(date: new \DateTimeImmutable("2026-01-{$this->twoDigit($i + 1)}"))->getId();
         }
 
         /** @var list<CurrencyExchangeRateResource> $result */
@@ -56,8 +55,8 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
 
     public function testProvideOrdersByRateDateAscendingThenId(): void
     {
-        $later = $this->createRate(new \DateTimeImmutable('2026-02-01'));
-        $earlier = $this->createRate(new \DateTimeImmutable('2026-01-01'));
+        $later = $this->createRate(date: new \DateTimeImmutable('2026-02-01'));
+        $earlier = $this->createRate(date: new \DateTimeImmutable('2026-01-01'));
 
         /** @var list<CurrencyExchangeRateResource> $result */
         $result = $this->provider->provide(new GetCollection());
@@ -73,8 +72,8 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
 
     public function testProvideExcludesUntrackedCurrencies(): void
     {
-        $tracked = $this->createRate(new \DateTimeImmutable(), 'CHF');
-        $untracked = $this->createRate(new \DateTimeImmutable(), 'DKK');
+        $tracked = $this->createRate(date: new \DateTimeImmutable(), currency: 'CHF');
+        $untracked = $this->createRate(date: new \DateTimeImmutable(), currency: 'DKK');
 
         /** @var list<CurrencyExchangeRateResource> $result */
         $result = $this->provider->provide(new GetCollection());
@@ -88,7 +87,7 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
     {
         // Mapping scalar rows to API resources must not issue additional queries.
         for ($i = 0; $i < 3; ++$i) {
-            $this->createRate(new \DateTimeImmutable("2026-01-{$this->twoDigit($i + 1)}"));
+            $this->createRate(date: new \DateTimeImmutable("2026-01-{$this->twoDigit($i + 1)}"));
         }
         $this->em()->clear();
 
@@ -99,25 +98,6 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
         $this->provider->provide(new GetCollection());
 
         self::assertSame(1, $queryCounter->count, 'Expected exactly one query for history and resource mapping.');
-    }
-
-    private function createRate(\DateTimeImmutable $date, string $currencyCode = 'CHF'): CurrencyExchangeRate
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find($currencyCode);
-        if (null === $currency) {
-            $currency = new Currency($currencyCode);
-            $this->em()->persist($currency);
-        }
-
-        $rate = new CurrencyExchangeRate($bank, $currency, $date, 43210);
-        $this->em()->persist($rate);
-        $this->em()->flush();
-
-        return $rate;
     }
 
     private function twoDigit(int $n): string

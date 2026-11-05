@@ -5,14 +5,15 @@ declare(strict_types=1);
 namespace App\Tests\Repository;
 
 use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
 use App\Repository\GoldAssetRepository;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class GoldAssetRepositoryTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private GoldAssetRepository $repository;
 
@@ -34,9 +35,9 @@ final class GoldAssetRepositoryTest extends KernelTestCase
 
     public function testFindAllOrderedSortsByIdAscending(): void
     {
-        $first = $this->createGoldAsset('First');
-        $second = $this->createGoldAsset('Second');
-        $third = $this->createGoldAsset('Third');
+        $first = $this->createGoldAsset(description: 'First');
+        $second = $this->createGoldAsset(description: 'Second');
+        $third = $this->createGoldAsset(description: 'Third');
 
         $result = $this->repository->findAllOrdered();
 
@@ -54,23 +55,11 @@ final class GoldAssetRepositoryTest extends KernelTestCase
 
     public function testFindAllOrderedIncludesForm(): void
     {
-        $asset = $this->createGoldAsset('Test Description');
+        $asset = $this->createGoldAsset(description: 'Test Description');
 
         $result = $this->repository->findAllOrdered();
 
         self::assertSame($asset->getForm()->getId(), $result[0]->getForm()->getId());
         self::assertSame($asset->getForm()->getName(), $result[0]->getForm()->getName());
-    }
-
-    private function createGoldAsset(string $description): GoldAsset
-    {
-        $goldForm = new GoldForm('Test Form '.uniqid());
-        $this->em()->persist($goldForm);
-
-        $asset = new GoldAsset($goldForm, 10000, $description);
-        $this->em()->persist($asset);
-        $this->em()->flush();
-
-        return $asset;
     }
 }

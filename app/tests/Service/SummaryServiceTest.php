@@ -4,25 +4,19 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
-use App\Entity\Account;
-use App\Entity\AccountOperation;
-use App\Entity\AccountType;
 use App\Entity\Bank;
-use App\Entity\Contractor;
-use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
-use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
-use App\Entity\GoldPrice;
 use App\Entity\Household;
 use App\Service\SummaryService;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use App\ValueObject\Money;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class SummaryServiceTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private SummaryService $summaryService;
 
@@ -52,21 +46,21 @@ final class SummaryServiceTest extends KernelTestCase
 
         $ownFundsBefore = $this->summaryService->getSummary()['byHousehold'][$ownHousehold->getName()];
 
-        $currency = $this->findOrCreateCurrency('PLN');
+        $currency = $this->currency('PLN');
         $contractor = $this->createContractor();
 
         // Bank A: holds both our money and the mother's on separate accounts
         $bankA = $this->createBank();
         $ourAccountInBankA = $this->createAccount(
-            $bankA,
             $currency,
+            $bankA,
             $this->createAccountType(),
             $ownHousehold,
             'OUR-A-'.uniqid(),
         );
         $motherAccountInBankA = $this->createAccount(
-            $bankA,
             $currency,
+            $bankA,
             $this->createAccountType(),
             $excludedHousehold,
             'MOTHER-A-'.uniqid(),
@@ -75,8 +69,8 @@ final class SummaryServiceTest extends KernelTestCase
         // Bank B: only our money
         $bankB = $this->createBank();
         $ourAccountInBankB = $this->createAccount(
-            $bankB,
             $currency,
+            $bankB,
             $this->createAccountType(),
             $ownHousehold,
             'OUR-B-'.uniqid(),
@@ -85,17 +79,17 @@ final class SummaryServiceTest extends KernelTestCase
         // Bank C: only the mother's money
         $bankC = $this->createBank();
         $motherAccountInBankC = $this->createAccount(
-            $bankC,
             $currency,
+            $bankC,
             $this->createAccountType(),
             $excludedHousehold,
             'MOTHER-C-'.uniqid(),
         );
 
-        $this->createOperation($ourAccountInBankA, $contractor, $currency, 100000);
-        $this->createOperation($ourAccountInBankB, $contractor, $currency, 50000);
-        $this->createOperation($motherAccountInBankA, $contractor, $currency, 9999999);
-        $this->createOperation($motherAccountInBankC, $contractor, $currency, 8888888);
+        $this->createOperation($ourAccountInBankA, 100000, contractor: $contractor);
+        $this->createOperation($ourAccountInBankB, 50000, contractor: $contractor);
+        $this->createOperation($motherAccountInBankA, 9999999, contractor: $contractor);
+        $this->createOperation($motherAccountInBankC, 8888888, contractor: $contractor);
 
         $summaryAfter = $this->summaryService->getSummary();
 
@@ -110,12 +104,12 @@ final class SummaryServiceTest extends KernelTestCase
         self::assertNotNull($excludedHousehold, 'Fixtures must provide exactly one non-own-funds household.');
 
         $bank = $this->createBank();
-        $currency = $this->findOrCreateCurrency('PLN');
+        $currency = $this->currency('PLN');
         $accountType = $this->createAccountType();
         $contractor = $this->createContractor();
 
-        $account = $this->createAccount($bank, $currency, $accountType, $excludedHousehold, 'ACC-'.uniqid());
-        $this->createOperation($account, $contractor, $currency, 60000);
+        $account = $this->createAccount($currency, $bank, $accountType, $excludedHousehold, 'ACC-'.uniqid());
+        $this->createOperation($account, 60000, contractor: $contractor);
 
         $summary = $this->summaryService->getSummary();
 
@@ -130,26 +124,24 @@ final class SummaryServiceTest extends KernelTestCase
         $retirementBefore = $this->summaryService->getSummary()['retirementBalanceWithGold'];
 
         $bank = $this->createBank();
-        $currency = $this->findOrCreateCurrency('PLN');
+        $currency = $this->currency('PLN');
         $contractor = $this->createContractor();
 
-        $retirementType = new AccountType('Test Retirement '.uniqid(), true);
-        $this->em()->persist($retirementType);
+        $retirementType = $this->createAccountType('Test Retirement '.uniqid(), true);
 
-        $regularType = new AccountType('Test Regular '.uniqid());
-        $this->em()->persist($regularType);
+        $regularType = $this->createAccountType('Test Regular '.uniqid());
 
         $retirementAccount = $this->createAccount(
-            $bank,
             $currency,
+            $bank,
             $retirementType,
             $ownHousehold,
             'RET-ACC-'.uniqid(),
         );
-        $regularAccount = $this->createAccount($bank, $currency, $regularType, $ownHousehold, 'REG-ACC-'.uniqid());
+        $regularAccount = $this->createAccount($currency, $bank, $regularType, $ownHousehold, 'REG-ACC-'.uniqid());
 
-        $this->createOperation($retirementAccount, $contractor, $currency, 100000);
-        $this->createOperation($regularAccount, $contractor, $currency, 500000);
+        $this->createOperation($retirementAccount, 100000, contractor: $contractor);
+        $this->createOperation($regularAccount, 500000, contractor: $contractor);
 
         $summaryAfter = $this->summaryService->getSummary();
 
@@ -167,15 +159,15 @@ final class SummaryServiceTest extends KernelTestCase
         self::assertNotNull($excludedHousehold, 'Fixtures must provide exactly one non-own-funds household.');
 
         $bank = $this->createBank();
-        $currency = $this->findOrCreateCurrency('PLN');
+        $currency = $this->currency('PLN');
         $contractor = $this->createContractor();
         $sharedType = $this->createAccountType();
 
-        $ourAccount = $this->createAccount($bank, $currency, $sharedType, $ownHousehold, 'OUR-'.uniqid());
-        $motherAccount = $this->createAccount($bank, $currency, $sharedType, $excludedHousehold, 'MOTHER-'.uniqid());
+        $ourAccount = $this->createAccount($currency, $bank, $sharedType, $ownHousehold, 'OUR-'.uniqid());
+        $motherAccount = $this->createAccount($currency, $bank, $sharedType, $excludedHousehold, 'MOTHER-'.uniqid());
 
-        $this->createOperation($ourAccount, $contractor, $currency, 100000);
-        $this->createOperation($motherAccount, $contractor, $currency, 9999999);
+        $this->createOperation($ourAccount, 100000, contractor: $contractor);
+        $this->createOperation($motherAccount, 9999999, contractor: $contractor);
 
         $byType = $this->summaryService->getSummary()['byType'];
 
@@ -190,11 +182,11 @@ final class SummaryServiceTest extends KernelTestCase
         self::assertNotNull($excludedHousehold, 'Fixtures must provide exactly one non-own-funds household.');
 
         $bank = $this->createBank();
-        $currency = $this->findOrCreateCurrency('PLN');
+        $currency = $this->currency('PLN');
         $motherOnlyType = $this->createAccountType();
 
-        $account = $this->createAccount($bank, $currency, $motherOnlyType, $excludedHousehold, 'MOTHER-'.uniqid());
-        $this->createOperation($account, $this->createContractor(), $currency, 60000);
+        $account = $this->createAccount($currency, $bank, $motherOnlyType, $excludedHousehold, 'MOTHER-'.uniqid());
+        $this->createOperation($account, 60000, contractor: $this->createContractor());
 
         self::assertArrayNotHasKey($motherOnlyType->getName(), $this->summaryService->getSummary()['byType']);
     }
@@ -207,18 +199,17 @@ final class SummaryServiceTest extends KernelTestCase
         $retirementBefore = $this->summaryService->getSummary()['retirementBalance'];
 
         $bank = $this->createBank();
-        $currency = $this->findOrCreateCurrency('PLN');
-        $retirementType = new AccountType('Test Retirement '.uniqid(), true);
-        $this->em()->persist($retirementType);
+        $currency = $this->currency('PLN');
+        $retirementType = $this->createAccountType('Test Retirement '.uniqid(), true);
 
         $motherAccount = $this->createAccount(
-            $bank,
             $currency,
+            $bank,
             $retirementType,
             $excludedHousehold,
             'MOTHER-RET-'.uniqid(),
         );
-        $this->createOperation($motherAccount, $this->createContractor(), $currency, 777700);
+        $this->createOperation($motherAccount, 777700, contractor: $this->createContractor());
 
         self::assertTrue($retirementBefore->equals($this->summaryService->getSummary()['retirementBalance']));
     }
@@ -250,8 +241,8 @@ final class SummaryServiceTest extends KernelTestCase
 
     public function testHouseholdTotalsAddUpOwnAccountsAndGoldForOurAndOnlyAccountsForTheMother(): void
     {
-        $ownName = $this->ownHousehold()->getName();
-        $motherName = $this->excludedHousehold()->getName();
+        $ownName = $this->household()->getName();
+        $motherName = $this->household(false)->getName();
         $before = $this->summaryService->getSummary()['byHousehold'];
 
         $this->createMixedHouseholdScenario();
@@ -267,7 +258,7 @@ final class SummaryServiceTest extends KernelTestCase
     public function testRatesByBankReturnsMoneyAtRateScale(): void
     {
         $bank = $this->createBank();
-        $currency = $this->findOrCreateCurrency('CHF');
+        $currency = $this->currency('CHF');
 
         $rate = new CurrencyExchangeRate($bank, $currency, new \DateTimeImmutable(), 41234); // 4.1234 PLN za 1 CHF
         $this->em()->persist($rate);
@@ -291,22 +282,6 @@ final class SummaryServiceTest extends KernelTestCase
         return $after->add($before->negate())->toDecimalString();
     }
 
-    private function ownHousehold(): Household
-    {
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        self::assertNotNull($household, 'Fixtures must provide exactly one own-funds household.');
-
-        return $household;
-    }
-
-    private function excludedHousehold(): Household
-    {
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => false]);
-        self::assertNotNull($household, 'Fixtures must provide exactly one non-own-funds household.');
-
-        return $household;
-    }
-
     /**
      * Own: 1000.00 PLN retirement, 200.00 CHF retirement (rate 4.5) -> (900 PLN), 500.00 PLN regular.
      * Gold worth 8500.00 PLN.
@@ -314,118 +289,43 @@ final class SummaryServiceTest extends KernelTestCase
      */
     private function createMixedHouseholdScenario(): void
     {
-        $own = $this->ownHousehold();
-        $mother = $this->excludedHousehold();
+        $own = $this->household();
+        $mother = $this->household(false);
         $bank = $this->createBank();
-        $pln = $this->findOrCreateCurrency('PLN');
-        $chf = $this->findOrCreateCurrency('CHF');
+        $pln = $this->currency('PLN');
+        $chf = $this->currency('CHF');
         $contractor = $this->createContractor();
 
-        $retirementType = new AccountType('Test Retirement '.uniqid(), true);
-        $this->em()->persist($retirementType);
+        $retirementType = $this->createAccountType(retirement: true);
         $regularType = $this->createAccountType();
-
-        $this->em()->persist(new CurrencyExchangeRate($bank, $chf, new \DateTimeImmutable(), 45000));
+        $this->createRate($bank, $chf, rateToPln: 45000);
 
         $this->createOperation(
-            $this->createAccount($bank, $pln, $retirementType, $own, 'OWN-RET-PLN-'.uniqid()),
-            $contractor,
-            $pln,
+            $this->createAccount($pln, $bank, $retirementType, $own, 'OWN-RET-PLN-'.uniqid()),
             100000,
+            contractor: $contractor,
         );
         $this->createOperation(
-            $this->createAccount($bank, $chf, $retirementType, $own, 'OWN-RET-CHF-'.uniqid()),
-            $contractor,
-            $chf,
+            $this->createAccount($chf, $bank, $retirementType, $own, 'OWN-RET-CHF-'.uniqid()),
             20000,
+            contractor: $contractor,
         );
         $this->createOperation(
-            $this->createAccount($bank, $pln, $regularType, $own, 'OWN-REG-'.uniqid()),
-            $contractor,
-            $pln,
+            $this->createAccount($pln, $bank, $regularType, $own, 'OWN-REG-'.uniqid()),
             50000,
+            contractor: $contractor,
         );
         $this->createOperation(
-            $this->createAccount($bank, $pln, $retirementType, $mother, 'MOTHER-RET-'.uniqid()),
-            $contractor,
-            $pln,
+            $this->createAccount($pln, $bank, $retirementType, $mother, 'MOTHER-RET-'.uniqid()),
             777700,
+            contractor: $contractor,
         );
         $this->createOperation(
-            $this->createAccount($bank, $pln, $regularType, $mother, 'MOTHER-REG-'.uniqid()),
-            $contractor,
-            $pln,
+            $this->createAccount($pln, $bank, $regularType, $mother, 'MOTHER-REG-'.uniqid()),
             333300,
+            contractor: $contractor,
         );
 
-        $goldForm = new GoldForm('test-form-'.uniqid());
-        $this->em()->persist($goldForm);
-        $goldAsset = new GoldAsset($goldForm, 1, 'Test gold '.uniqid());
-        $this->em()->persist($goldAsset);
-        $this->em()->persist(new GoldPrice($goldAsset, new \DateTimeImmutable(), 850000, $pln));
-        $this->em()->flush();
-    }
-
-    private function createBank(): Bank
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        return $bank;
-    }
-
-    private function createAccountType(): AccountType
-    {
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        return $accountType;
-    }
-
-    private function createContractor(): Contractor
-    {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-
-        return $contractor;
-    }
-
-    private function findOrCreateCurrency(string $code): Currency
-    {
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->findOneBy(['code' => $code]);
-        if (null === $currency) {
-            $currency = new Currency($code);
-            $this->em()->persist($currency);
-        }
-
-        return $currency;
-    }
-
-    private function createAccount(
-        Bank $bank,
-        Currency $currency,
-        AccountType $type,
-        Household $household,
-        string $accountNumber,
-    ): Account {
-        $account = new Account($bank, $currency, $type, $accountNumber, $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function createOperation(
-        Account $account,
-        Contractor $contractor,
-        Currency $currency,
-        int $amount,
-    ): AccountOperation {
-        $operation = new AccountOperation($account, $contractor, new \DateTimeImmutable(), $amount, $currency);
-        $this->em()->persist($operation);
-        $this->em()->flush();
-
-        return $operation;
+        $this->createGoldPrice($this->createGoldAsset(ounces: 1), pricePln: 850000);
     }
 }

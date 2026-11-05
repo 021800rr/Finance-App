@@ -6,22 +6,18 @@ namespace App\Tests\Service;
 
 use App\Entity\Account;
 use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\FixedExpense;
-use App\Entity\Household;
 use App\Repository\AccountOperationRepository;
 use App\Repository\AccountRepository;
 use App\Repository\FixedExpenseRepository;
 use App\Service\FixedExpensePlannerService;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class FixedExpensePlannerServiceTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private FixedExpensePlannerService $planner;
     private Account $mainAccount;
@@ -100,12 +96,12 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         $contractor = $this->createContractor();
         $duplicateDate = $this->buildExpectedDate($year, $month, 10);
 
-        $currency = $this->getPlnCurrency();
+        $currency = $this->currency();
         $existingOperation = new AccountOperation($this->mainAccount, $contractor, $duplicateDate, -15000, $currency);
         $this->em()->persist($existingOperation);
         $this->em()->flush();
 
-        $this->createFixedExpenseWithContractor(day: 10, amount: -15000, contractor: $contractor);
+        $this->createFixedExpense(day: 10, amount: -15000, contractor: $contractor, description: 'Test');
 
         $this->assertPlanningIsRefusedWith('/Suspected duplicate/');
     }
@@ -116,12 +112,12 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         $contractor = $this->createContractor();
         $duplicateDate = $this->buildExpectedDate((int) $targetMonth->format('Y'), (int) $targetMonth->format('m'), 20);
         $this->em()->persist(
-            new AccountOperation($this->mainAccount, $contractor, $duplicateDate, -15000, $this->getPlnCurrency()),
+            new AccountOperation($this->mainAccount, $contractor, $duplicateDate, -15000, $this->currency()),
         );
         $this->em()->flush();
         // Checked first, because expenses are planned by day: this one alone could be booked.
         $this->createFixedExpense(day: 5, amount: -5000, description: 'New one');
-        $this->createFixedExpenseWithContractor(day: 20, amount: -15000, contractor: $contractor);
+        $this->createFixedExpense(day: 20, amount: -15000, contractor: $contractor, description: 'Test');
 
         $this->assertPlanningIsRefusedWith('/Suspected duplicate/');
     }
@@ -129,7 +125,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
     public function testPlanNextMonthRefusesAMainAccountInAnotherCurrencyThanTheFixedExpenses(): void
     {
         $this->createFixedExpense(day: 10, amount: -15000, description: 'Rent');
-        $this->markAsMain($this->createAccount(currencyCode: 'CHF'));
+        $this->markAsMain($this->createAccount(currency: 'CHF'));
 
         $this->assertPlanningIsRefusedWith('/is in CHF/');
     }
@@ -137,7 +133,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
     public function testPlanNextMonthRefusesAMainAccountOfAnotherHousehold(): void
     {
         $this->createFixedExpense(day: 10, amount: -15000, description: 'Rent');
-        $this->markAsMain($this->createAccount(ownFunds: false));
+        $this->markAsMain($this->createAccount(household: $this->household(false)));
 
         $this->assertPlanningIsRefusedWith('/only be planned on our own accounts/');
     }
@@ -176,51 +172,6 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         return $date;
     }
 
-    private function createFixedExpense(int $day, int $amount, string $description): FixedExpense
-    {
-        return $this->createFixedExpenseWithContractor($day, $amount, $this->createContractor(), $description);
-    }
-
-    private function createFixedExpenseWithContractor(
-        int $day,
-        int $amount,
-        Contractor $contractor,
-        string $description = 'Test',
-    ): FixedExpense {
-        $fixedExpense = new FixedExpense($contractor, $day, $amount, $this->getPlnCurrency());
-        $fixedExpense->setDescription($description);
-        $this->em()->persist($fixedExpense);
-        $this->em()->flush();
-
-        return $fixedExpense;
-    }
-
-    private function createContractor(): Contractor
-    {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-        $this->em()->flush();
-
-        return $contractor;
-    }
-
-    private function getPlnCurrency(): Currency
-    {
-        return $this->findOrCreateCurrency('PLN');
-    }
-
-    private function findOrCreateCurrency(string $code): Currency
-    {
-        $currency = $this->em()->getRepository(Currency::class)->find($code);
-        if (null === $currency) {
-            $currency = new Currency($code);
-            $this->em()->persist($currency);
-            $this->em()->flush();
-        }
-
-        return $currency;
-    }
-
     private function markAsMain(Account $account): void
     {
         /** @var AccountRepository $accountRepository */
@@ -240,27 +191,5 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         }
 
         self::assertSame($operationsBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
-    }
-
-    private function createAccount(string $currencyCode = 'PLN', bool $ownFunds = true): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currency = $this->findOrCreateCurrency($currencyCode);
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => $ownFunds]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide the household for this test.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
     }
 }

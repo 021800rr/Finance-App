@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace App\Tests\Api;
 
 use App\Entity\Contractor;
-use App\Entity\Currency;
 use App\Entity\FixedExpense;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -16,6 +17,8 @@ final class FixedExpenseApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use ReadsJsonTrait;
+    use TestDataTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
 
@@ -33,13 +36,12 @@ final class FixedExpenseApiTest extends WebTestCase
 
     public function testPostRejectsDay29WithoutSavingExpense(): void
     {
-        $contractor = new Contractor('Invalid day API test '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Invalid day API test '.uniqid());
         $this->em()->flush();
         $countBefore = $this->em()->getRepository(FixedExpense::class)->count([]);
 
         $this->client->request('POST', '/api/fixed_expenses', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
         ], content: json_encode([
             'contractorId' => $contractor->getId(),
@@ -89,7 +91,7 @@ final class FixedExpenseApiTest extends WebTestCase
             $this->patch($fixedExpense, $body);
         } else {
             $this->client->request('POST', '/api/fixed_expenses', server: [
-                'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+                'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
                 'CONTENT_TYPE' => 'application/ld+json',
             ], content: json_encode($body, JSON_THROW_ON_ERROR));
         }
@@ -166,11 +168,10 @@ final class FixedExpenseApiTest extends WebTestCase
             return;
         }
 
-        $contractor = new Contractor('Description API test '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Description API test '.uniqid());
         $this->em()->flush();
         $this->client->request('POST', '/api/fixed_expenses', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
         ], content: json_encode($body + [
             'contractorId' => $contractor->getId(),
@@ -196,8 +197,7 @@ final class FixedExpenseApiTest extends WebTestCase
     public function testPatchWithTheNameOfAnExistingContractorAssignsThatContractor(): void
     {
         $fixedExpense = $this->createFixedExpense();
-        $existing = new Contractor('Existing '.uniqid());
-        $this->em()->persist($existing);
+        $existing = $this->createContractor('Existing '.uniqid());
         $this->em()->flush();
         $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
 
@@ -213,8 +213,7 @@ final class FixedExpenseApiTest extends WebTestCase
     public function testPatchWithANewContractorIdAssignsThatContractor(): void
     {
         $fixedExpense = $this->createFixedExpense();
-        $other = new Contractor('Other '.uniqid());
-        $this->em()->persist($other);
+        $other = $this->createContractor('Other '.uniqid());
         $this->em()->flush();
 
         $this->patch($fixedExpense, ['contractorId' => $other->getId()]);
@@ -290,37 +289,10 @@ final class FixedExpenseApiTest extends WebTestCase
             'PATCH',
             '/api/fixed_expenses/'.$fixedExpense->getId(),
             server: [
-                'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+                'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
                 'CONTENT_TYPE' => 'application/merge-patch+json',
             ],
             content: json_encode($body, JSON_THROW_ON_ERROR),
         );
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $this->client->request(
-            'POST',
-            '/api/login_check',
-            server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => 'test@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
-        );
-
-        return self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'token');
-    }
-
-    private function createFixedExpense(): FixedExpense
-    {
-        $contractor = new Contractor('Original '.uniqid());
-        $this->em()->persist($contractor);
-
-        $currency = $this->em()->getRepository(Currency::class)->find('PLN');
-        self::assertNotNull($currency);
-
-        $fixedExpense = new FixedExpense($contractor, 10, -15000, $currency);
-        $this->em()->persist($fixedExpense);
-        $this->em()->flush();
-
-        return $fixedExpense;
     }
 }

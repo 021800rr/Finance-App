@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -15,6 +15,7 @@ final class GoldAssetControllerTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use LogsInTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -40,7 +41,7 @@ final class GoldAssetControllerTest extends WebTestCase
 
     public function testIndexSubmittingWithValidDataCreatesAssetAndRedirects(): void
     {
-        $goldForm = $this->getOrCreateGoldForm('sztabka');
+        $goldForm = $this->goldForm('sztabka');
         $description = 'Test sztabka '.uniqid();
 
         $crawler = $this->client->request('GET', '/gold-assets');
@@ -69,7 +70,7 @@ final class GoldAssetControllerTest extends WebTestCase
     #[DataProvider('blankDescriptions')]
     public function testCreateWithBlankDescriptionShowsFieldErrorWithoutSaving(array $description): void
     {
-        $goldForm = $this->getOrCreateGoldForm('sztabka');
+        $goldForm = $this->goldForm('sztabka');
         $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
         $crawler = $this->client->request('GET', '/gold-assets');
         $token = $crawler->filter('#gold_asset_form input[name="gold_asset[_token]"]')->attr('value');
@@ -100,7 +101,7 @@ final class GoldAssetControllerTest extends WebTestCase
     #[DataProvider('blankOunces')]
     public function testCreateWithBlankOuncesShowsFieldErrorWithoutSaving(array $ounces): void
     {
-        $goldForm = $this->getOrCreateGoldForm('sztabka');
+        $goldForm = $this->goldForm('sztabka');
         $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
         $crawler = $this->client->request('GET', '/gold-assets');
         $token = $crawler->filter('#gold_asset_form input[name="gold_asset[_token]"]')->attr('value');
@@ -121,7 +122,7 @@ final class GoldAssetControllerTest extends WebTestCase
 
     public function testIndexSubmittingWithNonPositiveOuncesShowsValidationError(): void
     {
-        $goldForm = $this->getOrCreateGoldForm('sztabka');
+        $goldForm = $this->goldForm('sztabka');
 
         $crawler = $this->client->request('GET', '/gold-assets');
         $form = $crawler->filter('#gold_asset_form button[type="submit"]')->form();
@@ -152,8 +153,8 @@ final class GoldAssetControllerTest extends WebTestCase
 
     public function testEditUpdatesAssetAndRedirects(): void
     {
-        $asset = $this->createAssetInDatabase();
-        $newGoldForm = $this->getOrCreateGoldForm('moneta');
+        $asset = $this->createGoldAsset($this->goldForm('moneta'));
+        $newGoldForm = $this->goldForm('moneta');
         $description = 'Updated description '.uniqid();
 
         $crawler = $this->client->request('GET', '/gold-assets/'.$asset->getId().'/edit');
@@ -181,10 +182,10 @@ final class GoldAssetControllerTest extends WebTestCase
     #[DataProvider('blankDescriptions')]
     public function testEditWithBlankDescriptionShowsFieldErrorWithoutChangingAsset(array $description): void
     {
-        $asset = $this->createAssetInDatabase();
+        $asset = $this->createGoldAsset($this->goldForm('moneta'));
         $id = $asset->getId();
         $originalFormId = $asset->getForm()->getId();
-        $newGoldForm = $this->getOrCreateGoldForm('sztabka');
+        $newGoldForm = $this->goldForm('sztabka');
         $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
         $uri = '/gold-assets/'.$id.'/edit';
         $crawler = $this->client->request('GET', $uri);
@@ -222,10 +223,10 @@ final class GoldAssetControllerTest extends WebTestCase
     #[DataProvider('blankOunces')]
     public function testEditWithBlankOuncesShowsFieldErrorWithoutChangingAsset(array $ounces): void
     {
-        $asset = $this->createAssetInDatabase();
+        $asset = $this->createGoldAsset($this->goldForm('moneta'));
         $id = $asset->getId();
         $originalFormId = $asset->getForm()->getId();
-        $newGoldForm = $this->getOrCreateGoldForm('sztabka');
+        $newGoldForm = $this->goldForm('sztabka');
         $countBefore = $this->em()->getRepository(GoldAsset::class)->count([]);
         $uri = '/gold-assets/'.$id.'/edit';
         $crawler = $this->client->request('GET', $uri);
@@ -285,8 +286,8 @@ final class GoldAssetControllerTest extends WebTestCase
         string $field,
         string $message,
     ): void {
-        $asset = $edit ? $this->createAssetInDatabase() : null;
-        $goldForm = $this->getOrCreateGoldForm('sztabka');
+        $asset = $edit ? $this->createGoldAsset($this->goldForm('moneta')) : null;
+        $goldForm = $this->goldForm('sztabka');
         $uri = null === $asset ? '/gold-assets' : '/gold-assets/'.$asset->getId().'/edit';
         $before = $this->em()->getConnection()->fetchAllAssociative('SELECT * FROM gold_asset ORDER BY id');
         $crawler = $this->client->request('GET', $uri);
@@ -339,8 +340,8 @@ final class GoldAssetControllerTest extends WebTestCase
         string $ounces,
         int $storedOunces,
     ): void {
-        $asset = $edit ? $this->createAssetInDatabase() : null;
-        $goldForm = $this->getOrCreateGoldForm('sztabka');
+        $asset = $edit ? $this->createGoldAsset($this->goldForm('moneta')) : null;
+        $goldForm = $this->goldForm('sztabka');
         $description = str_repeat('ą', 255);
         $uri = null === $asset ? '/gold-assets' : '/gold-assets/'.$asset->getId().'/edit';
         $crawler = $this->client->request('GET', $uri);
@@ -385,7 +386,7 @@ final class GoldAssetControllerTest extends WebTestCase
 
     public function testDeleteRejectsInvalidCsrfToken(): void
     {
-        $asset = $this->createAssetInDatabase();
+        $asset = $this->createGoldAsset($this->goldForm('moneta'));
 
         $this->client->request('POST', '/gold-assets/'.$asset->getId().'/delete', [
             '_token' => 'invalid-token',
@@ -396,7 +397,7 @@ final class GoldAssetControllerTest extends WebTestCase
 
     public function testDeleteRemovesAssetWithValidCsrfToken(): void
     {
-        $asset = $this->createAssetInDatabase();
+        $asset = $this->createGoldAsset($this->goldForm('moneta'));
         $assetId = $asset->getId();
 
         $crawler = $this->client->request('GET', '/gold-assets');
@@ -422,29 +423,5 @@ final class GoldAssetControllerTest extends WebTestCase
             'Please enter the number of ounces.',
         );
         self::assertInputValueSame('gold_asset[ounces]', '');
-    }
-
-    private function getOrCreateGoldForm(string $name): GoldForm
-    {
-        $goldFormRepository = $this->em()->getRepository(GoldForm::class);
-        $goldForm = $goldFormRepository->findOneBy(['name' => $name]);
-        if (null === $goldForm) {
-            $goldForm = new GoldForm($name);
-            $this->em()->persist($goldForm);
-            $this->em()->flush();
-        }
-
-        return $goldForm;
-    }
-
-    private function createAssetInDatabase(): GoldAsset
-    {
-        $goldForm = $this->getOrCreateGoldForm('moneta');
-
-        $asset = new GoldAsset($goldForm, 10000, 'Test');
-        $this->em()->persist($asset);
-        $this->em()->flush();
-
-        return $asset;
     }
 }

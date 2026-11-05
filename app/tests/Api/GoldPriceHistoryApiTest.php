@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use App\Entity\Currency;
-use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
-use App\Entity\GoldPrice;
 use App\Tests\Controller\LogsInTrait;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -18,9 +16,10 @@ final class GoldPriceHistoryApiTest extends WebTestCase
     use DatabaseTestTrait;
     use LogsInTrait;
     use ReadsJsonTrait;
+    use TestDataTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
-    private ?string $token = null;
 
     protected function setUp(): void
     {
@@ -38,13 +37,13 @@ final class GoldPriceHistoryApiTest extends WebTestCase
     {
         $this->logIn();
         // Identical form, weight and description must still produce separate series by asset ID.
-        $assetA = $this->createAsset();
-        $assetB = $this->createAsset();
-        $this->createPrice($assetA, '2026-10-26', 1100000);
-        $latestA = $this->createPrice($assetA, '2026-10-26', 1000001);
-        $this->createPrice($assetB, '2026-10-26', 1200000);
-        $latestB = $this->createPrice($assetB, '2026-10-26', 1300020);
-        $historical = $this->createPrice($assetA, '2026-10-25', 9000001);
+        $assetA = $this->createGoldAsset($this->goldForm('sztabka'), description: 'Same description');
+        $assetB = $this->createGoldAsset($this->goldForm('sztabka'), description: 'Same description');
+        $this->createGoldPrice($assetA, new \DateTimeImmutable('2026-10-26'), 1100000);
+        $latestA = $this->createGoldPrice($assetA, new \DateTimeImmutable('2026-10-26'), 1000001);
+        $this->createGoldPrice($assetB, new \DateTimeImmutable('2026-10-26'), 1200000);
+        $latestB = $this->createGoldPrice($assetB, new \DateTimeImmutable('2026-10-26'), 1300020);
+        $historical = $this->createGoldPrice($assetA, new \DateTimeImmutable('2026-10-25'), 9000001);
 
         $rows = $this->getCollection('/api/gold_prices/chart');
 
@@ -83,13 +82,13 @@ final class GoldPriceHistoryApiTest extends WebTestCase
 
     public function testRecentReturnsLatestTwentyEntriesWhileChartIncludesEveryDay(): void
     {
-        $asset = $this->createAsset();
+        $asset = $this->createGoldAsset($this->goldForm('sztabka'), description: 'Same description');
         $ids = [];
         for ($day = 1; $day <= 21; ++$day) {
             $date = sprintf('2026-01-%02d', $day);
-            $ids[] = $this->createPrice($asset, $date, 100000 + $day)->getId();
+            $ids[] = $this->createGoldPrice($asset, new \DateTimeImmutable($date), 100000 + $day)->getId();
         }
-        $sameDayPrice = $this->createPrice($asset, '2026-01-21', 99000);
+        $sameDayPrice = $this->createGoldPrice($asset, new \DateTimeImmutable('2026-01-21'), 99000);
 
         $list = $this->getCollection('/api/gold_prices/recent');
         $expectedListIds = array_slice(array_reverse([...$ids, $sameDayPrice->getId()]), 0, 20);
@@ -163,46 +162,5 @@ final class GoldPriceHistoryApiTest extends WebTestCase
         $data = self::decodeObject((string) $this->client->getResponse()->getContent());
 
         return self::rowsAt($data, 'member');
-    }
-
-    private function jwt(): string
-    {
-        if (null === $this->token) {
-            $this->client->request(
-                'POST',
-                '/api/login_check',
-                server: ['CONTENT_TYPE' => 'application/json'],
-                content: json_encode(['email' => 'test@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
-            );
-            self::assertResponseIsSuccessful();
-            $data = self::decodeObject((string) $this->client->getResponse()->getContent());
-            $this->token = self::stringAt($data, 'token');
-        }
-
-        return $this->token;
-    }
-
-    private function createAsset(): GoldAsset
-    {
-        $form = $this->em()->getRepository(GoldForm::class)->findOneBy(['name' => 'sztabka']);
-        self::assertNotNull($form);
-
-        $asset = new GoldAsset($form, 10000, 'Same description');
-        $this->em()->persist($asset);
-        $this->em()->flush();
-
-        return $asset;
-    }
-
-    private function createPrice(GoldAsset $asset, string $date, int $minorUnits): GoldPrice
-    {
-        $currency = $this->em()->getRepository(Currency::class)->find('PLN');
-        self::assertNotNull($currency);
-
-        $price = new GoldPrice($asset, new \DateTimeImmutable($date), $minorUnits, $currency);
-        $this->em()->persist($price);
-        $this->em()->flush();
-
-        return $price;
     }
 }

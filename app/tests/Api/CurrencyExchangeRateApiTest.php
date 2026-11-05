@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use App\Entity\Account;
-use App\Entity\AccountType;
 use App\Entity\Bank;
-use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
-use App\Entity\Household;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -19,6 +17,8 @@ final class CurrencyExchangeRateApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use ReadsJsonTrait;
+    use TestDataTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
 
@@ -38,7 +38,7 @@ final class CurrencyExchangeRateApiTest extends WebTestCase
     {
         $countBefore = $this->em()->getRepository(CurrencyExchangeRate::class)->count([]);
 
-        $this->postRate($this->createBank(['CHF']), 'CHF');
+        $this->postRate($this->createBankWithAccounts(['CHF']), 'CHF');
 
         self::assertResponseStatusCodeSame(201);
         self::assertSame($countBefore + 1, $this->em()->getRepository(CurrencyExchangeRate::class)->count([]));
@@ -54,7 +54,7 @@ final class CurrencyExchangeRateApiTest extends WebTestCase
     ): void {
         $countBefore = $this->em()->getRepository(CurrencyExchangeRate::class)->count([]);
 
-        $this->postRate($this->createBank($accountCurrencies, $hidden), 'CHF');
+        $this->postRate($this->createBankWithAccounts($accountCurrencies, $hidden), 'CHF');
 
         self::assertSame(
             ['bankId' => 'This bank has no visible foreign-currency account. Please select another bank.'],
@@ -78,7 +78,7 @@ final class CurrencyExchangeRateApiTest extends WebTestCase
     {
         $countBefore = $this->em()->getRepository(CurrencyExchangeRate::class)->count([]);
 
-        $this->postRate($this->createBank(['CHF']), $currencyCode);
+        $this->postRate($this->createBankWithAccounts(['CHF']), $currencyCode);
 
         self::assertSame(
             ['currencyCode' => 'A rate cannot be added for PLN. Please select another currency.'],
@@ -131,7 +131,7 @@ final class CurrencyExchangeRateApiTest extends WebTestCase
     private function postRate(Bank $bank, string $currencyCode): void
     {
         $this->client->request('POST', '/api/currency_exchange_rates', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
         ], content: json_encode([
             'bankId' => $bank->getId(),
@@ -141,40 +141,15 @@ final class CurrencyExchangeRateApiTest extends WebTestCase
         ], JSON_THROW_ON_ERROR));
     }
 
-    private function obtainJwtToken(): string
-    {
-        $this->client->request(
-            'POST',
-            '/api/login_check',
-            server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => 'test@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
-        );
-        self::assertResponseIsSuccessful();
-
-        return self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'token');
-    }
-
     /**
      * @param list<string> $accountCurrencies
      */
-    private function createBank(array $accountCurrencies, bool $hidden = false): Bank
+    private function createBankWithAccounts(array $accountCurrencies, bool $hidden = false): Bank
     {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        self::assertNotNull($household);
-
+        $bank = $this->createBank();
         foreach ($accountCurrencies as $code) {
-            $currency = $this->em()->find(Currency::class, $code);
-            self::assertNotNull($currency);
-            $type = new AccountType('Test Type '.uniqid());
-            $this->em()->persist($type);
-            $account = new Account($bank, $currency, $type, 'ACC-'.uniqid(), $household);
-            $account->setHidden($hidden);
-            $this->em()->persist($account);
+            $this->createAccount($code, $bank, hidden: $hidden);
         }
-
-        $this->em()->flush();
 
         return $bank;
     }

@@ -7,6 +7,7 @@ namespace App\Tests\Api;
 use App\Entity\Account;
 use App\Entity\Contractor;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
 use App\Tests\LosesContractorRaceTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -17,6 +18,7 @@ final class ContractorApiTest extends WebTestCase
     use DatabaseTestTrait;
     use LosesContractorRaceTrait;
     use ReadsJsonTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
 
@@ -35,7 +37,7 @@ final class ContractorApiTest extends WebTestCase
     #[DataProvider('duplicateNameWhitespace')]
     public function testRepeatedPostReturns409AndPreservesExistingContractor(string $whitespace): void
     {
-        $token = $this->obtainJwtToken();
+        $token = $this->jwt();
         $name = 'API contractor '.uniqid();
         $countBefore = $this->em()->getRepository(Contractor::class)->count([]);
 
@@ -69,7 +71,7 @@ final class ContractorApiTest extends WebTestCase
 
     public function testDuplicateCaughtOnlyByTheDatabaseIsTheSameConflict(): void
     {
-        $token = $this->obtainJwtToken();
+        $token = $this->jwt();
         $name = 'API race '.uniqid();
         $this->loseTheNextContractorRace($this->client);
 
@@ -93,7 +95,7 @@ final class ContractorApiTest extends WebTestCase
             self::assertNotNull($account);
             $record['accountId'] = $account->getId();
         }
-        $token = $this->obtainJwtToken();
+        $token = $this->jwt();
         $name = 'Race in a record '.uniqid();
         $this->loseTheNextContractorRace($this->client);
 
@@ -131,15 +133,5 @@ final class ContractorApiTest extends WebTestCase
         self::assertSame([], $error['params'] ?? null);
         self::assertSame('A contractor with this name already exists.', self::stringAt($error, 'detail'));
         self::assertStringNotContainsString('SQLSTATE', self::stringAt($error, 'detail'));
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $this->client->request('POST', '/api/login_check', server: [
-            'CONTENT_TYPE' => 'application/json',
-        ], content: json_encode(['email' => 'test@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR));
-        self::assertResponseIsSuccessful();
-
-        return self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'token');
     }
 }

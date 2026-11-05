@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
-use App\Entity\Contractor;
 use App\Service\ContractorResolver;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -14,6 +14,7 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 final class ContractorResolverTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private ContractorResolver $resolver;
 
@@ -116,14 +117,5 @@ final class ContractorResolverTest extends KernelTestCase
         $this->expectExceptionMessage('Either contractorId or contractorName is required.');
 
         $this->resolver->resolve(null, null);
-    }
-
-    private function createContractor(): Contractor
-    {
-        $contractor = new Contractor('Resolver test '.uniqid());
-        $this->em()->persist($contractor);
-        $this->em()->flush();
-
-        return $contractor;
     }
 }

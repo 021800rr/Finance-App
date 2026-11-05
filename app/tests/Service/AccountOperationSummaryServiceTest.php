@@ -4,21 +4,16 @@ declare(strict_types=1);
 
 namespace App\Tests\Service;
 
-use App\Entity\Account;
-use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\Service\AccountOperationSummaryService;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use App\ValueObject\Money;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class AccountOperationSummaryServiceTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private AccountOperationSummaryService $summaryService;
 
@@ -36,49 +31,6 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
     {
         parent::tearDown();
         $this->closeEntityManager();
-    }
-
-    private function createAccount(string $currencyCode = 'PLN'): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->findOneBy(['code' => $currencyCode]);
-        if (null === $currency) {
-            $currency = new Currency($currencyCode);
-            $this->em()->persist($currency);
-        }
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function createOperation(
-        Account $account,
-        int $amountMinorUnits,
-        \DateTimeImmutable $date,
-    ): AccountOperation {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-
-        $operation = new AccountOperation($account, $contractor, $date, $amountMinorUnits, $account->getCurrency());
-        $this->em()->persist($operation);
-        $this->em()->flush();
-
-        return $operation;
     }
 
     public function testSaldoAllSumsAllOperationsRegardlessOfDate(): void
@@ -168,14 +120,7 @@ final class AccountOperationSummaryServiceTest extends KernelTestCase
 
     public function testSaldoAllUsesAccountCurrencyForChfAccount(): void
     {
-        $chf = $this->em()->getRepository(Currency::class)->find('CHF');
-        if (null === $chf) {
-            $chf = new Currency('CHF');
-            $this->em()->persist($chf);
-            $this->em()->flush();
-        }
-
-        $account = $this->createAccount(currencyCode: 'CHF');
+        $account = $this->createAccount(currency: 'CHF');
         $this->createOperation($account, 100000, new \DateTimeImmutable('today'));
 
         $summary = $this->summaryService->getBalances($account);

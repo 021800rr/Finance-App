@@ -5,13 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Service;
 
 use App\Constant\Contractors;
-use App\Entity\Account;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\Service\TransferHandler;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
@@ -22,6 +18,7 @@ use Symfony\Component\Form\FormInterface;
 final class TransferHandlerTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private TransferHandler $handler;
     private FormFactoryInterface $formFactory;
@@ -202,39 +199,5 @@ final class TransferHandlerTest extends KernelTestCase
         $form->get('description')->setData(null);
 
         return $form;
-    }
-
-    private function createAccount(string $currencyCode): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currency = $this->findOrCreateCurrency($currencyCode);
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function findOrCreateCurrency(string $code): Currency
-    {
-        $repository = $this->em()->getRepository(Currency::class);
-        $currency = $repository->findOneBy(['code' => $code]);
-        if (null === $currency) {
-            $currency = new Currency($code);
-            $this->em()->persist($currency);
-        }
-
-        return $currency;
     }
 }

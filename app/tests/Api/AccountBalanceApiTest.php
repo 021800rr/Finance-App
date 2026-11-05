@@ -4,14 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use App\Entity\Account;
-use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -19,6 +14,8 @@ final class AccountBalanceApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use ReadsJsonTrait;
+    use TestDataTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
 
@@ -37,9 +34,9 @@ final class AccountBalanceApiTest extends WebTestCase
     public function testBalanceShowsBothSaldosWhenFutureOperationsExist(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 100000, '-3 days');
-        $this->createOperation($account, -5050, 'today');
-        $this->createOperation($account, 3000, '+4 days');
+        $this->createOperation($account, 100000, new \DateTimeImmutable('-3 days'));
+        $this->createOperation($account, -5050, new \DateTimeImmutable('today'));
+        $this->createOperation($account, 3000, new \DateTimeImmutable('+4 days'));
 
         $data = $this->getBalance((string) $account->getId());
 
@@ -53,7 +50,7 @@ final class AccountBalanceApiTest extends WebTestCase
     public function testBalanceHasNoFutureOperationsWhenAllOperationsArePastOrToday(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 12345, '-1 day');
+        $this->createOperation($account, 12345, new \DateTimeImmutable('-1 day'));
 
         $data = $this->getBalance((string) $account->getId());
 
@@ -72,7 +69,7 @@ final class AccountBalanceApiTest extends WebTestCase
     public function testPatchResponseDoesNotCarryBalances(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 1000, 'today');
+        $this->createOperation($account, 1000, new \DateTimeImmutable('today'));
 
         $this->client->request(
             'PATCH',
@@ -94,7 +91,7 @@ final class AccountBalanceApiTest extends WebTestCase
     public function testBalanceFieldsInPatchBodyAreIgnored(): void
     {
         $account = $this->createAccount();
-        $this->createOperation($account, 1000, 'today');
+        $this->createOperation($account, 1000, new \DateTimeImmutable('today'));
 
         $this->client->request(
             'PATCH',
@@ -181,71 +178,5 @@ final class AccountBalanceApiTest extends WebTestCase
         self::assertResponseIsSuccessful();
 
         return self::decodeObject((string) $this->client->getResponse()->getContent());
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function authHeaders(): array
-    {
-        return ['HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken()];
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $this->client->request(
-            'POST',
-            '/api/login_check',
-            server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => 'test@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
-        );
-
-        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-        if (!is_array($data) || !is_string($data['token'] ?? null)) {
-            throw new \RuntimeException('Could not obtain a JWT token in the test.');
-        }
-
-        return $data['token'];
-    }
-
-    private function createAccount(): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currency = $this->em()->getRepository(Currency::class)->find('PLN');
-        if (null === $currency) {
-            $currency = new Currency('PLN');
-            $this->em()->persist($currency);
-        }
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function createOperation(Account $account, int $amount, string $relativeDate): void
-    {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-
-        $this->em()->persist(new AccountOperation(
-            $account,
-            $contractor,
-            new \DateTimeImmutable($relativeDate),
-            $amount,
-            $account->getCurrency(),
-        ));
-        $this->em()->flush();
     }
 }

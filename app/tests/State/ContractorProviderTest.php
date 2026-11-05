@@ -7,15 +7,16 @@ namespace App\Tests\State;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use App\ApiResource\ContractorResource;
-use App\Entity\Contractor;
 use App\State\ContractorProvider;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 final class ContractorProviderTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private ContractorProvider $provider;
 
@@ -69,15 +70,6 @@ final class ContractorProviderTest extends KernelTestCase
         self::assertIsInt($positionOfAlpha);
         self::assertIsInt($positionOfZebra);
         self::assertLessThan($positionOfZebra, $positionOfAlpha);
-    }
-
-    private function createContractor(string $name): Contractor
-    {
-        $contractor = new Contractor($name);
-        $this->em()->persist($contractor);
-        $this->em()->flush();
-
-        return $contractor;
     }
 
     public function testProvideFiltersByPartialNameWhenNameFilterGiven(): void

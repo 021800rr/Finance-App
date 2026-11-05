@@ -7,12 +7,8 @@ namespace App\Tests\Controller;
 use App\Constant\Contractors;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -21,6 +17,7 @@ final class TransferControllerTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use LogsInTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -108,8 +105,7 @@ final class TransferControllerTest extends WebTestCase
 
     public function testSubmittedContractorIsRejectedWithoutCreatingOperations(): void
     {
-        $other = new Contractor('Other contractor '.uniqid());
-        $this->em()->persist($other);
+        $other = $this->createContractor('Other contractor '.uniqid());
         $this->em()->flush();
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
         $crawler = $this->client->request('GET', '/transfer/new');
@@ -178,7 +174,7 @@ final class TransferControllerTest extends WebTestCase
     public function testNewFormOffersOnlyVisibleAccounts(): void
     {
         $visible = $this->createAccount('PLN');
-        $hidden = $this->createHiddenAccount();
+        $hidden = $this->createAccount(hidden: true);
 
         $this->client->request('GET', '/transfer/new');
 
@@ -194,7 +190,7 @@ final class TransferControllerTest extends WebTestCase
         string $field,
         ?string $accountId,
     ): void {
-        $accountId ??= (string) $this->createHiddenAccount()->getId();
+        $accountId ??= (string) $this->createAccount(hidden: true)->getId();
         $data = [
             'fromAccount' => (string) $this->createAccount('PLN')->getId(),
             'toAccount' => (string) $this->createAccount('PLN')->getId(),
@@ -476,41 +472,5 @@ final class TransferControllerTest extends WebTestCase
         $repository = $this->em()->getRepository(AccountOperation::class);
         self::assertSame(-99999999, $repository->findOneBy(['account' => $from])?->getAmount());
         self::assertSame(99999999, $repository->findOneBy(['account' => $to])?->getAmount());
-    }
-
-    private function createHiddenAccount(): Account
-    {
-        $account = $this->createAccount('PLN');
-        $account->setHidden(true);
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function createAccount(string $currencyCode): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find($currencyCode);
-        if (null === $currency) {
-            $currency = new Currency($currencyCode);
-            $this->em()->persist($currency);
-        }
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
     }
 }

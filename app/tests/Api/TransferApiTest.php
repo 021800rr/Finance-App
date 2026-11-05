@@ -7,6 +7,7 @@ namespace App\Tests\Api;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -15,6 +16,7 @@ final class TransferApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use ReadsJsonTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
 
@@ -90,7 +92,7 @@ final class TransferApiTest extends WebTestCase
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
 
         $this->client->request('POST', '/api/transfers', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
         ], content: json_encode([
             'fromAccountId' => $this->account('Bank1-ROR-PLN')->getId(),
@@ -144,7 +146,7 @@ final class TransferApiTest extends WebTestCase
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
 
         $this->client->request('POST', '/api/transfers', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
         ], content: json_encode([
             'fromAccountId' => $this->account('Bank1-ROR-PLN')->getId(),
@@ -178,7 +180,7 @@ final class TransferApiTest extends WebTestCase
     public function testDifferentCurrenciesStillCheckAmountTo(mixed $amountTo, array $expected): void
     {
         $this->client->request('POST', '/api/transfers', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
         ], content: json_encode([
             'fromAccountId' => $this->account('Bank1-ROR-PLN')->getId(),
@@ -330,7 +332,7 @@ final class TransferApiTest extends WebTestCase
     private function transferBetweenIds(?int $fromId, ?int $toId, ?string $description = null): void
     {
         $this->client->request('POST', '/api/transfers', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
         ], content: json_encode([
             'fromAccountId' => $fromId,
@@ -339,19 +341,6 @@ final class TransferApiTest extends WebTestCase
             'amountFrom' => '100.00',
             'description' => $description,
         ], JSON_THROW_ON_ERROR));
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $this->client->request(
-            'POST',
-            '/api/login_check',
-            server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => 'test@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
-        );
-        self::assertResponseIsSuccessful();
-
-        return self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'token');
     }
 
     private function account(string $number): Account

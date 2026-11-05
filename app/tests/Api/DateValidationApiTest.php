@@ -12,6 +12,7 @@ use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\Entity\GoldPrice;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -20,6 +21,7 @@ final class DateValidationApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use ReadsJsonTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
 
@@ -297,18 +299,11 @@ final class DateValidationApiTest extends WebTestCase
      */
     private function requestJson(string $method, string $uri, array $payload): void
     {
-        $this->client->jsonRequest('POST', '/api/login_check', [
-            'email' => 'test@example.com',
-            'password' => 'test1234',
-        ]);
-        self::assertResponseIsSuccessful();
-        $token = self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'token');
-
         $this->client->request(
             $method,
             $uri,
             server: [
-                'HTTP_AUTHORIZATION' => 'Bearer '.$token,
+                'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
                 'CONTENT_TYPE' => 'PATCH' === $method ? 'application/merge-patch+json' : 'application/ld+json',
                 'HTTP_ACCEPT' => 'application/ld+json',
             ],

@@ -7,12 +7,9 @@ namespace App\Tests\State;
 use ApiPlatform\Metadata\Patch;
 use App\ApiResource\AccountResource;
 use App\Entity\Account;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\State\AccountProcessor;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -20,6 +17,7 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 final class AccountProcessorTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private AccountProcessor $processor;
 
@@ -128,32 +126,5 @@ final class AccountProcessorTest extends KernelTestCase
         $resource->hidden = $hidden;
 
         return $resource;
-    }
-
-    private function createAccount(): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find('PLN');
-        if (null === $currency) {
-            $currency = new Currency('PLN');
-            $this->em()->persist($currency);
-        }
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
     }
 }

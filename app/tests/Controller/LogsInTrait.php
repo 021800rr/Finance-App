@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\DataFixtures\AppFixtures;
 use App\Entity\User;
 
 /**
@@ -14,9 +15,9 @@ trait LogsInTrait
 {
     protected function logIn(): void
     {
-        $user = $this->em()->getRepository(User::class)->findOneBy(['email' => 'test@example.com']);
+        $user = $this->em()->getRepository(User::class)->findOneBy(['email' => AppFixtures::TEST_USER_EMAIL]);
         if (null === $user) {
-            throw new \LogicException('The test user "test@example.com" does not exist — check AppFixtures.');
+            throw new \LogicException('The test user from AppFixtures does not exist.');
         }
 
         $this->client->loginUser($user);

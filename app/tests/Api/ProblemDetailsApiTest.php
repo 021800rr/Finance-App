@@ -9,6 +9,7 @@ use App\Entity\Contractor;
 use App\Exception\BusinessError;
 use App\OpenApi\ProblemDetailsDecorator;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
 use App\Tests\LosesMainAccountRaceTrait;
 use Doctrine\DBAL\Driver\Exception as DriverException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -28,6 +29,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     use DatabaseTestTrait;
     use LosesMainAccountRaceTrait;
     use ReadsJsonTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
 
@@ -104,7 +106,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     public function testErrorWithoutABusinessCodeIsNamedAfterTheHttpStatus(): void
     {
         $this->client->request('GET', '/api/no_such_address/1', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
         ]);
 
         $problem = $this->assertProblem(404, 'http.not_found', []);
@@ -120,7 +122,7 @@ final class ProblemDetailsApiTest extends WebTestCase
         string $errorCode,
     ): void {
         $this->client->request($method, $uri, server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/merge-patch+json',
         ], content: 'PATCH' === $method ? '{}' : null);
 
@@ -170,7 +172,7 @@ final class ProblemDetailsApiTest extends WebTestCase
         self::assertCount(2, $accounts);
         [$account, $rival] = $accounts;
         $rivalId = $rival->getId();
-        $token = $this->obtainJwtToken();
+        $token = $this->jwt();
         $this->loseTheNextMainAccountRace($this->client, $rivalId);
 
         $this->client->request('PATCH', '/api/accounts/'.$account->getId(), server: [
@@ -188,7 +190,7 @@ final class ProblemDetailsApiTest extends WebTestCase
 
     public function testAnOverlookedDuplicateIsAConflictWithoutSql(): void
     {
-        $token = $this->obtainJwtToken();
+        $token = $this->jwt();
         $this->client->disableReboot();
         $entityManager = $this->client->getContainer()->get('doctrine.orm.entity_manager');
         self::assertInstanceOf(EntityManagerInterface::class, $entityManager);
@@ -231,7 +233,7 @@ final class ProblemDetailsApiTest extends WebTestCase
         self::assertSame('/api/errors/422', $problem['@id'] ?? null);
 
         $this->client->request('GET', '/api/errors/422', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
         ]);
         self::assertResponseIsSuccessful();
     }
@@ -375,7 +377,7 @@ final class ProblemDetailsApiTest extends WebTestCase
         self::assertArrayHasKey('401', self::objectAt($operation, 'responses'));
 
         $this->client->request('GET', '/api/errors/409', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/ld+json',
         ]);
 
@@ -414,7 +416,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     public function testBadBodyOnUpdateIsABadRequest(): void
     {
         $this->client->request('PATCH', '/api/accounts/'.$this->account('Bank1-ROR-PLN')->getId(), server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/merge-patch+json',
         ], content: '5');
 
@@ -432,7 +434,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     public function testMissingRecordStaysNotFoundWhateverTheBody(): void
     {
         $this->client->request('PATCH', '/api/accounts/999999999', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/merge-patch+json',
         ], content: '5');
 
@@ -442,7 +444,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     public function testUnsupportedContentTypeStaysUnsupportedWhateverTheBody(): void
     {
         $this->client->request('POST', '/api/transfers', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'text/plain',
         ], content: '{bad');
 
@@ -452,7 +454,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     public function testOperationWithoutABodyDoesNotRequireOne(): void
     {
         $this->client->request('POST', '/api/fixed_expenses/plan', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
         ]);
 
@@ -463,7 +465,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     public function testUnsupportedResponseFormatIsAProblemWithACode(string $accept): void
     {
         $this->client->request('GET', '/api/accounts', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => $accept,
         ]);
 
@@ -482,7 +484,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     public function testUnsupportedRequestFormatIsAProblemWithACode(): void
     {
         $this->client->request('POST', '/api/transfers', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/xml',
         ], content: '{}');
 
@@ -492,7 +494,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     public function testPlainJsonIsAnsweredWithoutJsonLdFields(): void
     {
         $this->client->request('GET', '/api/accounts/'.$this->account('Bank1-ROR-PLN')->getId(), server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/json',
         ]);
 
@@ -511,7 +513,7 @@ final class ProblemDetailsApiTest extends WebTestCase
         $name = 'Plain JSON '.uniqid();
 
         $this->client->request('POST', '/api/contractors', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/json',
             'CONTENT_TYPE' => 'application/json',
         ], content: json_encode(['name' => $name], JSON_THROW_ON_ERROR));
@@ -526,7 +528,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     public function testPlainJsonErrorKeepsCodesAndViolations(): void
     {
         $this->client->request('POST', '/api/contractors', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/json',
             'CONTENT_TYPE' => 'application/json',
         ], content: '{}');
@@ -755,22 +757,9 @@ final class ProblemDetailsApiTest extends WebTestCase
     private function postTransfer(string $json): void
     {
         $this->client->request('POST', '/api/transfers', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken(),
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
         ], content: $json);
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $this->client->request(
-            'POST',
-            '/api/login_check',
-            server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => 'test@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
-        );
-        self::assertResponseIsSuccessful();
-
-        return self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'token');
     }
 
     private function account(string $number): Account

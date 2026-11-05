@@ -8,6 +8,7 @@ use App\Entity\Bank;
 use App\Entity\Currency;
 use App\Service\CurrencyExchangeRateFactory;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Form\Extension\Core\Type\FormType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
@@ -18,6 +19,7 @@ use Symfony\Component\Form\FormInterface;
 final class CurrencyExchangeRateFactoryTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private CurrencyExchangeRateFactory $factory;
     private FormFactoryInterface $formFactory;
@@ -47,7 +49,7 @@ final class CurrencyExchangeRateFactoryTest extends KernelTestCase
     public function testCreateFromFormBuildsRateWithCorrectMinorUnits(): void
     {
         $bank = $this->createBank();
-        $currency = $this->createCurrency('CHF');
+        $currency = $this->currency('CHF');
 
         $form = $this->buildForm($bank, $currency, new \DateTimeImmutable('2026-01-15'), 4.5);
 
@@ -61,7 +63,7 @@ final class CurrencyExchangeRateFactoryTest extends KernelTestCase
 
     public function testCreateFromFormThrowsWhenBankIsMissing(): void
     {
-        $currency = $this->createCurrency('CHF');
+        $currency = $this->currency('CHF');
         $form = $this->buildForm(null, $currency, new \DateTimeImmutable(), 4.5);
 
         $this->expectException(\InvalidArgumentException::class);
@@ -84,7 +86,7 @@ final class CurrencyExchangeRateFactoryTest extends KernelTestCase
     public function testCreateFromFormThrowsWhenRateDateIsMissing(): void
     {
         $bank = $this->createBank();
-        $currency = $this->createCurrency('CHF');
+        $currency = $this->currency('CHF');
         $form = $this->buildForm($bank, $currency, null, 4.5);
 
         $this->expectException(\InvalidArgumentException::class);
@@ -96,7 +98,7 @@ final class CurrencyExchangeRateFactoryTest extends KernelTestCase
     public function testCreateFromFormHandlesHighPrecisionRate(): void
     {
         $bank = $this->createBank();
-        $currency = $this->createCurrency('CHF');
+        $currency = $this->currency('CHF');
         $form = $this->buildForm($bank, $currency, new \DateTimeImmutable(), 4.1234);
 
         $rate = $this->factory->createFromForm($form);
@@ -127,26 +129,5 @@ final class CurrencyExchangeRateFactoryTest extends KernelTestCase
         $form->get('rateToPln')->setData((string) $rate);
 
         return $form;
-    }
-
-    private function createBank(): Bank
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-        $this->em()->flush();
-
-        return $bank;
-    }
-
-    private function createCurrency(string $code): Currency
-    {
-        $currency = $this->em()->getRepository(Currency::class)->find($code);
-        if (null === $currency) {
-            $currency = new Currency($code);
-            $this->em()->persist($currency);
-            $this->em()->flush();
-        }
-
-        return $currency;
     }
 }

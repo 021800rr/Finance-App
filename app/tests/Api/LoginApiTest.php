@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
+use App\DataFixtures\AppFixtures;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class LoginApiTest extends WebTestCase
 {
-    private const string VALID_EMAIL = 'test@example.com';
-    private const string VALID_PASSWORD = 'test1234';
-
     private KernelBrowser $client;
 
     protected function setUp(): void
@@ -22,7 +20,7 @@ final class LoginApiTest extends WebTestCase
 
     public function testLoginCheckReturnsJwtTokenForValidCredentials(): void
     {
-        $this->requestLogin(self::VALID_EMAIL, self::VALID_PASSWORD);
+        $this->requestLogin(AppFixtures::TEST_USER_EMAIL, AppFixtures::TEST_USER_PASSWORD);
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('"token"', (string) $this->client->getResponse()->getContent());
@@ -30,14 +28,14 @@ final class LoginApiTest extends WebTestCase
 
     public function testLoginCheckWithInvalidCredentialsFails(): void
     {
-        $this->requestLogin(self::VALID_EMAIL, 'wrongpassword');
+        $this->requestLogin(AppFixtures::TEST_USER_EMAIL, 'wrongpassword');
 
         self::assertResponseStatusCodeSame(401);
     }
 
     public function testLoginCheckAcceptsTheEmailInAnyCaseWithSurroundingSpaces(): void
     {
-        $this->requestLogin('  TEST@Example.COM ', self::VALID_PASSWORD);
+        $this->requestLogin('  TEST@Example.COM ', AppFixtures::TEST_USER_PASSWORD);
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('"token"', (string) $this->client->getResponse()->getContent());
@@ -49,10 +47,10 @@ final class LoginApiTest extends WebTestCase
 
         try {
             for ($attempt = 1; $attempt <= 5; ++$attempt) {
-                $this->requestLogin(self::VALID_EMAIL, 'wrong-password-'.$attempt);
+                $this->requestLogin(AppFixtures::TEST_USER_EMAIL, 'wrong-password-'.$attempt);
             }
 
-            $this->requestLogin(self::VALID_EMAIL, self::VALID_PASSWORD);
+            $this->requestLogin(AppFixtures::TEST_USER_EMAIL, AppFixtures::TEST_USER_PASSWORD);
 
             self::assertResponseStatusCodeSame(401);
             self::assertStringNotContainsString('"token"', (string) $this->client->getResponse()->getContent());

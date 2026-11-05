@@ -4,20 +4,19 @@ declare(strict_types=1);
 
 namespace App\Tests\Repository;
 
-use App\Entity\Account;
 use App\Entity\AccountOperation;
-use App\Entity\AccountType;
 use App\Entity\Bank;
-use App\Entity\Contractor;
 use App\Entity\Currency;
 use App\Entity\Household;
 use App\Repository\AccountBalanceReportRepository;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class AccountBalanceReportRepositoryTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private AccountBalanceReportRepository $reportRepository;
 
@@ -130,48 +129,5 @@ final class AccountBalanceReportRepositoryTest extends KernelTestCase
         }
 
         return null;
-    }
-
-    private function createAccount(): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currency = $this->findOrCreateCurrency('PLN');
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function createContractor(): Contractor
-    {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-        $this->em()->flush();
-
-        return $contractor;
-    }
-
-    private function findOrCreateCurrency(string $code): Currency
-    {
-        $repository = $this->em()->getRepository(Currency::class);
-        $currency = $repository->findOneBy(['code' => $code]);
-        if (null === $currency) {
-            $currency = new Currency($code);
-            $this->em()->persist($currency);
-        }
-
-        return $currency;
     }
 }

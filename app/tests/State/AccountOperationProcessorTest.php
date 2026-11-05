@@ -10,14 +10,10 @@ use ApiPlatform\Metadata\Post;
 use App\ApiResource\AccountOperationResource;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\Repository\ContractorRepository;
 use App\State\AccountOperationProcessor;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Events;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -28,6 +24,7 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 final class AccountOperationProcessorTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private AccountOperationProcessor $processor;
     private ContractorRepository $contractorRepository;
@@ -526,41 +523,5 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $resource->description = $description;
 
         return $resource;
-    }
-
-    private function createAccount(string $currencyCode = 'PLN'): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find($currencyCode);
-        if (null === $currency) {
-            $currency = new Currency($currencyCode);
-            $this->em()->persist($currency);
-        }
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function createContractor(string $name): Contractor
-    {
-        $contractor = new Contractor($name);
-        $this->em()->persist($contractor);
-        $this->em()->flush();
-
-        return $contractor;
     }
 }

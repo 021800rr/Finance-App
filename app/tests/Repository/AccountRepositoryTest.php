@@ -5,17 +5,15 @@ declare(strict_types=1);
 namespace App\Tests\Repository;
 
 use App\Entity\Account;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\Repository\AccountRepository;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class AccountRepositoryTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private AccountRepository $accountRepository;
 
@@ -71,39 +69,5 @@ final class AccountRepositoryTest extends KernelTestCase
         $result = $this->accountRepository->findByIdOrNull('999999999');
 
         self::assertNull($result);
-    }
-
-    private function createAccount(): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currency = $this->findOrCreateCurrency('PLN');
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
-    }
-
-    private function findOrCreateCurrency(string $code): Currency
-    {
-        $repository = $this->em()->getRepository(Currency::class);
-        $currency = $repository->findOneBy(['code' => $code]);
-        if (null === $currency) {
-            $currency = new Currency($code);
-            $this->em()->persist($currency);
-        }
-
-        return $currency;
     }
 }

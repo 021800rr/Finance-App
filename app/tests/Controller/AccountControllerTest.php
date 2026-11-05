@@ -6,14 +6,10 @@ namespace App\Tests\Controller;
 
 use App\Entity\Account;
 use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\Repository\AccountRepository;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\LosesMainAccountRaceTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -22,6 +18,7 @@ final class AccountControllerTest extends WebTestCase
     use DatabaseTestTrait;
     use LosesMainAccountRaceTrait;
     use LogsInTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -38,36 +35,9 @@ final class AccountControllerTest extends WebTestCase
         $this->closeEntityManager();
     }
 
-    private function createTestAccount(): Account
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->findOneBy(['code' => 'PLN']);
-        if (null === $currency) {
-            $currency = new Currency('PLN');
-            $this->em()->persist($currency);
-        }
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
-
-        return $account;
-    }
-
     public function testToggleHiddenRejectsInvalidCsrfToken(): void
     {
-        $account = $this->createTestAccount();
+        $account = $this->createAccount();
 
         $this->client->request('POST', '/account/'.$account->getId().'/toggle-hidden', [
             '_token' => 'invalid-token',
@@ -78,7 +48,7 @@ final class AccountControllerTest extends WebTestCase
 
     public function testToggleHiddenTogglesHiddenFlagWithValidToken(): void
     {
-        $account = $this->createTestAccount();
+        $account = $this->createAccount();
         $accountId = $account->getId();
         self::assertFalse($account->isHidden());
 
@@ -101,7 +71,7 @@ final class AccountControllerTest extends WebTestCase
 
     public function testToggleHiddenReturnsNotFoundForNonExistentAccount(): void
     {
-        $this->createTestAccount();
+        $this->createAccount();
 
         $crawler = $this->client->request('GET', '/');
         $csrfToken = $crawler->filter('form[action*="toggle-hidden"] input[name="_token"]')->first()->attr('value');
@@ -122,7 +92,7 @@ final class AccountControllerTest extends WebTestCase
 
     public function testOperationsRendersSuccessfullyForExistingAccount(): void
     {
-        $account = $this->createTestAccount();
+        $account = $this->createAccount();
 
         $this->client->request('GET', '/account/'.$account->getId().'/operations');
 
@@ -131,7 +101,7 @@ final class AccountControllerTest extends WebTestCase
 
     public function testOperationsOffersNewOperationOnlyForVisibleAccount(): void
     {
-        $account = $this->createTestAccount();
+        $account = $this->createAccount();
         $link = 'a[href="/operation/new?account='.$account->getId().'"]';
 
         $this->client->request('GET', '/account/'.$account->getId().'/operations');
@@ -160,7 +130,7 @@ final class AccountControllerTest extends WebTestCase
 
     public function testToggleHiddenPreservesShowHiddenQueryParameter(): void
     {
-        $account = $this->createTestAccount();
+        $account = $this->createAccount();
         $accountId = $account->getId();
 
         $crawler = $this->client->request('GET', '/?show_hidden=1');
@@ -177,7 +147,7 @@ final class AccountControllerTest extends WebTestCase
 
     public function testSetMainRejectsInvalidCsrfToken(): void
     {
-        $account = $this->createTestAccount();
+        $account = $this->createAccount();
 
         $this->client->request('POST', '/account/'.$account->getId().'/set-main', [
             '_token' => 'invalid-token',
@@ -188,13 +158,13 @@ final class AccountControllerTest extends WebTestCase
 
     public function testSetMainMarksAccountAsMainAndUnsetsPrevious(): void
     {
-        $previousMain = $this->createTestAccount();
+        $previousMain = $this->createAccount();
 
         /** @var AccountRepository $accountRepository */
         $accountRepository = self::getContainer()->get(AccountRepository::class);
         $accountRepository->setAsMainAccount($previousMain);
 
-        $newMain = $this->createTestAccount();
+        $newMain = $this->createAccount();
         $newMainId = $newMain->getId();
 
         $crawler = $this->client->request('GET', '/');
@@ -219,9 +189,9 @@ final class AccountControllerTest extends WebTestCase
 
     public function testSetMainLosingARaceShowsAMessageAndKeepsOneMainAccount(): void
     {
-        $account = $this->createTestAccount();
+        $account = $this->createAccount();
         $accountId = $account->getId();
-        $rivalId = $this->createTestAccount()->getId();
+        $rivalId = $this->createAccount()->getId();
 
         $crawler = $this->client->request('GET', '/');
         $csrfToken = $crawler
@@ -253,10 +223,9 @@ final class AccountControllerTest extends WebTestCase
 
     public function testOperationsDisplaysSaldoAndOperationInResponse(): void
     {
-        $account = $this->createTestAccount();
+        $account = $this->createAccount();
 
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
+        $contractor = $this->createContractor('Test Contractor '.uniqid());
 
         $operation = new AccountOperation(
             $account,

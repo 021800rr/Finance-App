@@ -8,13 +8,12 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\GoldAssetResource;
-use App\Entity\Currency;
 use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
-use App\Entity\GoldPrice;
 use App\Repository\GoldAssetRepository;
 use App\State\GoldAssetProcessor;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -23,6 +22,7 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 final class GoldAssetProcessorTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private GoldAssetProcessor $processor;
     private GoldAssetRepository $goldAssetRepository;
@@ -143,15 +143,6 @@ final class GoldAssetProcessorTest extends KernelTestCase
         $this->processor->process($this->resource($form, $ounces), new Post());
     }
 
-    private function createGoldForm(): GoldForm
-    {
-        $form = new GoldForm('Test Form '.uniqid());
-        $this->em()->persist($form);
-        $this->em()->flush();
-
-        return $form;
-    }
-
     private function resource(GoldForm $form, ?string $ounces): GoldAssetResource
     {
         $resource = new GoldAssetResource();
@@ -160,34 +151,5 @@ final class GoldAssetProcessorTest extends KernelTestCase
         $resource->ounces = $ounces;
 
         return $resource;
-    }
-
-    private function createGoldAsset(): GoldAsset
-    {
-        $form = new GoldForm('Test Form '.uniqid());
-        $this->em()->persist($form);
-        $this->em()->flush();
-
-        $goldAsset = new GoldAsset($form, 1, 'Test asset '.uniqid());
-        $this->em()->persist($goldAsset);
-        $this->em()->flush();
-
-        return $goldAsset;
-    }
-
-    private function createGoldPrice(GoldAsset $goldAsset): GoldPrice
-    {
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find('PLN');
-        if (null === $currency) {
-            $currency = new Currency('PLN');
-            $this->em()->persist($currency);
-        }
-
-        $goldPrice = new GoldPrice($goldAsset, new \DateTimeImmutable(), 100000, $currency);
-        $this->em()->persist($goldPrice);
-        $this->em()->flush();
-
-        return $goldPrice;
     }
 }

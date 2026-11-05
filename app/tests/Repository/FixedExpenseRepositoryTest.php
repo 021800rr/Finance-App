@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace App\Tests\Repository;
 
-use App\Constant\Currencies;
-use App\Entity\Contractor;
-use App\Entity\Currency;
 use App\Entity\FixedExpense;
 use App\Repository\FixedExpenseRepository;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class FixedExpenseRepositoryTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private FixedExpenseRepository $repository;
 
@@ -74,24 +73,5 @@ final class FixedExpenseRepositoryTest extends KernelTestCase
         $result = $this->repository->findAllOrdered();
 
         self::assertSame($expense->getContractor()->getId(), $result[0]->getContractor()->getId());
-    }
-
-    private function createFixedExpense(int $day, int $amount): FixedExpense
-    {
-        $contractor = new Contractor('Test Contractor '.uniqid());
-        $this->em()->persist($contractor);
-
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find(Currencies::SETTLEMENT_CURRENCY_CODE);
-        if (null === $currency) {
-            $currency = new Currency(Currencies::SETTLEMENT_CURRENCY_CODE);
-            $this->em()->persist($currency);
-        }
-
-        $fixedExpense = new FixedExpense($contractor, $day, $amount, $currency);
-        $this->em()->persist($fixedExpense);
-        $this->em()->flush();
-
-        return $fixedExpense;
     }
 }

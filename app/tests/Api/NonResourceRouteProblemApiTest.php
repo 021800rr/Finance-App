@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
+use App\DataFixtures\AppFixtures;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -69,7 +70,10 @@ final class NonResourceRouteProblemApiTest extends WebTestCase
 
     public function testValidLoginStillReturnsAToken(): void
     {
-        $this->postLogin('application/json', '{"email":"test@example.com","password":"test1234"}');
+        $this->postLogin('application/json', json_encode([
+            'email' => AppFixtures::TEST_USER_EMAIL,
+            'password' => AppFixtures::TEST_USER_PASSWORD,
+        ], JSON_THROW_ON_ERROR));
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('"token"', (string) $this->client->getResponse()->getContent());

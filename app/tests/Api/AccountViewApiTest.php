@@ -6,14 +6,12 @@ namespace App\Tests\Api;
 
 use App\Entity\Account;
 use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
 use App\Entity\Contractor;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\Service\Paginator;
 use App\Tests\Controller\LogsInTrait;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -29,6 +27,8 @@ final class AccountViewApiTest extends WebTestCase
     use DatabaseTestTrait;
     use LogsInTrait;
     use ReadsJsonTrait;
+    use TestDataTrait;
+    use JwtTrait;
 
     private const int OPERATIONS = Paginator::DEFAULT_PER_PAGE + 5;
 
@@ -141,27 +141,7 @@ final class AccountViewApiTest extends WebTestCase
         );
         self::assertResponseIsSuccessful();
 
-        $data = self::decodeObject((string) $this->client->getResponse()->getContent());
-        $data['member'] ??= $data['hydra:member'] ?? null;
-        $data['view'] ??= $data['hydra:view'] ?? null;
-
-        return $data;
-    }
-
-    private function jwt(): string
-    {
-        $this->client->request(
-            'POST',
-            '/api/login_check',
-            server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => 'test@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
-        );
-        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-        if (!is_array($data) || !is_string($data['token'] ?? null)) {
-            throw new \RuntimeException('Could not obtain a JWT token in the test.');
-        }
-
-        return $data['token'];
+        return self::decodeObject((string) $this->client->getResponse()->getContent());
     }
 
     private function webPage(Account $account, int $page): Crawler
@@ -217,21 +197,9 @@ final class AccountViewApiTest extends WebTestCase
 
     private function createAccountWithHistory(): Account
     {
-        $bank = new Bank('View Bank '.uniqid());
-        $type = new AccountType('View Type '.uniqid());
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => true]);
-        $currency = $this->em()->getRepository(Currency::class)->find('PLN') ?? new Currency('PLN');
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide exactly one own-funds household.');
-        }
-        $this->em()->persist($bank);
-        $this->em()->persist($type);
-        $this->em()->persist($currency);
-        $account = new Account($bank, $currency, $type, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-
-        $contractor = new Contractor('View Contractor '.uniqid());
-        $this->em()->persist($contractor);
+        $account = $this->createAccount();
+        $currency = $account->getCurrency();
+        $contractor = $this->createContractor();
         for ($i = 0; $i < self::OPERATIONS; ++$i) {
             // The two newest operations are dated in the future ("balance today" must differ from "balance").
             $date = new \DateTimeImmutable(sprintf('%+d days', 2 - $i));

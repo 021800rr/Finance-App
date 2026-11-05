@@ -18,6 +18,7 @@ use App\Entity\GoldPrice;
 use App\Entity\Household;
 use App\Tests\Controller\LogsInTrait;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\RouterInterface;
@@ -31,6 +32,7 @@ final class AllRoutesSmokeTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use LogsInTrait;
+    use JwtTrait;
 
     /**
      * Query parameters a route needs before its provider runs at all.
@@ -54,7 +56,7 @@ final class AllRoutesSmokeTest extends WebTestCase
     public function testEveryGetRouteAnswersALoggedInUserWithoutAServerError(): void
     {
         $ids = $this->createOneRecordOfEachKind();
-        $apiHeaders = ['HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken()];
+        $apiHeaders = ['HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt()];
         $this->logIn();
         $router = self::getContainer()->get('router');
         self::assertInstanceOf(RouterInterface::class, $router);
@@ -188,17 +190,5 @@ final class AllRoutesSmokeTest extends WebTestCase
         self::assertNotNull($entity, sprintf('Fixtures must provide %s "%s".', $class, $id));
 
         return $entity;
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $credentials = ['email' => 'test@example.com', 'password' => 'test1234'];
-        $this->client->jsonRequest('POST', '/api/login_check', $credentials);
-        self::assertResponseIsSuccessful();
-        $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-        self::assertIsArray($data);
-        self::assertIsString($data['token'] ?? null);
-
-        return $data['token'];
     }
 }

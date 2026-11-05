@@ -8,12 +8,11 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\FixedExpenseResource;
-use App\Entity\Contractor;
-use App\Entity\Currency;
 use App\Entity\FixedExpense;
 use App\Repository\ContractorRepository;
 use App\State\FixedExpenseProcessor;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Events;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -24,6 +23,7 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 final class FixedExpenseProcessorTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private FixedExpenseProcessor $processor;
     private ContractorRepository $contractorRepository;
@@ -40,8 +40,6 @@ final class FixedExpenseProcessorTest extends KernelTestCase
         /** @var ContractorRepository $contractorRepository */
         $contractorRepository = self::getContainer()->get(ContractorRepository::class);
         $this->contractorRepository = $contractorRepository;
-
-        $this->ensurePlnCurrency();
     }
 
     protected function tearDown(): void
@@ -334,23 +332,5 @@ final class FixedExpenseProcessorTest extends KernelTestCase
         $resource->description = $description;
 
         return $resource;
-    }
-
-    private function createContractor(string $name): Contractor
-    {
-        $contractor = new Contractor($name);
-        $this->em()->persist($contractor);
-        $this->em()->flush();
-
-        return $contractor;
-    }
-
-    private function ensurePlnCurrency(): void
-    {
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        if (null === $currencyRepository->find('PLN')) {
-            $this->em()->persist(new Currency('PLN'));
-            $this->em()->flush();
-        }
     }
 }

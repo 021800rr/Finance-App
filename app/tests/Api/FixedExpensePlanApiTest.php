@@ -6,14 +6,11 @@ namespace App\Tests\Api;
 
 use App\Entity\Account;
 use App\Entity\AccountOperation;
-use App\Entity\AccountType;
-use App\Entity\Bank;
-use App\Entity\Contractor;
-use App\Entity\Currency;
 use App\Entity\FixedExpense;
-use App\Entity\Household;
 use App\Repository\AccountRepository;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -21,6 +18,8 @@ final class FixedExpensePlanApiTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use ReadsJsonTrait;
+    use TestDataTrait;
+    use JwtTrait;
 
     private KernelBrowser $client;
 
@@ -170,72 +169,14 @@ final class FixedExpensePlanApiTest extends WebTestCase
         return $params;
     }
 
-    /**
-     * @return array<string, string>
-     */
-    private function authHeaders(): array
-    {
-        return ['HTTP_AUTHORIZATION' => 'Bearer '.$this->obtainJwtToken()];
-    }
-
-    private function obtainJwtToken(): string
-    {
-        $this->client->request(
-            'POST',
-            '/api/login_check',
-            server: ['CONTENT_TYPE' => 'application/json'],
-            content: json_encode(['email' => 'test@example.com', 'password' => 'test1234'], JSON_THROW_ON_ERROR),
-        );
-
-        $data = self::decodeObject((string) $this->client->getResponse()->getContent());
-
-        return self::stringAt($data, 'token');
-    }
-
     private function createMainAccount(string $currencyCode = 'PLN', bool $ownFunds = true): Account
     {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currency = $this->em()->getRepository(Currency::class)->find($currencyCode);
-        if (null === $currency) {
-            $currency = new Currency($currencyCode);
-            $this->em()->persist($currency);
-        }
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
-        $household = $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => $ownFunds]);
-        if (null === $household) {
-            throw new \RuntimeException('Fixtures must provide the household for this test.');
-        }
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $this->em()->persist($account);
-        $this->em()->flush();
+        $account = $this->createAccount($currencyCode, household: $this->household($ownFunds));
 
         /** @var AccountRepository $accountRepository */
         $accountRepository = self::getContainer()->get(AccountRepository::class);
         $accountRepository->setAsMainAccount($account);
 
         return $account;
-    }
-
-    private function createFixedExpense(int $day, int $amount): FixedExpense
-    {
-        $contractor = new Contractor('Plan Contractor '.uniqid());
-        $this->em()->persist($contractor);
-
-        $currency = $this->em()->getRepository(Currency::class)->find('PLN');
-        if (null === $currency) {
-            throw new \RuntimeException('PLN currency must exist.');
-        }
-
-        $fixedExpense = new FixedExpense($contractor, $day, $amount, $currency);
-        $this->em()->persist($fixedExpense);
-        $this->em()->flush();
-
-        return $fixedExpense;
     }
 }

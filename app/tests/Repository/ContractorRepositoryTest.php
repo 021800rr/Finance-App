@@ -7,11 +7,13 @@ namespace App\Tests\Repository;
 use App\Entity\Contractor;
 use App\Repository\ContractorRepository;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class ContractorRepositoryTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private ContractorRepository $repository;
 
@@ -197,14 +199,5 @@ final class ContractorRepositoryTest extends KernelTestCase
         self::assertFalse(
             (bool) array_filter($names, static fn (string $name) => str_starts_with($name, 'Aaa-Zdrowie')),
         );
-    }
-
-    private function createContractor(string $name): Contractor
-    {
-        $contractor = new Contractor($name);
-        $this->em()->persist($contractor);
-        $this->em()->flush();
-
-        return $contractor;
     }
 }

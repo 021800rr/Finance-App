@@ -9,12 +9,14 @@ use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\Repository\CurrencyExchangeRateRepository;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use App\Tests\Util\QueryCounter;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
 {
     use DatabaseTestTrait;
+    use TestDataTrait;
 
     private CurrencyExchangeRateRepository $repository;
 
@@ -36,16 +38,10 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
 
     public function testFetchSummaryReturnsExpectedShape(): void
     {
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->findOneBy(['code' => 'CHF']);
-        if (null === $currency) {
-            $currency = new Currency('CHF');
-            $this->em()->persist($currency);
-        }
+        $currency = $this->currency('CHF');
 
         $testBankName = 'Test Bank '.uniqid();
-        $bank = new Bank($testBankName);
-        $this->em()->persist($bank);
+        $bank = $this->createBank($testBankName);
 
         $oldRate = new CurrencyExchangeRate($bank, $currency, new \DateTimeImmutable('-2 days'), 400);
         $this->em()->persist($oldRate);
@@ -65,7 +61,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
     public function testFindDataForListReturnsResultsOrderedByDateThenIdDescending(): void
     {
         $bank = $this->createBank();
-        $currency = $this->findOrCreateCurrency('CHF');
+        $currency = $this->currency('CHF');
 
         $day = new \DateTimeImmutable('2026-10-26');
         $first = $this->createRate($bank, $currency, $day, 45000);
@@ -84,8 +80,8 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
     {
         $bankA = $this->createBank();
         $bankB = $this->createBank();
-        $chf = $this->findOrCreateCurrency('CHF');
-        $eur = $this->findOrCreateCurrency('EUR');
+        $chf = $this->currency('CHF');
+        $eur = $this->currency('EUR');
         $day = new \DateTimeImmutable('2026-10-26');
 
         $this->createRate($bankA, $chf, $day, 45000);
@@ -108,7 +104,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
     public function testFindDataForListRespectsDefaultLimit(): void
     {
         $bank = $this->createBank();
-        $currency = $this->findOrCreateCurrency('CHF');
+        $currency = $this->currency('CHF');
 
         for ($i = 0; $i < 25; ++$i) {
             $this->createRate($bank, $currency, new \DateTimeImmutable("-{$i} days"), 400 + $i);
@@ -122,7 +118,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
     public function testFindDataForListRespectsExplicitLimit(): void
     {
         $bank = $this->createBank();
-        $currency = $this->findOrCreateCurrency('CHF');
+        $currency = $this->currency('CHF');
 
         for ($i = 0; $i < 15; ++$i) {
             $this->createRate($bank, $currency, new \DateTimeImmutable("-{$i} days"), 400 + $i);
@@ -141,7 +137,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         for ($i = 0; $i < 3; ++$i) {
             $this->createRate(
                 $this->createBank(),
-                $this->findOrCreateCurrency('CHF'),
+                $this->currency('CHF'),
                 new \DateTimeImmutable("-{$i} days"),
                 rateToPln: 400 + $i);
         }
@@ -168,8 +164,8 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
     public function testFindAllHistoricalRatesReturnsOnlyChfRates(): void
     {
         $bank = $this->createBank();
-        $chf = $this->findOrCreateCurrency('CHF');
-        $eur = $this->findOrCreateCurrency('EUR');
+        $chf = $this->currency('CHF');
+        $eur = $this->currency('EUR');
 
         $tracked = $this->createRate($bank, $chf, new \DateTimeImmutable('-1 day'), 45500);
         $this->createRate($bank, $eur, new \DateTimeImmutable('-1 day'), 42000);
@@ -183,7 +179,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
     public function testFindAllHistoricalRatesReturnsScalarRowsWithMinorUnits(): void
     {
         $bank = $this->createBank();
-        $currency = $this->findOrCreateCurrency('CHF');
+        $currency = $this->currency('CHF');
         $date = new \DateTimeImmutable('-1 day');
 
         $rate = $this->createRate($bank, $currency, $date, 45500);
@@ -206,7 +202,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
         for ($i = 0; $i < 3; ++$i) {
             $this->createRate(
                 $this->createBank(),
-                $this->findOrCreateCurrency('CHF'),
+                $this->currency('CHF'),
                 new \DateTimeImmutable("-{$i} days"),
                 rateToPln: 400 + $i);
         }
@@ -224,7 +220,7 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
     {
         $rate = $this->createRate(
             $this->createBank(),
-            $this->findOrCreateCurrency('CHF'),
+            $this->currency('CHF'),
             new \DateTimeImmutable('2026-10-26 12:34:56'),
             43210,
         );
@@ -241,40 +237,5 @@ final class CurrencyExchangeRateRepositoryTest extends KernelTestCase
 
         self::assertNotNull($reloaded);
         self::assertSame('2026-10-26 00:00:00', $reloaded->getRateDate()->format('Y-m-d H:i:s'));
-    }
-
-    private function createBank(): Bank
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-        $this->em()->flush();
-
-        return $bank;
-    }
-
-    private function findOrCreateCurrency(string $code): Currency
-    {
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->findOneBy(['code' => $code]);
-        if (null === $currency) {
-            $currency = new Currency($code);
-            $this->em()->persist($currency);
-            $this->em()->flush();
-        }
-
-        return $currency;
-    }
-
-    private function createRate(
-        Bank $bank,
-        Currency $currency,
-        \DateTimeImmutable $date,
-        int $rateToPln,
-    ): CurrencyExchangeRate {
-        $rate = new CurrencyExchangeRate($bank, $currency, $date, $rateToPln);
-        $this->em()->persist($rate);
-        $this->em()->flush();
-
-        return $rate;
     }
 }

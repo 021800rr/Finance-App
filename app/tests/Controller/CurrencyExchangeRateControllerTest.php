@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\Account;
-use App\Entity\AccountType;
 use App\Entity\Bank;
 use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\Entity\Household;
 use App\Tests\DatabaseTestTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -19,6 +19,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
 {
     use DatabaseTestTrait;
     use LogsInTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -54,8 +55,8 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
     {
         $bankA = $this->createBank();
         $bankB = $this->createBank();
-        $chf = $this->getOrCreateCurrency('CHF');
-        $eur = $this->getOrCreateCurrency('EUR');
+        $chf = $this->currency('CHF');
+        $eur = $this->currency('EUR');
 
         foreach ([
             [$bankA, $chf, '2026-10-26', 45000],
@@ -83,7 +84,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
     public function testIndexSubmittingWithValidDataCreatesRateAndRedirects(): void
     {
         $bank = $this->createBankWithForeignCurrencyAccount();
-        $chf = $this->getOrCreateCurrency('CHF');
+        $chf = $this->currency('CHF');
 
         $crawler = $this->client->request('GET', '/rate');
         $form = $crawler->filter('#rate_form button[type="submit"]')->form();
@@ -106,7 +107,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
     public function testIndexSubmittingWithNonPositiveRateShowsValidationError(): void
     {
         $bank = $this->createBankWithForeignCurrencyAccount();
-        $chf = $this->getOrCreateCurrency('CHF');
+        $chf = $this->currency('CHF');
 
         $crawler = $this->client->request('GET', '/rate');
         $form = $crawler->selectButton('Add')->form();
@@ -234,7 +235,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
 
     public function testDeleteRejectsInvalidCsrfToken(): void
     {
-        $rate = $this->createRateInDatabase();
+        $rate = $this->createRate(rateToPln: 45000);
 
         $this->client->request('POST', '/rate/'.$rate->getId().'/delete', [
             '_token' => 'invalid-token',
@@ -245,7 +246,7 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
 
     public function testDeleteRemovesRateWithValidCsrfToken(): void
     {
-        $rate = $this->createRateInDatabase();
+        $rate = $this->createRate(rateToPln: 45000);
         $rateId = $rate->getId();
 
         $crawler = $this->client->request('GET', '/rate');
@@ -262,40 +263,6 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
         self::assertNull($deleted);
     }
 
-    private function createBank(): Bank
-    {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-        $this->em()->flush();
-
-        return $bank;
-    }
-
-    private function getOrCreateCurrency(string $code): Currency
-    {
-        $currencyRepository = $this->em()->getRepository(Currency::class);
-        $currency = $currencyRepository->find($code);
-        if (null === $currency) {
-            $currency = new Currency($code);
-            $this->em()->persist($currency);
-            $this->em()->flush();
-        }
-
-        return $currency;
-    }
-
-    private function createRateInDatabase(): CurrencyExchangeRate
-    {
-        $bank = $this->createBank();
-        $chf = $this->getOrCreateCurrency('CHF');
-
-        $rate = new CurrencyExchangeRate($bank, $chf, new \DateTimeImmutable(), 45000);
-        $this->em()->persist($rate);
-        $this->em()->flush();
-
-        return $rate;
-    }
-
     private function createBankWithForeignCurrencyAccount(): Bank
     {
         return $this->createBankWithAccount('CHF');
@@ -303,22 +270,10 @@ final class CurrencyExchangeRateControllerTest extends WebTestCase
 
     private function createBankWithAccount(string $currencyCode, bool $hidden = false): Bank
     {
-        $bank = new Bank('Test Bank '.uniqid());
-        $this->em()->persist($bank);
-
-        $currency = $this->getOrCreateCurrency($currencyCode);
-
-        $accountType = new AccountType('Test Type '.uniqid());
-        $this->em()->persist($accountType);
-
+        $bank = $this->createBank();
         $household = new Household('Test Household '.uniqid());
         $this->em()->persist($household);
-
-        $account = new Account($bank, $currency, $accountType, 'ACC-'.uniqid(), $household);
-        $account->setHidden($hidden);
-        $this->em()->persist($account);
-
-        $this->em()->flush();
+        $this->createAccount($currencyCode, $bank, household: $household, hidden: $hidden);
 
         return $bank;
     }
