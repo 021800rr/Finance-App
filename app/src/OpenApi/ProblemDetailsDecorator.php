@@ -21,75 +21,6 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
 {
     private const array ERROR_SCHEMAS = ['Error', 'Error.jsonld', 'ConstraintViolation', 'ConstraintViolation.jsonld'];
 
-    private const string ERRORS_DESCRIPTION = <<<'MD'
-
-
-        ## Errors
-
-        Every error is [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457.html)
-        (`Content-Type: application/problem+json`). Build your own message from `errorCode` and `params`;
-        `detail` is a plain English sentence for curl/Postman and may change wording at any time.
-
-        Ask for `application/ld+json` or `application/json` in `Accept`, also for errors: `application/problem+json`
-        alone gives 406, because it is the type of errors only. With `application/ld+json` an error also has the
-        JSON-LD fields `@context`, `@id` and `@type`.
-
-        `@id` is the address of the general error for the status, e.g. `/api/errors/409`. See
-        `GET /api/errors/{status}` below for how to call it. A client does not need it: read `errorCode` from the
-        error response itself.
-
-        - `errorCode`: stable code of the problem; `type` is `urn:finance-app:problem:` followed by it.
-        - `params`: values for the message, always an object (`{}` when there are none), values are strings.
-        - `detail`: English explanation. For an unexpected server error it is generic and reveals nothing.
-
-        Validation errors (422) have `errorCode` `validation.failed` and a `violations` list. Each violation has
-        `propertyPath` (the JSON field), `code` (e.g. `transfer.to_account_required`; a constraint without its own
-        code gives `validation.` plus the Symfony error name, e.g. `validation.invalid_type`, `validation.too_short`,
-        and one whose error cannot be named gives `validation.invalid`),
-        `params` (only `limit`, `min`, `max`, `type`; never the submitted value) and an English `message`.
-
-        Business errors:
-
-        | errorCode | Status | params |
-        | --- | --- | --- |
-        | `contractor.name_not_unique` | 409 | |
-        | `account.main_changed_concurrently` | 409 | |
-        | `account.not_found` | 404 | |
-        | `account_operation.not_found` | 404 | |
-        | `account_type.not_found` | 404 | |
-        | `bank.not_found` | 404 | |
-        | `contractor.not_found` | 404 | |
-        | `currency_exchange_rate.not_found` | 404 | |
-        | `fixed_expense.not_found` | 404 | |
-        | `gold_asset.not_found` | 404 | |
-        | `gold_form.not_found` | 404 | |
-        | `gold_price.not_found` | 404 | |
-        | `household.not_found` | 404 | |
-        | `transfer.accounts_must_differ` | 422 | |
-        | `transfer.amount_to_required_for_currency_exchange` | 422 | `fromCurrency`, `toCurrency` |
-        | `fixed_expense.plan_no_main_account` | 409 | |
-        | `fixed_expense.plan_main_not_own` | 409 | `account`, `household` |
-        | `fixed_expense.plan_main_hidden` | 409 | `account` |
-        | `fixed_expense.plan_currency_mismatch` | 409 | `expenseCurrency`, `account`, `accountCurrency` |
-        | `fixed_expense.plan_duplicate` | 409 | `contractor`, `amount`, `date` |
-
-        Authentication errors (status 401, sent with `WWW-Authenticate: Bearer`):
-
-        | errorCode | Meaning | params |
-        | --- | --- | --- |
-        | `auth.token_missing` | No `Authorization: Bearer` token | |
-        | `auth.token_invalid` | The token cannot be used: malformed, wrong signature, or its user no longer exists | |
-        | `auth.token_expired` | The token has expired; log in again | |
-        | `auth.invalid_credentials` | Wrong email or password at `POST /api/login_check` | |
-        | `auth.too_many_login_attempts` | Login locked after too many failed attempts; also `Retry-After` | `minutes` |
-        | `auth.login_failed` | Login refused for another reason | |
-
-        Any other error has `errorCode` `http.` followed by a fixed name of the HTTP status, e.g. `http.not_found`,
-        `http.bad_request`, `http.unprocessable_content`, `http.internal_server_error`, with empty `params`
-        (a status without a fixed name gets its number, e.g. `http.418`). Unlike `title`, these codes do not follow
-        wording changes of the status texts.
-        MD;
-
     private const string ERROR_ADDRESS_RESPONSE = 'The general description of this HTTP status. The response has '
         .'status 200: this address describes an error, it does not report one.';
 
@@ -124,8 +55,8 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         'PATCH /api/fixed_expenses/{id}' => self::CONTRACTOR_RACE_DESCRIPTION,
         'PATCH /api/accounts/{id}' => 'Another request changed the main account at the same moment '
             .'(errorCode account.main_changed_concurrently).',
-        'POST /api/fixed_expenses/plan' => 'The expenses cannot be planned (errorCode fixed_expense.plan_*; '
-            .'see "Errors" in the API description). Nothing was created.',
+        'POST /api/fixed_expenses/plan' => 'The expenses cannot be planned (errorCode fixed_expense.plan_*). '
+            .'Nothing was created.',
     ];
 
     /** "METHOD path" => which query parameters it refuses with 422 */
@@ -183,9 +114,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
             }
         }
 
-        $info = $openApi->getInfo();
-
-        return $openApi->withInfo($info->withDescription($info->getDescription().self::ERRORS_DESCRIPTION));
+        return $openApi;
     }
 
     /**
@@ -419,7 +348,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
             'readOnly' => true,
             // No examples here: Swagger UI would show them on every response instead of each response's own one.
             'description' => 'Stable code of the problem, e.g. "transfer.accounts_must_differ", "validation.failed" '
-                .'or "http.not_found"; see "Errors" in the API description.',
+                .'or "http.not_found".',
         ];
         $properties['params'] = $this->paramsSchema('Values for the message, e.g. {"fromCurrency": "PLN"}.');
 

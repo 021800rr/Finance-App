@@ -6,7 +6,6 @@ namespace App\Tests\Api;
 
 use App\Entity\Account;
 use App\Entity\Contractor;
-use App\Exception\BusinessError;
 use App\OpenApi\ProblemDetailsDecorator;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\JwtTrait;
@@ -366,8 +365,6 @@ final class ProblemDetailsApiTest extends WebTestCase
         foreach (['"instance"', '"hint"', '"payload"'] as $field) {
             self::assertStringNotContainsString($field, (string) json_encode($schemas), $field);
         }
-        self::assertStringContainsString('alone gives 406', self::stringAt($docs, 'info', 'description'));
-        self::assertStringContainsString('GET /api/errors/{status}', self::stringAt($docs, 'info', 'description'));
     }
 
     public function testOpenApiDocumentsHowToCallTheErrorAddressAndItWorks(): void
@@ -639,54 +636,6 @@ final class ProblemDetailsApiTest extends WebTestCase
     }
 
     /**
-     * Every factory of every BusinessError in src/Exception, found by reflection: a new refusal cannot be added
-     * without being listed in the API docs.
-     *
-     * @return iterable<string, array{BusinessError}>
-     */
-    public static function businessErrors(): iterable
-    {
-        foreach (glob(dirname(__DIR__, 2).'/src/Exception/*.php') ?: [] as $file) {
-            $className = 'App\\Exception\\'.basename($file, '.php');
-            if (!class_exists($className) && !interface_exists($className)) {
-                continue;
-            }
-
-            $class = new \ReflectionClass($className);
-            if (!$class->implementsInterface(BusinessError::class) || $class->isInterface()) {
-                continue;
-            }
-
-            // The filter flags are OR-ed, so the static check is needed as well.
-            foreach ($class->getMethods(\ReflectionMethod::IS_STATIC) as $factory) {
-                if (!$factory->isPublic()) {
-                    continue;
-                }
-
-                $arguments = array_map(static fn (): string => 'X', $factory->getParameters());
-                $error = $factory->invoke(null, ...$arguments);
-                if ($error instanceof BusinessError) {
-                    yield $class->getShortName().'::'.$factory->getName() => [$error];
-                }
-            }
-        }
-    }
-
-    #[DataProvider('businessErrors')]
-    public function testOpenApiListsEveryBusinessErrorCodeWithItsParams(BusinessError $error): void
-    {
-        $description = self::stringAt($this->openApiDocs(), 'info', 'description');
-        $row = '| `'.$error->getErrorCode().'` |';
-
-        self::assertStringContainsString($row, $description);
-        $line = strstr(substr($description, (int) strpos($description, $row)), "\n", true);
-        self::assertIsString($line);
-        foreach (array_keys($error->getErrorParams()) as $param) {
-            self::assertStringContainsString('`'.$param.'`', $line);
-        }
-    }
-
-    /**
      * Our Swagger UI template override keeps inline code in the descriptions from overlapping in Chrome.
      */
     public function testSwaggerUiPageIncludesTheInlineCodeFix(): void
@@ -695,22 +644,6 @@ final class ProblemDetailsApiTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('padding: 1px 4px', (string) $this->client->getResponse()->getContent());
-    }
-
-    public function testOpenApiListsTheAuthenticationErrorCodes(): void
-    {
-        $description = self::stringAt($this->openApiDocs(), 'info', 'description');
-
-        foreach ([
-            'auth.token_missing',
-            'auth.token_invalid',
-            'auth.token_expired',
-            'auth.invalid_credentials',
-            'auth.too_many_login_attempts',
-            'auth.login_failed',
-        ] as $errorCode) {
-            self::assertStringContainsString('| `'.$errorCode.'` |', $description);
-        }
     }
 
     /**
