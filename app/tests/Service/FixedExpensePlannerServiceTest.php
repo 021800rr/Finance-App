@@ -27,11 +27,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         $kernel = self::bootKernel();
         $this->initEntityManager($kernel);
 
-        $this->mainAccount = $this->createAccount();
-
-        /** @var AccountRepository $accountRepository */
-        $accountRepository = self::getContainer()->get(AccountRepository::class);
-        $accountRepository->setAsMainAccount($this->mainAccount);
+        $this->mainAccount = $this->createAccount(main: true);
 
         $this->planner = $this->buildPlanner();
     }
@@ -119,7 +115,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
     public function testPlanNextMonthRefusesAMainAccountInAnotherCurrencyThanTheFixedExpenses(): void
     {
         $this->createFixedExpense(day: 10, amount: -15000, description: 'Rent');
-        $this->markAsMain($this->createAccount(currency: 'CHF'));
+        $this->createAccount(currency: 'CHF', main: true);
 
         $this->assertPlanningIsRefusedWith('/is in CHF/');
     }
@@ -127,7 +123,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
     public function testPlanNextMonthRefusesAMainAccountOfAnotherHousehold(): void
     {
         $this->createFixedExpense(day: 10, amount: -15000, description: 'Rent');
-        $this->markAsMain($this->createAccount(household: $this->household(false)));
+        $this->createAccount(household: $this->household(false), main: true);
 
         $this->assertPlanningIsRefusedWith('/only be planned on our own accounts/');
     }
@@ -164,13 +160,6 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
         }
 
         return $date;
-    }
-
-    private function markAsMain(Account $account): void
-    {
-        /** @var AccountRepository $accountRepository */
-        $accountRepository = self::getContainer()->get(AccountRepository::class);
-        $accountRepository->setAsMainAccount($account);
     }
 
     private function assertPlanningIsRefusedWith(string $messagePattern): void

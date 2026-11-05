@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Database;
 
-use App\Entity\Account;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -96,13 +95,5 @@ final class ConstraintTest extends KernelTestCase
             'otherPlnAccount' => $this->account('Bank1-WAK-PLN')->getId(),
             'chfAccount' => $this->account('Bank1-WAK-CHF')->getId(),
         ];
-    }
-
-    private function account(string $number): Account
-    {
-        $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => $number]);
-        self::assertNotNull($account);
-
-        return $account;
     }
 }

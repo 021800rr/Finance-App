@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Form;
 
-use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
 use App\Form\AccountOperationType;
@@ -133,13 +132,5 @@ final class BusinessDateTest extends KernelTestCase
             ],
             default => throw new \InvalidArgumentException('Unknown form: '.$formClass),
         };
-    }
-
-    private function account(string $number): Account
-    {
-        $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => $number]);
-        self::assertNotNull($account);
-
-        return $account;
     }
 }

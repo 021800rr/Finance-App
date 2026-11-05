@@ -7,7 +7,6 @@ namespace App\Tests\Api;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\FixedExpense;
-use App\Repository\AccountRepository;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\JwtTrait;
 use App\Tests\TestDataTrait;
@@ -44,7 +43,7 @@ final class FixedExpensePlanApiTest extends WebTestCase
 
     public function testPlanCreatesOperationsOnTheMainAccountForTheNextMonth(): void
     {
-        $main = $this->createMainAccount();
+        $main = $this->createAccount(main: true);
         $fixedExpense = $this->createFixedExpense(day: 12, amount: -15000);
         $expectedCount = $this->em()->getRepository(FixedExpense::class)->count([]);
         $operationsBefore = $this->em()->getRepository(AccountOperation::class)->count(['account' => $main]);
@@ -80,7 +79,7 @@ final class FixedExpensePlanApiTest extends WebTestCase
 
     public function testPlanTwiceRespondsWithConflictAndCreatesNothingTheSecondTime(): void
     {
-        $this->createMainAccount();
+        $this->createAccount(main: true);
         $this->createFixedExpense(day: 12, amount: -15000);
 
         $this->client->request('POST', '/api/fixed_expenses/plan', server: $this->authHeaders());
@@ -107,7 +106,7 @@ final class FixedExpensePlanApiTest extends WebTestCase
 
     public function testPlanWithAForeignCurrencyMainAccountRespondsWithConflictAndCreatesNothing(): void
     {
-        $this->createMainAccount(currencyCode: 'CHF');
+        $this->createAccount('CHF', main: true);
         $this->createFixedExpense(day: 12, amount: -15000);
         $operationsBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
 
@@ -124,7 +123,7 @@ final class FixedExpensePlanApiTest extends WebTestCase
 
     public function testPlanWithAMainAccountOfAnotherHouseholdRespondsWithConflictAndCreatesNothing(): void
     {
-        $this->createMainAccount(ownFunds: false);
+        $this->createAccount(household: $this->household(false), main: true);
         $this->createFixedExpense(day: 12, amount: -15000);
         $operationsBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
 
@@ -136,7 +135,7 @@ final class FixedExpensePlanApiTest extends WebTestCase
 
     public function testPlanWithAHiddenMainAccountRespondsWithConflictAndCreatesNothing(): void
     {
-        $main = $this->createMainAccount();
+        $main = $this->createAccount(main: true);
         $main->setHidden(true);
         $this->em()->flush();
         $this->createFixedExpense(day: 12, amount: -15000);
@@ -167,16 +166,5 @@ final class FixedExpensePlanApiTest extends WebTestCase
         self::assertSame($paramNames, array_keys($params));
 
         return $params;
-    }
-
-    private function createMainAccount(string $currencyCode = 'PLN', bool $ownFunds = true): Account
-    {
-        $account = $this->createAccount($currencyCode, household: $this->household($ownFunds));
-
-        /** @var AccountRepository $accountRepository */
-        $accountRepository = self::getContainer()->get(AccountRepository::class);
-        $accountRepository->setAsMainAccount($account);
-
-        return $account;
     }
 }

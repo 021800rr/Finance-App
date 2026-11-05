@@ -11,6 +11,7 @@ use App\OpenApi\ProblemDetailsDecorator;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\JwtTrait;
 use App\Tests\LosesMainAccountRaceTrait;
+use App\Tests\TestDataTrait;
 use Doctrine\DBAL\Driver\Exception as DriverException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\Query;
@@ -30,6 +31,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     use LosesMainAccountRaceTrait;
     use ReadsJsonTrait;
     use JwtTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -760,13 +762,5 @@ final class ProblemDetailsApiTest extends WebTestCase
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/ld+json',
         ], content: $json);
-    }
-
-    private function account(string $number): Account
-    {
-        $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => $number]);
-        self::assertNotNull($account);
-
-        return $account;
     }
 }

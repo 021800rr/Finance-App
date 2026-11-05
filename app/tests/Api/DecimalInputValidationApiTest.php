@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
 use App\Entity\CurrencyExchangeRate;
@@ -211,14 +210,6 @@ final class DecimalInputValidationApiTest extends WebTestCase
             ],
             default => throw new \InvalidArgumentException('Unknown API URI: '.$uri),
         };
-    }
-
-    private function account(string $number): Account
-    {
-        $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => $number]);
-        self::assertNotNull($account);
-
-        return $account;
     }
 
     /**

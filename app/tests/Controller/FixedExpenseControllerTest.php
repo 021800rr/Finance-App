@@ -548,16 +548,13 @@ final class FixedExpenseControllerTest extends WebTestCase
 
         $reference = $this->em()->getRepository(Account::class)->findOneBy([]);
         self::assertNotNull($reference);
-        $foreignAccount = $this->createAccount(
+        $this->createAccount(
             'CHF',
             $reference->getBank(),
             $reference->getType(),
             accountNumber: 'CHF-MAIN-'.uniqid(),
+            main: true,
         );
-
-        /** @var AccountRepository $accountRepository */
-        $accountRepository = self::getContainer()->get(AccountRepository::class);
-        $accountRepository->setAsMainAccount($foreignAccount);
 
         $crawler = $this->client->request('GET', '/fixed-expense');
         $csrfToken = $crawler->filter('form[action*="/fixed-expense/plan"] input[name="_token"]')->attr('value');

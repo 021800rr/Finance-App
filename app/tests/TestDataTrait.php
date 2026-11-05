@@ -17,6 +17,7 @@ use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\Entity\GoldPrice;
 use App\Entity\Household;
+use App\Repository\AccountRepository;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -42,6 +43,15 @@ trait TestDataTrait
     {
         return $this->em()->getRepository(Household::class)->findOneBy(['isOwnFunds' => $ownFunds])
             ?? throw new \LogicException('The fixtures have no such household.');
+    }
+
+    /**
+     * An account by its number, e.g. "Bank1-ROR-PLN" from the fixtures.
+     */
+    private function account(string $accountNumber): Account
+    {
+        return $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => $accountNumber])
+            ?? throw new \LogicException(sprintf('There is no account "%s".', $accountNumber));
     }
 
     /**
@@ -72,7 +82,8 @@ trait TestDataTrait
     }
 
     /**
-     * By default a PLN account of the own-funds household, in a new bank and of a new type.
+     * By default a PLN account of the own-funds household, in a new bank and of a new type. With $main it becomes the
+     * main account in place of the one from the fixtures.
      */
     private function createAccount(
         string|Currency $currency = Currencies::SETTLEMENT_CURRENCY_CODE,
@@ -81,6 +92,7 @@ trait TestDataTrait
         ?Household $household = null,
         ?string $accountNumber = null,
         bool $hidden = false,
+        bool $main = false,
     ): Account {
         $account = new Account(
             $bank ?? $this->createBank(),
@@ -90,8 +102,15 @@ trait TestDataTrait
             $household ?? $this->household(),
         );
         $account->setHidden($hidden);
+        $this->saved($account);
 
-        return $this->saved($account);
+        if ($main) {
+            /** @var AccountRepository $accounts */
+            $accounts = $this->em()->getRepository(Account::class);
+            $accounts->setAsMainAccount($account);
+        }
+
+        return $account;
     }
 
     private function createContractor(?string $name = null): Contractor

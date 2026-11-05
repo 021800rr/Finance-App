@@ -9,7 +9,6 @@ use App\ApiResource\SummaryResource;
 use App\Entity\Bank;
 use App\Entity\Currency;
 use App\Entity\Household;
-use App\Repository\AccountRepository;
 use App\State\SummaryProvider;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\TestDataTrait;
@@ -150,12 +149,8 @@ final class SummaryProviderTest extends KernelTestCase
     {
         $mainNumber = 'MAIN-'.uniqid();
         $otherNumber = 'OTHER-'.uniqid();
-        $main = $this->createAccount(accountNumber: $mainNumber);
+        $this->createAccount(accountNumber: $mainNumber, main: true);
         $this->createAccount(accountNumber: $otherNumber);
-
-        /** @var AccountRepository $accountRepository */
-        $accountRepository = self::getContainer()->get(AccountRepository::class);
-        $accountRepository->setAsMainAccount($main);
 
         $this->pushRequest([]);
 

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Entity\Account;
-use App\Repository\AccountRepository;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\LosesMainAccountRaceTrait;
 use App\Tests\TestDataTrait;
@@ -157,11 +156,7 @@ final class AccountControllerTest extends WebTestCase
 
     public function testSetMainMarksAccountAsMainAndUnsetsPrevious(): void
     {
-        $previousMain = $this->createAccount();
-
-        /** @var AccountRepository $accountRepository */
-        $accountRepository = self::getContainer()->get(AccountRepository::class);
-        $accountRepository->setAsMainAccount($previousMain);
+        $previousMain = $this->createAccount(main: true);
 
         $newMain = $this->createAccount();
         $newMainId = $newMain->getId();

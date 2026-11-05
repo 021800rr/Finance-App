@@ -8,6 +8,7 @@ use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\JwtTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -17,6 +18,7 @@ final class TransferApiTest extends WebTestCase
     use DatabaseTestTrait;
     use ReadsJsonTrait;
     use JwtTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -341,13 +343,5 @@ final class TransferApiTest extends WebTestCase
             'amountFrom' => '100.00',
             'description' => $description,
         ], JSON_THROW_ON_ERROR));
-    }
-
-    private function account(string $number): Account
-    {
-        $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => $number]);
-        self::assertNotNull($account);
-
-        return $account;
     }
 }

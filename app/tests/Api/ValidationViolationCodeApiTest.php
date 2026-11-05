@@ -114,8 +114,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     public function testTooLongContractorNameIsAViolationOnCreateAndUpdate(string $uri, array $valid): void
     {
         if ('/api/account_operations' === $uri) {
-            $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => 'Bank1-ROR-PLN']);
-            self::assertNotNull($account);
+            $account = $this->account('Bank1-ROR-PLN');
             $valid['accountId'] = $account->getId();
         }
 
@@ -314,8 +313,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
 
     public function testHiddenNullIsAViolationAndTheAccountStaysUnchanged(): void
     {
-        $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => 'Bank1-ROR-PLN']);
-        self::assertNotNull($account);
+        $account = $this->account('Bank1-ROR-PLN');
         $hidden = $account->isHidden();
 
         $this->send('PATCH', '/api/accounts/'.$account->getId(), ['hidden' => null]);
@@ -1063,8 +1061,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
      */
     private function validOperation(): array
     {
-        $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => 'Bank1-ROR-PLN']);
-        self::assertNotNull($account);
+        $account = $this->account('Bank1-ROR-PLN');
 
         return [
             'accountId' => $account->getId(),
@@ -1128,10 +1125,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
 
     private function accountId(string $accountNumber): int
     {
-        $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => $accountNumber]);
-        self::assertNotNull($account);
-
-        return (int) $account->getId();
+        return (int) $this->account($accountNumber)->getId();
     }
 
     /**

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Api;
 
-use App\Entity\Account;
 use App\Entity\Contractor;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\JwtTrait;
 use App\Tests\LosesContractorRaceTrait;
+use App\Tests\TestDataTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -19,6 +19,7 @@ final class ContractorApiTest extends WebTestCase
     use LosesContractorRaceTrait;
     use ReadsJsonTrait;
     use JwtTrait;
+    use TestDataTrait;
 
     private KernelBrowser $client;
 
@@ -91,8 +92,7 @@ final class ContractorApiTest extends WebTestCase
     public function testLosingTheContractorRaceRefusesTheRecordWithoutSql(string $uri, array $record): void
     {
         if ('/api/account_operations' === $uri) {
-            $account = $this->em()->getRepository(Account::class)->findOneBy(['accountNumber' => 'Bank1-ROR-PLN']);
-            self::assertNotNull($account);
+            $account = $this->account('Bank1-ROR-PLN');
             $record['accountId'] = $account->getId();
         }
         $token = $this->jwt();
