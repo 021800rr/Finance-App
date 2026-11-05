@@ -1,0 +1,8 @@
+# The login limiter keeps its counters in the memory of the PHPUnit process, not in files shared by every run, so two
+# runs at the same time cannot lift each other's lock. It is a plain service, not a cache pool: Symfony empties cache
+# pools before every request. A test that checks the lock keeps the kernel between its requests
+# ($client->disableReboot()), because a new kernel starts with an empty limiter.
+services:
+    cache.rate_limiter:
+        class: Symfony\Component\Cache\Adapter\ArrayAdapter
+        autoconfigure: false

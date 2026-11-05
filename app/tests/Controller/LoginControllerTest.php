@@ -6,7 +6,6 @@ namespace App\Tests\Controller;
 
 use App\DataFixtures\AppFixtures;
 use App\Tests\DatabaseTestTrait;
-use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -20,10 +19,6 @@ final class LoginControllerTest extends WebTestCase
     {
         $this->client = self::createClient();
         $this->initEntityManager($this->client->getKernel());
-
-        $rateLimiterCache = self::getContainer()->get('cache.rate_limiter');
-        self::assertInstanceOf(CacheItemPoolInterface::class, $rateLimiterCache);
-        $rateLimiterCache->clear();
     }
 
     protected function tearDown(): void
@@ -57,6 +52,8 @@ final class LoginControllerTest extends WebTestCase
 
     public function testLoginThrottlesAfterTooManyFailedAttempts(): void
     {
+        // The limiter lives in the kernel's memory in tests (config/packages/test/cache.yaml).
+        $this->client->disableReboot();
         for ($i = 0; $i < 5; ++$i) {
             $this->submitLoginForm(AppFixtures::TEST_USER_EMAIL, 'wrongpassword');
         }
@@ -69,6 +66,8 @@ final class LoginControllerTest extends WebTestCase
 
     public function testLoginThrottlingBlocksEvenValidCredentials(): void
     {
+        // The limiter lives in the kernel's memory in tests (config/packages/test/cache.yaml).
+        $this->client->disableReboot();
         for ($i = 0; $i < 5; ++$i) {
             $this->submitLoginForm(AppFixtures::TEST_USER_EMAIL, 'wrongpassword');
         }

@@ -6,7 +6,6 @@ namespace App\Tests\Api;
 
 use App\DataFixtures\AppFixtures;
 use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
-use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -54,8 +53,6 @@ final class AuthenticationProblemApiTest extends WebTestCase
 
     public function testWrongPassword(): void
     {
-        $this->clearLoginThrottle();
-
         $this->login('wrong-password');
 
         $problem = $this->assertAuthenticationProblem('auth.invalid_credentials');
@@ -64,27 +61,23 @@ final class AuthenticationProblemApiTest extends WebTestCase
 
     public function testTooManyFailedLoginsNameTheLockTime(): void
     {
-        $this->clearLoginThrottle();
-
-        try {
-            for ($attempt = 1; $attempt <= 5; ++$attempt) {
-                $this->login('wrong-password-'.$attempt);
-            }
-            $this->login(AppFixtures::TEST_USER_PASSWORD);
-
-            // The lock lasts 15 minutes, but Symfony's rate limiter rounds the remaining time up to whole seconds
-            // from the start of the current second, so a lock set a fraction of a second ago reads 901 s = 16 min.
-            $minutes = $this->lockMinutes();
-            self::assertContains($minutes, ['15', '16']);
-            $problem = $this->assertAuthenticationProblem('auth.too_many_login_attempts', ['minutes' => $minutes]);
-            self::assertResponseHeaderSame('Retry-After', (string) ((int) $minutes * 60));
-            self::assertSame(
-                sprintf('Too many failed login attempts, please try again in %s minutes.', $minutes),
-                $problem['detail'] ?? null,
-            );
-        } finally {
-            $this->clearLoginThrottle();
+        // The limiter lives in the kernel's memory in tests (config/packages/test/cache.yaml).
+        $this->client->disableReboot();
+        for ($attempt = 1; $attempt <= 5; ++$attempt) {
+            $this->login('wrong-password-'.$attempt);
         }
+        $this->login(AppFixtures::TEST_USER_PASSWORD);
+
+        // The lock lasts 15 minutes, but Symfony's rate limiter rounds the remaining time up to whole seconds
+        // from the start of the current second, so a lock set a fraction of a second ago reads 901 s = 16 min.
+        $minutes = $this->lockMinutes();
+        self::assertContains($minutes, ['15', '16']);
+        $problem = $this->assertAuthenticationProblem('auth.too_many_login_attempts', ['minutes' => $minutes]);
+        self::assertResponseHeaderSame('Retry-After', (string) ((int) $minutes * 60));
+        self::assertSame(
+            sprintf('Too many failed login attempts, please try again in %s minutes.', $minutes),
+            $problem['detail'] ?? null,
+        );
     }
 
     /**
@@ -134,16 +127,5 @@ final class AuthenticationProblemApiTest extends WebTestCase
                 JSON_THROW_ON_ERROR,
             ),
         );
-    }
-
-    /**
-     * The limiter keeps its counters in a persistent cache pool: reset it so a test neither inherits nor leaves
-     * behind failed attempts.
-     */
-    private function clearLoginThrottle(): void
-    {
-        $pool = self::getContainer()->get('cache.rate_limiter');
-        self::assertInstanceOf(CacheItemPoolInterface::class, $pool);
-        $pool->clear();
     }
 }
