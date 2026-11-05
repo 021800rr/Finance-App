@@ -37,6 +37,14 @@ final class HomeControllerTest extends WebTestCase
         self::assertResponseIsSuccessful();
     }
 
+    public function testTheAccountsTableReceivesTranslatedSortLabels(): void
+    {
+        $table = $this->client->request('GET', '/')->filter('table[data-sortable="accounts"]');
+
+        self::assertSame('Sort ascending', $table->attr('data-sort-asc-label'));
+        self::assertSame('Sort descending', $table->attr('data-sort-desc-label'));
+    }
+
     public function testIndexHidesHiddenAccountsByDefault(): void
     {
         $account = $this->createAccount(hidden: true);

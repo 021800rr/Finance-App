@@ -11,7 +11,12 @@
 
     <div class="card mb-3 shadow-sm">
         <div class="card-body">
-            <table class="table table-striped table-hover align-middle" data-sortable="accounts">
+            <table
+                class="table table-striped table-hover align-middle"
+                data-sortable="accounts"
+                data-sort-asc-label="{{ 'common.sort_ascending'|trans }}"
+                data-sort-desc-label="{{ 'common.sort_descending'|trans }}"
+            >
                 <thead class="table-dark">
                 <tr>
                     <th data-sort-key="text">{{ 'account.bank'|trans }}</th>

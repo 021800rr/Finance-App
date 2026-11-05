@@ -91,3 +91,22 @@ tr.highlight > *:last-child {
 .chart-container {
     height: 400px;
 }
+
+/* The sort arrows next to a header of a sortable table (assets/js/sort-table.js): the filled one shows the order. */
+.sort-arrows {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+}
+
+.sort-arrow {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font-size: 0.55rem;
+    line-height: 1;
+    cursor: pointer;
+}

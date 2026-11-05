@@ -12,6 +12,8 @@ account:
 
 common:
     add: 'Dodaj'
+    sort_ascending: 'Sortuj rosnąco'
+    sort_descending: 'Sortuj malejąco'
 
 contractor:
     invalid_id: 'Nieprawidłowy identyfikator kontrahenta.'

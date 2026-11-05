@@ -12,6 +12,8 @@ account:
 
 common:
     add: 'Add'
+    sort_ascending: 'Sort ascending'
+    sort_descending: 'Sort descending'
 
 contractor:
     invalid_id: 'Invalid contractor identifier.'
