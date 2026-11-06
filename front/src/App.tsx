@@ -5,6 +5,7 @@ import { Layout } from './layout/Layout'
 import { AccountOperationsPage } from './pages/AccountOperationsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PagePlaceholder } from './pages/PagePlaceholder'
+import { SummaryPage } from './summary/SummaryPage'
 
 // The login form until the user is logged in, whatever the address; afterwards the page of the address, so a link
 // opened while logged out lands where it pointed.
@@ -21,7 +22,7 @@ function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<PagePlaceholder title="Podsumowanie" />} />
+        <Route index element={<SummaryPage />} />
         <Route path="account/:id/operations" element={<AccountOperationsPage />} />
         <Route path="operation/new" element={<PagePlaceholder title="Nowa operacja" />} />
         <Route path="transfer/new" element={<PagePlaceholder title="Przelew / Wymiana" />} />

@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import * as React from 'react'
 import * as api from '../api'
 import { AuthContext } from './AuthContext'
@@ -6,14 +7,20 @@ import { AuthContext } from './AuthContext'
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [checking, setChecking] = React.useState(true)
   const [email, setEmail] = React.useState<string | null>(null)
+  const queryClient = useQueryClient()
 
   React.useEffect(() => {
+    // Logged out: nothing read while logged in may stay in memory.
+    api.setSessionEndHandler(() => {
+      setEmail(null)
+      queryClient.clear()
+    })
     api.currentUser()
       .then(setEmail)
       // The server does not answer: show the login form, logging in will say what is wrong.
       .catch(() => setEmail(null))
       .finally(() => setChecking(false))
-  }, [])
+  }, [queryClient])
 
   async function login(loginEmail: string, password: string): Promise<string | null> {
     const error = await api.login(loginEmail, password)
@@ -27,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function logout(): Promise<void> {
     await api.logout()
     setEmail(null)
+    queryClient.clear()
   }
 
   return <AuthContext value={{ checking, email, login, logout }}>{children}</AuthContext>
