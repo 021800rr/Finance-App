@@ -10,6 +10,10 @@ account:
     number: 'Number'
     type: 'Type'
 
+auth:
+    invalid_credentials: 'Invalid email or password.'
+    too_many_login_attempts: 'Too many failed login attempts, please try again in %minutes% minutes.'
+
 common:
     add: 'Add'
     sort_ascending: 'Sort ascending'

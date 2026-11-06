@@ -6,6 +6,7 @@ account:
 
 account_operation:
     not_found: 'This account operation does not exist.'
+    other_side_not_found: 'Related operation not found.'
 
 account_type:
     not_found: 'This account type does not exist.'

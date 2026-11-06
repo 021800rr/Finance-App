@@ -10,6 +10,10 @@ account:
     number: 'Numer'
     type: 'Typ'
 
+auth:
+    invalid_credentials: 'Nieprawidłowy e-mail lub hasło.'
+    too_many_login_attempts: 'Zbyt wiele nieudanych prób logowania. Spróbuj ponownie za %minutes% min.'
+
 common:
     add: 'Dodaj'
     sort_ascending: 'Sortuj rosnąco'
