@@ -17,8 +17,14 @@ export function LogoutButton() {
 
   return (
     <>
-      <button type="button" onClick={handleClick}>Wyloguj</button>
-      {message && <span>{message}</span>}
+      {message && <span role="alert" className="text-red-600">{message}</span>}
+      <button
+        type="button"
+        onClick={handleClick}
+        className="rounded-md border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50"
+      >
+        Wyloguj
+      </button>
     </>
   )
 }
