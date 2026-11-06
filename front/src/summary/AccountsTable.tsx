@@ -1,4 +1,4 @@
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
+import { EyeIcon, EyeSlashIcon, ListBulletIcon } from '@heroicons/react/24/outline'
 import * as React from 'react'
 import { Link } from 'react-router'
 import { errorMessage } from '../messages'
@@ -103,8 +103,13 @@ export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
                     ☆
                   </button>
                 )}
-                <Link to={`/account/${account.id}/operations`} className="text-indigo-600 hover:underline">
-                  Historia
+                <Link
+                  to={`/account/${account.id}/operations`}
+                  title="Historia"
+                  aria-label="Historia"
+                  className="inline-block align-middle text-slate-500 hover:text-slate-800"
+                >
+                  <ListBulletIcon className="size-5" />
                 </Link>
                 <button
                   type="button"

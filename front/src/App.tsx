@@ -2,7 +2,7 @@ import { Route, Routes } from 'react-router'
 import { useAuth } from './auth/AuthContext'
 import { LoginForm } from './auth/LoginForm'
 import { Layout } from './layout/Layout'
-import { AccountOperationsPage } from './pages/AccountOperationsPage'
+import { AccountOperationsPage } from './account/AccountOperationsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PagePlaceholder } from './pages/PagePlaceholder'
 import { SummaryPage } from './summary/SummaryPage'
@@ -25,6 +25,7 @@ function App() {
         <Route index element={<SummaryPage />} />
         <Route path="account/:id/operations" element={<AccountOperationsPage />} />
         <Route path="operation/new" element={<PagePlaceholder title="Nowa operacja" />} />
+        <Route path="operation/:id/edit" element={<PagePlaceholder title="Edycja operacji" />} />
         <Route path="transfer/new" element={<PagePlaceholder title="Przelew / Wymiana" />} />
         <Route path="fixed-expense" element={<PagePlaceholder title="Opłaty stałe" />} />
         <Route path="rate" element={<PagePlaceholder title="Kursy" />} />

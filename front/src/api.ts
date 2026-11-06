@@ -69,6 +69,28 @@ export async function getJson<T>(path: string): Promise<T> {
   return response.json()
 }
 
+// One page of a list of the API.
+export type Page<T> = { items: T[]; totalItems: number; lastPage: number }
+
+type JsonLdCollection<T> = { member: T[]; totalItems: number; view?: { last?: string } }
+
+// Reads one page of a list. Plain JSON gives the rows only; JSON-LD also says how many rows there are and links the
+// last page ("view.last", absent when there is just one page).
+export async function getPage<T>(path: string): Promise<Page<T>> {
+  const response = await apiFetch(path, { headers: { Accept: 'application/ld+json' } })
+  if (!response.ok) {
+    throw await apiError('GET', path, response)
+  }
+  const collection: JsonLdCollection<T> = await response.json()
+  const last = collection.view?.last
+
+  return {
+    items: collection.member,
+    totalItems: collection.totalItems,
+    lastPage: last === undefined ? 1 : Number(new URL(last, window.location.origin).searchParams.get('page') ?? 1),
+  }
+}
+
 // Changes some fields of a resource: the fields sent change, the others stay (JSON Merge Patch).
 export async function patchJson(path: string, changes: object): Promise<void> {
   const response = await apiFetch(path, {
@@ -78,6 +100,14 @@ export async function patchJson(path: string, changes: object): Promise<void> {
   })
   if (!response.ok) {
     throw await apiError('PATCH', path, response)
+  }
+}
+
+// Deletes a resource; the API answers 204 No Content.
+export async function deleteResource(path: string): Promise<void> {
+  const response = await apiFetch(path, { method: 'DELETE', headers: { Accept: 'application/json' } })
+  if (!response.ok) {
+    throw await apiError('DELETE', path, response)
   }
 }
 

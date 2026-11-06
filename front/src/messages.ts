@@ -6,6 +6,7 @@ export const SERVER_DOWN = 'Serwer nie odpowiada. Spróbuj za chwilę.'
 const ERROR_MESSAGES: Record<string, string> = {
   'account.main_changed_concurrently': 'Konto główne zostało właśnie zmienione przez inne żądanie. '
     + 'Sprawdź konto główne i spróbuj ponownie.',
+  'account_operation.other_side_not_found': 'Nie znaleziono powiązanej operacji.',
 }
 
 // What to tell the user about a failed request: the text of its errorCode, the fallback for any other answer of the
