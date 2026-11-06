@@ -27,6 +27,15 @@ final class RecordNotFoundException extends \RuntimeException implements Busines
         return new self('Account operation not found.', 'account_operation.not_found');
     }
 
+    public static function accountOperationOtherSide(): self
+    {
+        return new self(
+            'The other side of this transfer was not found: the operation is not part of a transfer, '
+            .'or the other operation was deleted.',
+            'account_operation.other_side_not_found',
+        );
+    }
+
     public static function accountType(): self
     {
         return new self('Account type not found.', 'account_type.not_found');

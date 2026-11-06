@@ -18,6 +18,7 @@ use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
 use App\Service\Paginator;
+use App\State\AccountOperationOtherSideProvider;
 use App\State\AccountOperationProcessor;
 use App\State\AccountOperationProvider;
 use App\Util\BusinessDateRange;
@@ -69,6 +70,21 @@ use Symfony\Component\Validator\Constraints as Assert;
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Retrieves a single operation by id.',
             provider: AccountOperationProvider::class,
+        ),
+        new Get(
+            uriTemplate: '/account_operations/{id}/other-side',
+            openapi: new OpenApiOperation(
+                summary: 'Retrieves the other operation of a transfer.',
+                responses: ['404' => new OpenApiResponse(
+                    description: 'The operation does not exist (errorCode account_operation.not_found), or it has '
+                    .'no other side: it is not part of a transfer, or the other operation was deleted '
+                    .'(errorCode account_operation.other_side_not_found).',
+                )],
+                security: [['JWT' => []]],
+            ),
+            description: 'The other operation of the transfer the operation belongs to, the one with the same '
+            .'transactionUuid, as the web app\'s 🔗 link finds it.',
+            provider: AccountOperationOtherSideProvider::class,
         ),
         new Post(
             openapi: new OpenApiOperation(

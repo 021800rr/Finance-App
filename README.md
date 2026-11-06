@@ -8,8 +8,8 @@ Osobisty tracker finansowy do kontroli domowych kont.
 
 - **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest 
     rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
-- **~1620 testów PHPUnit**.
-- **PHPStan na najwyższym poziomie (`max`)**.
+- **PHPUnit**.
+- **PHPStan**.
 - **PHP CS Fixer**.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
 - **Przewidywalne błędy API** (RFC 9457 Problem Details) — każdy błąd ma stały `errorCode`, parametry
