@@ -6,7 +6,8 @@
     "is_main_must_be_true": "The only allowed value is true. If you do not want to set this account as main, do not send this field."
   },
   "account_operation": {
-    "not_found": "This account operation does not exist."
+    "not_found": "This account operation does not exist.",
+    "other_side_not_found": "Related operation not found."
   },
   "account_type": {
     "not_found": "This account type does not exist."

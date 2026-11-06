@@ -6,7 +6,8 @@
     "is_main_must_be_true": "Jedyna dozwolona wartość to true. Jeśli nie chcesz ustawić tego konta jako głównego, nie wysyłaj tego pola."
   },
   "account_operation": {
-    "not_found": "Ta operacja nie istnieje."
+    "not_found": "Ta operacja nie istnieje.",
+    "other_side_not_found": "Nie znaleziono powiązanej operacji."
   },
   "account_type": {
     "not_found": "Ten typ konta nie istnieje."

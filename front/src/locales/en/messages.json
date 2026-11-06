@@ -11,6 +11,10 @@
     "number": "Number",
     "type": "Type"
   },
+  "auth": {
+    "invalid_credentials": "Invalid email or password.",
+    "too_many_login_attempts": "Too many failed login attempts, please try again in {{minutes}} minutes."
+  },
   "common": {
     "add": "Add",
     "sort_ascending": "Sort ascending",
@@ -194,8 +198,6 @@
     "save_transfer_failed": "The transfer could not be saved.",
     "new_contractor": "The new contractor \"{{name}}\" is added when you save.",
     "amount_placeholder": "-309.00 expense · 309.00 income",
-    "invalid_credentials": "Invalid email or password.",
-    "too_many_login_attempts": "Too many failed login attempts, please try again in {{minutes}} minutes.",
     "choose_date": "Choose a date in the calendar",
     "date_format": "YYYY-MM-DD"
   }

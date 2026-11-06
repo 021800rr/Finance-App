@@ -11,6 +11,10 @@
     "number": "Numer",
     "type": "Typ"
   },
+  "auth": {
+    "invalid_credentials": "Nieprawidłowy e-mail lub hasło.",
+    "too_many_login_attempts": "Zbyt wiele nieudanych prób logowania. Spróbuj ponownie za {{minutes}} min."
+  },
   "common": {
     "add": "Dodaj",
     "sort_ascending": "Sortuj rosnąco",
@@ -194,8 +198,6 @@
     "save_transfer_failed": "Nie udało się zapisać przelewu.",
     "new_contractor": "Nowy kontrahent „{{name}}” zostanie dodany przy zapisie.",
     "amount_placeholder": "-309,00 wydatek · 309,00 wpływ",
-    "invalid_credentials": "Nieprawidłowy e-mail lub hasło.",
-    "too_many_login_attempts": "Zbyt wiele nieudanych prób logowania. Spróbuj ponownie za {{minutes}} min.",
     "choose_date": "Wybierz datę z kalendarza",
     "date_format": "RRRR-MM-DD"
   }
