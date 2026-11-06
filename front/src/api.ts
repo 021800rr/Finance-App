@@ -1,18 +1,23 @@
 // The backend keeps both tokens in HttpOnly cookies (BEARER and refresh_token). The browser stores them and sends
 // them with every request to /api by itself; this code never sees them.
 
-// The error body of the API (RFC 9457 Problem Details): errorCode is stable, detail is English text for curl.
-type Problem = { detail?: string; errorCode?: string }
+// One field error of a 422 answer: the field (e.g. "amount"), a stable code and the values of its message.
+export type Violation = { propertyPath: string; message: string; code?: string; params?: Record<string, string> }
 
-// An answer of the API other than 2xx, with the errorCode of its body when it has one.
+// The error body of the API (RFC 9457 Problem Details): errorCode is stable, detail is English text for curl.
+type Problem = { detail?: string; errorCode?: string; violations?: Violation[] }
+
+// An answer of the API other than 2xx, with the errorCode of its body and, for 422, the field errors.
 export class ApiError extends Error {
   readonly status: number
   readonly errorCode: string | undefined
+  readonly violations: Violation[]
 
-  constructor(status: number, errorCode: string | undefined, message: string) {
+  constructor(status: number, errorCode: string | undefined, message: string, violations: Violation[] = []) {
     super(message)
     this.status = status
     this.errorCode = errorCode
+    this.violations = violations
   }
 }
 
@@ -20,7 +25,12 @@ async function apiError(method: string, path: string, response: Response): Promi
   // A proxy in between may answer with something that is not JSON.
   const problem: Problem = await response.json().catch(() => ({}))
 
-  return new ApiError(response.status, problem.errorCode, problem.detail ?? `${method} ${path}: ${response.status}`)
+  return new ApiError(
+    response.status,
+    problem.errorCode,
+    problem.detail ?? `${method} ${path}: ${response.status}`,
+    problem.violations ?? [],
+  )
 }
 
 let refreshing: Promise<boolean> | null = null
@@ -89,6 +99,20 @@ export async function getPage<T>(path: string): Promise<Page<T>> {
     totalItems: collection.totalItems,
     lastPage: last === undefined ? 1 : Number(new URL(last, window.location.origin).searchParams.get('page') ?? 1),
   }
+}
+
+// Creates a resource and returns it as the API stored it (with its id).
+export async function postJson<T>(path: string, body: object): Promise<T> {
+  const response = await apiFetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    throw await apiError('POST', path, response)
+  }
+
+  return response.json()
 }
 
 // Changes some fields of a resource: the fields sent change, the others stay (JSON Merge Patch).

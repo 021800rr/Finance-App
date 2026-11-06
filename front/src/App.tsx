@@ -3,6 +3,8 @@ import { useAuth } from './auth/AuthContext'
 import { LoginForm } from './auth/LoginForm'
 import { Layout } from './layout/Layout'
 import { AccountOperationsPage } from './account/AccountOperationsPage'
+import { EditOperationPage } from './operation/EditOperationPage'
+import { NewOperationPage } from './operation/NewOperationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PagePlaceholder } from './pages/PagePlaceholder'
 import { SummaryPage } from './summary/SummaryPage'
@@ -24,8 +26,8 @@ function App() {
       <Route element={<Layout />}>
         <Route index element={<SummaryPage />} />
         <Route path="account/:id/operations" element={<AccountOperationsPage />} />
-        <Route path="operation/new" element={<PagePlaceholder title="Nowa operacja" />} />
-        <Route path="operation/:id/edit" element={<PagePlaceholder title="Edycja operacji" />} />
+        <Route path="operation/new" element={<NewOperationPage />} />
+        <Route path="operation/:id/edit" element={<EditOperationPage />} />
         <Route path="transfer/new" element={<PagePlaceholder title="Przelew / Wymiana" />} />
         <Route path="fixed-expense" element={<PagePlaceholder title="Opłaty stałe" />} />
         <Route path="rate" element={<PagePlaceholder title="Kursy" />} />
