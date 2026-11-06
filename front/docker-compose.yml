@@ -1,0 +1,20 @@
+name: finance-front
+
+services:
+  node:
+    image: node:24-bookworm
+    container_name: finance-front-node
+    working_dir: /app
+    user: "1000:1000"
+    volumes:
+      - ./:/app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "127.0.0.1:5173:5173"
+    networks:
+      - finance-dev
+
+networks:
+  finance-dev:
+    external: true
+    name: finance-dev-network
