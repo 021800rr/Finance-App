@@ -1,29 +1,30 @@
 import * as React from 'react'
-import { SERVER_DOWN } from '../messages'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from './AuthContext'
 
 export function LogoutButton() {
+  const { t } = useTranslation()
   const { logout } = useAuth()
-  const [message, setMessage] = React.useState('')
+  const [failed, setFailed] = React.useState(false)
 
   async function handleClick() {
     try {
       await logout()
     } catch {
       // The server did not get the logout, so the cookies still work: stay logged in and say so.
-      setMessage(SERVER_DOWN)
+      setFailed(true)
     }
   }
 
   return (
     <>
-      {message && <span role="alert" className="text-red-600">{message}</span>}
+      {failed && <span role="alert" className="text-red-600">{t('app.server_down')}</span>}
       <button
         type="button"
         onClick={handleClick}
-        className="rounded-md border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50"
+        className="cursor-pointer rounded-md border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50"
       >
-        Wyloguj
+        {t('nav.logout')}
       </button>
     </>
   )

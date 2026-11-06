@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDebouncedValue } from '../ui/useDebouncedValue'
 import { useContractorSearch } from './operationApi'
 
@@ -12,9 +13,10 @@ type Props = {
   inputClassName: string
 }
 
-// As in the web app: type a part of the name, then pick a contractor from the list, or "➕ Dodaj" for a new one.
+// As in the web app: type a part of the name, then pick a contractor from the list, or "➕ Add" for a new one.
 // Typed text alone is not a choice, so a typo does not quietly add a new contractor.
 export function ContractorField({ value, onChange, error, inputClassName }: Props) {
+  const { t } = useTranslation()
   const [text, setText] = React.useState(value?.name ?? '')
   const [open, setOpen] = React.useState(false)
   const search = useDebouncedValue(text.trim(), 250)
@@ -41,7 +43,7 @@ export function ContractorField({ value, onChange, error, inputClassName }: Prop
         }}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        placeholder="Wpisz nazwę kontrahenta..."
+        placeholder={t('form.contractor_placeholder')}
         autoComplete="off"
         aria-invalid={error !== undefined}
         className={inputClassName}
@@ -71,7 +73,7 @@ export function ContractorField({ value, onChange, error, inputClassName }: Prop
                 onClick={() => choose({ id: null, name: text.trim() })}
                 className="block w-full cursor-pointer px-3 py-1.5 text-left text-indigo-700 hover:bg-slate-100"
               >
-                ➕ Dodaj „{text.trim()}”
+                {t('contractor_autocomplete.add', { name: text.trim() })}
               </button>
             </li>
           )}
@@ -79,7 +81,7 @@ export function ContractorField({ value, onChange, error, inputClassName }: Prop
       )}
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
       {!error && value?.id === null && (
-        <p className="mt-1 text-sm text-slate-500">Nowy kontrahent „{value.name}” zostanie dodany przy zapisie.</p>
+        <p className="mt-1 text-sm text-slate-500">{t('app.new_contractor', { name: value.name })}</p>
       )}
     </div>
   )

@@ -1,6 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query'
 import * as React from 'react'
 import * as api from '../api'
+import i18n from '../i18n'
+import { errorMessage } from '../messages'
 import { AuthContext } from './AuthContext'
 
 // Keeps the login state for the whole app: asks the API on start and changes it on login and logout.
@@ -24,11 +26,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function login(loginEmail: string, password: string): Promise<string | null> {
     const error = await api.login(loginEmail, password)
-    if (error === null) {
-      setEmail(await api.currentUser())
+    if (error !== null) {
+      return errorMessage(error, i18n.t('app.login_failed'))
     }
+    setEmail(await api.currentUser())
 
-    return error
+    return null
   }
 
   async function logout(): Promise<void> {

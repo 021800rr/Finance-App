@@ -1,8 +1,9 @@
+import { useTranslation } from 'react-i18next'
 import type { SortDirection } from './sorting'
 
 const ARROWS = {
-  asc: { empty: '△', filled: '▲', label: 'Sortuj rosnąco' },
-  desc: { empty: '▽', filled: '▼', label: 'Sortuj malejąco' },
+  asc: { empty: '△', filled: '▲', label: 'common.sort_ascending' },
+  desc: { empty: '▽', filled: '▼', label: 'common.sort_descending' },
 }
 
 type Props = {
@@ -38,12 +39,13 @@ function Arrow({ direction, active, onSort }: {
   active: boolean
   onSort: (direction: SortDirection) => void
 }) {
+  const { t } = useTranslation()
   const arrow = ARROWS[direction]
 
   return (
     <button
       type="button"
-      aria-label={arrow.label}
+      aria-label={t(arrow.label)}
       aria-pressed={active}
       onClick={(event) => {
         // An arrow sets the order; the click must not also reach the header, which would switch it back.

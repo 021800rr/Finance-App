@@ -1,26 +1,22 @@
+import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router'
 import { errorMessage } from '../messages'
+import { today } from '../ui/form'
 import { OperationForm } from './OperationForm'
 import { useAccounts, useCreateOperation } from './operationApi'
 
-// Today in the browser's time zone, as YYYY-MM-DD (toISOString() would give the UTC date).
-function today(): string {
-  const now = new Date()
-
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-}
-
-// /operation/new?account=ID: a new operation; "Dodaj operację" of an account history chooses its account.
+// /operation/new?account=ID: a new operation; "Add operation" of an account history chooses its account.
 export function NewOperationPage() {
+  const { t } = useTranslation()
   const [params] = useSearchParams()
   const accounts = useAccounts()
   const create = useCreateOperation()
 
   if (accounts.isPending) {
-    return <p className="text-slate-500">Wczytuję…</p>
+    return <p className="text-slate-500">{t('app.loading')}</p>
   }
   if (accounts.isError) {
-    return <p role="alert" className="text-red-600">{errorMessage(accounts.error, 'Nie udało się wczytać kont.')}</p>
+    return <p role="alert" className="text-red-600">{errorMessage(accounts.error, t('app.accounts_load_failed'))}</p>
   }
 
   const visible = accounts.data.filter((account) => !account.hidden)
@@ -32,17 +28,17 @@ export function NewOperationPage() {
       <div role="alert" className="space-y-2">
         <p className="text-red-600">
           {preselected === undefined
-            ? 'To konto nie istnieje.'
-            : 'To konto jest ukryte. Wybierz konto, które nie jest ukryte.'}
+            ? t('account.not_found', { ns: 'validators' })
+            : t('account.hidden_not_selectable', { ns: 'validators' })}
         </p>
-        <Link to="/" className="text-indigo-600 hover:underline">Wróć do podsumowania</Link>
+        <Link to="/" className="text-indigo-600 hover:underline">{t('error.back_home')}</Link>
       </div>
     )
   }
 
   return (
     <OperationForm
-      title="Nowa operacja"
+      title={t('operation.new_title')}
       accounts={visible}
       accountFixed={false}
       initial={{

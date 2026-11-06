@@ -1,1 +1,8 @@
 @import 'tailwindcss';
+
+/* The calendar of the date fields (react-day-picker) in the colours of the buttons. "body" makes this win over the
+   calendar's own style.css, which is loaded later. */
+body .rdp-root {
+  --rdp-accent-color: var(--color-indigo-600);
+  --rdp-accent-background-color: var(--color-indigo-50);
+}

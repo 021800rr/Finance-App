@@ -1,5 +1,6 @@
 import { CheckCircleIcon, PencilSquareIcon, QuestionMarkCircleIcon, TrashIcon } from '@heroicons/react/24/outline'
 import * as React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { errorMessage } from '../messages'
 import { formatAmount } from '../money'
@@ -12,6 +13,7 @@ const HIGHLIGHT = '[&>td]:border-y-2 [&>td]:border-blue-500 [&>td:first-child]:b
   + '[&>td:last-child]:border-r-2'
 
 export function OperationsTable({ operations, highlight }: { operations: Operation[]; highlight: number | null }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const setConfirmed = useSetOperationConfirmed()
@@ -20,9 +22,9 @@ export function OperationsTable({ operations, highlight }: { operations: Operati
   // One change at a time: the buttons wait until the table shows the result of the previous one.
   const busy = setConfirmed.isPending || remove.isPending
   const failure = remove.isError
-    ? errorMessage(remove.error, 'Nie udało się usunąć operacji.')
+    ? errorMessage(remove.error, t('app.delete_failed'))
     : setConfirmed.isError
-      ? errorMessage(setConfirmed.error, 'Nie udało się zmienić statusu potwierdzenia.')
+      ? errorMessage(setConfirmed.error, t('app.confirm_failed'))
       : otherSideMessage
 
   // Every action clears the message of the previous one, so only the last failure is on the screen.
@@ -40,7 +42,7 @@ export function OperationsTable({ operations, highlight }: { operations: Operati
       const otherSide = await findOtherSide(operation.id)
       navigate(`/account/${otherSide.accountId}/operations?highlight=${otherSide.id}`)
     } catch (error) {
-      setOtherSideMessage(errorMessage(error, 'Nie udało się znaleźć drugiej strony transakcji.'))
+      setOtherSideMessage(errorMessage(error, t('app.other_side_failed')))
       setParams({ ...Object.fromEntries(params), highlight: String(operation.id) })
     }
   }
@@ -52,7 +54,7 @@ export function OperationsTable({ operations, highlight }: { operations: Operati
 
   function deleteOperation(operation: Operation) {
     // The browser's own question, as in the web app.
-    if (!window.confirm('Usunąć?')) {
+    if (!window.confirm(t('operation.confirm_delete'))) {
       return
     }
     clearMessages()
@@ -66,11 +68,11 @@ export function OperationsTable({ operations, highlight }: { operations: Operati
         <thead className="bg-slate-800 text-left text-white">
           <tr>
             <th className={`${CELL} text-right`}>#</th>
-            <th className={CELL}>Data</th>
-            <th className={CELL}>Kontrahent</th>
-            <th className={CELL}>Opis</th>
-            <th className={`${CELL} text-right`}>Kwota</th>
-            <th className={CELL}><span className="sr-only">Akcje</span></th>
+            <th className={CELL}>{t('operation.date')}</th>
+            <th className={CELL}>{t('operation.contractor')}</th>
+            <th className={CELL}>{t('operation.description')}</th>
+            <th className={`${CELL} text-right`}>{t('operation.amount')}</th>
+            <th className={CELL}><span className="sr-only">{t('app.actions')}</span></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 text-slate-800">
@@ -95,8 +97,8 @@ export function OperationsTable({ operations, highlight }: { operations: Operati
                       <button
                         type="button"
                         onClick={() => goToOtherSide(operation)}
-                        title="Pokaż drugą stronę transakcji"
-                        aria-label="Pokaż drugą stronę transakcji"
+                        title={t('operation.show_other_side')}
+                        aria-label={t('operation.show_other_side')}
                         className="cursor-pointer"
                       >
                         🔗
@@ -107,8 +109,8 @@ export function OperationsTable({ operations, highlight }: { operations: Operati
                     type="button"
                     onClick={() => toggleConfirmed(operation)}
                     disabled={busy}
-                    title={operation.confirmed ? 'Potwierdzona' : 'Do potwierdzenia'}
-                    aria-label="Zmień status potwierdzenia"
+                    title={operation.confirmed ? t('app.confirmed') : t('app.unconfirmed')}
+                    aria-label={t('operation.change_confirmation_status')}
                     aria-pressed={operation.confirmed}
                     className={ICON}
                   >
@@ -116,15 +118,20 @@ export function OperationsTable({ operations, highlight }: { operations: Operati
                       ? <CheckCircleIcon className="size-5 text-green-600" />
                       : <QuestionMarkCircleIcon className="size-5 text-amber-500" />}
                   </button>
-                  <Link to={`/operation/${operation.id}/edit`} title="Edytuj" aria-label="Edytuj" className={ICON}>
+                  <Link
+                    to={`/operation/${operation.id}/edit`}
+                    title={t('operation.edit')}
+                    aria-label={t('operation.edit')}
+                    className={ICON}
+                  >
                     <PencilSquareIcon className="size-5" />
                   </Link>
                   <button
                     type="button"
                     onClick={() => deleteOperation(operation)}
                     disabled={busy}
-                    title="Usuń"
-                    aria-label="Usuń"
+                    title={t('operation.delete')}
+                    aria-label={t('operation.delete')}
                     className={ICON}
                   >
                     <TrashIcon className="size-5 text-red-600" />
@@ -135,7 +142,7 @@ export function OperationsTable({ operations, highlight }: { operations: Operati
           ))}
           {operations.length === 0 && (
             <tr>
-              <td colSpan={6} className={`${CELL} text-center text-slate-500`}>Brak operacji</td>
+              <td colSpan={6} className={`${CELL} text-center text-slate-500`}>{t('operation.none_found')}</td>
             </tr>
           )}
         </tbody>

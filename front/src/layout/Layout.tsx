@@ -1,28 +1,30 @@
+import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet } from 'react-router'
-import { useAuth } from '../auth/AuthContext'
 import { LogoutButton } from '../auth/LogoutButton'
+import { LanguageSwitcher } from './LanguageSwitcher'
 
-// The same menu as in the web app (templates/partials/_navbar.html.twig), with the same addresses.
+// The same menu as in the web app (templates/partials/_navbar.html.twig), with the same addresses and texts.
 const MENU = [
-  { to: '/operation/new', label: 'Nowa operacja' },
-  { to: '/transfer/new', label: 'Przelew / Wymiana' },
-  { to: '/fixed-expense', label: 'Opłaty stałe' },
-  { to: '/rate', label: 'Kursy' },
-  { to: '/gold-assets', label: 'Złoto – aktywa' },
-  { to: '/gold-prices', label: 'Złoto – ceny' },
+  { to: '/operation/new', label: 'nav.new_operation' },
+  { to: '/transfer/new', label: 'nav.transfer' },
+  { to: '/fixed-expense', label: 'nav.fixed_expenses' },
+  { to: '/rate', label: 'nav.rates' },
+  { to: '/gold-assets', label: 'nav.gold_assets' },
+  { to: '/gold-prices', label: 'nav.gold_prices' },
 ]
 
-// The frame of every page of the logged-in app: the header with the menu, the user and the logout; the page of the
-// current address goes in place of <Outlet />.
+// The frame of every page of the logged-in app: the header with the menu, the language and the logout, all in one
+// row (on a narrow screen the menu scrolls sideways instead of wrapping); the page of the current address goes in
+// place of <Outlet />.
 export function Layout() {
-  const { email } = useAuth()
+  const { t } = useTranslation()
 
   return (
     <div className="min-h-screen bg-slate-100">
       <header className="bg-white shadow-sm">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-          <Link to="/" className="text-lg font-semibold text-slate-900">Finance</Link>
-          <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3">
+          <Link to="/" className="shrink-0 text-lg font-semibold text-slate-900">Finance</Link>
+          <nav className="flex min-w-0 gap-4 overflow-x-auto whitespace-nowrap text-sm">
             {MENU.map((item) => (
               <NavLink
                 key={item.to}
@@ -31,17 +33,17 @@ export function Layout() {
                   ? 'font-medium text-indigo-600'
                   : 'text-slate-600 hover:text-slate-900'}
               >
-                {item.label}
+                {t(item.label)}
               </NavLink>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-3 text-sm text-slate-600">
-            <span>{email}</span>
+          <div className="ml-auto flex shrink-0 items-center gap-3 whitespace-nowrap text-sm text-slate-600">
+            <LanguageSwitcher />
             <LogoutButton />
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-6">
+      <main className="mx-auto max-w-6xl px-4 py-6">
         <Outlet />
       </main>
     </div>

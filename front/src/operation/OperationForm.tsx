@@ -1,17 +1,15 @@
 import * as React from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { ApiError } from '../api'
-import { errorMessage, violationMessage } from '../messages'
+import { errorMessage } from '../messages'
+import { AmountInput } from '../ui/AmountInput'
+import { DateInput } from '../ui/DateInput'
+import { fieldErrors, inputClass, MAX_DATE, MIN_DATE, toApiAmount } from '../ui/form'
+import { FormButtons } from '../ui/FormButtons'
+import { FormRow } from '../ui/FormRow'
 import { type ContractorChoice, ContractorField } from './ContractorField'
 import type { AccountChoice, OperationInput } from './operationApi'
-
-const INPUT = 'block w-full rounded-md border px-3 py-2 text-slate-900 focus:outline-none focus:ring-1 '
-const INPUT_OK = `${INPUT}border-slate-300 focus:border-indigo-500 focus:ring-indigo-500`
-const INPUT_ERROR = `${INPUT}border-red-500 focus:border-red-500 focus:ring-red-500`
-
-// The business date range of the backend (BusinessDateRange).
-const MIN_DATE = '2025-01-01'
-const MAX_DATE = '2070-12-31'
 
 type Field = 'account' | 'contractor' | 'date' | 'amount' | 'description'
 
@@ -44,24 +42,10 @@ type Props = {
   save: (input: OperationInput, accountId: number) => Promise<string>
 }
 
-// 1234,56 → 1234.56: the API takes a plain decimal number with a dot.
-function apiAmount(amount: string): string {
-  return amount.replace(',', '.')
-}
-
-// The characters an amount is made of: digits, a comma or a dot, and a minus only at the start.
-const AMOUNT_CHARACTER = /^[\d,.-]$/
-
-// What is left of a typed or pasted text when only amount characters stay, e.g. '-1 234,56 zł' → '-1234,56'.
-function amountCharacters(text: string): string {
-  const kept = text.replace(/[^\d,.-]/g, '')
-
-  return (kept.startsWith('-') ? '-' : '') + kept.replace(/-/g, '')
-}
-
 // The form of a new operation and of an edit, as in the web app: account, contractor, date, amount, description,
 // confirmed. The API checks the values; its field errors appear under their fields, in Polish.
 export function OperationForm({ title, initial, accounts, accountFixed, save }: Props) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [values, setValues] = React.useState(initial)
   const [errors, setErrors] = React.useState<Partial<Record<Field, string>>>({})
@@ -78,14 +62,14 @@ export function OperationForm({ title, initial, accounts, accountFixed, save }: 
     // What the API cannot tell: no account to choose, or a contractor typed but not picked from the list.
     const ownErrors: Partial<Record<Field, string>> = {}
     if (values.accountId === null) {
-      ownErrors.account = 'Wybierz konto.'
+      ownErrors.account = t('operation.account_required', { ns: 'validators' })
     }
     if (values.contractor === null) {
-      ownErrors.contractor = 'Wybierz kontrahenta z listy.'
+      ownErrors.contractor = t('contractor.required', { ns: 'validators' })
     }
     setErrors(ownErrors)
     if (values.accountId === null || values.contractor === null) {
-      setFailure('Uzupełnij wymagane pola. Zaznaczone na czerwono.')
+      setFailure(t('form.fill_required_fields'))
       return
     }
 
@@ -94,7 +78,7 @@ export function OperationForm({ title, initial, accounts, accountFixed, save }: 
         ? { contractorName: values.contractor.name }
         : { contractorId: values.contractor.id }),
       operationDate: values.operationDate,
-      amount: apiAmount(values.amount),
+      amount: toApiAmount(values.amount),
       description: values.description.trim() === '' ? null : values.description,
       confirmed: values.confirmed,
     }
@@ -103,17 +87,10 @@ export function OperationForm({ title, initial, accounts, accountFixed, save }: 
       navigate(await save(input, values.accountId))
     } catch (error) {
       if (error instanceof ApiError && error.violations.length > 0) {
-        const apiErrors: Partial<Record<Field, string>> = {}
-        for (const violation of error.violations) {
-          const field = FIELD_OF_PATH[violation.propertyPath]
-          if (field !== undefined) {
-            apiErrors[field] ??= violationMessage(violation)
-          }
-        }
-        setErrors(apiErrors)
-        setFailure('Uzupełnij wymagane pola. Zaznaczone na czerwono.')
+        setErrors(fieldErrors(error.violations, FIELD_OF_PATH))
+        setFailure(t('form.fill_required_fields'))
       } else {
-        setFailure(errorMessage(error, 'Nie udało się zapisać operacji.'))
+        setFailure(errorMessage(error, t('app.save_operation_failed')))
       }
     } finally {
       setSending(false)
@@ -125,66 +102,57 @@ export function OperationForm({ title, initial, accounts, accountFixed, save }: 
       <h1 className="mb-4 text-xl font-semibold text-slate-900">{title}</h1>
       {failure && <p role="alert" className="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{failure}</p>}
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        <Row label="Konto" htmlFor="account" error={errors.account}>
+        <FormRow label={t('form.account')} htmlFor="account" error={errors.account}>
           <select
             id="account"
             value={values.accountId ?? ''}
             onChange={(event) => set('accountId', Number(event.target.value))}
             disabled={accountFixed}
-            className={`${errors.account ? INPUT_ERROR : INPUT_OK} disabled:bg-slate-100`}
+            className={inputClass(errors.account)}
           >
             {accounts.map((account) => (
               <option key={account.id} value={account.id}>{account.displayLabel}</option>
             ))}
           </select>
-        </Row>
-        <Row label="Kontrahent" htmlFor="contractor">
+        </FormRow>
+        <FormRow label={t('form.contractor')} htmlFor="contractor">
           <ContractorField
             value={values.contractor}
             onChange={(contractor) => set('contractor', contractor)}
             error={errors.contractor}
-            inputClassName={errors.contractor ? INPUT_ERROR : INPUT_OK}
+            inputClassName={inputClass(errors.contractor)}
           />
-        </Row>
-        <Row label="Data" htmlFor="date" error={errors.date}>
-          <input
+        </FormRow>
+        <FormRow label={t('form.date')} htmlFor="date" error={errors.date}>
+          <DateInput
             id="date"
-            type="date"
             value={values.operationDate}
             min={MIN_DATE}
             max={MAX_DATE}
-            onChange={(event) => set('operationDate', event.target.value)}
-            className={errors.date ? INPUT_ERROR : INPUT_OK}
+            onChange={(date) => set('operationDate', date)}
+            className={inputClass(errors.date)}
           />
-        </Row>
-        <Row label="Kwota" htmlFor="amount" error={errors.amount}>
-          <input
+        </FormRow>
+        <FormRow label={t('form.amount')} htmlFor="amount" error={errors.amount}>
+          <AmountInput
             id="amount"
-            type="text"
-            inputMode="decimal"
             value={values.amount}
-            // A typed key that is not an amount character does nothing, and the caret stays where it was. Longer
-            // text (a paste) goes on to onChange, which keeps only its amount characters.
-            onBeforeInput={(event) => {
-              if (event.data.length === 1 && !AMOUNT_CHARACTER.test(event.data)) {
-                event.preventDefault()
-              }
-            }}
-            onChange={(event) => set('amount', amountCharacters(event.target.value))}
-            placeholder="-309,00 wydatek · 309,00 wpływ"
-            className={`${errors.amount ? INPUT_ERROR : INPUT_OK} tabular-nums`}
+            onChange={(amount) => set('amount', amount)}
+            allowMinus
+            placeholder={t('app.amount_placeholder')}
+            className={inputClass(errors.amount)}
           />
-        </Row>
-        <Row label="Opis" htmlFor="description" error={errors.description}>
+        </FormRow>
+        <FormRow label={t('form.description')} htmlFor="description" error={errors.description}>
           <input
             id="description"
             type="text"
             maxLength={255}
             value={values.description}
             onChange={(event) => set('description', event.target.value)}
-            className={errors.description ? INPUT_ERROR : INPUT_OK}
+            className={inputClass(errors.description)}
           />
-        </Row>
+        </FormRow>
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input
             type="checkbox"
@@ -192,41 +160,10 @@ export function OperationForm({ title, initial, accounts, accountFixed, save }: 
             onChange={(event) => set('confirmed', event.target.checked)}
             className="size-4"
           />
-          Potwierdzone
+          {t('form.confirmed')}
         </label>
-        <div className="flex gap-2 pt-2">
-          <button
-            type="submit"
-            disabled={sending}
-            className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700
-              disabled:opacity-50"
-          >
-            {sending ? 'Zapisuję…' : 'Zapisz'}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="rounded-md border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50"
-          >
-            Anuluj
-          </button>
-        </div>
+        <FormButtons sending={sending} />
       </form>
     </section>
-  )
-}
-
-function Row({ label, htmlFor, error, children }: {
-  label: string
-  htmlFor: string
-  error?: string
-  children: React.ReactNode
-}) {
-  return (
-    <div>
-      <label htmlFor={htmlFor} className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
-      {children}
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-    </div>
   )
 }

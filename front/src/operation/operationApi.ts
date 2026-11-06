@@ -3,7 +3,7 @@ import { getJson, patchJson, postJson } from '../api'
 import type { Operation } from '../account/accountApi'
 
 // One row of GET /api/accounts.
-export type AccountChoice = { id: number; hidden: boolean; isMain: boolean; displayLabel: string }
+export type AccountChoice = { id: number; hidden: boolean; isMain: boolean; displayLabel: string; currencyCode: string }
 
 export type Contractor = { id: number; name: string }
 

@@ -5,18 +5,27 @@
 export type Violation = { propertyPath: string; message: string; code?: string; params?: Record<string, string> }
 
 // The error body of the API (RFC 9457 Problem Details): errorCode is stable, detail is English text for curl.
-type Problem = { detail?: string; errorCode?: string; violations?: Violation[] }
+type Problem = { detail?: string; errorCode?: string; params?: Record<string, string>; violations?: Violation[] }
 
-// An answer of the API other than 2xx, with the errorCode of its body and, for 422, the field errors.
+// An answer of the API other than 2xx: the errorCode of its body with the values of its message, and for 422 the
+// field errors.
 export class ApiError extends Error {
   readonly status: number
   readonly errorCode: string | undefined
+  readonly params: Record<string, string>
   readonly violations: Violation[]
 
-  constructor(status: number, errorCode: string | undefined, message: string, violations: Violation[] = []) {
+  constructor(
+    status: number,
+    errorCode: string | undefined,
+    message: string,
+    params: Record<string, string> = {},
+    violations: Violation[] = [],
+  ) {
     super(message)
     this.status = status
     this.errorCode = errorCode
+    this.params = params
     this.violations = violations
   }
 }
@@ -29,6 +38,7 @@ async function apiError(method: string, path: string, response: Response): Promi
     response.status,
     problem.errorCode,
     problem.detail ?? `${method} ${path}: ${response.status}`,
+    problem.params ?? {},
     problem.violations ?? [],
   )
 }
@@ -135,19 +145,15 @@ export async function deleteResource(path: string): Promise<void> {
   }
 }
 
-// Logs in. Returns null on success, otherwise the backend's message to show (e.g. wrong password, login locked).
-export async function login(email: string, password: string): Promise<string | null> {
+// Logs in. Returns null on success, otherwise why not (e.g. a wrong password, or the login locked for a while).
+export async function login(email: string, password: string): Promise<ApiError | null> {
   const response = await fetch('/api/login_check', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   })
-  if (response.ok) {
-    return null
-  }
-  const problem: Problem = await response.json()
 
-  return problem.detail ?? 'Logowanie nie powiodło się.'
+  return response.ok ? null : apiError('POST', '/api/login_check', response)
 }
 
 // Deletes the refresh token, blocks the JWT and clears both cookies. 400 only means there was no refresh token
