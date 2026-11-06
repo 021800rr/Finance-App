@@ -1,0 +1,13 @@
+# Both are answered by the "api" firewall (security.yaml), so they need no controller: refresh_jwt takes over
+# the refresh, the logout listener the invalidation.
+api_token_refresh:
+    path: /api/token/refresh
+    methods: [POST]
+    defaults:
+        _locale: en
+
+api_token_invalidate:
+    path: /api/token/invalidate
+    methods: [POST]
+    defaults:
+        _locale: en

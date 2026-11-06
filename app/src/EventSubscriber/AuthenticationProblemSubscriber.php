@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\EventSubscriber;
 
 use App\Http\ProblemResponse;
+use Gesdinet\JWTRefreshTokenBundle\Event\RefreshAuthenticationFailureEvent;
+use Gesdinet\JWTRefreshTokenBundle\Event\RefreshTokenNotFoundEvent;
+use Gesdinet\JWTRefreshTokenBundle\Security\Exception\MissingTokenException;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationFailureEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTExpiredEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTInvalidEvent;
@@ -17,9 +20,9 @@ use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\Exception\TooManyLoginAttemptsAuthenticationException;
 
 /**
- * The JWT bundle answers authentication failures before API Platform sees the request, in its own format
- * ({"code": 401, "message": "..."}). This gives them the same Problem Details shape as every other API error:
- * "errorCode", "params" and an English "detail". Status and headers (WWW-Authenticate etc.) are kept.
+ * The JWT and refresh token bundles answer authentication failures before API Platform sees the request, in their
+ * own format ({"code": 401, "message": "..."}). This gives them the same Problem Details shape as every other API
+ * error: "errorCode", "params" and an English "detail". Status, headers (WWW-Authenticate etc.) and cookies are kept.
  */
 final readonly class AuthenticationProblemSubscriber implements EventSubscriberInterface
 {
@@ -30,6 +33,8 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
             Events::JWT_INVALID => 'onTokenInvalid',
             Events::JWT_EXPIRED => 'onTokenExpired',
             Events::AUTHENTICATION_FAILURE => 'onLoginFailure',
+            'gesdinet.refresh_token_not_found' => 'onRefreshTokenNotFound',
+            'gesdinet.refresh_token_failure' => 'onRefreshFailure',
         ];
     }
 
@@ -38,7 +43,8 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
         $event->setResponse($this->problem(
             $event->getResponse(),
             'auth.token_missing',
-            'JWT Token not found. Send it as "Authorization: Bearer <token>"; get one from POST /api/login_check.',
+            'JWT Token not found. Send it as "Authorization: Bearer <token>" or in the BEARER cookie; '
+            .'get one from POST /api/login_check.',
         ));
     }
 
@@ -52,7 +58,8 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
         $event->setResponse($this->problem(
             $event->getResponse(),
             'auth.token_expired',
-            'Expired JWT Token. Get a new one from POST /api/login_check.',
+            'Expired JWT Token. Get a new one from POST /api/token/refresh, '
+            .'or log in again with POST /api/login_check.',
         ));
     }
 
@@ -78,6 +85,35 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
 
         $errorCode = $exception instanceof BadCredentialsException ? 'auth.invalid_credentials' : 'auth.login_failed';
         $event->setResponse($this->problem($response, $errorCode, $detail));
+    }
+
+    public function onRefreshTokenNotFound(RefreshTokenNotFoundEvent $event): void
+    {
+        $event->setResponse($this->refreshTokenMissing($event->getResponse()));
+    }
+
+    /**
+     * Unknown, expired and already used refresh tokens are told apart only in the logs: a client can do one thing
+     * about each, log in again.
+     */
+    public function onRefreshFailure(RefreshAuthenticationFailureEvent $event): void
+    {
+        $event->setResponse($event->getException() instanceof MissingTokenException
+            ? $this->refreshTokenMissing($event->getResponse())
+            : $this->problem(
+                $event->getResponse(),
+                'auth.refresh_token_invalid',
+                'Invalid, expired or already used refresh token. Log in again with POST /api/login_check.',
+            ));
+    }
+
+    private function refreshTokenMissing(?Response $original): Response
+    {
+        return $this->problem(
+            $original,
+            'auth.refresh_token_missing',
+            'Refresh token not found. Send it in the refresh_token cookie or as {"refresh_token": "<token>"}.',
+        );
     }
 
     /**

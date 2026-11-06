@@ -2,4 +2,24 @@ lexik_jwt_authentication:
     secret_key: '%env(resolve:JWT_SECRET_KEY)%'
     public_key: '%env(resolve:JWT_PUBLIC_KEY)%'
     pass_phrase: '%env(JWT_PASSPHRASE)%'
-    token_ttl: 28800
+    # 15 minutes: the browser gets a new one from POST /api/token/refresh (gesdinet_jwt_refresh_token.yaml).
+    token_ttl: 900
+    # The token goes both into an HttpOnly cookie, for the browser, and into the response body, for curl,
+    # Swagger and scripts, which send it back as "Authorization: Bearer <token>".
+    remove_token_from_body_when_cookies_used: false
+    set_cookies:
+        BEARER:
+            samesite: strict
+            path: /api
+            secure: true
+            httpOnly: true
+    token_extractors:
+        authorization_header:
+            enabled: true
+        cookie:
+            enabled: true
+            name: BEARER
+    # A token of a logout, or one replaced by a refresh, is refused until it would have expired anyway.
+    blocklist_token:
+        enabled: true
+        cache: cache.app

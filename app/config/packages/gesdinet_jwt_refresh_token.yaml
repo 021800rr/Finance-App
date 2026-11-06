@@ -1,0 +1,23 @@
+gesdinet_jwt_refresh_token:
+    refresh_token_class: App\Entity\RefreshToken
+    # 30 days; every refresh replaces the token (single_use) and its 30 days start over.
+    ttl: 2592000
+    single_use: true
+    # A spent token presented again (most likely stolen) revokes every token of that login.
+    reuse_detection:
+        enabled: true
+    # The JWT a refresh replaces stops working at once (Lexik's blocklist_token).
+    block_previous_jwt: true
+    # Only the hash of a token is stored, so a copy of the database cannot be used to refresh.
+    hash_tokens:
+        enabled: true
+        accept_stored_in_the_clear: false
+    # Like the JWT: an HttpOnly cookie for the browser and the response body for API clients. The cookie goes only
+    # to /api/token/refresh and /api/token/invalidate.
+    cookie:
+        enabled: true
+        same_site: strict
+        path: /api/token
+        remove_token_from_body: false
+    api_platform:
+        enabled: true

@@ -297,23 +297,26 @@ final class ProblemDetailsApiTest extends WebTestCase
     }
 
     /**
-     * @return iterable<string, array{string, string, string}>
+     * @return iterable<string, array{string, string, string, string}>
      */
     public static function authenticationExamples(): iterable
     {
-        yield 'login' => ['/api/login_check', 'post', 'auth.invalid_credentials'];
-        yield 'protected address' => ['/api/accounts', 'get', 'auth.token_missing'];
+        yield 'login' => ['/api/login_check', 'post', '401', 'auth.invalid_credentials'];
+        yield 'protected address' => ['/api/accounts', 'get', '401', 'auth.token_missing'];
+        yield 'refresh' => ['/api/token/refresh', 'post', '401', 'auth.refresh_token_invalid'];
+        yield 'logout' => ['/api/token/invalidate', 'post', '400', 'auth.refresh_token_missing'];
     }
 
     #[DataProvider('authenticationExamples')]
     public function testOpenApiShowsTheAuthenticationErrorThatFitsTheAddress(
         string $path,
         string $method,
+        string $status,
         string $errorCode,
     ): void {
         $schema = self::objectAt(
             $this->openApiDocs(),
-            'paths', $path, $method, 'responses', '401', 'content', 'application/json', 'schema',
+            'paths', $path, $method, 'responses', $status, 'content', 'application/json', 'schema',
         );
 
         $example = self::objectAt($schema, 'allOf', '1', 'properties', 'errorCode');

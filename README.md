@@ -8,7 +8,7 @@ Osobisty tracker finansowy do kontroli domowych kont.
 
 - **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest 
     rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
-- **~1600 testów PHPUnit**.
+- **~1620 testów PHPUnit**.
 - **PHPStan na najwyższym poziomie (`max`)**.
 - **PHP CS Fixer**.
 - **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
@@ -19,7 +19,8 @@ Osobisty tracker finansowy do kontroli domowych kont.
 
 - Symfony 8.1 / PHP 8.5, Doctrine ORM, API Platform
 - PostgreSQL
-- Symfony Security (form login do widoku Twig) + JWT (LexikJWTAuthenticationBundle) dla API
+- Symfony Security (form login do widoku Twig) + JWT (LexikJWTAuthenticationBundle) i refresh tokeny
+  (gesdinet/jwt-refresh-token-bundle) dla API
 - PHPUnit, PHPStan, PHP CS Fixer
 - Bootstrap 5, Stimulus (klasyczny widok Twig)
 
@@ -55,11 +56,25 @@ Appka jest jednoosobowa, więc model bezpieczeństwa jest celowo prosty.
 - **Konta zakłada się z CLI**, `php bin/console app:create-user <email> <hasło>`.
 - **E-mail jest normalizowany** (trim + małe litery) przy zapisie i przy logowaniu.
 - **Throttling logowania** 5 nieudanych prób na 15 minut.
-- **JWT żyje 8 godzin** `token_ttl: 28800`.
+- **JWT żyje 15 minut** `token_ttl: 900`, **refresh token 30 dni**.
+- **Rotacja refresh tokenów**: każdy działa raz, a ponowne użycie zużytego unieważnia całe logowanie. W bazie jest
+    tylko hash.
+- **Blocklista JWT**: wylogowanie i odświeżenie od razu blokują stary JWT.
+
+**Endpointy logowania:**
+
+- `POST /api/login_check` — logowanie (`email`, `password`), zwraca JWT i refresh token,
+- `POST /api/token/refresh` — nowa para tokenów w zamian za refresh token,
+- `POST /api/token/invalidate` — wylogowanie: usuwa refresh token i blokuje JWT.
+
+**Ciasteczka:** oba tokeny trafiają do ciasteczek HttpOnly, Secure, SameSite=Strict (`BEARER` i `refresh_token`),
+więc przeglądarka wysyła je sama, a JavaScript ich nie odczyta. Curl, Swagger i skrypty biorą tokeny z treści
+odpowiedzi i wysyłają JWT jako `Authorization: Bearer <token>`.
 
 **Świadome ograniczenia:**
 
-- Tokeny JWT **nie są odwoływalne** — wylogowanie nie unieważnia tokena. Nie ma tu odświeżania tokenów i blacklisty.
+- Blocklista JWT i wykrywanie ponownego użycia refresh tokenów są w `cache.app`, czyli w plikach na serwerze. Przy
+    kilku serwerach trzeba wspólnego cache (np. Redis).
 - Nie ma resetu hasła, zmiany hasła, 2FA ani blokady konta.
 - `/api/docs` jest publiczne.
 - Jeden user - **brak izolacji danych per użytkownik**.

@@ -43,6 +43,12 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     private const string LOGIN_ERROR_DESCRIPTION = 'Wrong email or password, or the login is locked after too many '
         .'failed attempts (errorCode auth.invalid_credentials or auth.too_many_login_attempts).';
 
+    private const string REFRESH_ERROR_DESCRIPTION = 'The refresh token is missing, or invalid, expired or already '
+        .'used (errorCode auth.refresh_token_missing or auth.refresh_token_invalid). Log in again.';
+
+    private const string LOGOUT_ERROR_DESCRIPTION = 'The request carries no refresh token '
+        .'(errorCode auth.refresh_token_missing).';
+
     private const string CONTRACTOR_RACE_DESCRIPTION = 'Another request stored the same new contractorName at the '
         .'same moment (errorCode contractor.name_not_unique). Nothing was stored; send the request again.';
 
@@ -142,6 +148,12 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         }
         if ('POST /api/login_check' === $route) {
             $responses['401'] = $this->errorResponse(self::LOGIN_ERROR_DESCRIPTION);
+        }
+        if ('POST /api/token/refresh' === $route) {
+            $responses['401'] = $this->errorResponse(self::REFRESH_ERROR_DESCRIPTION);
+        }
+        if ('POST /api/token/invalidate' === $route) {
+            $responses['400'] = $this->errorResponse(self::LOGOUT_ERROR_DESCRIPTION);
         }
         if (isset(self::CONFLICTS[$route])) {
             $responses['409'] = $this->errorResponse(self::CONFLICTS[$route]);
@@ -263,6 +275,8 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     {
         return match (true) {
             401 === $status && 'POST /api/login_check' === $route => 'auth.invalid_credentials',
+            401 === $status && 'POST /api/token/refresh' === $route => 'auth.refresh_token_invalid',
+            400 === $status && 'POST /api/token/invalidate' === $route => 'auth.refresh_token_missing',
             401 === $status => 'auth.token_missing',
             422 === $status => 'validation.failed',
             default => ProblemResponse::httpErrorCode($status),

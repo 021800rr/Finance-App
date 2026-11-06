@@ -32,6 +32,20 @@ security:
             lazy: true
             provider: app_user_provider
             jwt: ~
+            # Without a token the JWT authenticator answers (401 auth.token_missing), as before the refresh.
+            entry_point: jwt
+            # A new JWT and refresh token for a refresh token (gesdinet_jwt_refresh_token.yaml).
+            refresh_jwt:
+                check_path: api_token_refresh
+                invalidate_token_on_logout: true
+            # Logging out deletes the refresh token, blocks the JWT and clears both cookies.
+            logout:
+                path: api_token_invalidate
+                delete_cookies:
+                    BEARER:
+                        path: /api
+                        secure: true
+                        samesite: strict
 
         main:
             lazy: true
@@ -51,6 +65,8 @@ security:
     access_control:
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/login_check$, roles: PUBLIC_ACCESS }
+        # Reachable with an expired JWT: the refresh token is what they check.
+        - { path: ^/api/token/(refresh|invalidate)$, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
         - { path: ^/, roles: ROLE_USER }

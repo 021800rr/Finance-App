@@ -29,6 +29,8 @@ services:
 
     App\OpenApi\JwtDecorator:
         decorates: 'api_platform.openapi.factory'
+        # After LexikJWT (0, the login) and gesdinet (-25, the refresh), before ProblemDetailsDecorator (-100).
+        decoration_priority: -50
         arguments: [ '@.inner' ]
         autoconfigure: false
 
