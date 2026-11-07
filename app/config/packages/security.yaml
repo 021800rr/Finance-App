@@ -22,9 +22,9 @@ security:
                 password_path: password
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
+            # One counter with the web form: a lock there locks the API too (config/packages/rate_limiter.yaml).
             login_throttling:
-                max_attempts: 5
-                interval: '15 minutes'
+                limiter: App\Security\LoginRateLimiter
 
         api:
             pattern: ^/api
@@ -50,9 +50,9 @@ security:
         main:
             lazy: true
             provider: app_user_provider
+            # One counter with the API login (config/packages/rate_limiter.yaml).
             login_throttling:
-                max_attempts: 5
-                interval: '15 minutes'
+                limiter: App\Security\LoginRateLimiter
             form_login:
                 login_path: app_login
                 check_path: app_login

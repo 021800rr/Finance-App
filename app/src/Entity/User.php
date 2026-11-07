@@ -50,13 +50,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public static function normalizeEmail(string $email): string
     {
-        $normalized = mb_strtolower(trim($email));
+        $normalized = self::canonicalEmail($email);
         self::assertNotBlank($normalized, 'Email');
         if (false === filter_var($normalized, FILTER_VALIDATE_EMAIL)) {
             throw new \InvalidArgumentException(sprintf('Email "%s" is not a valid address.', $normalized));
         }
 
         return $normalized;
+    }
+
+    /**
+     * The form every spelling of an address is compared in: trimmed, lower case. Unlike normalizeEmail() it accepts
+     * any text, as typed into a login form, so the login throttling can count the attempts at one account together.
+     */
+    public static function canonicalEmail(string $email): string
+    {
+        return mb_strtolower(trim($email));
     }
 
     public function getId(): int

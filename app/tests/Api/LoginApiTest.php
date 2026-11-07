@@ -54,6 +54,23 @@ final class LoginApiTest extends WebTestCase
         self::assertStringNotContainsString('"token"', (string) $this->client->getResponse()->getContent());
     }
 
+    public function testAnotherSpellingOfTheLockedAddressIsLockedToo(): void
+    {
+        // The limiter lives in the kernel's memory in tests (config/packages/test/cache.yaml).
+        $this->client->disableReboot();
+        for ($attempt = 1; $attempt <= 5; ++$attempt) {
+            $this->requestLogin(AppFixtures::TEST_USER_EMAIL, 'wrong-password-'.$attempt);
+        }
+
+        // Each of these logs in to the same account, so each must meet the same lock.
+        foreach ([' '.AppFixtures::TEST_USER_EMAIL, AppFixtures::TEST_USER_EMAIL.'  ', 'TEST@Example.COM'] as $email) {
+            $this->requestLogin($email, AppFixtures::TEST_USER_PASSWORD);
+
+            self::assertResponseStatusCodeSame(401, $email);
+            self::assertStringNotContainsString('"token"', (string) $this->client->getResponse()->getContent());
+        }
+    }
+
     private function requestLogin(string $email, string $password): void
     {
         $this->client->request(

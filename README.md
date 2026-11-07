@@ -4,25 +4,12 @@
 
 Osobisty tracker finansowy do kontroli domowych kont.
 
-## Co tu jest warte pokazania
-
-- **Architektura API Platform** oparta o wzorzec Resource / Provider / Processor — logika odczytu i zapisu jest 
-    rozdzielona i niezależnie testowalna, bez tuczenia kontrolerów.
-- **PHPUnit**.
-- **PHPStan**.
-- **PHP CS Fixer**.
-- **Pełna dokumentacja API** (OpenAPI/Swagger) pod `/api/docs` — auto-generowana z adnotacji, zawsze aktualna.
-- **Przewidywalne błędy API** (RFC 9457 Problem Details) — każdy błąd ma stały `errorCode`, parametry
-    i opis; szczegóły w sekcji [Błędy API](#błędy-api).
-
 ## Stack
 
-- Symfony 8.1 / PHP 8.5, Doctrine ORM, API Platform
+- Symfony 8.1, API Platform 5.0, PHP 8.5, Doctrine ORM
 - PostgreSQL
-- Symfony Security (form login do widoku Twig) + JWT (LexikJWTAuthenticationBundle) i refresh tokeny
-  (gesdinet/jwt-refresh-token-bundle) dla API
+- Symfony Security, JWT
 - PHPUnit, PHPStan, PHP CS Fixer
-- Bootstrap 5, Stimulus (klasyczny widok Twig)
 
 ## Uruchomienie
 
@@ -32,11 +19,11 @@ cd Finance-App
 
 make build       # zbuduj i uruchom kontenery
 make install     # composer install
-make migrate     # migracje bazy dev
-make fixtures    # przykładowe dane demo
-make test        # baza testowa + phpunit + phpstan + cs-fixer
+make migrate     # migracja
+make fixtures    # dane demo
+make test        # phpunit + phpstan + cs-fixer etc...
 make user        # załóż konto demo
-make token       # pobierz token JWT konta demo
+make token       # pobierz token konta demo
 ```
 
 ## Logowanie
@@ -49,54 +36,43 @@ openapi: http://localhost:8081/api/docs.jsonopenapi
 
 ## Bezpieczeństwo
 
-Appka jest jednoosobowa, więc model bezpieczeństwa jest celowo prosty.
+- Aplikacja jest jednoosobowa.
+- Throttling logowania 5 nieudanych prób na 15 minut.
+- JWT żyje 15 minut `token_ttl: 900`, refresh token 30 dni.
+- Blacklista JWT.
+- Nie ma resetu hasła, zmiany hasła, 2FA ani blokady konta.
 
-**Co jest zrobione:**
-
-- **Konta zakłada się z CLI**, `php bin/console app:create-user <email> <hasło>`.
-- **E-mail jest normalizowany** (trim + małe litery) przy zapisie i przy logowaniu.
-- **Throttling logowania** 5 nieudanych prób na 15 minut.
-- **JWT żyje 15 minut** `token_ttl: 900`, **refresh token 30 dni**.
-- **Rotacja refresh tokenów**: każdy działa raz, a ponowne użycie zużytego unieważnia całe logowanie. W bazie jest
-    tylko hash.
-- **Blocklista JWT**: wylogowanie i odświeżenie od razu blokują stary JWT.
-
-**Endpointy logowania:**
+Endpointy logowania:
 
 - `POST /api/login_check` — logowanie (`email`, `password`), zwraca JWT i refresh token,
 - `POST /api/token/refresh` — nowa para tokenów w zamian za refresh token,
 - `POST /api/token/invalidate` — wylogowanie: usuwa refresh token i blokuje JWT.
 
-**Ciasteczka:** oba tokeny trafiają do ciasteczek HttpOnly, Secure, SameSite=Strict (`BEARER` i `refresh_token`),
-więc przeglądarka wysyła je sama, a JavaScript ich nie odczyta. Curl, Swagger i skrypty biorą tokeny z treści
-odpowiedzi i wysyłają JWT jako `Authorization: Bearer <token>`.
+Tokeny trafiają do ciasteczek, więc przeglądarka wysyła je sama, a JavaScript ich nie odczyta. Curl 
+i Swagger biorą tokeny z treści odpowiedzi i wysyłają JWT jako `Authorization: Bearer <token>`.
 
-**Świadome ograniczenia:**
 
-- Blocklista JWT i wykrywanie ponownego użycia refresh tokenów są w `cache.app`, czyli w plikach na serwerze. Przy
-    kilku serwerach trzeba wspólnego cache (np. Redis).
-- Nie ma resetu hasła, zmiany hasła, 2FA ani blokady konta.
-- `/api/docs` jest publiczne.
-- Jeden user - **brak izolacji danych per użytkownik**.
 
 ## Błędy API
 
 Każdy błąd API to [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457.html) z trzema polami:
 
-- **`errorCode`** — stały kod błędu; po nim klient rozpoznaje, co się stało,
-- **`params`** — dane do komunikatu (zawsze obiekt, wartości jako tekst; `{}` gdy brak),
-- **`detail`** — prosty tekst dla curla / Postmana; jego treść może się zmieniać, nie parsować.
+- `errorCode` — stały kod błędu; po nim klient rozpoznaje, co się stało,
+- `params` — dane do komunikatu (zawsze obiekt, wartości jako tekst; `{}` gdy brak),
+- `detail` — prosty tekst dla curla / Postmana; jego treść może się zmieniać, nie parsować.
 
-`type` to `urn:finance-app:problem:` + `errorCode`, a `title` to nazwa statusu HTTP.
-
-Przykład: przelew z konta PLN na konto CHF bez `amountTo` (ID kont zależą od danych; token z `make token`):
+Przykład:
 
 ```bash
 $ curl -s -X POST http://localhost:8081/api/transfers -H "Authorization: Bearer $TOKEN" \
     -H 'Content-Type: application/ld+json' \
-    -d '{"fromAccountId": 1, "toAccountId": 3, "operationDate": "2026-01-15", "amountFrom": "100.00"}'
+    -d '{
+    "fromAccountId": 1, 
+    "toAccountId": 3, 
+    "operationDate": "2026-01-15", 
+    "amountFrom": "100.00"
+  }'
 ```
-
 ```json
 {
   "title":     "Unprocessable Content",
@@ -113,22 +89,17 @@ $ curl -s -X POST http://localhost:8081/api/transfers -H "Authorization: Bearer 
 
 ## Zasady wprowadzania danych
 
-**Daty operacji, przelewów, cen złota i kursów walut** muszą mieścić się w zakresie
-**2025-01-01 – 2070-12-31 (włącznie)**.
+Daty operacji muszą mieścić się w zakresie 2025-01-01 – 2070-12-31.
 
-**Najmniejszą jednostką czasu dla dat biznesowych jest doba.** 
+Najmniejszą jednostką czasu jest doba. 
 
-Nowe operacje na koncie dodajemy bez znaku, jeśli to **przychód** na koncie: "309 zł refundacja/zwrot" lub ze znakiem 
-`-` jeżeli to **wydatek** z konta: "-309 zł zakup okularów"
+Operacje na koncie dodajemy:  
+**bez znaku**, jeśli to **przychód**: "309 zł refundacja/zwrot" lub  
+**ze znakiem** `-` jeżeli to **wydatek**: "-309 zł zakup okularów"
 
-**Przelewy / transfery / "kantor"** — jeżeli robisz przelew między kontami o tej samej walucie, wtedy konto docelowe 
-jest generowane automatycznie. W formularzu to pole jest zablokowane, a w API nie wolno go wysyłać.  
-Jeżeli robisz przelew między kontami o różnych walutach, musisz określić jaką kwotę zdejmujesz z pierwszego konta i jaka 
-wejdzie na drugie konto: "100 PLN / 25 EUR". NIE podajemy żadnych znaków `+/-`.
+Jeżeli robisz przelew między kontami o tej samej walucie, wtedy kwota na koncie docelowym jest uzupełniana automatycznie.  
+Jeżeli robisz przelew między kontami o różnych walutach, musisz podać obie kwoty: "100 PLN / 25 EUR". 
+**NIE** podajemy żadnych znaków `+/-`.
 
-Dla poprawnego wyliczenia podsumowań **musisz** dodać kursy walut, przynajmniej dla tych banków, w których trzymasz 
-walutę.
-
-**Opłaty stałe / planowanie wydatków cyklicznych** (czynsz, subskrypcje, abonamenty itp). Wystarczy dodać opłaty stałe 
-do systemu i zanim zacznie się nowy miesiąc dorzucić je do konta głównego ("Zaplanuj wydatki").
-
+Opłaty stałe (czynsz, subskrypcje, abonamenty ...): dodaj opłaty stałe do systemu i zanim zacznie się nowy 
+miesiąc dorzucić je do konta głównego ("Zaplanuj wydatki").

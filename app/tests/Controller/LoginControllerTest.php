@@ -78,6 +78,21 @@ final class LoginControllerTest extends WebTestCase
         self::assertStringContainsString('Too many failed login attempts', $crawler->filter('.alert-danger')->text());
     }
 
+    public function testAnotherSpellingOfTheLockedAddressIsLockedToo(): void
+    {
+        // The limiter lives in the kernel's memory in tests (config/packages/test/cache.yaml).
+        $this->client->disableReboot();
+        for ($i = 0; $i < 5; ++$i) {
+            $this->submitLoginForm(AppFixtures::TEST_USER_EMAIL, 'wrongpassword');
+        }
+
+        // Logs in to the same account, so it must meet the same lock.
+        $this->submitLoginForm('  '.AppFixtures::TEST_USER_EMAIL.' ', AppFixtures::TEST_USER_PASSWORD);
+        $crawler = $this->client->followRedirect();
+
+        self::assertStringContainsString('Too many failed login attempts', $crawler->filter('.alert-danger')->text());
+    }
+
     private function submitLoginForm(string $email, string $password): void
     {
         $crawler = $this->client->request('GET', '/login');

@@ -1,0 +1,13 @@
+framework:
+    rate_limiter:
+        # The login throttling of security.yaml, one for the web form and the API (App\Security\LoginRateLimiter):
+        # 5 failed attempts at one account from one IP, and 25 from one IP in all, then a lock until the 15 minutes
+        # are over. The same numbers as Symfony's own login_throttling (max_attempts: 5, 5 x 5 per IP).
+        login_local:
+            policy: fixed_window
+            limit: 5
+            interval: '15 minutes'
+        login_global:
+            policy: fixed_window
+            limit: 25
+            interval: '15 minutes'

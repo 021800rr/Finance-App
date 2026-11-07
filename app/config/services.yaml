@@ -23,6 +23,18 @@ services:
         decoration_priority: 301
         arguments: [ '@.inner' ]
 
+    # The login throttling of both login firewalls (security.yaml): Symfony's own limiter, built once from the
+    # limiters of config/packages/rate_limiter.yaml, so the web form and the API count the attempts together.
+    app.login_rate_limiter.symfony:
+        class: Symfony\Component\Security\Http\RateLimiter\DefaultLoginRateLimiter
+        arguments:
+            $globalFactory: '@limiter.login_global'
+            $localFactory: '@limiter.login_local'
+            $secret: '%kernel.secret%'
+
+    App\Security\LoginRateLimiter:
+        arguments: [ '@app.login_rate_limiter.symfony' ]
+
     App\Serializer\ExpectedTypeViolationFactory:
         decorates: 'api_platform.state.denormalization_violation_factory'
         arguments: [ '@.inner' ]
