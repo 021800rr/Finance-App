@@ -60,7 +60,11 @@ export function useSetOperationConfirmed() {
   return useMutation({
     mutationFn: ({ operationId, confirmed }: { operationId: number; confirmed: boolean }) =>
       patchJson(`/api/account_operations/${operationId}`, { confirmed }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['account'] }),
+    // The account pages and the search results show the status.
+    onSettled: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['account'] }),
+      queryClient.invalidateQueries({ queryKey: ['search'] }),
+    ]),
   })
 }
 
@@ -69,10 +73,11 @@ export function useDeleteOperation() {
 
   return useMutation({
     mutationFn: (operationId: number) => deleteResource(`/api/account_operations/${operationId}`),
-    // The balances change too: the account pages and the summary are read again.
+    // The balances change too: the account pages, the summary and the search results are read again.
     onSettled: () => Promise.all([
       queryClient.invalidateQueries({ queryKey: ['account'] }),
       queryClient.invalidateQueries({ queryKey: ['summary'] }),
+      queryClient.invalidateQueries({ queryKey: ['search'] }),
     ]),
   })
 }

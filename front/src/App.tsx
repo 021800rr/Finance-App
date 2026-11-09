@@ -8,6 +8,7 @@ import { EditOperationPage } from './operation/EditOperationPage'
 import { NewOperationPage } from './operation/NewOperationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PagePlaceholder } from './pages/PagePlaceholder'
+import { SearchPage } from './search/SearchPage'
 import { TransferPage } from './transfer/TransferPage'
 import { SummaryPage } from './summary/SummaryPage'
 
@@ -32,6 +33,7 @@ function App() {
         <Route path="operation/new" element={<NewOperationPage />} />
         <Route path="operation/:id/edit" element={<EditOperationPage />} />
         <Route path="transfer/new" element={<TransferPage />} />
+        <Route path="search" element={<SearchPage />} />
         <Route path="fixed-expense" element={<PagePlaceholder title={t('nav.fixed_expenses')} />} />
         <Route path="rate" element={<PagePlaceholder title={t('nav.rates')} />} />
         <Route path="gold-assets" element={<PagePlaceholder title={t('nav.gold_assets')} />} />

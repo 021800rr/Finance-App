@@ -3,7 +3,14 @@ import { getJson, patchJson, postJson } from '../api'
 import type { Operation } from '../account/accountApi'
 
 // One row of GET /api/accounts.
-export type AccountChoice = { id: number; hidden: boolean; isMain: boolean; displayLabel: string; currencyCode: string }
+export type AccountChoice = {
+  id: number
+  hidden: boolean
+  isMain: boolean
+  displayLabel: string
+  currencyCode: string
+  accountNumber: string
+}
 
 export type Contractor = { id: number; name: string }
 
@@ -39,12 +46,12 @@ export function useContractorSearch(text: string) {
   })
 }
 
-// After a save the balances, the history and the contractors (maybe a new one) are read again.
+// After a save the balances, the history, the search results and the contractors (maybe a new one) are read again.
 function useInvalidateAfterSave() {
   const queryClient = useQueryClient()
 
   return () => Promise.all(
-    [['account'], ['summary'], ['operation'], ['contractors']]
+    [['account'], ['summary'], ['operation'], ['search'], ['contractors']]
       .map((queryKey) => queryClient.invalidateQueries({ queryKey })),
   )
 }

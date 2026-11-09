@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import { Link, NavLink, Outlet } from 'react-router'
+import { Link, NavLink, Outlet, useLocation, useSearchParams } from 'react-router'
 import { LogoutButton } from '../auth/LogoutButton'
+import { SearchBox } from '../search/SearchBox'
 import { LanguageSwitcher } from './LanguageSwitcher'
 
 // The same menu as in the web app (templates/partials/_navbar.html.twig), with the same addresses and texts.
@@ -18,6 +19,10 @@ const MENU = [
 // place of <Outlet />.
 export function Layout() {
   const { t } = useTranslation()
+  const location = useLocation()
+  const [params] = useSearchParams()
+  // The phrase of the results page shown; a new one (or leaving the page) gives the search field a fresh start.
+  const phrase = location.pathname === '/search' ? params.get('q') ?? '' : ''
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -38,6 +43,7 @@ export function Layout() {
             ))}
           </nav>
           <div className="ml-auto flex shrink-0 items-center gap-3 whitespace-nowrap text-sm text-slate-600">
+            <SearchBox key={phrase} initial={phrase} />
             <LanguageSwitcher />
             <LogoutButton />
           </div>

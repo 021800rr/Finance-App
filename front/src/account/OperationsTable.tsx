@@ -12,7 +12,26 @@ const ICON = 'cursor-pointer text-slate-500 hover:text-slate-900 disabled:cursor
 const HIGHLIGHT = '[&>td]:border-y-2 [&>td]:border-blue-500 [&>td:first-child]:border-l-2 '
   + '[&>td:last-child]:border-r-2'
 
-export function OperationsTable({ operations, highlight }: { operations: Operation[]; highlight: number | null }) {
+type Props = {
+  operations: Operation[]
+  // the operation framed after a 🔗 (?highlight=ID)
+  highlight?: number | null
+  // the search results show the account of every operation: account numbers by account id
+  accountNumbers?: Map<number, string>
+  // the 🔗 to the other side of a transfer; the search results have none, as in the web app
+  otherSideLinks?: boolean
+  // what the table says when there are no operations
+  emptyText?: string
+}
+
+// The operations of an account history or of a search, with the actions of the web app on each of them.
+export function OperationsTable({
+  operations,
+  highlight = null,
+  accountNumbers,
+  otherSideLinks = true,
+  emptyText,
+}: Props) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
@@ -68,6 +87,7 @@ export function OperationsTable({ operations, highlight }: { operations: Operati
         <thead className="bg-slate-800 text-left text-white">
           <tr>
             <th className={`${CELL} text-right`}>#</th>
+            {accountNumbers && <th className={CELL}>{t('search.account_column')}</th>}
             <th className={CELL}>{t('operation.date')}</th>
             <th className={CELL}>{t('operation.contractor')}</th>
             <th className={CELL}>{t('operation.description')}</th>
@@ -79,6 +99,13 @@ export function OperationsTable({ operations, highlight }: { operations: Operati
           {operations.map((operation) => (
             <tr key={operation.id} className={operation.id === highlight ? HIGHLIGHT : 'hover:bg-slate-50'}>
               <td className={`${CELL} text-right text-slate-500 tabular-nums`}>{operation.id}</td>
+              {accountNumbers && (
+                <td className={CELL}>
+                  <code className="rounded bg-slate-100 px-1.5 py-0.5">
+                    {accountNumbers.get(operation.accountId) ?? operation.accountId}
+                  </code>
+                </td>
+              )}
               <td className={`${CELL} whitespace-nowrap tabular-nums`}>{operation.operationDate}</td>
               <td className={CELL}>{operation.contractorName}</td>
               <td className={`${CELL} text-slate-500`}>{operation.description}</td>
@@ -92,19 +119,21 @@ export function OperationsTable({ operations, highlight }: { operations: Operati
               <td className={CELL}>
                 <div className="flex items-center justify-end gap-2">
                   {/* Every icon has its own place, so the icons of all rows stay in line. */}
-                  <span className="w-5 text-center">
-                    {operation.transactionUuid && (
-                      <button
-                        type="button"
-                        onClick={() => goToOtherSide(operation)}
-                        title={t('operation.show_other_side')}
-                        aria-label={t('operation.show_other_side')}
-                        className="cursor-pointer"
-                      >
-                        🔗
-                      </button>
-                    )}
-                  </span>
+                  {otherSideLinks && (
+                    <span className="w-5 text-center">
+                      {operation.transactionUuid && (
+                        <button
+                          type="button"
+                          onClick={() => goToOtherSide(operation)}
+                          title={t('operation.show_other_side')}
+                          aria-label={t('operation.show_other_side')}
+                          className="cursor-pointer"
+                        >
+                          🔗
+                        </button>
+                      )}
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => toggleConfirmed(operation)}
@@ -142,7 +171,9 @@ export function OperationsTable({ operations, highlight }: { operations: Operati
           ))}
           {operations.length === 0 && (
             <tr>
-              <td colSpan={6} className={`${CELL} text-center text-slate-500`}>{t('operation.none_found')}</td>
+              <td colSpan={accountNumbers ? 7 : 6} className={`${CELL} text-center text-slate-500`}>
+                {emptyText ?? t('operation.none_found')}
+              </td>
             </tr>
           )}
         </tbody>
