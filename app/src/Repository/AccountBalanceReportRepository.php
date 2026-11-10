@@ -64,7 +64,8 @@ final readonly class AccountBalanceReportRepository
                     JOIN household h ON h.id = a.household_id
                     LEFT JOIN account_operation o ON o.account_id = a.id
             GROUP BY a.id, b.name, at.name, c.code, a.account_number, a.hidden, h.name, h.is_own_funds, at.is_retirement
-            ORDER BY a.account_number
+            -- The place set by hand in account.sort_order first; the accounts without one after them, by number.
+            ORDER BY a.sort_order NULLS LAST, a.account_number
             SQL
         );
 

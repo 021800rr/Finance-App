@@ -55,6 +55,13 @@ class Account
     #[ORM\Column(name: 'is_main', type: 'boolean', options: ['default' => false])]
     private bool $isMain = false;
 
+    /**
+     * The place of the account in the summary list (AccountBalanceReportRepository): lower numbers first, then the
+     * accounts without one by account number. Set by hand in the database; the app only sorts by it.
+     */
+    #[ORM\Column(name: 'sort_order', type: 'integer', nullable: true)]
+    private ?int $sortOrder = null;
+
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(name: 'household_id', nullable: false, onDelete: 'RESTRICT')]
     private Household $household;
