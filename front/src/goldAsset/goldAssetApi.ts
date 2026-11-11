@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { deleteResource, getJson, patchJson, postJson } from '../api'
+import type { components } from '../generated/api'
 import { queryKeys, useInvalidate } from '../queryKeys'
 
 // One gold holding of GET /api/gold_assets: its form (bar, coin…), weight and description.
@@ -12,7 +13,8 @@ export type GoldAsset = {
   ounces: string
 }
 
-export type GoldForm = { id: number; name: string }
+// generated from the OpenAPI description of the API (npm run api-types)
+export type GoldForm = components['schemas']['GoldForm']
 
 // What the form sends; the API asks for whatever is missing.
 export type GoldAssetInput = { formId: number | null; ounces: string; description: string }

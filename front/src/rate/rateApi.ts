@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { deleteResource, getJson, postJson } from '../api'
+import type { components } from '../generated/api'
 import { queryKeys, useInvalidate } from '../queryKeys'
 
 // One exchange rate of the API: what a bank sells a currency for, in PLN, on a day.
@@ -13,7 +14,9 @@ export type Rate = {
   rateToPln: string
 }
 
-export type Bank = { id: number; name: string }
+// generated from the OpenAPI description of the API (npm run api-types)
+export type Bank = components['schemas']['Bank']
+type Currency = components['schemas']['Currency']
 
 // What the form sends; the API asks for whatever is missing.
 export type RateInput = { bankId: number | null; currencyCode: string; rateDate: string; rateToPln: string }
@@ -42,7 +45,7 @@ export function useBanks() {
 export function useCurrencies() {
   return useQuery({
     queryKey: queryKeys.currencies(),
-    queryFn: async () => (await getJson<{ code: string }[]>('/api/currencies')).map((currency) => currency.code),
+    queryFn: async () => (await getJson<Currency[]>('/api/currencies')).map((currency) => currency.code),
   })
 }
 

@@ -1324,24 +1324,56 @@ export interface components {
             readonly transactionUuid?: string | null;
         };
         AccountType: {
-            readonly id?: number | null;
-            name?: string | null;
-            /** @default false */
+            /**
+             * @description Account type id.
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description Name of the type.
+             * @example ROR
+             */
+            name: string;
+            /** @description Whether the accounts of this type count as retirement savings. */
             isRetirement: boolean;
         };
         "AccountType.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            readonly id?: number | null;
-            name?: string | null;
-            /** @default false */
+            /**
+             * @description Account type id.
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description Name of the type.
+             * @example ROR
+             */
+            name: string;
+            /** @description Whether the accounts of this type count as retirement savings. */
             isRetirement: boolean;
         };
         Bank: {
-            readonly id?: number | null;
-            name?: string | null;
+            /**
+             * @description Bank id.
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description Bank name.
+             * @example Example bank
+             */
+            name: string;
         };
         "Bank.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            readonly id?: number | null;
-            name?: string | null;
+            /**
+             * @description Bank id.
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description Bank name.
+             * @example Example bank
+             */
+            name: string;
         };
         /** @description Unprocessable entity */
         ConstraintViolation: {
@@ -1429,18 +1461,18 @@ export interface components {
         /** @description Lists all currencies, ordered by code. */
         Currency: {
             /**
-             * @description ISO 4217 currency code. Read-only, ignored on write.
+             * @description ISO 4217 currency code.
              * @example PLN
              */
-            readonly code?: string | null;
+            code: string;
         };
         /** @description Lists all currencies, ordered by code. */
         "Currency.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
-             * @description ISO 4217 currency code. Read-only, ignored on write.
+             * @description ISO 4217 currency code.
              * @example PLN
              */
-            readonly code?: string | null;
+            code: string;
         };
         /** @description Exchange rate of a currency to PLN for a given bank and date. */
         CurrencyExchangeRate: {
@@ -1796,12 +1828,28 @@ export interface components {
             ounces: string | null;
         };
         GoldForm: {
-            readonly id?: number | null;
-            name?: string | null;
+            /**
+             * @description Gold form id.
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description Name of the form: a bar, a coin…
+             * @example sztabka
+             */
+            name: string;
         };
         "GoldForm.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            readonly id?: number | null;
-            name?: string | null;
+            /**
+             * @description Gold form id.
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description Name of the form: a bar, a coin…
+             * @example sztabka
+             */
+            name: string;
         };
         /** @description A historical price point (in PLN) for a gold asset on a given date. */
         GoldPrice: {
@@ -1860,15 +1908,31 @@ export interface components {
             readonly currencyCode?: string | null;
         };
         Household: {
-            readonly id?: number | null;
-            name?: string | null;
-            /** @default true */
+            /**
+             * @description Household id.
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description Name of the household.
+             * @example Nasze
+             */
+            name: string;
+            /** @description Whether its accounts count as own funds in the summary. */
             isOwnFunds: boolean;
         };
         "Household.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            readonly id?: number | null;
-            name?: string | null;
-            /** @default true */
+            /**
+             * @description Household id.
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description Name of the household.
+             * @example Nasze
+             */
+            name: string;
+            /** @description Whether its accounts count as own funds in the summary. */
             isOwnFunds: boolean;
         };
         HydraCollectionBaseSchema: components["schemas"]["HydraCollectionBaseSchemaNoPagination"] & {
@@ -1923,12 +1987,18 @@ export interface components {
         };
         /** @description The user the JWT (the "Authorization: Bearer" header or the BEARER cookie) belongs to. A browser cannot read its HttpOnly cookies, so it asks here whether it is logged in: 200 when it is, 401 when it is not. */
         Me: {
-            /** @default  */
+            /**
+             * @description Email of the logged-in user.
+             * @example user@example.com
+             */
             email: string;
         };
         /** @description The user the JWT (the "Authorization: Bearer" header or the BEARER cookie) belongs to. A browser cannot read its HttpOnly cookies, so it asks here whether it is logged in: 200 when it is, 401 when it is not. */
         "Me.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /** @default  */
+            /**
+             * @description Email of the logged-in user.
+             * @example user@example.com
+             */
             email: string;
         };
         /** @description Financial summary across all accounts. By default hidden accounts are excluded from both the accounts list and all totals, mirroring the web app's "Show hidden" toggle. Pass ?showHidden=true to include them. Each account row carries "rate": the bank's latest stored rate to PLN for accounts in another currency, or null for PLN accounts and when no rate is stored (see "missing_rate"). "is_main" marks the main account (the ★ in the web app); at most one account has it. "byType", "retirementBalance" and "retirementBalanceWithGold" cover only own-funds accounts; "byHousehold" splits the totals of all accounts (and our gold) by household. */

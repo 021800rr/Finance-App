@@ -1,3 +1,5 @@
+import type { components } from './generated/api'
+
 // The backend keeps both tokens in HttpOnly cookies (BEARER and refresh_token). The browser stores them and sends
 // them with every request to /api by itself; this code never sees them.
 
@@ -162,7 +164,8 @@ export async function logout(): Promise<void> {
   await fetch('/api/token/invalidate', { method: 'POST' })
 }
 
-type Me = { email: string }
+// generated from the OpenAPI description of the API (npm run api-types)
+type Me = components['schemas']['Me']
 
 // The logged-in user's email, or null when logged out. The cookies are invisible to JavaScript, so asking the API
 // is the only way to know.
