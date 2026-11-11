@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "api-types": "npx --yes openapi-typescript@7.13.0 http://finance-nginx-dev/api/docs.jsonopenapi -o src/generated/api.d.ts"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",

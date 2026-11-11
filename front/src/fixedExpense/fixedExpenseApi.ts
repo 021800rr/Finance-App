@@ -1,33 +1,18 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { deleteResource, getJson, patchJson, postJson } from '../api'
+import type { components } from '../generated/api'
 import { queryKeys, useInvalidate } from '../queryKeys'
 
-// One row of GET /api/fixed_expenses: an expense of every month, always negative and in PLN. The API leaves out the
-// fields that are null.
-export type FixedExpense = {
-  id: number
-  contractorId: number
-  contractorName: string
-  // the day of the month, 1-28
-  day: number
-  // a decimal string, e.g. '-200.00'
-  amount: string
-  currencyCode: string
-  description?: string | null
-}
+// The types of the API, generated from its OpenAPI description (npm run api-types), so they cannot drift from the
+// backend: what it answers (every field there, the description only when there is one)…
+export type FixedExpense = components['schemas']['FixedExpense']
 
-// What the form sends. The contractor goes as in an operation: contractorId (one from the list) or contractorName
-// (a new one: the API creates it).
-export type FixedExpenseInput = {
-  contractorId?: number
-  contractorName?: string
-  day: number | null
-  amount: string
-  description: string | null
-}
+// …what the form sends: any field may be missing or null, and the API says which one is wrong. The contractor goes as
+// in an operation: contractorId (one from the list) or contractorName (a new one: the API creates it)…
+export type FixedExpenseInput = components['schemas']['FixedExpense.FixedExpenseInput']
 
-// What "Zaplanuj wydatki" did: the operations of the month (YYYY-MM) went to the main account.
-export type Plan = { accountId: number; month: string; createdCount: number }
+// …and what "Zaplanuj wydatki" did: the operations of the month (YYYY-MM) went to the main account.
+export type Plan = components['schemas']['FixedExpensePlan']
 
 // Every fixed expense, by day, as in the web app; the list has no pages.
 export function useFixedExpenses() {
