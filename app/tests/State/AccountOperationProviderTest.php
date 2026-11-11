@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use App\ApiResource\AccountOperationResource;
 use App\ApiResource\Input\AccountOperationInput;
+use App\ApiResource\Input\NewAccountOperationInput;
 use App\Service\Paginator;
 use App\State\AccountOperationProvider;
 use App\State\Pagination\OffsetPaginator;
@@ -69,8 +70,9 @@ final class AccountOperationProviderTest extends KernelTestCase
         $result = $this->provider->provide(new Patch(), ['id' => $operation->getId()]);
 
         self::assertInstanceOf(AccountOperationInput::class, $result);
+        // A change has no account to send: the account of an operation is chosen once, on create.
+        self::assertNotInstanceOf(NewAccountOperationInput::class, $result);
         self::assertSame($operation->getId(), $result->id);
-        self::assertSame($account->getId(), $result->accountId);
         self::assertSame('-12.50', $result->amount);
         self::assertSame('Current note', $result->description);
         self::assertTrue($result->confirmed);

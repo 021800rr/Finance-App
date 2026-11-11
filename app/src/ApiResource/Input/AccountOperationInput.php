@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\ApiResource\Input;
 
 use ApiPlatform\Metadata\ApiProperty;
-use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
 use App\Util\BusinessDateRange;
@@ -15,18 +14,17 @@ use App\Validator\DecimalString;
 use App\Validator\NoNullCharacter;
 use App\Validator\NonZeroAmount;
 use App\Validator\RecordExists;
-use App\Validator\SelectableAccount;
-use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * What a client sends to create an operation (POST) or to change one (PATCH). Any field may be missing or null here:
- * the validation then says which one and why, with a code the clients translate. The account is chosen only on
- * create (group operation:create); every other field can be sent both times (operation:write). What the API answers
- * is AccountOperationResource, where every field is always there.
+ * What a client sends to change an operation (PATCH). Any field may be missing or null here: the validation then says
+ * which one and why, with a code the clients translate. A new operation (POST) sends the same and its account:
+ * NewAccountOperationInput. What the API answers is AccountOperationResource, where every field is always there.
+ *
+ * Not final: NewAccountOperationInput extends it with the account, which is chosen once, on create.
  */
 #[ContractorGiven]
-final class AccountOperationInput
+class AccountOperationInput
 {
     /**
      * The operation being changed (PATCH), null for a new one (POST): ContractorGiven tells them apart by it.
@@ -35,23 +33,11 @@ final class AccountOperationInput
     public ?int $id = null;
 
     #[ApiProperty(
-        description: 'Id of the account this operation belongs to. Required on create; a hidden account is rejected; '
-        .'it cannot be changed afterwards, so it is not part of the update request.',
-        example: 1
-    )]
-    #[Assert\NotNull(message: 'operation.account_required')]
-    #[RecordExists(Account::class, message: 'account.not_found', groups: ['operation:create'])]
-    #[SelectableAccount(groups: ['operation:create'])]
-    #[Groups(['operation:create'])]
-    public ?int $accountId = null;
-
-    #[ApiProperty(
         description: 'Id of an existing contractor. Send it alone, or with the name of the same contractor. '
         .'Null is allowed only on update, together with contractorName, to replace the contractor.',
         example: 10,
     )]
     #[RecordExists(Contractor::class, message: 'contractor.not_found')]
-    #[Groups(['operation:write'])]
     public ?int $contractorId = null;
 
     #[ApiProperty(
@@ -61,14 +47,12 @@ final class AccountOperationInput
     )]
     #[Assert\Length(max: 255, maxMessage: 'contractor.name_max_length')]
     #[NoNullCharacter]
-    #[Groups(['operation:write'])]
     public ?string $contractorName = null;
 
     #[ApiProperty(description: 'Operation date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '
         .BusinessDateRange::MAX_DATE.' inclusive. Required.', example: '2026-09-29')]
     #[Assert\NotBlank(message: 'operation.date_not_blank')]
     #[BusinessDate]
-    #[Groups(['operation:write'])]
     public ?string $operationDate = null;
 
     #[ApiProperty(
@@ -87,7 +71,6 @@ final class AccountOperationInput
         ),
         new NonZeroAmount(),
     ])]
-    #[Groups(['operation:write'])]
     public ?string $amount = null;
 
     #[ApiProperty(
@@ -97,11 +80,9 @@ final class AccountOperationInput
     )]
     #[Assert\Length(max: 255, normalizer: 'trim', maxMessage: 'common.description_max_length')]
     #[NoNullCharacter]
-    #[Groups(['operation:write'])]
     public ?string $description = null;
 
     #[ApiProperty(description: 'Whether the operation is confirmed. Defaults to false.', example: false)]
-    #[Groups(['operation:write'])]
     public bool $confirmed = false;
 
     /**
@@ -111,7 +92,6 @@ final class AccountOperationInput
     {
         $input = new self();
         $input->id = $accountOperation->getId();
-        $input->accountId = $accountOperation->getAccount()->getId();
         $input->contractorId = $accountOperation->getContractor()->getId();
         $input->contractorName = $accountOperation->getContractor()->getName();
         $input->operationDate = $accountOperation->getOperationDate()->format('Y-m-d');

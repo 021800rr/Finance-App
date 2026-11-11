@@ -15,6 +15,7 @@ use ApiPlatform\Metadata\QueryParameter;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Response as OpenApiResponse;
 use App\ApiResource\Input\AccountOperationInput;
+use App\ApiResource\Input\NewAccountOperationInput;
 use App\Entity\AccountOperation;
 use App\Service\Paginator;
 use App\State\AccountOperationOtherSideProvider;
@@ -26,8 +27,9 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * An operation as the API returns it: every field is always there, and the OpenAPI document says so (a generated
  * client gets types without needless nulls); the description and the transaction UUID are left out when there are
- * none. What a client sends is AccountOperationInput (input: on POST and PATCH), where any field may be missing until
- * the validation says why.
+ * none. What a client sends is NewAccountOperationInput to create one (input: on POST) and AccountOperationInput, the
+ * same without the account, to change one (input: on PATCH); there any field may be missing until the validation
+ * says why.
  */
 #[ApiResource(
     shortName: 'AccountOperation',
@@ -93,9 +95,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             description: 'Creates a new operation. Give contractorId, contractorName or both (of the same contractor); '
             .'a contractorName that matches no contractor creates one. '
             .'A hidden account cannot be chosen: such a request is rejected with 422 on accountId.',
-            denormalizationContext: ['groups' => ['operation:create', 'operation:write']],
-            validationContext: ['groups' => ['Default', 'operation:create']],
-            input: AccountOperationInput::class,
+            input: NewAccountOperationInput::class,
             processor: AccountOperationProcessor::class,
         ),
         new Patch(
@@ -105,7 +105,6 @@ use Symfony\Component\Validator\Constraints as Assert;
             .'contractor (created when the name is new). '
             .'The account of an operation is fixed at creation and cannot be changed. '
             .'Operations of an account that was hidden later can still be updated.',
-            denormalizationContext: ['groups' => ['operation:write']],
             input: AccountOperationInput::class,
             provider: AccountOperationProvider::class,
             processor: AccountOperationProcessor::class,
