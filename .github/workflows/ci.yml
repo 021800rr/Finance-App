@@ -16,7 +16,7 @@ jobs:
   checks:
     name: Tests and static analysis
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     defaults:
       run:
@@ -74,7 +74,9 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: app/package-lock.json
+          cache-dependency-path: |
+            app/package-lock.json
+            front/package-lock.json
 
       # The Twig layout needs public/build/entrypoints.json, which is not committed.
       - name: Build the front-end assets
@@ -109,34 +111,18 @@ jobs:
       - name: PHP CS Fixer (dry run)
         run: vendor/bin/php-cs-fixer fix --dry-run --diff
 
-  react:
-    name: React lint, tests and build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    defaults:
-      run:
+      - name: Install React dependencies
         working-directory: front
-
-    steps:
-      - name: Check out the code
-        uses: actions/checkout@v5
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: "24"
-          cache: npm
-          cache-dependency-path: front/package-lock.json
-
-      - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
-      - name: ESLint
+      - name: React ESLint
+        working-directory: front
         run: npm run lint
 
-      - name: Vitest
+      - name: React Vitest
+        working-directory: front
         run: npm test
 
-      - name: TypeScript and production build
+      - name: React TypeScript and production build
+        working-directory: front
         run: npm run build
