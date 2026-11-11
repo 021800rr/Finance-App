@@ -37,6 +37,9 @@ export function useFixedExpense(id: string) {
   return useQuery({
     queryKey: ['fixedExpenses', id],
     queryFn: () => getJson<FixedExpense>(`/api/fixed_expenses/${encodeURIComponent(id)}`),
+    // An edit form copies the values once, when it opens: never from a copy kept since an earlier visit, which may be
+    // older than the record. Dropped as soon as the form closes, so every edit waits for the API.
+    gcTime: 0,
   })
 }
 

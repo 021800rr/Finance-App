@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getJson, patchJson, postJson } from '../api'
 import type { Operation } from '../account/accountApi'
 
@@ -35,15 +35,20 @@ export function useOperation(id: string) {
   return useQuery({
     queryKey: ['operation', id],
     queryFn: () => getJson<Operation>(`/api/account_operations/${encodeURIComponent(id)}`),
+    // An edit form copies the values once, when it opens: never from a copy kept since an earlier visit, which may be
+    // older than the record. Dropped as soon as the form closes, so every edit waits for the API.
+    gcTime: 0,
   })
 }
 
-// Contractors whose name contains the text (case-insensitive); nothing is asked for an empty text.
+// Contractors whose name contains the text (case-insensitive); nothing is asked for an empty text. The list keeps the
+// previous ones while the next load, instead of blinking empty.
 export function useContractorSearch(text: string) {
   return useQuery({
     queryKey: ['contractors', text],
     queryFn: () => getJson<Contractor[]>(`/api/contractors?name=${encodeURIComponent(text)}`),
     enabled: text !== '',
+    placeholderData: keepPreviousData,
   })
 }
 

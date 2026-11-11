@@ -25,6 +25,9 @@ export function useGoldAsset(id: string) {
   return useQuery({
     queryKey: ['goldAssets', id],
     queryFn: () => getJson<GoldAsset>(`/api/gold_assets/${encodeURIComponent(id)}`),
+    // An edit form copies the values once, when it opens: never from a copy kept since an earlier visit, which may be
+    // older than the record. Dropped as soon as the form closes, so every edit waits for the API.
+    gcTime: 0,
   })
 }
 

@@ -108,6 +108,7 @@ export function FixedExpenseForm({ initial, adding, save }: Props) {
       </FormRow>
       <FormRow label={t('form.contractor')} htmlFor="contractor">
         <ContractorField
+          id="contractor"
           value={values.contractor}
           onChange={(contractor) => set('contractor', contractor)}
           error={errors.contractor}
