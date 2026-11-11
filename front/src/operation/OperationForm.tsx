@@ -98,10 +98,10 @@ export function OperationForm({ title, initial, accounts, accountFixed, save }: 
   }
 
   return (
-    <section className="max-w-xl rounded-xl bg-white p-6 shadow">
+    <section className="rounded-xl bg-white p-6 shadow">
       <h1 className="mb-4 text-xl font-semibold text-slate-900">{title}</h1>
       {failure && <p role="alert" className="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{failure}</p>}
-      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="max-w-xl space-y-4">
         <FormRow label={t('form.account')} htmlFor="account" error={errors.account}>
           <select
             id="account"

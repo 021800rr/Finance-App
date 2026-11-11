@@ -53,7 +53,7 @@
     "list_title": "Lista opłat stałych",
     "none_found": "Brak opłat stałych",
     "plan_button": "Zaplanuj wydatki",
-    "plan_currency_mismatch": "Opłaty stałe są w {{expense_currency}}, a konto główne \"{{account}}\" jest w {{account_currency}}. Najpierw oznacz jako główne konto w {{expense_currency}}.",
+    "plan_currency_mismatch": "Opłaty stałe są w {{expenseCurrency}}, a konto główne \"{{account}}\" jest w {{accountCurrency}}. Najpierw oznacz jako główne konto w {{expenseCurrency}}.",
     "plan_duplicate": "Podejrzenie duplikatu: operacja dla \"{{contractor}}\" na kwotę {{amount}} w dniu {{date}} już istnieje. Sprawdź konto przed ponownym planowaniem.",
     "plan_main_hidden": "Konto główne \"{{account}}\" jest ukryte, więc nie można dodawać do niego nowych operacji. Najpierw pokaż to konto albo oznacz jako główne inne konto.",
     "plan_main_not_own": "Opłaty stałe można planować tylko na naszych kontach, a konto główne \"{{account}}\" należy do: {{household}}. Najpierw oznacz jako główne jedno z naszych kont.",
@@ -199,6 +199,19 @@
     "new_contractor": "Nowy kontrahent „{{name}}” zostanie dodany przy zapisie.",
     "amount_placeholder": "-309,00 wydatek · 309,00 wpływ",
     "choose_date": "Wybierz datę z kalendarza",
-    "date_format": "RRRR-MM-DD"
+    "date_format": "RRRR-MM-DD",
+    "fixed_expenses_load_failed": "Nie udało się wczytać opłat stałych.",
+    "fixed_expense_load_failed": "Nie udało się wczytać opłaty stałej.",
+    "save_fixed_expense_failed": "Nie udało się zapisać opłaty stałej.",
+    "delete_fixed_expense_failed": "Nie udało się usunąć opłaty stałej.",
+    "plan_failed": "Nie udało się zaplanować wydatków.",
+    "planning": "Planuję…",
+    "day_placeholder": "1–28",
+    "fixed_amount_placeholder": "-200,00",
+    "rates_load_failed": "Nie udało się wczytać kursów.",
+    "rate_form_load_failed": "Nie udało się wczytać banków i walut.",
+    "save_rate_failed": "Nie udało się zapisać kursu.",
+    "delete_rate_failed": "Nie udało się usunąć kursu.",
+    "rate_placeholder": "4,5590"
   }
 }

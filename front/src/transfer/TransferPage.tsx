@@ -104,63 +104,59 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
   ))
 
   return (
-    <section className="max-w-3xl rounded-xl bg-white p-6 shadow">
+    <section className="rounded-xl bg-white p-6 shadow">
       <h1 className="mb-4 text-xl font-semibold text-slate-900">{t('transfer.title')}</h1>
       {failure && <p role="alert" className="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{failure}</p>}
-      <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormRow label={t('transfer.from_account')} htmlFor="from" error={errors.from}>
-            <select
-              id="from"
-              value={fromId ?? ''}
-              onChange={(event) => setFromId(Number(event.target.value))}
-              className={inputClass(errors.from)}
-            >
-              {accountOptions}
-            </select>
-          </FormRow>
-          <FormRow label={t('transfer.to_account')} htmlFor="to" error={errors.to}>
-            <select
-              id="to"
-              value={toId ?? ''}
-              onChange={(event) => setToId(Number(event.target.value))}
-              className={inputClass(errors.to)}
-            >
-              {accountOptions}
-            </select>
-          </FormRow>
-          <FormRow label={t('transfer.debit')} htmlFor="amountFrom" error={errors.amountFrom}>
-            <AmountInput
-              id="amountFrom"
-              value={amountFrom}
-              onChange={setAmountFrom}
-              allowMinus={false}
-              className={inputClass(errors.amountFrom)}
-            />
-          </FormRow>
-          <FormRow label={t('transfer.credit')} htmlFor="amountTo" error={sameCurrency ? undefined : errors.amountTo}>
-            <AmountInput
-              id="amountTo"
-              value={sameCurrency ? '' : amountTo}
-              onChange={setAmountTo}
-              allowMinus={false}
-              disabled={sameCurrency}
-              placeholder={sameCurrency ? t('transfer.credit_same_currency') : undefined}
-              className={inputClass(sameCurrency ? undefined : errors.amountTo)}
-            />
-          </FormRow>
-        </div>
+      <form onSubmit={handleSubmit} noValidate className="max-w-xl space-y-4">
+        <FormRow label={t('transfer.from_account')} htmlFor="from" error={errors.from}>
+          <select
+            id="from"
+            value={fromId ?? ''}
+            onChange={(event) => setFromId(Number(event.target.value))}
+            className={inputClass(errors.from)}
+          >
+            {accountOptions}
+          </select>
+        </FormRow>
+        <FormRow label={t('transfer.to_account')} htmlFor="to" error={errors.to}>
+          <select
+            id="to"
+            value={toId ?? ''}
+            onChange={(event) => setToId(Number(event.target.value))}
+            className={inputClass(errors.to)}
+          >
+            {accountOptions}
+          </select>
+        </FormRow>
+        <FormRow label={t('transfer.debit')} htmlFor="amountFrom" error={errors.amountFrom}>
+          <AmountInput
+            id="amountFrom"
+            value={amountFrom}
+            onChange={setAmountFrom}
+            allowMinus={false}
+            className={inputClass(errors.amountFrom)}
+          />
+        </FormRow>
+        <FormRow label={t('transfer.credit')} htmlFor="amountTo" error={sameCurrency ? undefined : errors.amountTo}>
+          <AmountInput
+            id="amountTo"
+            value={sameCurrency ? '' : amountTo}
+            onChange={setAmountTo}
+            allowMinus={false}
+            disabled={sameCurrency}
+            placeholder={sameCurrency ? t('transfer.credit_same_currency') : undefined}
+            className={inputClass(sameCurrency ? undefined : errors.amountTo)}
+          />
+        </FormRow>
         <FormRow label={t('form.date')} htmlFor="date" error={errors.date}>
-          <div className="sm:max-w-xs">
-            <DateInput
-              id="date"
-              value={date}
-              min={MIN_DATE}
-              max={MAX_DATE}
-              onChange={setDate}
-              className={inputClass(errors.date)}
-            />
-          </div>
+          <DateInput
+            id="date"
+            value={date}
+            min={MIN_DATE}
+            max={MAX_DATE}
+            onChange={setDate}
+            className={inputClass(errors.date)}
+          />
         </FormRow>
         <FormRow label={t('form.description')} htmlFor="description" error={errors.description}>
           <input

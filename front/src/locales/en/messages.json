@@ -53,7 +53,7 @@
     "list_title": "Fixed expenses list",
     "none_found": "No fixed expenses found",
     "plan_button": "Plan expenses",
-    "plan_currency_mismatch": "Fixed expenses are in {{expense_currency}}, but the main account \"{{account}}\" is in {{account_currency}}. Mark a {{expense_currency}} account as main first.",
+    "plan_currency_mismatch": "Fixed expenses are in {{expenseCurrency}}, but the main account \"{{account}}\" is in {{accountCurrency}}. Mark a {{expenseCurrency}} account as main first.",
     "plan_duplicate": "Suspected duplicate: an operation for \"{{contractor}}\" with amount {{amount}} on {{date}} already exists. Check the account before planning again.",
     "plan_main_hidden": "The main account \"{{account}}\" is hidden, so no new operations can be added to it. Show the account again or mark another account as main first.",
     "plan_main_not_own": "Fixed expenses can only be planned on our own accounts, but the main account \"{{account}}\" belongs to \"{{household}}\". Mark one of our accounts as main first.",
@@ -199,6 +199,19 @@
     "new_contractor": "The new contractor \"{{name}}\" is added when you save.",
     "amount_placeholder": "-309.00 expense · 309.00 income",
     "choose_date": "Choose a date in the calendar",
-    "date_format": "YYYY-MM-DD"
+    "date_format": "YYYY-MM-DD",
+    "fixed_expenses_load_failed": "Could not load the fixed expenses.",
+    "fixed_expense_load_failed": "Could not load the fixed expense.",
+    "save_fixed_expense_failed": "Could not save the fixed expense.",
+    "delete_fixed_expense_failed": "Could not delete the fixed expense.",
+    "plan_failed": "Could not plan the expenses.",
+    "planning": "Planning…",
+    "day_placeholder": "1–28",
+    "fixed_amount_placeholder": "-200.00",
+    "rates_load_failed": "Could not load the rates.",
+    "rate_form_load_failed": "Could not load the banks and currencies.",
+    "save_rate_failed": "Could not save the rate.",
+    "delete_rate_failed": "Could not delete the rate.",
+    "rate_placeholder": "4.5590"
   }
 }

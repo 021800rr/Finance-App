@@ -8,6 +8,7 @@ export type AccountChoice = {
   hidden: boolean
   isMain: boolean
   displayLabel: string
+  bankName: string
   currencyCode: string
   accountNumber: string
 }
