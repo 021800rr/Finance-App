@@ -38,6 +38,13 @@ final class OpenApiContractTest extends WebTestCase
         yield 'gold price' => ['GoldPrice', ['id', 'goldAssetId', 'priceDate', 'pricePln', 'currencyCode']];
         yield 'exchange rate' => ['CurrencyExchangeRate', ['id', 'bankId', 'currencyCode', 'rateDate', 'rateToPln']];
         yield 'contractor' => ['Contractor', ['id', 'name']];
+        yield 'account operation' => [
+            'AccountOperation',
+            [
+                'id', 'accountId', 'contractorId', 'contractorName', 'operationDate', 'amount', 'currencyCode',
+                'confirmed',
+            ],
+        ];
         yield 'transfer' => [
             'Transfer',
             [
@@ -80,6 +87,10 @@ final class OpenApiContractTest extends WebTestCase
     {
         // Only GET /api/accounts/{id} works out the balances; the list and the answer to PATCH leave them out.
         yield 'balances of an account' => ['Account', ['saldo', 'saldoToday', 'hasFutureOperations']];
+        // A note only when there is one; the transaction UUID only on the two operations of a transfer.
+        yield 'note and transfer link of an operation' => ['AccountOperation', ['description', 'transactionUuid']];
+        yield 'note of a fixed expense' => ['FixedExpense', ['description']];
+        yield 'note of a transfer' => ['Transfer', ['description']];
     }
 
     /**

@@ -11,8 +11,8 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
 use ApiPlatform\State\ProviderInterface;
-use App\ApiResource\AccountOperationResource;
 use App\ApiResource\Input\AccountInput;
+use App\ApiResource\Input\AccountOperationInput;
 use App\ApiResource\Input\CurrencyExchangeRateInput;
 use App\ApiResource\Input\FixedExpenseInput;
 use App\ApiResource\Input\GoldAssetInput;
@@ -91,7 +91,7 @@ final class IdOutOfRangeTest extends KernelTestCase
         yield 'account operation patch' => [
             AccountOperationProcessor::class,
             new Patch(),
-            new AccountOperationResource(),
+            new AccountOperationInput(),
         ];
         yield 'account patch' => [AccountProcessor::class, new Patch(), new AccountInput()];
         yield 'currency exchange rate delete' => [CurrencyExchangeRateProcessor::class, new Delete(), null];
@@ -124,7 +124,7 @@ final class IdOutOfRangeTest extends KernelTestCase
      */
     public static function processorsResolvingBodyId(): iterable
     {
-        $operation = new AccountOperationResource();
+        $operation = new AccountOperationInput();
         $operation->accountId = PHP_INT_MAX;
         yield 'account operation: accountId' => [AccountOperationProcessor::class, $operation];
 

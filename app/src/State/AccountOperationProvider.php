@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\State;
 
 use ApiPlatform\Metadata\CollectionOperationInterface;
+use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use ApiPlatform\Validator\Exception\ValidationException;
 use App\ApiResource\AccountOperationResource;
+use App\ApiResource\Input\AccountOperationInput;
 use App\Entity\AccountOperation;
 use App\Exception\RecordNotFoundException;
 use App\Repository\AccountOperationRepository;
@@ -22,7 +24,9 @@ use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
- * @implements ProviderInterface<AccountOperationResource|OffsetPaginator<AccountOperationResource>>
+ * @implements ProviderInterface<
+ *     AccountOperationResource|AccountOperationInput|OffsetPaginator<AccountOperationResource>
+ * >
  */
 final readonly class AccountOperationProvider implements ProviderInterface
 {
@@ -38,16 +42,20 @@ final readonly class AccountOperationProvider implements ProviderInterface
     }
 
     /**
+     * The lists and GET of one operation answer with AccountOperationResource. PATCH and DELETE get the current values
+     * as AccountOperationInput: PATCH lays the request over them (what it leaves out stays), and the processor reads
+     * the record they belong to.
+     *
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      *
-     * @return AccountOperationResource|OffsetPaginator<AccountOperationResource>
+     * @return AccountOperationResource|AccountOperationInput|OffsetPaginator<AccountOperationResource>
      */
     public function provide(
         Operation $operation,
         array $uriVariables = [],
         array $context = [],
-    ): AccountOperationResource|OffsetPaginator {
+    ): AccountOperationResource|AccountOperationInput|OffsetPaginator {
         if ($operation instanceof CollectionOperationInterface) {
             return isset($uriVariables['accountId'])
                 ? $this->provideAccountHistory($uriVariables['accountId'])
@@ -60,7 +68,9 @@ final readonly class AccountOperationProvider implements ProviderInterface
             throw RecordNotFoundException::accountOperation()->asHttp();
         }
 
-        return AccountOperationResource::fromEntity($accountOperation);
+        return $operation instanceof Get
+            ? AccountOperationResource::fromEntity($accountOperation)
+            : AccountOperationInput::fromEntity($accountOperation);
     }
 
     /**

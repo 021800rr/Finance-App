@@ -6,7 +6,9 @@ namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use App\ApiResource\AccountOperationResource;
+use App\ApiResource\Input\AccountOperationInput;
 use App\Service\Paginator;
 use App\State\AccountOperationProvider;
 use App\State\Pagination\OffsetPaginator;
@@ -56,6 +58,22 @@ final class AccountOperationProviderTest extends KernelTestCase
         self::assertInstanceOf(AccountOperationResource::class, $result);
         self::assertSame($operation->getId(), $result->id);
         self::assertSame($account->getId(), $result->accountId);
+    }
+
+    public function testProvideGivesPatchTheCurrentValuesToLayTheRequestOver(): void
+    {
+        $account = $this->createAccount();
+        $operation = $this->createOperation($account, -1250, description: 'Current note', confirmed: true);
+
+        $this->pushRequest([]);
+        $result = $this->provider->provide(new Patch(), ['id' => $operation->getId()]);
+
+        self::assertInstanceOf(AccountOperationInput::class, $result);
+        self::assertSame($operation->getId(), $result->id);
+        self::assertSame($account->getId(), $result->accountId);
+        self::assertSame('-12.50', $result->amount);
+        self::assertSame('Current note', $result->description);
+        self::assertTrue($result->confirmed);
     }
 
     public function testProvideThrowsNotFoundForNonExistentId(): void
@@ -247,7 +265,7 @@ final class AccountOperationProviderTest extends KernelTestCase
     {
         return $paginator
                 |> iterator_to_array(...)
-                |> (fn ($x) => array_map(static fn (AccountOperationResource $r): ?int => $r->id, $x))
+                |> (fn ($x) => array_map(static fn (AccountOperationResource $r): int => $r->id, $x))
                 |> array_values(...);
     }
 

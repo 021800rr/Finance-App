@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\AccountOperationResource;
+use App\ApiResource\Input\AccountOperationInput;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Repository\AccountOperationRepository;
@@ -53,8 +54,8 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
             return null;
         }
 
-        if (!$data instanceof AccountOperationResource) {
-            throw new \InvalidArgumentException('Expected instance of AccountOperationResource.');
+        if (!$data instanceof AccountOperationInput) {
+            throw new \InvalidArgumentException('Expected instance of AccountOperationInput.');
         }
 
         try {
@@ -89,7 +90,7 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
 
     private function create(
         Account $account,
-        AccountOperationResource $data,
+        AccountOperationInput $data,
         \DateTimeImmutable $operationDate,
         int $amount,
     ): AccountOperation {
@@ -106,7 +107,7 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
 
     private function update(
         AccountOperation $accountOperation,
-        AccountOperationResource $data,
+        AccountOperationInput $data,
         \DateTimeImmutable $operationDate,
         int $amount,
     ): AccountOperation {

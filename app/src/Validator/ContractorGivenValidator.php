@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Validator;
 
-use App\ApiResource\AccountOperationResource;
+use App\ApiResource\Input\AccountOperationInput;
 use App\ApiResource\Input\FixedExpenseInput;
 use App\Repository\ContractorRepository;
 use App\Util\RequestBody;
@@ -30,7 +30,7 @@ final class ContractorGivenValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, ContractorGiven::class);
         }
 
-        if (!$value instanceof AccountOperationResource && !$value instanceof FixedExpenseInput) {
+        if (!$value instanceof AccountOperationInput && !$value instanceof FixedExpenseInput) {
             return;
         }
 
