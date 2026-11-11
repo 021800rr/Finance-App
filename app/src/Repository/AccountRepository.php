@@ -27,12 +27,9 @@ final class AccountRepository extends ServiceEntityRepository
     public function createOrderedForSelectQueryBuilder(): QueryBuilder
     {
         return $this->createQueryBuilder('a')
-            ->join('a.bank', 'b')
-            ->join('a.type', 't')
-            ->join('a.currency', 'c')
-            ->orderBy('b.name', 'ASC')
-            ->addOrderBy('t.name', 'ASC')
-            ->addOrderBy('c.code', 'ASC')
+            ->addSelect('CASE WHEN a.sortOrder IS NULL THEN 1 ELSE 0 END AS HIDDEN sortOrderIsNull')
+            ->orderBy('sortOrderIsNull', 'ASC')
+            ->addOrderBy('a.sortOrder', 'ASC')
             ->addOrderBy('a.accountNumber', 'ASC');
     }
 

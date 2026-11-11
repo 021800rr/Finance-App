@@ -43,6 +43,36 @@ final class AccountRepositoryTest extends KernelTestCase
         self::assertSame($account->getId(), $result->getId());
     }
 
+    public function testAccountChoicesFollowSummaryOrderAndVisibleChoicesExcludeHiddenAccounts(): void
+    {
+        $second = $this->createAccount(accountNumber: 'SORT-B');
+        $first = $this->createAccount(accountNumber: 'SORT-Z');
+        $samePosition = $this->createAccount(accountNumber: 'SORT-A');
+        $laterNumber = $this->createAccount(accountNumber: 'NO-SORT-2');
+        $earlierNumber = $this->createAccount(accountNumber: 'NO-SORT-1');
+        $hidden = $this->createAccount(accountNumber: 'SORT-HIDDEN', hidden: true);
+
+        $connection = $this->em()->getConnection();
+        foreach ([[$first, 0], [$second, 1], [$samePosition, 1], [$hidden, -1]] as [$account, $position]) {
+            $connection->executeStatement(
+                'UPDATE account SET sort_order = ? WHERE id = ?',
+                [$position, $account->getId()],
+            );
+        }
+
+        $accounts = [$hidden, $first, $samePosition, $second, $earlierNumber, $laterNumber];
+        $expectedIds = array_map(static fn (Account $account): int => $account->getId(), $accounts);
+
+        /** @var list<Account> $all */
+        $all = $this->accountRepository->createOrderedForSelectQueryBuilder()->getQuery()->getResult();
+        $allIds = array_map(static fn (Account $account): int => $account->getId(), $all);
+        self::assertSame($expectedIds, array_values(array_intersect($allIds, $expectedIds)));
+
+        $visible = $this->accountRepository->findVisibleOrderedForSelect();
+        $visibleIds = array_map(static fn (Account $account): int => $account->getId(), $visible);
+        self::assertSame(array_slice($expectedIds, 1), array_values(array_intersect($visibleIds, $expectedIds)));
+    }
+
     public function testFindByIdOrNullReturnsNullForNonNumericId(): void
     {
         $result = $this->accountRepository->findByIdOrNull('alamakota');
