@@ -17,7 +17,7 @@ use App\ApiResource\Input\CurrencyExchangeRateInput;
 use App\ApiResource\Input\FixedExpenseInput;
 use App\ApiResource\Input\GoldAssetInput;
 use App\ApiResource\Input\GoldPriceInput;
-use App\ApiResource\TransferResource;
+use App\ApiResource\Input\TransferInput;
 use App\Service\ContractorResolver;
 use App\State\AccountOperationProcessor;
 use App\State\AccountOperationProvider;
@@ -140,7 +140,7 @@ final class IdOutOfRangeTest extends KernelTestCase
         $price->goldAssetId = PHP_INT_MAX;
         yield 'gold price: goldAssetId' => [GoldPriceProcessor::class, $price];
 
-        $transfer = new TransferResource();
+        $transfer = new TransferInput();
         $transfer->fromAccountId = PHP_INT_MAX;
         yield 'transfer: fromAccountId' => [TransferProcessor::class, $transfer];
     }

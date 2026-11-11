@@ -6,6 +6,7 @@ namespace App\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
+use App\ApiResource\Input\TransferInput;
 use App\ApiResource\TransferResource;
 use App\Constant\Contractors;
 use App\Entity\Account;
@@ -43,8 +44,8 @@ final readonly class TransferProcessor implements ProcessorInterface
         array $uriVariables = [],
         array $context = [],
     ): TransferResource {
-        if (!$data instanceof TransferResource) {
-            throw new \InvalidArgumentException('Expected instance of TransferResource.');
+        if (!$data instanceof TransferInput) {
+            throw new \InvalidArgumentException('Expected instance of TransferInput.');
         }
 
         $fromAccount = $this->resolveAccount($data->fromAccountId, 'fromAccountId');
