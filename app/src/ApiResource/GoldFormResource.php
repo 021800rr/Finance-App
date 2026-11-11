@@ -26,19 +26,18 @@ use App\State\GoldFormProvider;
     ],
     security: "is_granted('ROLE_USER')",
 )]
-final class GoldFormResource
+final readonly class GoldFormResource
 {
-    #[ApiProperty(writable: false)]
-    public ?int $id = null;
-
-    public ?string $name = null;
+    public function __construct(
+        #[ApiProperty(description: 'Gold form id.', required: true, example: 1)]
+        public int $id,
+        #[ApiProperty(description: 'Name of the form: a bar, a coin…', required: true, example: 'sztabka')]
+        public string $name,
+    ) {
+    }
 
     public static function fromEntity(GoldForm $goldForm): self
     {
-        $resource = new self();
-        $resource->id = $goldForm->getId();
-        $resource->name = $goldForm->getName();
-
-        return $resource;
+        return new self($goldForm->getId(), $goldForm->getName());
     }
 }

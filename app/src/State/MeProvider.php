@@ -27,9 +27,6 @@ final readonly class MeProvider implements ProviderInterface
         $user = $this->security->getUser()
             ?? throw new \LogicException('GET /api/me is open only to logged-in users.');
 
-        $me = new MeResource();
-        $me->email = $user->getUserIdentifier();
-
-        return $me;
+        return new MeResource($user->getUserIdentifier());
     }
 }
