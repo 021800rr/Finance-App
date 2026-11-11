@@ -4,7 +4,7 @@ import { ApiError } from '../api'
 import { errorMessage } from '../messages'
 import { AmountInput } from '../ui/AmountInput'
 import { DateInput } from '../ui/DateInput'
-import { fieldErrors, inputClass, MAX_DATE, MIN_DATE, today } from '../ui/form'
+import { fieldErrors, inputClass, MAX_DATE, MIN_DATE, toApiDecimal, today } from '../ui/form'
 import { FormRow } from '../ui/FormRow'
 import type { Bank, RateInput } from './rateApi'
 
@@ -16,12 +16,6 @@ const FIELD_OF_PATH: Record<string, Field> = {
   currencyCode: 'currency',
   rateDate: 'date',
   rateToPln: 'rate',
-}
-
-// A rate as the API takes it. Rates are below 100, so a comma or a dot is always the decimal one ('4,559' is 4.559;
-// for an amount it would be 4559).
-function toApiRate(rate: string): string {
-  return rate.replace(/,/g, '.')
 }
 
 type Props = {
@@ -50,7 +44,7 @@ export function RateForm({ banks, currencies, save }: Props) {
     setErrors({})
     setSending(true)
     try {
-      await save({ bankId, currencyCode, rateDate, rateToPln: toApiRate(rate) })
+      await save({ bankId, currencyCode, rateDate, rateToPln: toApiDecimal(rate) })
     } catch (error) {
       if (error instanceof ApiError && error.violations.length > 0) {
         setErrors(fieldErrors(error.violations, FIELD_OF_PATH))

@@ -212,6 +212,12 @@
     "rate_form_load_failed": "Nie udało się wczytać banków i walut.",
     "save_rate_failed": "Nie udało się zapisać kursu.",
     "delete_rate_failed": "Nie udało się usunąć kursu.",
-    "rate_placeholder": "4,5590"
+    "rate_placeholder": "4,5590",
+    "gold_assets_load_failed": "Nie udało się wczytać aktywów złota.",
+    "gold_asset_load_failed": "Nie udało się wczytać aktywa złota.",
+    "gold_forms_load_failed": "Nie udało się wczytać form złota.",
+    "save_gold_asset_failed": "Nie udało się zapisać aktywa złota.",
+    "delete_gold_asset_failed": "Nie udało się usunąć aktywa złota.",
+    "ounces_placeholder": "1,0000"
   }
 }

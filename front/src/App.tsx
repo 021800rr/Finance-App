@@ -6,6 +6,8 @@ import { Layout } from './layout/Layout'
 import { AccountOperationsPage } from './account/AccountOperationsPage'
 import { EditFixedExpensePage } from './fixedExpense/EditFixedExpensePage'
 import { FixedExpensesPage } from './fixedExpense/FixedExpensesPage'
+import { EditGoldAssetPage } from './goldAsset/EditGoldAssetPage'
+import { GoldAssetsPage } from './goldAsset/GoldAssetsPage'
 import { EditOperationPage } from './operation/EditOperationPage'
 import { NewOperationPage } from './operation/NewOperationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -40,7 +42,8 @@ function App() {
         <Route path="fixed-expense" element={<FixedExpensesPage />} />
         <Route path="fixed-expense/:id/edit" element={<EditFixedExpensePage />} />
         <Route path="rate" element={<RatesPage />} />
-        <Route path="gold-assets" element={<PagePlaceholder title={t('nav.gold_assets')} />} />
+        <Route path="gold-assets" element={<GoldAssetsPage />} />
+        <Route path="gold-assets/:id/edit" element={<EditGoldAssetPage />} />
         <Route path="gold-prices" element={<PagePlaceholder title={t('nav.gold_prices')} />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

@@ -65,6 +65,12 @@ export function toApiAmount(amount: string): string {
   return fraction === '' ? whole : `${whole}.${fraction}`
 }
 
+// A number below 1000 (a rate, ounces) as the API takes it. It has no thousands to group, so a comma or a dot is
+// always the decimal one: '4,559' is 4.559 (as an amount it would be 4559).
+export function toApiDecimal(number: string): string {
+  return number.replace(/,/g, '.')
+}
+
 // The amount of the API as one types it in the language of the app: '-3200.00' → '-3200,00' in Polish.
 export function formAmount(amount: string): string {
   return amount.replace('.', amountSeparators().decimal)

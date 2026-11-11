@@ -212,6 +212,12 @@
     "rate_form_load_failed": "Could not load the banks and currencies.",
     "save_rate_failed": "Could not save the rate.",
     "delete_rate_failed": "Could not delete the rate.",
-    "rate_placeholder": "4.5590"
+    "rate_placeholder": "4.5590",
+    "gold_assets_load_failed": "Could not load the gold assets.",
+    "gold_asset_load_failed": "Could not load the gold asset.",
+    "gold_forms_load_failed": "Could not load the gold forms.",
+    "save_gold_asset_failed": "Could not save the gold asset.",
+    "delete_gold_asset_failed": "Could not delete the gold asset.",
+    "ounces_placeholder": "1.0000"
   }
 }
