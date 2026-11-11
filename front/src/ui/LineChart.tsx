@@ -123,7 +123,7 @@ export function LineChart({ series, colors, xTitle, yTitle }: Props) {
 
   return (
     <div>
-      <div className="relative h-[400px]">
+      <div className="relative h-[25rem]">
         <canvas ref={canvas} />
       </div>
       {/* The values of the date under the cursor. The box keeps its place without one, so the page does not jump. */}
