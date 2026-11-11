@@ -17,6 +17,7 @@ use App\ApiResource\Input\CurrencyExchangeRateInput;
 use App\ApiResource\Input\FixedExpenseInput;
 use App\ApiResource\Input\GoldAssetInput;
 use App\ApiResource\Input\GoldPriceInput;
+use App\ApiResource\Input\NewAccountOperationInput;
 use App\ApiResource\Input\TransferInput;
 use App\Service\ContractorResolver;
 use App\State\AccountOperationProcessor;
@@ -124,7 +125,7 @@ final class IdOutOfRangeTest extends KernelTestCase
      */
     public static function processorsResolvingBodyId(): iterable
     {
-        $operation = new AccountOperationInput();
+        $operation = new NewAccountOperationInput();
         $operation->accountId = PHP_INT_MAX;
         yield 'account operation: accountId' => [AccountOperationProcessor::class, $operation];
 

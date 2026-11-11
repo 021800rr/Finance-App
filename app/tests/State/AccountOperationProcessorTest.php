@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\AccountOperationResource;
 use App\ApiResource\Input\AccountOperationInput;
+use App\ApiResource\Input\NewAccountOperationInput;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Repository\ContractorRepository;
@@ -516,8 +517,8 @@ final class AccountOperationProcessorTest extends KernelTestCase
         ?string $amount = '10.00',
         ?string $operationDate = self::AUTO_DATE,
         ?string $description = null,
-    ): AccountOperationInput {
-        $input = new AccountOperationInput();
+    ): NewAccountOperationInput {
+        $input = new NewAccountOperationInput();
         $input->accountId = $accountId;
         $input->contractorId = $contractorId;
         $input->contractorName = $contractorName;

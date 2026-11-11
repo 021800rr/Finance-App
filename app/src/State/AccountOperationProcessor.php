@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\AccountOperationResource;
 use App\ApiResource\Input\AccountOperationInput;
+use App\ApiResource\Input\NewAccountOperationInput;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Repository\AccountOperationRepository;
@@ -59,8 +60,10 @@ final readonly class AccountOperationProcessor implements ProcessorInterface
         }
 
         try {
+            // The account is chosen once: a new operation names it, a change keeps the one of the operation.
             $existingOperation = $operation instanceof Patch ? $this->loadExisting($uriVariables) : null;
-            $account = $existingOperation?->getAccount() ?? $this->resolveAccount($data->accountId);
+            $account = $existingOperation?->getAccount()
+                ?? $this->resolveAccount($data instanceof NewAccountOperationInput ? $data->accountId : null);
             $operationDate = DateParser::parseValidated($data->operationDate);
             $amount = $this->parseAmount($data->amount, $account->getCurrencyCode());
 
