@@ -108,3 +108,35 @@ jobs:
 
       - name: PHP CS Fixer (dry run)
         run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+  react:
+    name: React lint, tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: front
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: front/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Vitest
+        run: npm test
+
+      - name: TypeScript and production build
+        run: npm run build
