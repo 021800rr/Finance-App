@@ -849,32 +849,67 @@ final class ValidationViolationCodeApiTest extends WebTestCase
             self::assertTrue(class_exists($class));
             $operations = (new \ReflectionClass($class))->getAttributes(ApiResource::class)[0]->newInstance()
                 ->getOperations();
-            $writes = false;
-            foreach ($operations ?? [] as $operation) {
-                $writes = $writes || $operation instanceof Post || $operation instanceof Patch;
-            }
-            if (!$writes) {
-                continue;
-            }
-
-            foreach ((new \ReflectionClass($class))->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
-                $type = $property->getType();
-                $apiProperty = $property->getAttributes(ApiProperty::class)[0] ?? null;
-                if (
-                    !$type instanceof \ReflectionNamedType
-                    || 'string' !== $type->getName()
-                    || false === $apiProperty?->newInstance()->isWritable()
-                    || in_array($property->getName(), $fixedFormat, true)
-                    || [] !== $property->getAttributes(NoNullCharacter::class)
-                ) {
-                    continue;
-                }
-
-                $unprotected[] = $class.'::$'.$property->getName();
+            foreach (array_unique(self::writtenClasses($class, $operations ?? [])) as $written) {
+                $unprotected = [...$unprotected, ...self::unprotectedTextFields($written, $fixedFormat)];
             }
         }
 
         self::assertSame([], $unprotected);
+    }
+
+    /**
+     * The classes the writes of a resource fill from the request: the input class of a POST or a PATCH that has one
+     * (input:), the resource itself otherwise. A write with input: false reads no request.
+     *
+     * @param class-string     $class
+     * @param iterable<object> $operations
+     *
+     * @return list<class-string>
+     */
+    private static function writtenClasses(string $class, iterable $operations): array
+    {
+        $written = [];
+        foreach ($operations as $operation) {
+            if (!$operation instanceof Post && !$operation instanceof Patch) {
+                continue;
+            }
+            $input = $operation->getInput();
+            if (false === $input) {
+                continue;
+            }
+            $inputClass = is_array($input) ? ($input['class'] ?? null) : $input;
+            $written[] = is_string($inputClass) && class_exists($inputClass) ? $inputClass : $class;
+        }
+
+        return $written;
+    }
+
+    /**
+     * @param class-string $class
+     * @param list<string> $fixedFormat
+     *
+     * @return list<string>
+     */
+    private static function unprotectedTextFields(string $class, array $fixedFormat): array
+    {
+        $unprotected = [];
+        foreach ((new \ReflectionClass($class))->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
+            $type = $property->getType();
+            $apiProperty = $property->getAttributes(ApiProperty::class)[0] ?? null;
+            if (
+                !$type instanceof \ReflectionNamedType
+                || 'string' !== $type->getName()
+                || false === $apiProperty?->newInstance()->isWritable()
+                || in_array($property->getName(), $fixedFormat, true)
+                || [] !== $property->getAttributes(NoNullCharacter::class)
+            ) {
+                continue;
+            }
+
+            $unprotected[] = $class.'::$'.$property->getName();
+        }
+
+        return $unprotected;
     }
 
     public function testWrongTypeGetsAGenericCode(): void

@@ -29,24 +29,30 @@ use App\State\FixedExpensePlanProcessor;
     ],
     security: "is_granted('ROLE_USER')",
 )]
-final class FixedExpensePlanResource
+final readonly class FixedExpensePlanResource
 {
-    #[ApiProperty(description: 'Id of the main account the operations were created on.', writable: false, example: 1)]
-    public ?int $accountId = null;
-
-    #[ApiProperty(description: 'Planned month, format YYYY-MM.', writable: false, example: '2026-11')]
-    public ?string $month = null;
-
-    #[ApiProperty(description: 'Number of operations created.', writable: false, example: 5)]
-    public ?int $createdCount = null;
+    public function __construct(
+        #[ApiProperty(
+            description: 'Id of the main account the operations were created on.',
+            writable: false,
+            required: true,
+            example: 1,
+        )]
+        public int $accountId,
+        #[ApiProperty(
+            description: 'Planned month, format YYYY-MM.',
+            writable: false,
+            required: true,
+            example: '2026-11',
+        )]
+        public string $month,
+        #[ApiProperty(description: 'Number of operations created.', writable: false, required: true, example: 5)]
+        public int $createdCount,
+    ) {
+    }
 
     public static function fromResult(int $accountId, FixedExpensePlanResult $result): self
     {
-        $resource = new self();
-        $resource->accountId = $accountId;
-        $resource->month = $result->month->format('Y-m');
-        $resource->createdCount = $result->createdCount;
-
-        return $resource;
+        return new self($accountId, $result->month->format('Y-m'), $result->createdCount);
     }
 }

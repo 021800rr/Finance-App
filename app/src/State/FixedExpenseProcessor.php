@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FixedExpenseResource;
+use App\ApiResource\Input\FixedExpenseInput;
 use App\Constant\Currencies;
 use App\Entity\Currency;
 use App\Entity\FixedExpense;
@@ -53,8 +54,8 @@ final readonly class FixedExpenseProcessor implements ProcessorInterface
             return null;
         }
 
-        if (!$data instanceof FixedExpenseResource) {
-            throw new \InvalidArgumentException('Expected instance of FixedExpenseResource.');
+        if (!$data instanceof FixedExpenseInput) {
+            throw new \InvalidArgumentException('Expected instance of FixedExpenseInput.');
         }
 
         $existingFixedExpense = $operation instanceof Patch ? $this->loadExisting($uriVariables) : null;
@@ -89,7 +90,7 @@ final readonly class FixedExpenseProcessor implements ProcessorInterface
     }
 
     private function create(
-        FixedExpenseResource $data,
+        FixedExpenseInput $data,
         int $day,
         int $amountMinorUnits,
         Currency $currency,
@@ -107,7 +108,7 @@ final readonly class FixedExpenseProcessor implements ProcessorInterface
 
     private function update(
         FixedExpense $fixedExpense,
-        FixedExpenseResource $data,
+        FixedExpenseInput $data,
         int $day,
         int $amountMinorUnits,
         Currency $currency,

@@ -6,7 +6,9 @@ namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use App\ApiResource\FixedExpenseResource;
+use App\ApiResource\Input\FixedExpenseInput;
 use App\State\FixedExpenseProvider;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\TestDataTrait;
@@ -47,6 +49,18 @@ final class FixedExpenseProviderTest extends KernelTestCase
         self::assertSame(10, $result->day);
     }
 
+    public function testProvideGivesPatchTheCurrentValuesToLayTheRequestOver(): void
+    {
+        $fixedExpense = $this->createFixedExpense(day: 10, amount: -20000);
+
+        $result = $this->provider->provide(new Patch(), ['id' => $fixedExpense->getId()]);
+
+        self::assertInstanceOf(FixedExpenseInput::class, $result);
+        self::assertSame($fixedExpense->getId(), $result->id);
+        self::assertSame(10, $result->day);
+        self::assertSame('-200.00', $result->amount);
+    }
+
     public function testProvideThrowsNotFoundForNonExistentId(): void
     {
         $this->expectException(NotFoundHttpException::class);
@@ -64,7 +78,7 @@ final class FixedExpenseProviderTest extends KernelTestCase
         /** @var list<FixedExpenseResource> $result */
         $result = $this->provider->provide(new GetCollection());
 
-        $ids = array_map(static fn (FixedExpenseResource $r): ?int => $r->id, $result);
+        $ids = array_map(static fn (FixedExpenseResource $r): int => $r->id, $result);
 
         $positionOfDayFive = array_search($dayFive->getId(), $ids, true);
         $positionOfDayTenFirst = array_search($dayTenFirst->getId(), $ids, true);

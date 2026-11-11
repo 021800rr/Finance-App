@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\FixedExpenseResource;
+use App\ApiResource\Input\FixedExpenseInput;
 use App\Entity\FixedExpense;
 use App\Repository\ContractorRepository;
 use App\State\FixedExpenseProcessor;
@@ -52,12 +53,12 @@ final class FixedExpenseProcessorTest extends KernelTestCase
     {
         $contractor = $this->createContractor('Existing Contractor');
 
-        $resource = $this->buildResource(contractorId: $contractor->getId(), day: 10, amount: '-200.00');
+        $input = $this->buildInput(contractorId: $contractor->getId(), day: 10, amount: '-200.00');
 
-        $result = $this->processor->process($resource, new Post());
+        $result = $this->processor->process($input, new Post());
 
         self::assertInstanceOf(FixedExpenseResource::class, $result);
-        self::assertNotNull($result->id);
+        self::assertGreaterThan(0, $result->id);
         self::assertSame($contractor->getId(), $result->contractorId);
         self::assertSame(10, $result->day);
         self::assertSame('-200.00', $result->amount);
@@ -68,12 +69,11 @@ final class FixedExpenseProcessorTest extends KernelTestCase
     {
         $newName = 'Brand New Contractor '.uniqid();
 
-        $resource = $this->buildResource(contractorName: $newName, day: 5, amount: '-30.00');
+        $input = $this->buildInput(contractorName: $newName, day: 5, amount: '-30.00');
 
-        $result = $this->processor->process($resource, new Post());
+        $result = $this->processor->process($input, new Post());
 
         self::assertInstanceOf(FixedExpenseResource::class, $result);
-        self::assertNotNull($result->contractorId);
         self::assertSame($newName, $result->contractorName);
         self::assertNotNull($this->contractorRepository->find($result->contractorId));
     }
@@ -82,9 +82,9 @@ final class FixedExpenseProcessorTest extends KernelTestCase
     {
         $contractor = $this->createContractor('Reused Contractor '.uniqid());
 
-        $resource = $this->buildResource(contractorName: $contractor->getName(), day: 5, amount: '-30.00');
+        $input = $this->buildInput(contractorName: $contractor->getName(), day: 5, amount: '-30.00');
 
-        $result = $this->processor->process($resource, new Post());
+        $result = $this->processor->process($input, new Post());
 
         self::assertInstanceOf(FixedExpenseResource::class, $result);
         self::assertSame($contractor->getId(), $result->contractorId);
@@ -92,93 +92,93 @@ final class FixedExpenseProcessorTest extends KernelTestCase
 
     public function testProcessThrowsUnprocessableWhenNeitherContractorIdNorNameGiven(): void
     {
-        $resource = $this->buildResource(day: 5, amount: '-30.00');
+        $input = $this->buildInput(day: 5, amount: '-30.00');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsNotFoundWhenContractorIdDoesNotExist(): void
     {
-        $resource = $this->buildResource(contractorId: 999999999, day: 5, amount: '-30.00');
+        $input = $this->buildInput(contractorId: 999999999, day: 5, amount: '-30.00');
 
         $this->expectException(NotFoundHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenDayMissing(): void
     {
         $contractor = $this->createContractor('Contractor');
-        $resource = $this->buildResource(contractorId: $contractor->getId(), day: null, amount: '-30.00');
+        $input = $this->buildInput(contractorId: $contractor->getId(), day: null, amount: '-30.00');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenDayOutOfRange(): void
     {
         $contractor = $this->createContractor('Contractor');
-        $resource = $this->buildResource(contractorId: $contractor->getId(), day: 29, amount: '-30.00');
+        $input = $this->buildInput(contractorId: $contractor->getId(), day: 29, amount: '-30.00');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenAmountMissing(): void
     {
         $contractor = $this->createContractor('Contractor');
-        $resource = $this->buildResource(contractorId: $contractor->getId(), day: 5, amount: null);
+        $input = $this->buildInput(contractorId: $contractor->getId(), day: 5, amount: null);
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenAmountNotDecimal(): void
     {
         $contractor = $this->createContractor('Contractor');
-        $resource = $this->buildResource(contractorId: $contractor->getId(), day: 5, amount: 'string');
+        $input = $this->buildInput(contractorId: $contractor->getId(), day: 5, amount: 'string');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenAmountPositive(): void
     {
         $contractor = $this->createContractor('Contractor');
-        $resource = $this->buildResource(contractorId: $contractor->getId(), day: 5, amount: '30.00');
+        $input = $this->buildInput(contractorId: $contractor->getId(), day: 5, amount: '30.00');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenAmountZero(): void
     {
         $contractor = $this->createContractor('Contractor');
-        $resource = $this->buildResource(contractorId: $contractor->getId(), day: 5, amount: '0.00');
+        $input = $this->buildInput(contractorId: $contractor->getId(), day: 5, amount: '0.00');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessUpdatesExistingFixedExpenseOnPatch(): void
     {
         $contractor = $this->createContractor('Original Contractor');
         $created = $this->processor->process(
-            $this->buildResource(contractorId: $contractor->getId(), day: 5, amount: '-30.00'),
+            $this->buildInput(contractorId: $contractor->getId(), day: 5, amount: '-30.00'),
             new Post(),
         );
         self::assertInstanceOf(FixedExpenseResource::class, $created);
 
         $newContractor = $this->createContractor('New Contractor');
-        $update = $this->buildResource(
+        $update = $this->buildInput(
             contractorId: $newContractor->getId(),
             day: 15,
             amount: '-99.99',
@@ -198,20 +198,21 @@ final class FixedExpenseProcessorTest extends KernelTestCase
     #[DataProvider('writeFailures')]
     public function testWriteFailureRollsBackTheContractorAndExpense(bool $patch, bool $afterExpense): void
     {
-        $resource = $this->buildResource();
+        $input = $this->buildInput();
         $uriVariables = [];
         if ($patch) {
             $contractor = $this->createContractor('Original expense contractor '.uniqid());
-            $resource->contractorId = $contractor->getId();
-            $created = $this->processor->process($resource, new Post());
+            $input->contractorId = $contractor->getId();
+            $created = $this->processor->process($input, new Post());
             self::assertInstanceOf(FixedExpenseResource::class, $created);
-            $resource = $created;
+            // As the provider gives it to a PATCH: the values of the record, with its id.
+            $input->id = $created->id;
             $uriVariables = ['id' => $created->id];
         }
-        $resource->contractorName = 'Rollback contractor '.uniqid();
-        $resource->amount = '-25.50';
-        $resource->day = 20;
-        $resource->description = 'Rollback expense '.uniqid();
+        $input->contractorName = 'Rollback contractor '.uniqid();
+        $input->amount = '-25.50';
+        $input->day = 20;
+        $input->description = 'Rollback expense '.uniqid();
 
         $connection = $this->em()->getConnection();
         $nestingBefore = $connection->getTransactionNestingLevel();
@@ -219,7 +220,7 @@ final class FixedExpenseProcessorTest extends KernelTestCase
         $expensesBefore = $connection->fetchAllAssociative('SELECT * FROM fixed_expense ORDER BY id');
 
         // Fail after SQL has run to verify that the transaction undoes actual database writes.
-        $listener = new class($resource->contractorName, $resource->description, $afterExpense) {
+        $listener = new class($input->contractorName, $input->description, $afterExpense) {
             public bool $triggered = false;
 
             public function __construct(
@@ -251,7 +252,7 @@ final class FixedExpenseProcessorTest extends KernelTestCase
         $events = $this->em()->getEventManager();
         $events->addEventListener([Events::postFlush], $listener);
         try {
-            $this->processor->process($resource, $patch ? new Patch() : new Post(), $uriVariables);
+            $this->processor->process($input, $patch ? new Patch() : new Post(), $uriVariables);
             self::fail('The write must fail after reaching the database.');
         } catch (\RuntimeException $exception) {
             self::assertSame('Forced failure after database write.', $exception->getMessage());
@@ -281,18 +282,18 @@ final class FixedExpenseProcessorTest extends KernelTestCase
     public function testProcessThrowsNotFoundOnPatchWhenFixedExpenseMissing(): void
     {
         $contractor = $this->createContractor('Contractor');
-        $resource = $this->buildResource(contractorId: $contractor->getId(), day: 5, amount: '-30.00');
+        $input = $this->buildInput(contractorId: $contractor->getId(), day: 5, amount: '-30.00');
 
         $this->expectException(NotFoundHttpException::class);
 
-        $this->processor->process($resource, new Patch(), ['id' => 999999999]);
+        $this->processor->process($input, new Patch(), ['id' => 999999999]);
     }
 
     public function testProcessDeletesExistingFixedExpenseOnDelete(): void
     {
         $contractor = $this->createContractor('Contractor');
         $created = $this->processor->process(
-            $this->buildResource(contractorId: $contractor->getId(), day: 5, amount: '-30.00'),
+            $this->buildInput(contractorId: $contractor->getId(), day: 5, amount: '-30.00'),
             new Post(),
         );
         self::assertInstanceOf(FixedExpenseResource::class, $created);
@@ -310,27 +311,27 @@ final class FixedExpenseProcessorTest extends KernelTestCase
         $this->processor->process(null, new Delete(), ['id' => 999999999]);
     }
 
-    public function testProcessThrowsWhenDataIsNotFixedExpenseResource(): void
+    public function testProcessThrowsWhenDataIsNotFixedExpenseInput(): void
     {
         $this->expectException(\InvalidArgumentException::class);
 
         $this->processor->process(new \stdClass(), new Post());
     }
 
-    private function buildResource(
+    private function buildInput(
         ?int $contractorId = null,
         ?string $contractorName = null,
         ?int $day = 5,
         ?string $amount = '-10.00',
         ?string $description = null,
-    ): FixedExpenseResource {
-        $resource = new FixedExpenseResource();
-        $resource->contractorId = $contractorId;
-        $resource->contractorName = $contractorName;
-        $resource->day = $day;
-        $resource->amount = $amount;
-        $resource->description = $description;
+    ): FixedExpenseInput {
+        $input = new FixedExpenseInput();
+        $input->contractorId = $contractorId;
+        $input->contractorName = $contractorName;
+        $input->day = $day;
+        $input->amount = $amount;
+        $input->description = $description;
 
-        return $resource;
+        return $input;
     }
 }
