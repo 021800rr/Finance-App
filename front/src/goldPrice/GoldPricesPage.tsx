@@ -1,10 +1,13 @@
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 import { type GoldAsset, useGoldAssets } from '../goldAsset/goldAssetApi'
-import { errorMessage } from '../messages'
-import { LineChart, type Series } from '../ui/LineChart'
+import { Card } from '../ui/Card'
+import { Note } from '../ui/Feedback'
+import { LineChart } from '../ui/LineChart'
+import { QueryResult } from '../ui/QueryResult'
+import { toSeries } from '../ui/series'
 import { GoldPriceForm } from './GoldPriceForm'
-import { type GoldPrice, useChartGoldPrices, useCreateGoldPrice, useRecentGoldPrices } from './goldPriceApi'
+import { useChartGoldPrices, useCreateGoldPrice, useRecentGoldPrices } from './goldPriceApi'
 import { GoldPricesTable } from './GoldPricesTable'
 
 // The colours of the assets' lines, as in the web app (assets/js/gold-prices-chart.js).
@@ -18,43 +21,34 @@ const COLORS = [
   'rgb(153, 102, 255)',
 ]
 
-const CARD = 'rounded-xl bg-white dark:bg-slate-900 p-6 shadow'
-
-// /gold-prices, as in the web app: the chart of the prices, the form of a new price and the latest prices.
+// /gold-prices, as in the web app: the chart of the prices, the form of a new price and the latest prices. The chart,
+// the form and the list all name the assets, so nothing shows until their names are there (no '#2' meanwhile).
 export function GoldPricesPage() {
   const { t } = useTranslation()
   const assets = useGoldAssets()
-  const assetNames = React.useMemo(
-    () => new Map(assets.data?.map((asset) => [asset.id, asset.description])),
-    [assets.data],
-  )
 
-  // The chart, the form and the list all name the assets: nothing until their names are there (no '#2' meanwhile).
-  if (assets.isPending) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
-  }
-  if (assets.isError) {
-    return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
-        {errorMessage(assets.error, t('app.gold_assets_load_failed'))}
-      </p>
-    )
-  }
+  return (
+    <QueryResult query={assets} failure={t('app.gold_assets_load_failed')}>
+      {(all) => <GoldPrices assets={all} />}
+    </QueryResult>
+  )
+}
+
+function GoldPrices({ assets }: { assets: GoldAsset[] }) {
+  const { t } = useTranslation()
+  const assetNames = React.useMemo(() => new Map(assets.map((asset) => [asset.id, asset.description])), [assets])
 
   return (
     <div className="space-y-6">
-      <section className={CARD}>
-        <h1 className="mb-4 text-xl font-semibold text-slate-900 dark:text-slate-100">{t('gold_price.chart_title')}</h1>
+      <Card title={t('gold_price.chart_title')}>
         <PricesChart assetNames={assetNames} />
-      </section>
-      <section className={CARD}>
-        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">{t('gold_price.add_title')}</h2>
-        <NewPrice assets={assets.data} />
-      </section>
-      <section className={CARD}>
-        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">{t('gold_price.list_title')}</h2>
+      </Card>
+      <Card title={t('gold_price.add_title')} heading="h2">
+        <NewPrice assets={assets} />
+      </Card>
+      <Card title={t('gold_price.list_title')} heading="h2">
         <RecentPrices assetNames={assetNames} />
-      </section>
+      </Card>
     </div>
   )
 }
@@ -62,38 +56,21 @@ export function GoldPricesPage() {
 function PricesChart({ assetNames }: { assetNames: Map<number, string> }) {
   const { t } = useTranslation()
   const prices = useChartGoldPrices()
-  const series = React.useMemo(() => assetSeries(prices.data ?? [], assetNames), [prices.data, assetNames])
+  // One line per asset. Memoized: the chart is drawn anew whenever its lines change.
+  const series = React.useMemo(() => toSeries(prices.data ?? [], {
+    line: (price) => price.goldAssetId,
+    label: (assetId) => assetNames.get(assetId) ?? `#${assetId}`,
+    date: (price) => price.priceDate,
+    value: (price) => price.pricePln,
+  }), [prices.data, assetNames])
 
-  if (prices.isPending) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
-  }
-  if (prices.isError) {
-    return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
-        {errorMessage(prices.error, t('app.gold_prices_load_failed'))}
-      </p>
-    )
-  }
-  if (series.length === 0) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('gold_price.none_found')}</p>
-  }
-
-  return <LineChart series={series} colors={COLORS} xTitle={t('form.date')} yTitle={t('gold_price.price_pln')} />
-}
-
-// One line per asset, in the order the assets first appear; two assets with the same description get a line each.
-function assetSeries(prices: GoldPrice[], assetNames: Map<number, string>): Series[] {
-  const byAsset = new Map<number, Series>()
-  for (const price of prices) {
-    let line = byAsset.get(price.goldAssetId)
-    if (line === undefined) {
-      line = { label: assetNames.get(price.goldAssetId) ?? `#${price.goldAssetId}`, values: {} }
-      byAsset.set(price.goldAssetId, line)
-    }
-    line.values[price.priceDate] = price.pricePln
-  }
-
-  return [...byAsset.values()]
+  return (
+    <QueryResult query={prices} failure={t('app.gold_prices_load_failed')}>
+      {() => series.length === 0
+        ? <Note>{t('gold_price.none_found')}</Note>
+        : <LineChart series={series} colors={COLORS} xTitle={t('form.date')} yTitle={t('gold_price.price_pln')} />}
+    </QueryResult>
+  )
 }
 
 function NewPrice({ assets }: { assets: GoldAsset[] }) {
@@ -117,16 +94,9 @@ function RecentPrices({ assetNames }: { assetNames: Map<number, string> }) {
   const { t } = useTranslation()
   const prices = useRecentGoldPrices()
 
-  if (prices.isPending) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
-  }
-  if (prices.isError) {
-    return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
-        {errorMessage(prices.error, t('app.gold_prices_load_failed'))}
-      </p>
-    )
-  }
-
-  return <GoldPricesTable prices={prices.data} assetNames={assetNames} />
+  return (
+    <QueryResult query={prices} failure={t('app.gold_prices_load_failed')}>
+      {(recent) => <GoldPricesTable prices={recent} assetNames={assetNames} />}
+    </QueryResult>
+  )
 }

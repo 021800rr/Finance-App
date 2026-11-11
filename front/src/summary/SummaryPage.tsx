@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router'
+import { QueryResult } from '../ui/QueryResult'
 import { AccountsTable } from './AccountsTable'
 import { TotalsTable } from './TotalsTable'
 import { useSummary } from './summaryApi'
@@ -24,14 +25,14 @@ export function SummaryPage() {
       >
         {showHidden ? t('home.hide_hidden') : t('home.show_hidden')}
       </button>
-      {summary.isPending && <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>}
-      {summary.isError && <p role="alert" className="text-red-600 dark:text-red-400">{t('app.summary_load_failed')}</p>}
-      {summary.data && (
-        <>
-          <AccountsTable accounts={summary.data.accounts} />
-          <TotalsTable summary={summary.data} />
-        </>
-      )}
+      <QueryResult query={summary} failure={t('app.summary_load_failed')}>
+        {(data) => (
+          <>
+            <AccountsTable accounts={data.accounts} />
+            <TotalsTable summary={data} />
+          </>
+        )}
+      </QueryResult>
     </section>
   )
 }

@@ -1,13 +1,13 @@
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router'
-import { ApiError } from '../api'
-import { errorMessage } from '../messages'
 import { AmountInput } from '../ui/AmountInput'
+import { Card } from '../ui/Card'
 import { DateInput } from '../ui/DateInput'
-import { fieldErrors, inputClass, MAX_DATE, MIN_DATE, toApiAmount } from '../ui/form'
+import { Alert } from '../ui/Feedback'
+import { inputClass, MAX_DATE, MIN_DATE, toApiAmount } from '../ui/form'
 import { FormButtons } from '../ui/FormButtons'
 import { FormRow } from '../ui/FormRow'
+import { useApiForm } from '../ui/useApiForm'
 import { type ContractorChoice, ContractorField } from './ContractorField'
 import type { AccountChoice, OperationInput } from './operationApi'
 
@@ -38,74 +38,49 @@ type Props = {
   // the accounts to choose from; for an edit only the operation's own one, which cannot change
   accounts: AccountChoice[]
   accountFixed: boolean
-  // sends the form; resolves to where to go afterwards
-  save: (input: OperationInput, accountId: number) => Promise<string>
+  // sends the form; when it fails, the form shows why
+  save: (input: OperationInput, accountId: number) => Promise<void>
+  onCancel: () => void
 }
 
 // The form of a new operation and of an edit, as in the web app: account, contractor, date, amount, description,
-// confirmed. The API checks the values; its field errors appear under their fields, in Polish.
-export function OperationForm({ title, initial, accounts, accountFixed, save }: Props) {
+// confirmed. The API checks the values; its field errors appear under their fields.
+export function OperationForm({ title, initial, accounts, accountFixed, save, onCancel }: Props) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const [values, setValues] = React.useState(initial)
-  const [errors, setErrors] = React.useState<Partial<Record<Field, string>>>({})
-  const [failure, setFailure] = React.useState('')
-  const [sending, setSending] = React.useState(false)
+  const form = useApiForm({ fieldOfPath: FIELD_OF_PATH, failure: t('app.save_operation_failed') })
 
   function set<K extends keyof OperationFormValues>(key: K, value: OperationFormValues[K]) {
     setValues((previous) => ({ ...previous, [key]: value }))
   }
 
-  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
-    setFailure('')
     // What the API cannot tell: no account to choose, or a contractor typed but not picked from the list.
-    const ownErrors: Partial<Record<Field, string>> = {}
-    if (values.accountId === null) {
-      ownErrors.account = t('operation.account_required', { ns: 'validators' })
-    }
-    if (values.contractor === null) {
-      ownErrors.contractor = t('contractor.required', { ns: 'validators' })
-    }
-    setErrors(ownErrors)
-    if (values.accountId === null || values.contractor === null) {
-      setFailure(t('form.fill_required_fields'))
+    const { accountId, contractor } = values
+    if (accountId === null || contractor === null) {
+      form.fail({
+        ...(accountId === null && { account: t('operation.account_required', { ns: 'validators' }) }),
+        ...(contractor === null && { contractor: t('contractor.required', { ns: 'validators' }) }),
+      })
       return
     }
 
     const input: OperationInput = {
-      ...(values.contractor.id === null
-        ? { contractorName: values.contractor.name }
-        : { contractorId: values.contractor.id }),
+      ...(contractor.id === null ? { contractorName: contractor.name } : { contractorId: contractor.id }),
       operationDate: values.operationDate,
       amount: toApiAmount(values.amount),
       description: values.description.trim() === '' ? null : values.description,
       confirmed: values.confirmed,
     }
-    setSending(true)
-    try {
-      navigate(await save(input, values.accountId))
-    } catch (error) {
-      if (error instanceof ApiError && error.violations.length > 0) {
-        setErrors(fieldErrors(error.violations, FIELD_OF_PATH))
-        setFailure(t('form.fill_required_fields'))
-      } else {
-        setFailure(errorMessage(error, t('app.save_operation_failed')))
-      }
-    } finally {
-      setSending(false)
-    }
+    void form.submit(() => save(input, accountId))
   }
 
+  const { errors } = form
+
   return (
-    <section className="rounded-xl bg-white dark:bg-slate-900 p-6 shadow">
-      <h1 className="mb-4 text-xl font-semibold text-slate-900 dark:text-slate-100">{title}</h1>
-      {failure && (
-        <p role="alert" className="mb-4 rounded bg-red-50 dark:bg-red-950 px-3 py-2 text-sm text-red-700
-          dark:text-red-300">
-          {failure}
-        </p>
-      )}
+    <Card title={title}>
+      {form.message && <Alert tone="error">{form.message}</Alert>}
       <form onSubmit={handleSubmit} noValidate className="max-w-xl space-y-4">
         <FormRow label={t('form.account')} htmlFor="account" error={errors.account}>
           <select
@@ -168,8 +143,8 @@ export function OperationForm({ title, initial, accounts, accountFixed, save }: 
           />
           {t('form.confirmed')}
         </label>
-        <FormButtons sending={sending} />
+        <FormButtons sending={form.sending} onCancel={onCancel} />
       </form>
-    </section>
+    </Card>
   )
 }

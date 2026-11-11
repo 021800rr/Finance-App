@@ -1,14 +1,18 @@
-import { CheckCircleIcon, PencilSquareIcon, QuestionMarkCircleIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { CheckCircleIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { errorMessage } from '../messages'
 import { formatAmount } from '../money'
+import { Code } from '../ui/Code'
+import { EmptyRow } from '../ui/EmptyRow'
+import { Alert } from '../ui/Feedback'
+import { DeleteButton, EditLink, IconButton } from '../ui/RowActions'
+import { AMOUNT, BODY, CELL, HEAD, MUTED, ROW, TABLE } from '../ui/tableStyle'
 import { findOtherSide, type Operation, useDeleteOperation, useSetOperationConfirmed } from './accountApi'
 
-const CELL = 'px-3 py-1.5'
-const ICON = 'cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 '
-  + 'disabled:cursor-wait'
+// Income in green, as in the web app; an expense stays in the normal colour.
+const INCOME = 'text-green-700 dark:text-green-400'
 // The blue frame the web app draws around the operation a 🔗 led to (tr.highlight in its app.css).
 const HIGHLIGHT = '[&>td]:border-y-2 [&>td]:border-blue-500 [&>td:first-child]:border-l-2 '
   + '[&>td:last-child]:border-r-2'
@@ -67,30 +71,11 @@ export function OperationsTable({
     }
   }
 
-  function toggleConfirmed(operation: Operation) {
-    clearMessages()
-    setConfirmed.mutate({ operationId: operation.id, confirmed: !operation.confirmed })
-  }
-
-  function deleteOperation(operation: Operation) {
-    // The browser's own question, as in the web app.
-    if (!window.confirm(t('operation.confirm_delete'))) {
-      return
-    }
-    clearMessages()
-    remove.mutate(operation.id)
-  }
-
   return (
-    <div className="overflow-x-auto">
-      {failure && (
-        <p role="alert" className="mb-2 rounded bg-amber-100 dark:bg-amber-950 px-3 py-2 text-sm text-amber-900
-          dark:text-amber-200">
-          {failure}
-        </p>
-      )}
-      <table className="min-w-full text-sm">
-        <thead className="bg-slate-800 text-left text-white">
+    <div className="space-y-2 overflow-x-auto">
+      {failure && <Alert tone="warning">{failure}</Alert>}
+      <table className={TABLE}>
+        <thead className={HEAD}>
           <tr>
             <th className={`${CELL} text-right`}>#</th>
             {accountNumbers && <th className={CELL}>{t('search.account_column')}</th>}
@@ -101,28 +86,19 @@ export function OperationsTable({
             <th className={CELL}><span className="sr-only">{t('app.actions')}</span></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+        <tbody className={BODY}>
           {operations.map((operation) => (
-            <tr
-              key={operation.id}
-              className={operation.id === highlight ? HIGHLIGHT : 'hover:bg-slate-50 dark:hover:bg-slate-800'}
-            >
-              <td className={`${CELL} text-right text-slate-500 dark:text-slate-400 tabular-nums`}>{operation.id}</td>
+            <tr key={operation.id} className={operation.id === highlight ? HIGHLIGHT : ROW}>
+              <td className={`${CELL} text-right tabular-nums ${MUTED}`}>{operation.id}</td>
               {accountNumbers && (
                 <td className={CELL}>
-                  <code className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5">
-                    {accountNumbers.get(operation.accountId) ?? operation.accountId}
-                  </code>
+                  <Code>{accountNumbers.get(operation.accountId) ?? operation.accountId}</Code>
                 </td>
               )}
               <td className={`${CELL} whitespace-nowrap tabular-nums`}>{operation.operationDate}</td>
               <td className={CELL}>{operation.contractorName}</td>
-              <td className={`${CELL} text-slate-500 dark:text-slate-400`}>{operation.description}</td>
-              {/* Income in green, as in the web app; an expense stays in the normal colour. */}
-              <td
-                className={`${CELL} whitespace-nowrap text-right font-semibold tabular-nums `
-                  + (Number(operation.amount) > 0 ? 'text-green-700 dark:text-green-400' : '')}
-              >
+              <td className={`${CELL} ${MUTED}`}>{operation.description}</td>
+              <td className={`${CELL} ${AMOUNT} ${Number(operation.amount) > 0 ? INCOME : ''}`}>
                 {formatAmount(operation.amount)}
               </td>
               <td className={CELL}>
@@ -131,59 +107,40 @@ export function OperationsTable({
                   {otherSideLinks && (
                     <span className="w-5 text-center">
                       {operation.transactionUuid && (
-                        <button
-                          type="button"
-                          onClick={() => goToOtherSide(operation)}
-                          title={t('operation.show_other_side')}
-                          aria-label={t('operation.show_other_side')}
-                          className="cursor-pointer"
-                        >
+                        <IconButton label={t('operation.show_other_side')} onClick={() => goToOtherSide(operation)}>
                           🔗
-                        </button>
+                        </IconButton>
                       )}
                     </span>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => toggleConfirmed(operation)}
-                    disabled={busy}
+                  <IconButton
+                    label={t('operation.change_confirmation_status')}
                     title={operation.confirmed ? t('app.confirmed') : t('app.unconfirmed')}
-                    aria-label={t('operation.change_confirmation_status')}
-                    aria-pressed={operation.confirmed}
-                    className={ICON}
+                    pressed={operation.confirmed}
+                    disabled={busy}
+                    onClick={() => {
+                      clearMessages()
+                      setConfirmed.mutate({ operationId: operation.id, confirmed: !operation.confirmed })
+                    }}
                   >
                     {operation.confirmed
                       ? <CheckCircleIcon className="size-5 text-green-600 dark:text-green-500" />
                       : <QuestionMarkCircleIcon className="size-5 text-amber-500" />}
-                  </button>
-                  <Link
-                    to={`/operation/${operation.id}/edit`}
-                    title={t('operation.edit')}
-                    aria-label={t('operation.edit')}
-                    className={ICON}
-                  >
-                    <PencilSquareIcon className="size-5" />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => deleteOperation(operation)}
+                  </IconButton>
+                  <EditLink to={`/operation/${operation.id}/edit`} />
+                  <DeleteButton
                     disabled={busy}
-                    title={t('operation.delete')}
-                    aria-label={t('operation.delete')}
-                    className={ICON}
-                  >
-                    <TrashIcon className="size-5 text-red-600 dark:text-red-400" />
-                  </button>
+                    onDelete={() => {
+                      clearMessages()
+                      remove.mutate(operation.id)
+                    }}
+                  />
                 </div>
               </td>
             </tr>
           ))}
           {operations.length === 0 && (
-            <tr>
-              <td colSpan={accountNumbers ? 7 : 6} className={`${CELL} text-center text-slate-500 dark:text-slate-400`}>
-                {emptyText ?? t('operation.none_found')}
-              </td>
-            </tr>
+            <EmptyRow columns={accountNumbers ? 7 : 6} text={emptyText ?? t('operation.none_found')} />
           )}
         </tbody>
       </table>

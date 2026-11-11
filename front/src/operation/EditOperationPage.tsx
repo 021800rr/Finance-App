@@ -1,12 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { useParams } from 'react-router'
-import { ApiError } from '../api'
-import { errorMessage } from '../messages'
-import { NotFoundPage } from '../pages/NotFoundPage'
+import { useNavigate, useParams } from 'react-router'
+import type { Operation } from '../account/accountApi'
 import { formAmount } from '../ui/form'
+import { QueryResult } from '../ui/QueryResult'
 import { OperationForm } from './OperationForm'
 import { type AccountChoice, type OperationInput, useAccounts, useOperation, useUpdateOperation } from './operationApi'
-import type { Operation } from '../account/accountApi'
 
 // /operation/:id/edit: the same form; the account of an operation is fixed when it is created.
 export function EditOperationPage() {
@@ -15,31 +13,20 @@ export function EditOperationPage() {
   const operation = useOperation(id)
   const accounts = useAccounts()
 
-  if (operation.isPending || accounts.isPending) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
-  }
-  if (operation.isError) {
-    return operation.error instanceof ApiError && operation.error.status === 404
-      ? <NotFoundPage />
-      : (
-        <p role="alert" className="text-red-600 dark:text-red-400">
-          {errorMessage(operation.error, t('app.operation_load_failed'))}
-        </p>
-      )
-  }
-  if (accounts.isError) {
-    return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
-        {errorMessage(accounts.error, t('app.accounts_load_failed'))}
-      </p>
-    )
-  }
-
-  return <EditForm operation={operation.data} accounts={accounts.data} />
+  return (
+    <QueryResult query={operation} failure={t('app.operation_load_failed')} notFound>
+      {(found) => (
+        <QueryResult query={accounts} failure={t('app.accounts_load_failed')}>
+          {(all) => <EditForm operation={found} accounts={all} />}
+        </QueryResult>
+      )}
+    </QueryResult>
+  )
 }
 
 function EditForm({ operation, accounts }: { operation: Operation; accounts: AccountChoice[] }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const update = useUpdateOperation(operation.id)
   // Only its own account, shown but fixed; it may have been hidden since, and still is the right one.
   const own = accounts.filter((account) => account.id === operation.accountId)
@@ -63,9 +50,9 @@ function EditForm({ operation, accounts }: { operation: Operation; accounts: Acc
           ? { ...input, contractorId: undefined }
           : input
         await update.mutateAsync(changes)
-
-        return `/account/${operation.accountId}/operations?highlight=${operation.id}`
+        navigate(`/account/${operation.accountId}/operations?highlight=${operation.id}`)
       }}
+      onCancel={() => navigate(-1)}
     />
   )
 }

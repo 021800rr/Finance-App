@@ -1,10 +1,13 @@
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
-import { errorMessage } from '../messages'
-import { useAccounts } from '../operation/operationApi'
-import { LineChart, type Series } from '../ui/LineChart'
+import { type AccountChoice, useAccounts } from '../operation/operationApi'
+import { Card } from '../ui/Card'
+import { Note } from '../ui/Feedback'
+import { LineChart } from '../ui/LineChart'
+import { QueryResult } from '../ui/QueryResult'
+import { toSeries } from '../ui/series'
 import { RateForm } from './RateForm'
-import { type Bank, type Rate, useBanks, useChartRates, useCreateRate, useCurrencies, useRecentRates } from './rateApi'
+import { type Bank, useBanks, useChartRates, useCreateRate, useCurrencies, useRecentRates } from './rateApi'
 import { RatesTable } from './RatesTable'
 
 // The colours of the banks' lines, as in the web app (assets/js/rates-chart.js).
@@ -18,40 +21,34 @@ const COLORS = [
   'rgb(255, 159, 64)',
 ]
 
-const CARD = 'rounded-xl bg-white dark:bg-slate-900 p-6 shadow'
-
-// /rate, as in the web app: the chart of the rates, the form of a new rate and the latest rates.
+// /rate, as in the web app: the chart of the rates, the form of a new rate and the latest rates. The chart, the
+// form and the list all name the banks, so nothing shows until their names are there (no '#1' meanwhile).
 export function RatesPage() {
   const { t } = useTranslation()
   const banks = useBanks()
-  const bankNames = React.useMemo(() => new Map(banks.data?.map((bank) => [bank.id, bank.name])), [banks.data])
 
-  // The chart, the form and the list all name the banks: nothing until their names are there (no '#1' meanwhile).
-  if (banks.isPending) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
-  }
-  if (banks.isError) {
-    return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
-        {errorMessage(banks.error, t('app.rate_form_load_failed'))}
-      </p>
-    )
-  }
+  return (
+    <QueryResult query={banks} failure={t('app.rate_form_load_failed')}>
+      {(all) => <Rates banks={all} />}
+    </QueryResult>
+  )
+}
+
+function Rates({ banks }: { banks: Bank[] }) {
+  const { t } = useTranslation()
+  const bankNames = React.useMemo(() => new Map(banks.map((bank) => [bank.id, bank.name])), [banks])
 
   return (
     <div className="space-y-6">
-      <section className={CARD}>
-        <h1 className="mb-4 text-xl font-semibold text-slate-900 dark:text-slate-100">{t('rate.chart_title')}</h1>
+      <Card title={t('rate.chart_title')}>
         <RatesChart bankNames={bankNames} />
-      </section>
-      <section className={CARD}>
-        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">{t('rate.add_title')}</h2>
-        <NewRate banks={banks.data} />
-      </section>
-      <section className={CARD}>
-        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">{t('rate.list_title')}</h2>
+      </Card>
+      <Card title={t('rate.add_title')} heading="h2">
+        <NewRate banks={banks} />
+      </Card>
+      <Card title={t('rate.list_title')} heading="h2">
         <RecentRates bankNames={bankNames} />
-      </section>
+      </Card>
     </div>
   )
 }
@@ -59,38 +56,31 @@ export function RatesPage() {
 function RatesChart({ bankNames }: { bankNames: Map<number, string> }) {
   const { t } = useTranslation()
   const rates = useChartRates()
-  const series = React.useMemo(() => bankSeries(rates.data ?? [], bankNames), [rates.data, bankNames])
+  // One line per bank. Memoized: the chart is drawn anew whenever its lines change.
+  const series = React.useMemo(() => toSeries(rates.data ?? [], {
+    line: (rate) => rate.bankId,
+    label: (bankId) => bankNames.get(bankId) ?? `#${bankId}`,
+    date: (rate) => rate.rateDate,
+    value: (rate) => rate.rateToPln,
+  }), [rates.data, bankNames])
 
-  if (rates.isPending) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
-  }
-  if (rates.isError) {
-    return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
-        {errorMessage(rates.error, t('app.rates_load_failed'))}
-      </p>
-    )
-  }
-  if (series.length === 0) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('rate.none_found')}</p>
-  }
-
-  return <LineChart series={series} colors={COLORS} xTitle={t('form.date')} yTitle={t('rate.chart_y_axis')} />
+  return (
+    <QueryResult query={rates} failure={t('app.rates_load_failed')}>
+      {() => series.length === 0
+        ? <Note>{t('rate.none_found')}</Note>
+        : <LineChart series={series} colors={COLORS} xTitle={t('form.date')} yTitle={t('rate.chart_y_axis')} />}
+    </QueryResult>
+  )
 }
 
-// One line per bank, in the order the banks first appear.
-function bankSeries(rates: Rate[], bankNames: Map<number, string>): Series[] {
-  const byBank = new Map<number, Series>()
-  for (const rate of rates) {
-    let line = byBank.get(rate.bankId)
-    if (line === undefined) {
-      line = { label: bankNames.get(rate.bankId) ?? `#${rate.bankId}`, values: {} }
-      byBank.set(rate.bankId, line)
-    }
-    line.values[rate.rateDate] = rate.rateToPln
-  }
+// As in the web app: only a bank with a visible account in a foreign currency takes rates. The accounts name their
+// bank but have no bank id; the API checks the bank once more anyway.
+function banksTakingRates(banks: Bank[], accounts: AccountChoice[]): Bank[] {
+  const foreign = new Set(accounts
+    .filter((account) => !account.hidden && account.currencyCode !== 'PLN')
+    .map((account) => account.bankName))
 
-  return [...byBank.values()]
+  return banks.filter((bank) => foreign.has(bank.name))
 }
 
 function NewRate({ banks }: { banks: Bank[] }) {
@@ -101,34 +91,24 @@ function NewRate({ banks }: { banks: Bank[] }) {
   // A new key gives a new, empty form after every rate added.
   const [formKey, setFormKey] = React.useState(0)
 
-  const error = accounts.error ?? currencies.error
-  if (error) {
-    return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
-        {errorMessage(error, t('app.rate_form_load_failed'))}
-      </p>
-    )
-  }
-  if (accounts.data === undefined || currencies.data === undefined) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
-  }
-
-  // As in the web app: only a bank with a visible account in a foreign currency takes rates. The accounts name their
-  // bank but have no bank id; the API checks the bank once more anyway.
-  const foreignBanks = new Set(accounts.data
-    .filter((account) => !account.hidden && account.currencyCode !== 'PLN')
-    .map((account) => account.bankName))
-
   return (
-    <RateForm
-      key={formKey}
-      banks={banks.filter((bank) => foreignBanks.has(bank.name))}
-      currencies={currencies.data.filter((code) => code !== 'PLN')}
-      save={async (input) => {
-        await create.mutateAsync(input)
-        setFormKey((key) => key + 1)
-      }}
-    />
+    <QueryResult query={accounts} failure={t('app.rate_form_load_failed')}>
+      {(allAccounts) => (
+        <QueryResult query={currencies} failure={t('app.rate_form_load_failed')}>
+          {(codes) => (
+            <RateForm
+              key={formKey}
+              banks={banksTakingRates(banks, allAccounts)}
+              currencies={codes.filter((code) => code !== 'PLN')}
+              save={async (input) => {
+                await create.mutateAsync(input)
+                setFormKey((key) => key + 1)
+              }}
+            />
+          )}
+        </QueryResult>
+      )}
+    </QueryResult>
   )
 }
 
@@ -136,16 +116,9 @@ function RecentRates({ bankNames }: { bankNames: Map<number, string> }) {
   const { t } = useTranslation()
   const rates = useRecentRates()
 
-  if (rates.isPending) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
-  }
-  if (rates.isError) {
-    return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
-        {errorMessage(rates.error, t('app.rates_load_failed'))}
-      </p>
-    )
-  }
-
-  return <RatesTable rates={rates.data} bankNames={bankNames} />
+  return (
+    <QueryResult query={rates} failure={t('app.rates_load_failed')}>
+      {(recent) => <RatesTable rates={recent} bankNames={bankNames} />}
+    </QueryResult>
+  )
 }

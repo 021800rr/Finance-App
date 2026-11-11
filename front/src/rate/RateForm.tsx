@@ -1,11 +1,12 @@
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ApiError } from '../api'
-import { errorMessage } from '../messages'
 import { AmountInput } from '../ui/AmountInput'
 import { DateInput } from '../ui/DateInput'
-import { fieldErrors, inputClass, MAX_DATE, MIN_DATE, toApiDecimal, today } from '../ui/form'
+import { Alert } from '../ui/Feedback'
+import { inputClass, MAX_DATE, MIN_DATE, toApiDecimal, today } from '../ui/form'
+import { FormButtons } from '../ui/FormButtons'
 import { FormRow } from '../ui/FormRow'
+import { useApiForm } from '../ui/useApiForm'
 import type { Bank, RateInput } from './rateApi'
 
 type Field = 'bank' | 'currency' | 'date' | 'rate'
@@ -34,36 +35,18 @@ export function RateForm({ banks, currencies, save }: Props) {
   const [currencyCode, setCurrencyCode] = React.useState(currencies[0] ?? '')
   const [rateDate, setRateDate] = React.useState(today)
   const [rate, setRate] = React.useState('')
-  const [errors, setErrors] = React.useState<Partial<Record<Field, string>>>({})
-  const [failure, setFailure] = React.useState('')
-  const [sending, setSending] = React.useState(false)
+  const form = useApiForm({ fieldOfPath: FIELD_OF_PATH, failure: t('app.save_rate_failed') })
 
-  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
-    setFailure('')
-    setErrors({})
-    setSending(true)
-    try {
-      await save({ bankId, currencyCode, rateDate, rateToPln: toApiDecimal(rate) })
-    } catch (error) {
-      if (error instanceof ApiError && error.violations.length > 0) {
-        setErrors(fieldErrors(error.violations, FIELD_OF_PATH))
-        setFailure(t('form.fill_required_fields'))
-      } else {
-        setFailure(errorMessage(error, t('app.save_rate_failed')))
-      }
-    } finally {
-      setSending(false)
-    }
+    void form.submit(() => save({ bankId, currencyCode, rateDate, rateToPln: toApiDecimal(rate) }))
   }
+
+  const { errors } = form
 
   return (
     <form onSubmit={handleSubmit} noValidate className="max-w-xl space-y-4">
-      {failure && (
-        <p role="alert" className="rounded bg-red-50 dark:bg-red-950 px-3 py-2 text-sm text-red-700 dark:text-red-300">
-          {failure}
-        </p>
-      )}
+      {form.message && <Alert tone="error">{form.message}</Alert>}
       <FormRow label={t('account.bank')} htmlFor="bank" error={errors.bank}>
         <select
           id="bank"
@@ -104,15 +87,7 @@ export function RateForm({ banks, currencies, save }: Props) {
           className={inputClass(errors.rate)}
         />
       </FormRow>
-      <div className="pt-2">
-        <button
-          type="submit"
-          disabled={sending}
-          className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-        >
-          {sending ? t('app.saving') : t('common.add')}
-        </button>
-      </div>
+      <FormButtons sending={form.sending} submitLabel={t('common.add')} />
     </form>
   )
 }

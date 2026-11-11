@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { formatAmount, type Money } from '../money'
+import { HEAD } from '../ui/tableStyle'
 import type { Summary } from './summaryApi'
 
 // The account types the web app sums up separately (App\Constant\AccountTypeNames).
@@ -29,7 +30,7 @@ export function TotalsTable({ summary }: { summary: Summary }) {
   return (
     <div className="inline-block overflow-x-auto rounded-xl bg-white dark:bg-slate-900 shadow">
       <table className="text-sm">
-        <thead className="bg-slate-800 text-left text-white">
+        <thead className={HEAD}>
           <tr>
             <th className={CELL}>{t('account.type')}</th>
             <th className={`${CELL} text-right`}>{t('home.currency_pln')}</th>

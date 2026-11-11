@@ -1,9 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
-import { ApiError } from '../api'
-import { errorMessage } from '../messages'
-import { NotFoundPage } from '../pages/NotFoundPage'
+import { Card } from '../ui/Card'
 import { formAmount } from '../ui/form'
+import { QueryResult } from '../ui/QueryResult'
 import { FixedExpenseForm } from './FixedExpenseForm'
 import { type FixedExpense, type FixedExpenseInput, useFixedExpense, useUpdateFixedExpense } from './fixedExpenseApi'
 
@@ -13,20 +12,11 @@ export function EditFixedExpensePage() {
   const { id = '' } = useParams()
   const fixedExpense = useFixedExpense(id)
 
-  if (fixedExpense.isPending) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
-  }
-  if (fixedExpense.isError) {
-    return fixedExpense.error instanceof ApiError && fixedExpense.error.status === 404
-      ? <NotFoundPage />
-      : (
-        <p role="alert" className="text-red-600 dark:text-red-400">
-          {errorMessage(fixedExpense.error, t('app.fixed_expense_load_failed'))}
-        </p>
-      )
-  }
-
-  return <EditForm fixedExpense={fixedExpense.data} />
+  return (
+    <QueryResult query={fixedExpense} failure={t('app.fixed_expense_load_failed')} notFound>
+      {(found) => <EditForm fixedExpense={found} />}
+    </QueryResult>
+  )
 }
 
 function EditForm({ fixedExpense }: { fixedExpense: FixedExpense }) {
@@ -35,10 +25,8 @@ function EditForm({ fixedExpense }: { fixedExpense: FixedExpense }) {
   const update = useUpdateFixedExpense(fixedExpense.id)
 
   return (
-    <section className="rounded-xl bg-white dark:bg-slate-900 p-6 shadow">
-      <h1 className="mb-4 text-xl font-semibold text-slate-900 dark:text-slate-100">{t('fixed_expense.edit_title')}</h1>
+    <Card title={t('fixed_expense.edit_title')}>
       <FixedExpenseForm
-        adding={false}
         initial={{
           day: String(fixedExpense.day),
           contractor: { id: fixedExpense.contractorId, name: fixedExpense.contractorName },
@@ -53,7 +41,9 @@ function EditForm({ fixedExpense }: { fixedExpense: FixedExpense }) {
           await update.mutateAsync(changes)
           navigate('/fixed-expense')
         }}
+        // As in the web app: back to the list.
+        onCancel={() => navigate('/fixed-expense')}
       />
-    </section>
+    </Card>
   )
 }

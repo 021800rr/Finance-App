@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router'
 import { OperationsTable } from '../account/OperationsTable'
-import { errorMessage } from '../messages'
 import { useAccounts } from '../operation/operationApi'
+import { Card } from '../ui/Card'
 import { pageFromParam } from '../ui/pageParam'
 import { Pagination } from '../ui/Pagination'
+import { QueryResult } from '../ui/QueryResult'
 import { useOperationSearch } from './searchApi'
 
 // /search?q=...&page=N: the operations of all accounts found by the search of the header, as on the web app's
@@ -19,8 +20,7 @@ export function SearchPage() {
   const accountNumbers = new Map((accounts.data ?? []).map((account) => [account.id, account.accountNumber]))
 
   return (
-    <section className="space-y-4 rounded-xl bg-white dark:bg-slate-900 p-6 shadow">
-      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{t('search.title')}</h1>
+    <Card title={t('search.title')}>
       <p className="text-sm text-slate-500 dark:text-slate-400">
         {phrase === ''
           ? t('search.prompt')
@@ -31,23 +31,22 @@ export function SearchPage() {
             </>
           )}
       </p>
-      {phrase !== '' && results.isPending && <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>}
-      {results.isError && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
-          {errorMessage(results.error, t('app.operations_load_failed'))}
-        </p>
+      {/* An empty phrase asks nothing: the query stays waiting, so there is nothing to show either. */}
+      {phrase !== '' && (
+        <QueryResult query={results} failure={t('app.operations_load_failed')}>
+          {(found) => (
+            <>
+              <OperationsTable
+                operations={found.items}
+                accountNumbers={accountNumbers}
+                otherSideLinks={false}
+                emptyText={t('search.none_found_for', { query: phrase })}
+              />
+              <Pagination page={page} lastPage={found.lastPage} />
+            </>
+          )}
+        </QueryResult>
       )}
-      {phrase !== '' && results.data && (
-        <>
-          <OperationsTable
-            operations={results.data.items}
-            accountNumbers={accountNumbers}
-            otherSideLinks={false}
-            emptyText={t('search.none_found_for', { query: phrase })}
-          />
-          <Pagination page={page} lastPage={results.data.lastPage} />
-        </>
-      )}
-    </section>
+    </Card>
   )
 }

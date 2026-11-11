@@ -1,14 +1,16 @@
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { ApiError } from '../api'
-import { errorMessage } from '../messages'
 import { type AccountChoice, useAccounts } from '../operation/operationApi'
 import { AmountInput } from '../ui/AmountInput'
+import { Card } from '../ui/Card'
 import { DateInput } from '../ui/DateInput'
-import { fieldErrors, inputClass, MAX_DATE, MIN_DATE, toApiAmount, today } from '../ui/form'
+import { Alert } from '../ui/Feedback'
+import { inputClass, MAX_DATE, MIN_DATE, toApiAmount, today } from '../ui/form'
 import { FormButtons } from '../ui/FormButtons'
 import { FormRow } from '../ui/FormRow'
+import { QueryResult } from '../ui/QueryResult'
+import { useApiForm } from '../ui/useApiForm'
 import { type TransferInput, useCreateTransfer } from './transferApi'
 
 type Field = 'from' | 'to' | 'amountFrom' | 'amountTo' | 'date' | 'description'
@@ -33,18 +35,11 @@ export function TransferPage() {
   const { t } = useTranslation()
   const accounts = useAccounts()
 
-  if (accounts.isPending) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
-  }
-  if (accounts.isError) {
-    return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
-        {errorMessage(accounts.error, t('app.accounts_load_failed'))}
-      </p>
-    )
-  }
-
-  return <TransferForm accounts={accounts.data.filter((account) => !account.hidden)} />
+  return (
+    <QueryResult query={accounts} failure={t('app.accounts_load_failed')}>
+      {(all) => <TransferForm accounts={all.filter((account) => !account.hidden)} />}
+    </QueryResult>
+  )
 }
 
 // As in the web app: from, to, the amount that leaves and the amount that arrives, date, description. With one
@@ -59,21 +54,21 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
   const [toId, setToId] = React.useState(accounts[1]?.id ?? accounts[0]?.id ?? null)
   const [amountFrom, setAmountFrom] = React.useState('')
   const [amountTo, setAmountTo] = React.useState('')
-  const [date, setDate] = React.useState(today())
+  const [date, setDate] = React.useState(today)
   const [description, setDescription] = React.useState('')
-  const [errors, setErrors] = React.useState<Partial<Record<Field, string>>>({})
-  const [failure, setFailure] = React.useState('')
+  const form = useApiForm({
+    fieldOfPath: FIELD_OF_PATH,
+    fieldOfErrorCode: FIELD_OF_ERROR_CODE,
+    failure: t('app.save_transfer_failed'),
+  })
 
   const currencyOf = (id: number | null) => accounts.find((account) => account.id === id)?.currencyCode
   const sameCurrency = currencyOf(fromId) !== undefined && currencyOf(fromId) === currencyOf(toId)
 
-  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
-    setFailure('')
-    setErrors({})
     if (fromId === null || toId === null) {
-      setErrors({ from: t('transfer.from_account_required', { ns: 'validators' }) })
-      setFailure(t('form.fill_required_fields'))
+      form.fail({ from: t('transfer.from_account_required', { ns: 'validators' }) })
       return
     }
 
@@ -82,40 +77,24 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
       toAccountId: toId,
       operationDate: date,
       amountFrom: toApiAmount(amountFrom),
-      ...(sameCurrency ? {} : { amountTo: toApiAmount(amountTo) }),
+      ...(!sameCurrency && { amountTo: toApiAmount(amountTo) }),
       description: description.trim() === '' ? null : description,
     }
-    try {
+    void form.submit(async () => {
       const transfer = await create.mutateAsync(input)
       // As in the web app: the history of the first account, with the operation that left it framed.
       navigate(`/account/${transfer.fromAccountId}/operations?highlight=${transfer.outOperationId}`)
-    } catch (error) {
-      if (error instanceof ApiError && error.violations.length > 0) {
-        setErrors(fieldErrors(error.violations, FIELD_OF_PATH))
-        setFailure(t('form.fill_required_fields'))
-      } else if (error instanceof ApiError && error.errorCode !== undefined && error.errorCode in FIELD_OF_ERROR_CODE) {
-        const message = errorMessage(error, '')
-        setErrors({ [FIELD_OF_ERROR_CODE[error.errorCode]]: message })
-        setFailure(message)
-      } else {
-        setFailure(errorMessage(error, t('app.save_transfer_failed')))
-      }
-    }
+    })
   }
 
+  const { errors } = form
   const accountOptions = accounts.map((account) => (
     <option key={account.id} value={account.id}>{account.displayLabel}</option>
   ))
 
   return (
-    <section className="rounded-xl bg-white dark:bg-slate-900 p-6 shadow">
-      <h1 className="mb-4 text-xl font-semibold text-slate-900 dark:text-slate-100">{t('transfer.title')}</h1>
-      {failure && (
-        <p role="alert" className="mb-4 rounded bg-red-50 dark:bg-red-950 px-3 py-2 text-sm text-red-700
-          dark:text-red-300">
-          {failure}
-        </p>
-      )}
+    <Card title={t('transfer.title')}>
+      {form.message && <Alert tone="error">{form.message}</Alert>}
       <form onSubmit={handleSubmit} noValidate className="max-w-xl space-y-4">
         <FormRow label={t('transfer.from_account')} htmlFor="from" error={errors.from}>
           <select
@@ -177,8 +156,8 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
             className={inputClass(errors.description)}
           />
         </FormRow>
-        <FormButtons sending={create.isPending} />
+        <FormButtons sending={form.sending} onCancel={() => navigate(-1)} />
       </form>
-    </section>
+    </Card>
   )
 }

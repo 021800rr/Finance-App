@@ -1,31 +1,31 @@
 import { useTranslation } from 'react-i18next'
-import { Link, useSearchParams } from 'react-router'
-import { errorMessage } from '../messages'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { today } from '../ui/form'
+import { QueryResult } from '../ui/QueryResult'
 import { OperationForm } from './OperationForm'
-import { useAccounts, useCreateOperation } from './operationApi'
+import { type AccountChoice, useAccounts, useCreateOperation } from './operationApi'
 
 // /operation/new?account=ID: a new operation; "Add operation" of an account history chooses its account.
 export function NewOperationPage() {
   const { t } = useTranslation()
-  const [params] = useSearchParams()
   const accounts = useAccounts()
+
+  return (
+    <QueryResult query={accounts} failure={t('app.accounts_load_failed')}>
+      {(all) => <NewOperation accounts={all} />}
+    </QueryResult>
+  )
+}
+
+function NewOperation({ accounts }: { accounts: AccountChoice[] }) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
   const create = useCreateOperation()
 
-  if (accounts.isPending) {
-    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
-  }
-  if (accounts.isError) {
-    return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
-        {errorMessage(accounts.error, t('app.accounts_load_failed'))}
-      </p>
-    )
-  }
-
-  const visible = accounts.data.filter((account) => !account.hidden)
+  const visible = accounts.filter((account) => !account.hidden)
   const wanted = params.get('account')
-  const preselected = wanted === null ? undefined : accounts.data.find((account) => String(account.id) === wanted)
+  const preselected = wanted === null ? undefined : accounts.find((account) => String(account.id) === wanted)
   // As in the web app: an account in the address that is missing or hidden is not offered instead of another one.
   if (wanted !== null && (preselected === undefined || preselected.hidden)) {
     return (
@@ -55,9 +55,9 @@ export function NewOperationPage() {
       }}
       save={async (input, accountId) => {
         const operation = await create.mutateAsync({ ...input, accountId })
-
-        return `/account/${operation.accountId}/operations?highlight=${operation.id}`
+        navigate(`/account/${operation.accountId}/operations?highlight=${operation.id}`)
       }}
+      onCancel={() => navigate(-1)}
     />
   )
 }

@@ -1,11 +1,11 @@
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ApiError } from '../api'
-import { errorMessage } from '../messages'
 import { AmountInput } from '../ui/AmountInput'
-import { fieldErrors, inputClass, toApiDecimal } from '../ui/form'
+import { Alert } from '../ui/Feedback'
+import { inputClass, toApiDecimal } from '../ui/form'
 import { FormButtons } from '../ui/FormButtons'
 import { FormRow } from '../ui/FormRow'
+import { useApiForm } from '../ui/useApiForm'
 import type { GoldAssetInput, GoldForm } from './goldAssetApi'
 
 type Field = 'form' | 'ounces' | 'description'
@@ -23,50 +23,34 @@ type Props = {
   // the gold forms to choose from (bar, coin…)
   forms: GoldForm[]
   initial: GoldAssetFormValues
-  // a new asset has one "Dodaj" button, as in the web app; an edit has Zapisz / Anuluj
-  adding: boolean
   // sends the form; when it fails, the form shows why
   save: (input: GoldAssetInput) => Promise<void>
+  // "Dodaj" for a new one (the list is right under it), "Zapisz" for an edit
+  submitLabel?: string
+  // an edit has "Anuluj"
+  onCancel?: () => void
 }
 
 // The form of a new gold asset and of an edit, as in the web app: form, ounces, description.
-export function GoldAssetForm({ forms, initial, adding, save }: Props) {
+export function GoldAssetForm({ forms, initial, save, submitLabel, onCancel }: Props) {
   const { t } = useTranslation()
   const [values, setValues] = React.useState(initial)
-  const [errors, setErrors] = React.useState<Partial<Record<Field, string>>>({})
-  const [failure, setFailure] = React.useState('')
-  const [sending, setSending] = React.useState(false)
+  const form = useApiForm({ fieldOfPath: FIELD_OF_PATH, failure: t('app.save_gold_asset_failed') })
 
   function set<K extends keyof GoldAssetFormValues>(key: K, value: GoldAssetFormValues[K]) {
     setValues((previous) => ({ ...previous, [key]: value }))
   }
 
-  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
-    setFailure('')
-    setErrors({})
-    setSending(true)
-    try {
-      await save({ ...values, ounces: toApiDecimal(values.ounces) })
-    } catch (error) {
-      if (error instanceof ApiError && error.violations.length > 0) {
-        setErrors(fieldErrors(error.violations, FIELD_OF_PATH))
-        setFailure(t('form.fill_required_fields'))
-      } else {
-        setFailure(errorMessage(error, t('app.save_gold_asset_failed')))
-      }
-    } finally {
-      setSending(false)
-    }
+    void form.submit(() => save({ ...values, ounces: toApiDecimal(values.ounces) }))
   }
+
+  const { errors } = form
 
   return (
     <form onSubmit={handleSubmit} noValidate className="max-w-xl space-y-4">
-      {failure && (
-        <p role="alert" className="rounded bg-red-50 dark:bg-red-950 px-3 py-2 text-sm text-red-700 dark:text-red-300">
-          {failure}
-        </p>
-      )}
+      {form.message && <Alert tone="error">{form.message}</Alert>}
       <FormRow label={t('gold_asset.shape')} htmlFor="form" error={errors.form}>
         <select
           id="form"
@@ -74,7 +58,7 @@ export function GoldAssetForm({ forms, initial, adding, save }: Props) {
           onChange={(event) => set('formId', Number(event.target.value))}
           className={inputClass(errors.form)}
         >
-          {forms.map((form) => <option key={form.id} value={form.id}>{form.name}</option>)}
+          {forms.map((shape) => <option key={shape.id} value={shape.id}>{shape.name}</option>)}
         </select>
       </FormRow>
       <FormRow label={t('gold_asset.ounces')} htmlFor="ounces" error={errors.ounces}>
@@ -97,20 +81,7 @@ export function GoldAssetForm({ forms, initial, adding, save }: Props) {
           className={inputClass(errors.description)}
         />
       </FormRow>
-      {adding
-        ? (
-          <div className="pt-2">
-            <button
-              type="submit"
-              disabled={sending}
-              className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700
-                disabled:opacity-50"
-            >
-              {sending ? t('app.saving') : t('common.add')}
-            </button>
-          </div>
-        )
-        : <FormButtons sending={sending} />}
+      <FormButtons sending={form.sending} submitLabel={submitLabel} onCancel={onCancel} />
     </form>
   )
 }

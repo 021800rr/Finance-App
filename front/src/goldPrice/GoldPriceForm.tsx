@@ -1,12 +1,13 @@
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ApiError } from '../api'
 import type { GoldAsset } from '../goldAsset/goldAssetApi'
-import { errorMessage } from '../messages'
 import { AmountInput } from '../ui/AmountInput'
 import { DateInput } from '../ui/DateInput'
-import { fieldErrors, inputClass, MAX_DATE, MIN_DATE, toApiAmount, today } from '../ui/form'
+import { Alert } from '../ui/Feedback'
+import { inputClass, MAX_DATE, MIN_DATE, toApiAmount, today } from '../ui/form'
+import { FormButtons } from '../ui/FormButtons'
 import { FormRow } from '../ui/FormRow'
+import { useApiForm } from '../ui/useApiForm'
 import type { GoldPriceInput } from './goldPriceApi'
 
 type Field = 'asset' | 'date' | 'price'
@@ -30,37 +31,19 @@ export function GoldPriceForm({ assets, save }: Props) {
   const [goldAssetId, setGoldAssetId] = React.useState(assets[0]?.id ?? null)
   const [priceDate, setPriceDate] = React.useState(today)
   const [price, setPrice] = React.useState('')
-  const [errors, setErrors] = React.useState<Partial<Record<Field, string>>>({})
-  const [failure, setFailure] = React.useState('')
-  const [sending, setSending] = React.useState(false)
+  const form = useApiForm({ fieldOfPath: FIELD_OF_PATH, failure: t('app.save_gold_price_failed') })
 
-  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
+  function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
-    setFailure('')
-    setErrors({})
-    setSending(true)
-    try {
-      // A price is an amount with cents, up to 999 999,99: '8 650,00' and '8,650.00' are both 8650.
-      await save({ goldAssetId, priceDate, pricePln: toApiAmount(price) })
-    } catch (error) {
-      if (error instanceof ApiError && error.violations.length > 0) {
-        setErrors(fieldErrors(error.violations, FIELD_OF_PATH))
-        setFailure(t('form.fill_required_fields'))
-      } else {
-        setFailure(errorMessage(error, t('app.save_gold_price_failed')))
-      }
-    } finally {
-      setSending(false)
-    }
+    // A price is an amount with cents, up to 999 999,99: '8 650,00' and '8,650.00' are both 8650.
+    void form.submit(() => save({ goldAssetId, priceDate, pricePln: toApiAmount(price) }))
   }
+
+  const { errors } = form
 
   return (
     <form onSubmit={handleSubmit} noValidate className="max-w-xl space-y-4">
-      {failure && (
-        <p role="alert" className="rounded bg-red-50 dark:bg-red-950 px-3 py-2 text-sm text-red-700 dark:text-red-300">
-          {failure}
-        </p>
-      )}
+      {form.message && <Alert tone="error">{form.message}</Alert>}
       <FormRow label={t('gold_price.asset')} htmlFor="asset" error={errors.asset}>
         <select
           id="asset"
@@ -91,15 +74,7 @@ export function GoldPriceForm({ assets, save }: Props) {
           className={inputClass(errors.price)}
         />
       </FormRow>
-      <div className="pt-2">
-        <button
-          type="submit"
-          disabled={sending}
-          className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-        >
-          {sending ? t('app.saving') : t('common.add')}
-        </button>
-      </div>
+      <FormButtons sending={form.sending} submitLabel={t('common.add')} />
     </form>
   )
 }

@@ -1,37 +1,23 @@
-import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router'
 import { errorMessage } from '../messages'
 import { formatAmount } from '../money'
+import { EmptyRow } from '../ui/EmptyRow'
+import { Alert } from '../ui/Feedback'
+import { DeleteButton, EditLink } from '../ui/RowActions'
+import { AMOUNT, BODY, CELL, HEAD, MUTED, ROW, TABLE } from '../ui/tableStyle'
 import { type GoldAsset, useDeleteGoldAsset } from './goldAssetApi'
 
-const CELL = 'px-3 py-1.5'
-const ICON = 'cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 '
-  + 'disabled:cursor-wait'
-
-// The list of the web app: #, form, ounces, description, with edit and delete on every row.
+// The list of the web app: #, form, ounces, description, with edit and delete on every row. Deleting an asset
+// deletes its prices too.
 export function GoldAssetsTable({ assets }: { assets: GoldAsset[] }) {
   const { t } = useTranslation()
   const remove = useDeleteGoldAsset()
 
-  function deleteAsset(asset: GoldAsset) {
-    // The browser's own question, as in the web app. The prices of the asset go with it.
-    if (!window.confirm(t('operation.confirm_delete'))) {
-      return
-    }
-    remove.mutate(asset.id)
-  }
-
   return (
-    <div className="overflow-x-auto">
-      {remove.isError && (
-        <p role="alert" className="mb-2 rounded bg-amber-100 dark:bg-amber-950 px-3 py-2 text-sm text-amber-900
-          dark:text-amber-200">
-          {errorMessage(remove.error, t('app.delete_gold_asset_failed'))}
-        </p>
-      )}
-      <table className="min-w-full text-sm">
-        <thead className="bg-slate-800 text-left text-white">
+    <div className="space-y-2 overflow-x-auto">
+      {remove.isError && <Alert tone="warning">{errorMessage(remove.error, t('app.delete_gold_asset_failed'))}</Alert>}
+      <table className={TABLE}>
+        <thead className={HEAD}>
           <tr>
             <th className={`${CELL} text-right`}>#</th>
             <th className={CELL}>{t('gold_asset.shape')}</th>
@@ -40,46 +26,22 @@ export function GoldAssetsTable({ assets }: { assets: GoldAsset[] }) {
             <th className={CELL}><span className="sr-only">{t('app.actions')}</span></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
+        <tbody className={BODY}>
           {assets.map((asset) => (
-            <tr key={asset.id} className="hover:bg-slate-50 dark:hover:bg-slate-800">
-              <td className={`${CELL} text-right text-slate-500 dark:text-slate-400 tabular-nums`}>{asset.id}</td>
+            <tr key={asset.id} className={ROW}>
+              <td className={`${CELL} text-right tabular-nums ${MUTED}`}>{asset.id}</td>
               <td className={CELL}>{asset.formName}</td>
-              <td className={`${CELL} whitespace-nowrap text-right font-semibold tabular-nums`}>
-                {formatAmount(asset.ounces)}
-              </td>
-              <td className={`${CELL} text-slate-500 dark:text-slate-400`}>{asset.description}</td>
+              <td className={`${CELL} ${AMOUNT}`}>{formatAmount(asset.ounces)}</td>
+              <td className={`${CELL} ${MUTED}`}>{asset.description}</td>
               <td className={CELL}>
                 <div className="flex items-center justify-end gap-2">
-                  <Link
-                    to={`/gold-assets/${asset.id}/edit`}
-                    title={t('operation.edit')}
-                    aria-label={t('operation.edit')}
-                    className={ICON}
-                  >
-                    <PencilSquareIcon className="size-5" />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => deleteAsset(asset)}
-                    disabled={remove.isPending}
-                    title={t('operation.delete')}
-                    aria-label={t('operation.delete')}
-                    className={ICON}
-                  >
-                    <TrashIcon className="size-5 text-red-600 dark:text-red-400" />
-                  </button>
+                  <EditLink to={`/gold-assets/${asset.id}/edit`} />
+                  <DeleteButton onDelete={() => remove.mutate(asset.id)} disabled={remove.isPending} />
                 </div>
               </td>
             </tr>
           ))}
-          {assets.length === 0 && (
-            <tr>
-              <td colSpan={5} className={`${CELL} text-center text-slate-500 dark:text-slate-400`}>
-                {t('gold_asset.none_found')}
-              </td>
-            </tr>
-          )}
+          {assets.length === 0 && <EmptyRow columns={5} text={t('gold_asset.none_found')} />}
         </tbody>
       </table>
     </div>
