@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace App\State;
 
+use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\FixedExpenseResource;
+use App\ApiResource\Input\FixedExpenseInput;
 use App\Exception\RecordNotFoundException;
 use App\Repository\FixedExpenseRepository;
 
 /**
- * @implements ProviderInterface<FixedExpenseResource>
+ * @implements ProviderInterface<FixedExpenseResource|FixedExpenseInput>
  */
 final readonly class FixedExpenseProvider implements ProviderInterface
 {
@@ -20,16 +22,19 @@ final readonly class FixedExpenseProvider implements ProviderInterface
     }
 
     /**
+     * GET answers with FixedExpenseResource. PATCH and DELETE get the current values as FixedExpenseInput: PATCH lays
+     * the request over them (what it leaves out stays), and the processor reads the record they belong to.
+     *
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      *
-     * @return FixedExpenseResource|list<FixedExpenseResource>
+     * @return FixedExpenseResource|FixedExpenseInput|list<FixedExpenseResource>
      */
     public function provide(
         Operation $operation,
         array $uriVariables = [],
         array $context = [],
-    ): FixedExpenseResource|array {
+    ): FixedExpenseResource|FixedExpenseInput|array {
         if (isset($uriVariables['id'])) {
             $fixedExpense = $this->fixedExpenseRepository->findByIdOrNull($uriVariables['id']);
 
@@ -37,7 +42,9 @@ final readonly class FixedExpenseProvider implements ProviderInterface
                 throw RecordNotFoundException::fixedExpense()->asHttp();
             }
 
-            return FixedExpenseResource::fromEntity($fixedExpense);
+            return $operation instanceof Get
+                ? FixedExpenseResource::fromEntity($fixedExpense)
+                : FixedExpenseInput::fromEntity($fixedExpense);
         }
 
         $fixedExpenses = $this->fixedExpenseRepository->findAllOrdered();

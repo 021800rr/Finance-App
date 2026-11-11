@@ -34,6 +34,52 @@ final class FixedExpenseApiTest extends WebTestCase
         $this->closeEntityManager();
     }
 
+    public function testOpenApiDescribesTheAnswersWithEveryFieldThereAndWhatIsSentAsItMayCome(): void
+    {
+        $this->client->request('GET', '/api/docs.jsonopenapi');
+
+        self::assertResponseIsSuccessful();
+        $document = self::decodeObject((string) $this->client->getResponse()->getContent());
+
+        // An answer always has these fields, none of them null: a generated client gets them without "| null".
+        $answer = self::objectAt($document, 'components', 'schemas', 'FixedExpense');
+        self::assertSame(
+            ['id', 'contractorId', 'contractorName', 'day', 'amount', 'currencyCode'],
+            $answer['required'],
+        );
+        self::assertSame('integer', self::stringAt($answer, 'properties', 'day', 'type'));
+        self::assertSame('string', self::stringAt($answer, 'properties', 'amount', 'type'));
+        $plan = self::objectAt($document, 'components', 'schemas', 'FixedExpensePlan');
+        self::assertSame(['accountId', 'month', 'createdCount'], $plan['required']);
+
+        // What a client sends may lack anything: the validation then says what, with a code.
+        $sent = self::objectAt($document, 'components', 'schemas', 'FixedExpense.FixedExpenseInput');
+        self::assertSame(['integer', 'null'], self::objectAt($sent, 'properties', 'day')['type']);
+
+        $answers = [
+            ['/api/fixed_expenses/{id}', 'get', '200'],
+            ['/api/fixed_expenses', 'post', '201'],
+            ['/api/fixed_expenses/{id}', 'patch', '200'],
+        ];
+        foreach ($answers as [$path, $method, $status]) {
+            $content = self::objectAt($document, 'paths', $path, $method, 'responses', $status, 'content');
+            self::assertSame(
+                '#/components/schemas/FixedExpense',
+                self::stringAt($content, 'application/json', 'schema', '$ref'),
+            );
+        }
+        $list = self::objectAt($document, 'paths', '/api/fixed_expenses', 'get', 'responses', '200', 'content');
+        self::assertSame(
+            '#/components/schemas/FixedExpense',
+            self::stringAt($list, 'application/json', 'schema', 'items', '$ref'),
+        );
+        $body = self::objectAt($document, 'paths', '/api/fixed_expenses', 'post', 'requestBody', 'content');
+        self::assertSame(
+            '#/components/schemas/FixedExpense.FixedExpenseInput',
+            self::stringAt($body, 'application/json', 'schema', '$ref'),
+        );
+    }
+
     public function testPostRejectsDay29WithoutSavingExpense(): void
     {
         $contractor = $this->createContractor('Invalid day API test '.uniqid());

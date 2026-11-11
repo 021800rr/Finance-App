@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Validator;
 
 use App\ApiResource\AccountOperationResource;
-use App\ApiResource\FixedExpenseResource;
+use App\ApiResource\Input\FixedExpenseInput;
 use App\Repository\ContractorRepository;
 use App\Util\RequestBody;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -30,7 +30,7 @@ final class ContractorGivenValidator extends ConstraintValidator
             throw new UnexpectedTypeException($constraint, ContractorGiven::class);
         }
 
-        if (!$value instanceof AccountOperationResource && !$value instanceof FixedExpenseResource) {
+        if (!$value instanceof AccountOperationResource && !$value instanceof FixedExpenseInput) {
             return;
         }
 

@@ -12,16 +12,16 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
-use App\Entity\Contractor;
+use App\ApiResource\Input\FixedExpenseInput;
 use App\Entity\FixedExpense;
 use App\State\FixedExpenseProcessor;
 use App\State\FixedExpenseProvider;
-use App\Validator\ContractorGiven;
-use App\Validator\DecimalString;
-use App\Validator\NoNullCharacter;
-use App\Validator\RecordExists;
-use Symfony\Component\Validator\Constraints as Assert;
 
+/**
+ * A fixed expense as the API returns it: every field is always there, the description only when there is one, and
+ * the OpenAPI document says so (a generated client gets types without needless nulls). What a client sends is
+ * FixedExpenseInput (input: on POST and PATCH), where any field may be missing until the validation says why.
+ */
 #[ApiResource(
     shortName: 'FixedExpense',
     description: 'A recurring monthly expense (always a negative amount, in PLN). Mirrors the "Fixed expenses" form.',
@@ -41,6 +41,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             description: 'Creates a new fixed expense. Give contractorId, contractorName or both (of the same '
             .'contractor); a contractorName that matches no contractor creates one. '
             .'Amount must be negative and is always in PLN.',
+            input: FixedExpenseInput::class,
             processor: FixedExpenseProcessor::class,
         ),
         new Patch(
@@ -48,6 +49,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             description: 'Updates an existing fixed expense. Send the contractor as in POST, but only when it '
             .'changes: a contractorId or a contractorName that differs from the current contractor assigns the '
             .'fixed expense to that contractor (created when the name is new).',
+            input: FixedExpenseInput::class,
             provider: FixedExpenseProvider::class,
             processor: FixedExpenseProcessor::class,
         ),
@@ -60,77 +62,40 @@ use Symfony\Component\Validator\Constraints as Assert;
     ],
     security: "is_granted('ROLE_USER')",
 )]
-#[ContractorGiven]
-final class FixedExpenseResource
+final readonly class FixedExpenseResource
 {
-    #[ApiProperty(description: 'Fixed expense id. Read-only, ignored on write.', writable: false, example: 1)]
-    public ?int $id = null;
-
-    #[ApiProperty(
-        description: 'Id of an existing contractor. Send it alone, or with the name of the same contractor. '
-        .'Null is allowed only on update, together with contractorName, to replace the contractor.',
-        example: 10,
-    )]
-    #[RecordExists(Contractor::class, message: 'contractor.not_found')]
-    public ?int $contractorId = null;
-
-    #[ApiProperty(
-        description: 'Contractor name, trimmed; letter case matters. Alone, it finds the contractor or creates a new '
-        .'one. With contractorId, it must be the name of that contractor. Null and a blank name are rejected.',
-        example: 'Example contractor',
-    )]
-    #[Assert\Length(max: 255, maxMessage: 'contractor.name_max_length')]
-    #[NoNullCharacter]
-    public ?string $contractorName = null;
-
-    #[ApiProperty(description: 'Day of the month the expense is due, 1-28. Required.', example: 10)]
-    #[Assert\NotNull(message: 'fixed_expense.day_required')]
-    #[Assert\Range(notInRangeMessage: 'fixed_expense.day_out_of_range', min: 1, max: 28)]
-    public ?int $day = null;
-
-    #[ApiProperty(
-        description: 'Amount as a decimal string. Must be negative, e.g. "-200.00". Always in PLN. Required.',
-        example: '-200.00',
-    )]
-    #[Assert\Sequentially([
-        new Assert\NotBlank(message: 'fixed_expense.amount_not_blank', normalizer: 'trim'),
-        new DecimalString(),
-        new Assert\Range(
-            notInRangeMessage: 'fixed_expense.amount_out_of_range',
-            invalidMessage: 'common.numeric_invalid',
-            min: -999999.99,
-            max: -0.01,
-        ),
-    ])]
-    public ?string $amount = null;
-
-    #[ApiProperty(
-        description: 'Currency code. Read-only, always "PLN", ignored on write.',
-        writable: false,
-        example: 'PLN',
-    )]
-    public ?string $currencyCode = null;
-
-    #[ApiProperty(
-        description: 'Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; '
-        .'a blank note is stored as null.',
-        example: 'Rent',
-    )]
-    #[Assert\Length(max: 255, normalizer: 'trim', maxMessage: 'common.description_max_length')]
-    #[NoNullCharacter]
-    public ?string $description = null;
+    public function __construct(
+        #[ApiProperty(description: 'Fixed expense id.', required: true, example: 1)]
+        public int $id,
+        #[ApiProperty(description: 'Id of the contractor.', required: true, example: 10)]
+        public int $contractorId,
+        #[ApiProperty(description: 'Name of the contractor.', required: true, example: 'Example contractor')]
+        public string $contractorName,
+        #[ApiProperty(description: 'Day of the month the expense is due, 1-28.', required: true, example: 10)]
+        public int $day,
+        #[ApiProperty(
+            description: 'Amount as a decimal string, always negative, in PLN.',
+            required: true,
+            example: '-200.00',
+        )]
+        public string $amount,
+        #[ApiProperty(description: 'Currency code, always "PLN".', required: true, example: 'PLN')]
+        public string $currencyCode,
+        #[ApiProperty(description: 'Free-text note; left out when there is none.', example: 'Rent')]
+        public ?string $description,
+    ) {
+    }
 
     public static function fromEntity(FixedExpense $fixedExpense): self
     {
-        $resource = new self();
-        $resource->id = $fixedExpense->getId();
-        $resource->contractorId = $fixedExpense->getContractor()->getId();
-        $resource->contractorName = $fixedExpense->getContractor()->getName();
-        $resource->day = $fixedExpense->getDay();
-        $resource->amount = $fixedExpense->getAmountAsMoney()->toDecimalString();
-        $resource->currencyCode = $fixedExpense->getCurrency()->getCode();
-        $resource->description = $fixedExpense->getDescription();
-
-        return $resource;
+        return new self(
+            id: $fixedExpense->getId(),
+            contractorId: $fixedExpense->getContractor()->getId(),
+            contractorName: $fixedExpense->getContractor()->getName(),
+            day: $fixedExpense->getDay(),
+            amount: $fixedExpense->getAmountAsMoney()->toDecimalString(),
+            currencyCode: $fixedExpense->getCurrency()->getCode(),
+            description: $fixedExpense->getDescription(),
+        );
     }
 }
