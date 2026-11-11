@@ -70,6 +70,22 @@ services:
     networks:
       - finance-dev
 
+  # The React front (front/): the Vite dev server on http://localhost:5173, passing /api on to nginx.
+  front:
+    image: node:24-bookworm
+    container_name: finance-front-node
+    working_dir: /app
+    user: "1000:1000"
+    volumes:
+      - ./front:/app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "127.0.0.1:5173:5173"
+    depends_on:
+      - nginx
+    networks:
+      - finance-dev
+
 networks:
   finance-dev:
     name: finance-dev-network
