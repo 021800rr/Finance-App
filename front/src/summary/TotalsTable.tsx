@@ -13,7 +13,7 @@ function Amount({ money }: { money: Money | null | undefined }) {
 
   return money
     ? <>{formatAmount(money.amount)}</>
-    : <span className="font-normal text-red-600">{t('home.category_not_found')}</span>
+    : <span className="font-normal text-red-600 dark:text-red-400">{t('home.category_not_found')}</span>
 }
 
 export function TotalsTable({ summary }: { summary: Summary }) {
@@ -27,7 +27,7 @@ export function TotalsTable({ summary }: { summary: Summary }) {
   ]
 
   return (
-    <div className="inline-block overflow-x-auto rounded-xl bg-white shadow">
+    <div className="inline-block overflow-x-auto rounded-xl bg-white dark:bg-slate-900 shadow">
       <table className="text-sm">
         <thead className="bg-slate-800 text-left text-white">
           <tr>
@@ -35,9 +35,12 @@ export function TotalsTable({ summary }: { summary: Summary }) {
             <th className={`${CELL} text-right`}>{t('home.currency_pln')}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
           {rows.map((row) => (
-            <tr key={row.label} className={row.muted ? 'text-slate-500' : 'text-slate-800'}>
+            <tr
+              key={row.label}
+              className={row.muted ? 'text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-200'}
+            >
               <td className={CELL}>{t(row.label)}</td>
               <td className={`${CELL} text-right tabular-nums ${row.muted ? '' : 'font-semibold'}`}>
                 <Amount money={row.money} />
@@ -45,7 +48,7 @@ export function TotalsTable({ summary }: { summary: Summary }) {
             </tr>
           ))}
           {Object.entries(summary.byHousehold).map(([name, money]) => (
-            <tr key={name} className={name === summary.ownFundsHouseholdName ? 'bg-slate-100' : ''}>
+            <tr key={name} className={name === summary.ownFundsHouseholdName ? 'bg-slate-100 dark:bg-slate-800' : ''}>
               {/* As in the web app: home.<name> when the household has a translation, its name otherwise. */}
               <td className={CELL}>{t(`home.${name}`, { defaultValue: name })}</td>
               <td className={`${CELL} text-right font-semibold tabular-nums`}><Amount money={money} /></td>

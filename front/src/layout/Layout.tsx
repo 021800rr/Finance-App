@@ -25,24 +25,25 @@ export function Layout() {
   const phrase = location.pathname === '/search' ? params.get('q') ?? '' : ''
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950">
+      <header className="bg-white dark:bg-slate-900 shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3">
-          <Link to="/" className="shrink-0 text-lg font-semibold text-slate-900">Finance</Link>
+          <Link to="/" className="shrink-0 text-lg font-semibold text-slate-900 dark:text-slate-100">Finance</Link>
           <nav className="flex min-w-0 gap-4 overflow-x-auto whitespace-nowrap text-sm">
             {MENU.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) => isActive
-                  ? 'font-medium text-indigo-600'
-                  : 'text-slate-600 hover:text-slate-900'}
+                  ? 'font-medium text-indigo-600 dark:text-indigo-400'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'}
               >
                 {t(item.label)}
               </NavLink>
             ))}
           </nav>
-          <div className="ml-auto flex shrink-0 items-center gap-3 whitespace-nowrap text-sm text-slate-600">
+          <div className="ml-auto flex shrink-0 items-center gap-3 whitespace-nowrap text-sm text-slate-600
+            dark:text-slate-400">
             <SearchBox key={phrase} initial={phrase} />
             <LanguageSwitcher />
             <LogoutButton />

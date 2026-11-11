@@ -70,13 +70,15 @@ export function DateInput({ id, value, onChange, min, max, className }: Props) {
           title={t('app.choose_date')}
           aria-label={t('app.choose_date')}
           aria-expanded={open}
-          className="shrink-0 cursor-pointer rounded-md border border-slate-300 px-2 text-slate-600 hover:bg-slate-50"
+          className="shrink-0 cursor-pointer rounded-md border border-slate-300 dark:border-slate-600 px-2
+            text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
         >
           <CalendarDaysIcon className="size-5" />
         </button>
       </div>
       {open && (
-        <div className="absolute z-20 mt-1 rounded-md border border-slate-200 bg-white p-3 shadow-lg">
+        <div className="absolute z-20 mt-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white
+          dark:bg-slate-900 p-3 shadow-lg">
           <DayPicker
             mode="single"
             selected={selected}

@@ -25,14 +25,16 @@ export function SearchBox({ initial }: { initial: string }) {
         onChange={(event) => setPhrase(event.target.value)}
         placeholder={t('nav.search_placeholder')}
         aria-label={t('nav.search')}
-        className="w-48 rounded-md border border-slate-300 py-1.5 pl-3 pr-8 text-sm text-slate-900
-          focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        className="w-48 rounded-md border border-slate-300 dark:border-slate-600 py-1.5 pl-3 pr-8 text-sm
+          text-slate-900 dark:text-slate-100 focus:border-indigo-500 focus:outline-none focus:ring-1
+          focus:ring-indigo-500"
       />
       <button
         type="submit"
         title={t('nav.search')}
         aria-label={t('nav.search')}
-        className="absolute inset-y-0 right-0 flex cursor-pointer items-center px-2 text-slate-500 hover:text-slate-800"
+        className="absolute inset-y-0 right-0 flex cursor-pointer items-center px-2 text-slate-500 dark:text-slate-400
+          hover:text-slate-800 dark:hover:text-slate-200"
       >
         <MagnifyingGlassIcon className="size-4" />
       </button>

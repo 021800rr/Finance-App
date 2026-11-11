@@ -18,7 +18,7 @@ const COLORS = [
   'rgb(153, 102, 255)',
 ]
 
-const CARD = 'rounded-xl bg-white p-6 shadow'
+const CARD = 'rounded-xl bg-white dark:bg-slate-900 p-6 shadow'
 
 // /gold-prices, as in the web app: the chart of the prices, the form of a new price and the latest prices.
 export function GoldPricesPage() {
@@ -31,24 +31,28 @@ export function GoldPricesPage() {
 
   // The chart, the form and the list all name the assets: nothing until their names are there (no '#2' meanwhile).
   if (assets.isPending) {
-    return <p className="text-slate-500">{t('app.loading')}</p>
+    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
   }
   if (assets.isError) {
-    return <p role="alert" className="text-red-600">{errorMessage(assets.error, t('app.gold_assets_load_failed'))}</p>
+    return (
+      <p role="alert" className="text-red-600 dark:text-red-400">
+        {errorMessage(assets.error, t('app.gold_assets_load_failed'))}
+      </p>
+    )
   }
 
   return (
     <div className="space-y-6">
       <section className={CARD}>
-        <h1 className="mb-4 text-xl font-semibold text-slate-900">{t('gold_price.chart_title')}</h1>
+        <h1 className="mb-4 text-xl font-semibold text-slate-900 dark:text-slate-100">{t('gold_price.chart_title')}</h1>
         <PricesChart assetNames={assetNames} />
       </section>
       <section className={CARD}>
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">{t('gold_price.add_title')}</h2>
+        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">{t('gold_price.add_title')}</h2>
         <NewPrice assets={assets.data} />
       </section>
       <section className={CARD}>
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">{t('gold_price.list_title')}</h2>
+        <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-100">{t('gold_price.list_title')}</h2>
         <RecentPrices assetNames={assetNames} />
       </section>
     </div>
@@ -61,13 +65,17 @@ function PricesChart({ assetNames }: { assetNames: Map<number, string> }) {
   const series = React.useMemo(() => assetSeries(prices.data ?? [], assetNames), [prices.data, assetNames])
 
   if (prices.isPending) {
-    return <p className="text-slate-500">{t('app.loading')}</p>
+    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
   }
   if (prices.isError) {
-    return <p role="alert" className="text-red-600">{errorMessage(prices.error, t('app.gold_prices_load_failed'))}</p>
+    return (
+      <p role="alert" className="text-red-600 dark:text-red-400">
+        {errorMessage(prices.error, t('app.gold_prices_load_failed'))}
+      </p>
+    )
   }
   if (series.length === 0) {
-    return <p className="text-slate-500">{t('gold_price.none_found')}</p>
+    return <p className="text-slate-500 dark:text-slate-400">{t('gold_price.none_found')}</p>
   }
 
   return <LineChart series={series} colors={COLORS} xTitle={t('form.date')} yTitle={t('gold_price.price_pln')} />
@@ -110,10 +118,14 @@ function RecentPrices({ assetNames }: { assetNames: Map<number, string> }) {
   const prices = useRecentGoldPrices()
 
   if (prices.isPending) {
-    return <p className="text-slate-500">{t('app.loading')}</p>
+    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
   }
   if (prices.isError) {
-    return <p role="alert" className="text-red-600">{errorMessage(prices.error, t('app.gold_prices_load_failed'))}</p>
+    return (
+      <p role="alert" className="text-red-600 dark:text-red-400">
+        {errorMessage(prices.error, t('app.gold_prices_load_failed'))}
+      </p>
+    )
   }
 
   return <GoldPricesTable prices={prices.data} assetNames={assetNames} />

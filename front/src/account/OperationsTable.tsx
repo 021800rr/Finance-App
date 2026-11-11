@@ -7,7 +7,8 @@ import { formatAmount } from '../money'
 import { findOtherSide, type Operation, useDeleteOperation, useSetOperationConfirmed } from './accountApi'
 
 const CELL = 'px-3 py-1.5'
-const ICON = 'cursor-pointer text-slate-500 hover:text-slate-900 disabled:cursor-wait'
+const ICON = 'cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 '
+  + 'disabled:cursor-wait'
 // The blue frame the web app draws around the operation a 🔗 led to (tr.highlight in its app.css).
 const HIGHLIGHT = '[&>td]:border-y-2 [&>td]:border-blue-500 [&>td:first-child]:border-l-2 '
   + '[&>td:last-child]:border-r-2'
@@ -82,7 +83,12 @@ export function OperationsTable({
 
   return (
     <div className="overflow-x-auto">
-      {failure && <p role="alert" className="mb-2 rounded bg-amber-100 px-3 py-2 text-sm text-amber-900">{failure}</p>}
+      {failure && (
+        <p role="alert" className="mb-2 rounded bg-amber-100 dark:bg-amber-950 px-3 py-2 text-sm text-amber-900
+          dark:text-amber-200">
+          {failure}
+        </p>
+      )}
       <table className="min-w-full text-sm">
         <thead className="bg-slate-800 text-left text-white">
           <tr>
@@ -95,24 +101,27 @@ export function OperationsTable({
             <th className={CELL}><span className="sr-only">{t('app.actions')}</span></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 text-slate-800">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
           {operations.map((operation) => (
-            <tr key={operation.id} className={operation.id === highlight ? HIGHLIGHT : 'hover:bg-slate-50'}>
-              <td className={`${CELL} text-right text-slate-500 tabular-nums`}>{operation.id}</td>
+            <tr
+              key={operation.id}
+              className={operation.id === highlight ? HIGHLIGHT : 'hover:bg-slate-50 dark:hover:bg-slate-800'}
+            >
+              <td className={`${CELL} text-right text-slate-500 dark:text-slate-400 tabular-nums`}>{operation.id}</td>
               {accountNumbers && (
                 <td className={CELL}>
-                  <code className="rounded bg-slate-100 px-1.5 py-0.5">
+                  <code className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5">
                     {accountNumbers.get(operation.accountId) ?? operation.accountId}
                   </code>
                 </td>
               )}
               <td className={`${CELL} whitespace-nowrap tabular-nums`}>{operation.operationDate}</td>
               <td className={CELL}>{operation.contractorName}</td>
-              <td className={`${CELL} text-slate-500`}>{operation.description}</td>
+              <td className={`${CELL} text-slate-500 dark:text-slate-400`}>{operation.description}</td>
               {/* Income in green, as in the web app; an expense stays in the normal colour. */}
               <td
                 className={`${CELL} whitespace-nowrap text-right font-semibold tabular-nums `
-                  + (Number(operation.amount) > 0 ? 'text-green-700' : '')}
+                  + (Number(operation.amount) > 0 ? 'text-green-700 dark:text-green-400' : '')}
               >
                 {formatAmount(operation.amount)}
               </td>
@@ -144,7 +153,7 @@ export function OperationsTable({
                     className={ICON}
                   >
                     {operation.confirmed
-                      ? <CheckCircleIcon className="size-5 text-green-600" />
+                      ? <CheckCircleIcon className="size-5 text-green-600 dark:text-green-500" />
                       : <QuestionMarkCircleIcon className="size-5 text-amber-500" />}
                   </button>
                   <Link
@@ -163,7 +172,7 @@ export function OperationsTable({
                     aria-label={t('operation.delete')}
                     className={ICON}
                   >
-                    <TrashIcon className="size-5 text-red-600" />
+                    <TrashIcon className="size-5 text-red-600 dark:text-red-400" />
                   </button>
                 </div>
               </td>
@@ -171,7 +180,7 @@ export function OperationsTable({
           ))}
           {operations.length === 0 && (
             <tr>
-              <td colSpan={accountNumbers ? 7 : 6} className={`${CELL} text-center text-slate-500`}>
+              <td colSpan={accountNumbers ? 7 : 6} className={`${CELL} text-center text-slate-500 dark:text-slate-400`}>
                 {emptyText ?? t('operation.none_found')}
               </td>
             </tr>

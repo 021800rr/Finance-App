@@ -24,7 +24,7 @@ function App() {
   const { checking, email } = useAuth()
 
   if (checking) {
-    return <p className="p-8 text-center text-slate-500">{t('app.checking_login')}</p>
+    return <p className="p-8 text-center text-slate-500 dark:text-slate-400">{t('app.checking_login')}</p>
   }
   if (email === null) {
     return <LoginForm />

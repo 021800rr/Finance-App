@@ -28,7 +28,8 @@ export function GoldPricesTable({ prices, assetNames }: Props) {
   return (
     <div className="overflow-x-auto">
       {remove.isError && (
-        <p role="alert" className="mb-2 rounded bg-amber-100 px-3 py-2 text-sm text-amber-900">
+        <p role="alert" className="mb-2 rounded bg-amber-100 dark:bg-amber-950 px-3 py-2 text-sm text-amber-900
+          dark:text-amber-200">
           {errorMessage(remove.error, t('app.delete_gold_price_failed'))}
         </p>
       )}
@@ -42,10 +43,10 @@ export function GoldPricesTable({ prices, assetNames }: Props) {
             <th className={CELL}><span className="sr-only">{t('app.actions')}</span></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 text-slate-800">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
           {prices.map((price) => (
-            <tr key={price.id} className="hover:bg-slate-50">
-              <td className={`${CELL} text-right text-slate-500 tabular-nums`}>{price.id}</td>
+            <tr key={price.id} className="hover:bg-slate-50 dark:hover:bg-slate-800">
+              <td className={`${CELL} text-right text-slate-500 dark:text-slate-400 tabular-nums`}>{price.id}</td>
               <td className={CELL}>{assetNames.get(price.goldAssetId) ?? `#${price.goldAssetId}`}</td>
               <td className={`${CELL} whitespace-nowrap tabular-nums`}>{price.priceDate}</td>
               <td className={`${CELL} whitespace-nowrap text-right font-semibold tabular-nums`}>
@@ -60,14 +61,16 @@ export function GoldPricesTable({ prices, assetNames }: Props) {
                   aria-label={t('operation.delete')}
                   className="cursor-pointer align-middle disabled:cursor-wait"
                 >
-                  <TrashIcon className="size-5 text-red-600" />
+                  <TrashIcon className="size-5 text-red-600 dark:text-red-400" />
                 </button>
               </td>
             </tr>
           ))}
           {prices.length === 0 && (
             <tr>
-              <td colSpan={5} className={`${CELL} text-center text-slate-500`}>{t('gold_price.none_found')}</td>
+              <td colSpan={5} className={`${CELL} text-center text-slate-500 dark:text-slate-400`}>
+                {t('gold_price.none_found')}
+              </td>
             </tr>
           )}
         </tbody>

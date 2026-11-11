@@ -6,7 +6,8 @@ import { formatAmount } from '../money'
 import { type GoldAsset, useDeleteGoldAsset } from './goldAssetApi'
 
 const CELL = 'px-3 py-1.5'
-const ICON = 'cursor-pointer text-slate-500 hover:text-slate-900 disabled:cursor-wait'
+const ICON = 'cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 '
+  + 'disabled:cursor-wait'
 
 // The list of the web app: #, form, ounces, description, with edit and delete on every row.
 export function GoldAssetsTable({ assets }: { assets: GoldAsset[] }) {
@@ -24,7 +25,8 @@ export function GoldAssetsTable({ assets }: { assets: GoldAsset[] }) {
   return (
     <div className="overflow-x-auto">
       {remove.isError && (
-        <p role="alert" className="mb-2 rounded bg-amber-100 px-3 py-2 text-sm text-amber-900">
+        <p role="alert" className="mb-2 rounded bg-amber-100 dark:bg-amber-950 px-3 py-2 text-sm text-amber-900
+          dark:text-amber-200">
           {errorMessage(remove.error, t('app.delete_gold_asset_failed'))}
         </p>
       )}
@@ -38,15 +40,15 @@ export function GoldAssetsTable({ assets }: { assets: GoldAsset[] }) {
             <th className={CELL}><span className="sr-only">{t('app.actions')}</span></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 text-slate-800">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
           {assets.map((asset) => (
-            <tr key={asset.id} className="hover:bg-slate-50">
-              <td className={`${CELL} text-right text-slate-500 tabular-nums`}>{asset.id}</td>
+            <tr key={asset.id} className="hover:bg-slate-50 dark:hover:bg-slate-800">
+              <td className={`${CELL} text-right text-slate-500 dark:text-slate-400 tabular-nums`}>{asset.id}</td>
               <td className={CELL}>{asset.formName}</td>
               <td className={`${CELL} whitespace-nowrap text-right font-semibold tabular-nums`}>
                 {formatAmount(asset.ounces)}
               </td>
-              <td className={`${CELL} text-slate-500`}>{asset.description}</td>
+              <td className={`${CELL} text-slate-500 dark:text-slate-400`}>{asset.description}</td>
               <td className={CELL}>
                 <div className="flex items-center justify-end gap-2">
                   <Link
@@ -65,7 +67,7 @@ export function GoldAssetsTable({ assets }: { assets: GoldAsset[] }) {
                     aria-label={t('operation.delete')}
                     className={ICON}
                   >
-                    <TrashIcon className="size-5 text-red-600" />
+                    <TrashIcon className="size-5 text-red-600 dark:text-red-400" />
                   </button>
                 </div>
               </td>
@@ -73,7 +75,9 @@ export function GoldAssetsTable({ assets }: { assets: GoldAsset[] }) {
           ))}
           {assets.length === 0 && (
             <tr>
-              <td colSpan={5} className={`${CELL} text-center text-slate-500`}>{t('gold_asset.none_found')}</td>
+              <td colSpan={5} className={`${CELL} text-center text-slate-500 dark:text-slate-400`}>
+                {t('gold_asset.none_found')}
+              </td>
             </tr>
           )}
         </tbody>

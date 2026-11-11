@@ -55,8 +55,12 @@ export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl bg-white shadow">
-      {failure && <p role="alert" className="bg-amber-100 px-3 py-2 text-sm text-amber-900">{failure}</p>}
+    <div className="overflow-x-auto rounded-xl bg-white dark:bg-slate-900 shadow">
+      {failure && (
+        <p role="alert" className="bg-amber-100 dark:bg-amber-950 px-3 py-2 text-sm text-amber-900 dark:text-amber-200">
+          {failure}
+        </p>
+      )}
       <table className="min-w-full text-sm">
         <thead className="bg-slate-800 text-left text-white">
           <tr>
@@ -72,19 +76,26 @@ export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
             <th className={CELL}><span className="sr-only">{t('app.actions')}</span></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
           {rows.map((account) => (
-            <tr key={account.id} className={account.hidden ? 'text-slate-400' : 'text-slate-800'}>
+            <tr
+              key={account.id}
+              className={account.hidden ? 'text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200'}
+            >
               <td className={CELL}>{account.bank}</td>
               <td className={CELL}>{account.type}</td>
               <td className={CELL}>
-                <code className="rounded bg-slate-100 px-1.5 py-0.5">{account.account_number}</code>
+                <code className="rounded bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5">{account.account_number}</code>
               </td>
               <td className={`${CELL} text-right`}>
                 {account.missing_rate ? (
                   <span className="rounded bg-red-600 px-2 py-0.5 text-xs text-white">{t('home.missing_rate')}</span>
                 ) : (
-                  account.rate && <span className="text-xs text-slate-500">{formatAmount(account.rate.amount)}</span>
+                  account.rate && (
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      {formatAmount(account.rate.amount)}
+                    </span>
+                  )
                 )}
               </td>
               <td className={`${CELL} text-right font-semibold tabular-nums`}>{formatAmount(account.saldo.amount)}</td>
@@ -99,7 +110,8 @@ export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
                     disabled={busy}
                     title={t('home.set_main')}
                     aria-label={t('home.set_main')}
-                    className="mr-3 cursor-pointer text-slate-400 hover:text-slate-800 disabled:cursor-wait"
+                    className="mr-3 cursor-pointer text-slate-400 dark:text-slate-500 hover:text-slate-800
+                      dark:hover:text-slate-200 disabled:cursor-wait"
                   >
                     ☆
                   </button>
@@ -108,7 +120,8 @@ export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
                   to={`/account/${account.id}/operations`}
                   title={t('home.history')}
                   aria-label={t('home.history')}
-                  className="inline-block align-middle text-slate-500 hover:text-slate-800"
+                  className="inline-block align-middle text-slate-500 dark:text-slate-400 hover:text-slate-800
+                    dark:hover:text-slate-200"
                 >
                   <ListBulletIcon className="size-5" />
                 </Link>
@@ -118,7 +131,8 @@ export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
                   disabled={busy}
                   title={account.hidden ? t('home.show') : t('home.hide')}
                   aria-label={account.hidden ? t('home.show') : t('home.hide')}
-                  className="ml-3 cursor-pointer align-middle text-slate-500 hover:text-slate-800 disabled:cursor-wait"
+                  className="ml-3 cursor-pointer align-middle text-slate-500 dark:text-slate-400 hover:text-slate-800
+                    dark:hover:text-slate-200 disabled:cursor-wait"
                 >
                   {account.hidden ? <EyeIcon className="size-5" /> : <EyeSlashIcon className="size-5" />}
                 </button>

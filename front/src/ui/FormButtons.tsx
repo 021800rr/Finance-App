@@ -18,7 +18,8 @@ export function FormButtons({ sending }: { sending: boolean }) {
       <button
         type="button"
         onClick={() => navigate(-1)}
-        className="rounded-md border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50"
+        className="rounded-md border border-slate-300 dark:border-slate-600 px-4 py-2 text-slate-700
+          dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
       >
         {t('form.cancel')}
       </button>

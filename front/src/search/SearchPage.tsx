@@ -19,9 +19,9 @@ export function SearchPage() {
   const accountNumbers = new Map((accounts.data ?? []).map((account) => [account.id, account.accountNumber]))
 
   return (
-    <section className="space-y-4 rounded-xl bg-white p-6 shadow">
-      <h1 className="text-xl font-semibold text-slate-900">{t('search.title')}</h1>
-      <p className="text-sm text-slate-500">
+    <section className="space-y-4 rounded-xl bg-white dark:bg-slate-900 p-6 shadow">
+      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{t('search.title')}</h1>
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         {phrase === ''
           ? t('search.prompt')
           : (
@@ -31,9 +31,11 @@ export function SearchPage() {
             </>
           )}
       </p>
-      {phrase !== '' && results.isPending && <p className="text-slate-500">{t('app.loading')}</p>}
+      {phrase !== '' && results.isPending && <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>}
       {results.isError && (
-        <p role="alert" className="text-red-600">{errorMessage(results.error, t('app.operations_load_failed'))}</p>
+        <p role="alert" className="text-red-600 dark:text-red-400">
+          {errorMessage(results.error, t('app.operations_load_failed'))}
+        </p>
       )}
       {phrase !== '' && results.data && (
         <>

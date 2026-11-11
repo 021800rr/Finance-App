@@ -14,13 +14,13 @@ export function EditFixedExpensePage() {
   const fixedExpense = useFixedExpense(id)
 
   if (fixedExpense.isPending) {
-    return <p className="text-slate-500">{t('app.loading')}</p>
+    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
   }
   if (fixedExpense.isError) {
     return fixedExpense.error instanceof ApiError && fixedExpense.error.status === 404
       ? <NotFoundPage />
       : (
-        <p role="alert" className="text-red-600">
+        <p role="alert" className="text-red-600 dark:text-red-400">
           {errorMessage(fixedExpense.error, t('app.fixed_expense_load_failed'))}
         </p>
       )
@@ -35,8 +35,8 @@ function EditForm({ fixedExpense }: { fixedExpense: FixedExpense }) {
   const update = useUpdateFixedExpense(fixedExpense.id)
 
   return (
-    <section className="rounded-xl bg-white p-6 shadow">
-      <h1 className="mb-4 text-xl font-semibold text-slate-900">{t('fixed_expense.edit_title')}</h1>
+    <section className="rounded-xl bg-white dark:bg-slate-900 p-6 shadow">
+      <h1 className="mb-4 text-xl font-semibold text-slate-900 dark:text-slate-100">{t('fixed_expense.edit_title')}</h1>
       <FixedExpenseForm
         adding={false}
         initial={{

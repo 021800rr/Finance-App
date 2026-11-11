@@ -52,15 +52,15 @@ export function ContractorField({ value, onChange, error, inputClassName }: Prop
         // mousedown would blur the input (and close the list) before the click; preventing it keeps the list.
         <ul
           onMouseDown={(event) => event.preventDefault()}
-          className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-slate-200 bg-white
-            text-sm shadow-lg"
+          className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-slate-200
+            dark:border-slate-700 bg-white dark:bg-slate-900 text-sm shadow-lg"
         >
           {found.slice(0, 10).map((contractor) => (
             <li key={contractor.id}>
               <button
                 type="button"
                 onClick={() => choose(contractor)}
-                className="block w-full cursor-pointer px-3 py-1.5 text-left hover:bg-slate-100"
+                className="block w-full cursor-pointer px-3 py-1.5 text-left hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 {contractor.name}
               </button>
@@ -71,7 +71,8 @@ export function ContractorField({ value, onChange, error, inputClassName }: Prop
               <button
                 type="button"
                 onClick={() => choose({ id: null, name: text.trim() })}
-                className="block w-full cursor-pointer px-3 py-1.5 text-left text-indigo-700 hover:bg-slate-100"
+                className="block w-full cursor-pointer px-3 py-1.5 text-left text-indigo-700 dark:text-indigo-300
+                  hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 {t('contractor_autocomplete.add', { name: text.trim() })}
               </button>
@@ -79,9 +80,11 @@ export function ContractorField({ value, onChange, error, inputClassName }: Prop
           )}
         </ul>
       )}
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
       {!error && value?.id === null && (
-        <p className="mt-1 text-sm text-slate-500">{t('app.new_contractor', { name: value.name })}</p>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          {t('app.new_contractor', { name: value.name })}
+        </p>
       )}
     </div>
   )

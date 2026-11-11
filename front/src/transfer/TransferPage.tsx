@@ -34,10 +34,14 @@ export function TransferPage() {
   const accounts = useAccounts()
 
   if (accounts.isPending) {
-    return <p className="text-slate-500">{t('app.loading')}</p>
+    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
   }
   if (accounts.isError) {
-    return <p role="alert" className="text-red-600">{errorMessage(accounts.error, t('app.accounts_load_failed'))}</p>
+    return (
+      <p role="alert" className="text-red-600 dark:text-red-400">
+        {errorMessage(accounts.error, t('app.accounts_load_failed'))}
+      </p>
+    )
   }
 
   return <TransferForm accounts={accounts.data.filter((account) => !account.hidden)} />
@@ -104,9 +108,14 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
   ))
 
   return (
-    <section className="rounded-xl bg-white p-6 shadow">
-      <h1 className="mb-4 text-xl font-semibold text-slate-900">{t('transfer.title')}</h1>
-      {failure && <p role="alert" className="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{failure}</p>}
+    <section className="rounded-xl bg-white dark:bg-slate-900 p-6 shadow">
+      <h1 className="mb-4 text-xl font-semibold text-slate-900 dark:text-slate-100">{t('transfer.title')}</h1>
+      {failure && (
+        <p role="alert" className="mb-4 rounded bg-red-50 dark:bg-red-950 px-3 py-2 text-sm text-red-700
+          dark:text-red-300">
+          {failure}
+        </p>
+      )}
       <form onSubmit={handleSubmit} noValidate className="max-w-xl space-y-4">
         <FormRow label={t('transfer.from_account')} htmlFor="from" error={errors.from}>
           <select

@@ -16,15 +16,23 @@ export function EditOperationPage() {
   const accounts = useAccounts()
 
   if (operation.isPending || accounts.isPending) {
-    return <p className="text-slate-500">{t('app.loading')}</p>
+    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
   }
   if (operation.isError) {
     return operation.error instanceof ApiError && operation.error.status === 404
       ? <NotFoundPage />
-      : <p role="alert" className="text-red-600">{errorMessage(operation.error, t('app.operation_load_failed'))}</p>
+      : (
+        <p role="alert" className="text-red-600 dark:text-red-400">
+          {errorMessage(operation.error, t('app.operation_load_failed'))}
+        </p>
+      )
   }
   if (accounts.isError) {
-    return <p role="alert" className="text-red-600">{errorMessage(accounts.error, t('app.accounts_load_failed'))}</p>
+    return (
+      <p role="alert" className="text-red-600 dark:text-red-400">
+        {errorMessage(accounts.error, t('app.accounts_load_failed'))}
+      </p>
+    )
   }
 
   return <EditForm operation={operation.data} accounts={accounts.data} />

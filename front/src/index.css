@@ -1,9 +1,13 @@
 @import 'tailwindcss';
 
 /* Everything 10% smaller than the browser's default. Tailwind gives text, spacing, widths and icons in rem, so they all
-   follow the font size of the page. */
+   follow the font size of the page.
+   Light or dark as the system says (Ubuntu's "Default" or "Dark" style): the dark: classes follow
+   prefers-color-scheme, and color-scheme gives the browser's own parts (scrollbars, the lists of the selects) the same
+   colours. */
 html {
   font-size: 90%;
+  color-scheme: light dark;
 }
 
 /* The calendar of the date fields (react-day-picker) in the colours of the buttons. "body" makes this win over the
@@ -11,4 +15,11 @@ html {
 body .rdp-root {
   --rdp-accent-color: var(--color-indigo-600);
   --rdp-accent-background-color: var(--color-indigo-50);
+}
+
+@media (prefers-color-scheme: dark) {
+  body .rdp-root {
+    --rdp-accent-color: var(--color-indigo-400);
+    --rdp-accent-background-color: var(--color-indigo-950);
+  }
 }

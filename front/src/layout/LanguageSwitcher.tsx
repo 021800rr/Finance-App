@@ -9,7 +9,7 @@ export function LanguageSwitcher() {
     <div
       role="group"
       aria-label={t('app.language')}
-      className="flex overflow-hidden rounded-md border border-slate-300"
+      className="flex overflow-hidden rounded-md border border-slate-300 dark:border-slate-600"
     >
       {LANGUAGES.map((language) => (
         <button
@@ -19,7 +19,8 @@ export function LanguageSwitcher() {
           aria-pressed={i18n.resolvedLanguage === language}
           className={i18n.resolvedLanguage === language
             ? 'bg-slate-700 px-2 py-1 text-xs font-medium text-white'
-            : 'cursor-pointer px-2 py-1 text-xs text-slate-600 hover:bg-slate-100'}
+            : 'cursor-pointer px-2 py-1 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 '
+              + 'dark:hover:bg-slate-800'}
         >
           {language.toUpperCase()}
         </button>

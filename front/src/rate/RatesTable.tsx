@@ -28,7 +28,8 @@ export function RatesTable({ rates, bankNames }: Props) {
   return (
     <div className="overflow-x-auto">
       {remove.isError && (
-        <p role="alert" className="mb-2 rounded bg-amber-100 px-3 py-2 text-sm text-amber-900">
+        <p role="alert" className="mb-2 rounded bg-amber-100 dark:bg-amber-950 px-3 py-2 text-sm text-amber-900
+          dark:text-amber-200">
           {errorMessage(remove.error, t('app.delete_rate_failed'))}
         </p>
       )}
@@ -42,9 +43,9 @@ export function RatesTable({ rates, bankNames }: Props) {
             <th className={CELL}><span className="sr-only">{t('app.actions')}</span></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 text-slate-800">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-800 dark:text-slate-200">
           {rates.map((rate) => (
-            <tr key={rate.id} className="hover:bg-slate-50">
+            <tr key={rate.id} className="hover:bg-slate-50 dark:hover:bg-slate-800">
               <td className={CELL}>{bankNames.get(rate.bankId) ?? rate.bankId}</td>
               <td className={CELL}>{rate.currencyCode}</td>
               <td className={`${CELL} whitespace-nowrap tabular-nums`}>{rate.rateDate}</td>
@@ -58,14 +59,16 @@ export function RatesTable({ rates, bankNames }: Props) {
                   aria-label={t('operation.delete')}
                   className="cursor-pointer align-middle disabled:cursor-wait"
                 >
-                  <TrashIcon className="size-5 text-red-600" />
+                  <TrashIcon className="size-5 text-red-600 dark:text-red-400" />
                 </button>
               </td>
             </tr>
           ))}
           {rates.length === 0 && (
             <tr>
-              <td colSpan={5} className={`${CELL} text-center text-slate-500`}>{t('rate.none_found')}</td>
+              <td colSpan={5} className={`${CELL} text-center text-slate-500 dark:text-slate-400`}>
+                {t('rate.none_found')}
+              </td>
             </tr>
           )}
         </tbody>

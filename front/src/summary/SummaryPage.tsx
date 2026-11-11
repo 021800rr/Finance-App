@@ -19,12 +19,13 @@ export function SummaryPage() {
         onClick={() => setParams(showHidden ? {} : { show_hidden: '1' })}
         className={showHidden
           ? 'cursor-pointer rounded-md bg-slate-600 px-3 py-1.5 text-sm text-white hover:bg-slate-700'
-          : 'cursor-pointer rounded-md border border-slate-400 px-3 py-1.5 text-sm text-slate-700 hover:bg-white'}
+          : 'cursor-pointer rounded-md border border-slate-400 dark:border-slate-500 px-3 py-1.5 text-sm '
+            + 'text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800'}
       >
         {showHidden ? t('home.hide_hidden') : t('home.show_hidden')}
       </button>
-      {summary.isPending && <p className="text-slate-500">{t('app.loading')}</p>}
-      {summary.isError && <p role="alert" className="text-red-600">{t('app.summary_load_failed')}</p>}
+      {summary.isPending && <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>}
+      {summary.isError && <p role="alert" className="text-red-600 dark:text-red-400">{t('app.summary_load_failed')}</p>}
       {summary.data && (
         <>
           <AccountsTable accounts={summary.data.accounts} />

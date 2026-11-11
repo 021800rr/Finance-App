@@ -13,10 +13,14 @@ export function NewOperationPage() {
   const create = useCreateOperation()
 
   if (accounts.isPending) {
-    return <p className="text-slate-500">{t('app.loading')}</p>
+    return <p className="text-slate-500 dark:text-slate-400">{t('app.loading')}</p>
   }
   if (accounts.isError) {
-    return <p role="alert" className="text-red-600">{errorMessage(accounts.error, t('app.accounts_load_failed'))}</p>
+    return (
+      <p role="alert" className="text-red-600 dark:text-red-400">
+        {errorMessage(accounts.error, t('app.accounts_load_failed'))}
+      </p>
+    )
   }
 
   const visible = accounts.data.filter((account) => !account.hidden)
@@ -26,12 +30,12 @@ export function NewOperationPage() {
   if (wanted !== null && (preselected === undefined || preselected.hidden)) {
     return (
       <div role="alert" className="space-y-2">
-        <p className="text-red-600">
+        <p className="text-red-600 dark:text-red-400">
           {preselected === undefined
             ? t('account.not_found', { ns: 'validators' })
             : t('account.hidden_not_selectable', { ns: 'validators' })}
         </p>
-        <Link to="/" className="text-indigo-600 hover:underline">{t('error.back_home')}</Link>
+        <Link to="/" className="text-indigo-600 dark:text-indigo-400 hover:underline">{t('error.back_home')}</Link>
       </div>
     )
   }

@@ -56,7 +56,11 @@ export function GoldPriceForm({ assets, save }: Props) {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="max-w-xl space-y-4">
-      {failure && <p role="alert" className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{failure}</p>}
+      {failure && (
+        <p role="alert" className="rounded bg-red-50 dark:bg-red-950 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+          {failure}
+        </p>
+      )}
       <FormRow label={t('gold_price.asset')} htmlFor="asset" error={errors.asset}>
         <select
           id="asset"

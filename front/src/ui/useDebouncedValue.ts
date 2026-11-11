@@ -13,4 +13,3 @@ export function useDebouncedValue<T>(value: T, milliseconds: number): T {
 
   return debounced
 }
-// HELP: opóźniacz dla szukajki kontrahenta
