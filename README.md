@@ -30,9 +30,13 @@ make token       # pobierz token konta demo
 
 Demo user: `twoj@email.pl` / `haslo123`
 
-web: http://localhost:8081  
-swagger: http://localhost:8081/api/docs  
-openapi: http://localhost:8081/api/docs.jsonopenapi
+| Usługa| Adres|
+|:---|:---|
+| react | http://localhost:5173 |
+| twig| http://localhost:8081|
+| swagger | http://localhost:8081/api/docs |
+| openapi| http://localhost:8081/api/docs.jsonopenapi |
+
 
 ## Bezpieczeństwo
 

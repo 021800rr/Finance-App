@@ -15,11 +15,16 @@ services:
     volumes:
       - ./docker/postgres/data:/var/lib/postgresql/data
     command: ["postgres", "-c", "timezone=Europe/Warsaw", "-c", "log_timezone=Europe/Warsaw"]
+    # php waits until this check passes, and the first one runs one interval after the start: every second, the stack
+    # goes on as soon as the database is up (about a second), not after 5 s. A failure within start_period does not
+    # count, so a slow start (a long recovery) is not taken for a broken database. pg_isready only asks whether the
+    # server accepts connections. (On Docker 25+, start_interval could keep the 1 s to the start alone.)
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-finance} -d ${POSTGRES_DB:-finance}"]
-      interval: 5s
+      interval: 1s
       timeout: 5s
       retries: 10
+      start_period: 30s
     networks:
       - finance-dev
 
@@ -66,19 +71,28 @@ services:
     volumes:
       - ./app:/var/www/html
       - node_modules_dev:/var/www/html/node_modules
-    command: sh -c "npm install && npm run watch"
+    # npm install only when package-lock.json differs from the one installed last (a copy kept in node_modules): on
+    # every start it asks the npm registry and takes a minute or more.
+    command: >-
+      sh -c "cmp -s package-lock.json node_modules/.installed-package-lock.json
+      || { npm install --no-audit --no-fund && cp package-lock.json node_modules/.installed-package-lock.json; };
+      exec npm run watch"
     networks:
       - finance-dev
 
   # The React front (front/): the Vite dev server on http://localhost:5173, passing /api on to nginx.
   front:
     image: node:24-bookworm
-    container_name: finance-front-node
+    container_name: finance-front-dev
     working_dir: /app
     user: "1000:1000"
     volumes:
       - ./front:/app
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    # npm install only when package-lock.json changed, as in the node service.
+    command: >-
+      sh -c "cmp -s package-lock.json node_modules/.installed-package-lock.json
+      || { npm install --no-audit --no-fund && cp package-lock.json node_modules/.installed-package-lock.json; };
+      exec npm run dev -- --host 0.0.0.0"
     ports:
       - "127.0.0.1:5173:5173"
     depends_on:
