@@ -5,7 +5,7 @@ const LINK = 'rounded-md border border-slate-300 dark:border-slate-600 px-3 py-1
   + 'hover:bg-slate-50 dark:hover:bg-slate-800'
 const OFF = 'rounded-md border border-slate-200 dark:border-slate-700 px-3 py-1 text-slate-300 dark:text-slate-600'
 
-// ‹ page / last › as in the web app; the page is ?page=N in the address, so it survives a reload and the back button
+// Numbered pages with ellipses; ?page=N survives a reload and the back button
 // returns to it. The other parameters of the address (the phrase of a search, the framed operation) stay. Nothing is
 // shown when everything fits on one page.
 export function Pagination({ page, lastPage }: { page: number; lastPage: number }) {
@@ -28,16 +28,64 @@ export function Pagination({ page, lastPage }: { page: number; lastPage: number 
     return null
   }
 
+  // Ten-page groups, with direct links to the first/last page and jumps between groups.
+  const groupSize = 10
+  const start = Math.floor((page - 1) / groupSize) * groupSize + 1
+  const end = Math.min(start + groupSize - 1, last)
+  const pages: (number | string)[] = [
+    ...(start > 1 ? [1] : []),
+    ...(start > 2 ? ['start-gap'] : []),
+    ...Array.from({ length: end - start + 1 }, (_, index) => start + index),
+    ...(end < last - 1 ? ['end-gap'] : []),
+    ...(end < last ? [last] : []),
+  ]
+
   return (
-    <div className="flex items-center justify-between text-sm">
-      <nav aria-label={t('pagination.label')} className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+      <nav aria-label={t('pagination.label')} className="flex flex-wrap items-center gap-1">
         {page > 1
           ? <Link to={pageAddress(page - 1)} aria-label={t('pagination.previous')} className={LINK}>‹</Link>
-          : <span className={OFF}>‹</span>}
-        <span className="px-2 text-slate-600 dark:text-slate-400">{page} / {lastPage}</span>
+          : <span aria-disabled="true" aria-label={t('pagination.previous')} className={OFF}>‹</span>}
+        {pages.map((target) => typeof target === 'string'
+          ? (
+            <Link
+              key={target}
+              to={pageAddress(target === 'start-gap' ? Math.max(1, start - groupSize) : end + 1)}
+              aria-label={t('pagination.page', {
+                page: target === 'start-gap' ? Math.max(1, start - groupSize) : end + 1,
+              })}
+              title={t('pagination.page', {
+                page: target === 'start-gap' ? Math.max(1, start - groupSize) : end + 1,
+              })}
+              className={LINK}
+            >
+              …
+            </Link>
+          )
+          : target === page
+            ? (
+              <span
+                key={target}
+                aria-current="page"
+                aria-label={t('pagination.page', { page: target })}
+                className="rounded-md border border-indigo-600 bg-indigo-600 px-3 py-1 text-white"
+              >
+                {target}
+              </span>
+            )
+            : (
+              <Link
+                key={target}
+                to={pageAddress(target)}
+                aria-label={t('pagination.page', { page: target })}
+                className={LINK}
+              >
+                {target}
+              </Link>
+            ))}
         {page < lastPage
           ? <Link to={pageAddress(page + 1)} aria-label={t('pagination.next')} className={LINK}>›</Link>
-          : <span className={OFF}>›</span>}
+          : <span aria-disabled="true" aria-label={t('pagination.next')} className={OFF}>›</span>}
       </nav>
       <span className="text-slate-500 dark:text-slate-400">
         {t('pagination.page_of', { page, totalPages: lastPage })}

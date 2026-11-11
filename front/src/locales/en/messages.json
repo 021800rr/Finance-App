@@ -115,6 +115,9 @@
     "title": "Log in"
   },
   "nav": {
+    "open_menu": "Open menu",
+    "close_menu": "Close menu",
+    "navigation": "Main navigation",
     "fixed_expenses": "Fixed expenses",
     "gold_assets": "Gold - assets",
     "gold_prices": "Gold - prices",
@@ -141,6 +144,7 @@
     "show_other_side": "Show other side of transaction"
   },
   "pagination": {
+    "page": "Page {{page}}",
     "label": "Pagination",
     "next": "Next",
     "page_of": "Page {{page}} of {{totalPages}}",

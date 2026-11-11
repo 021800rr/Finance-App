@@ -115,6 +115,9 @@
     "title": "Logowanie"
   },
   "nav": {
+    "open_menu": "Otwórz menu",
+    "close_menu": "Zamknij menu",
+    "navigation": "Nawigacja główna",
     "fixed_expenses": "Opłaty stałe",
     "gold_assets": "Złoto – aktywa",
     "gold_prices": "Złoto – ceny",
@@ -141,6 +144,7 @@
     "show_other_side": "Pokaż drugą stronę transakcji"
   },
   "pagination": {
+    "page": "Strona {{page}}",
     "label": "Paginacja",
     "next": "Następna",
     "page_of": "Strona {{page}} z {{totalPages}}",
