@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Validator;
 
-use App\ApiResource\TransferResource;
+use App\ApiResource\Input\TransferInput;
 use App\Repository\AccountRepository;
 use App\Util\RequestBody;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -30,7 +30,7 @@ final class TransferAmountToValidator extends ConstraintValidator
         }
 
         $transfer = $this->context->getObject();
-        if (!$transfer instanceof TransferResource) {
+        if (!$transfer instanceof TransferInput) {
             return;
         }
 

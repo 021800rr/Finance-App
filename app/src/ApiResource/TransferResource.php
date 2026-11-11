@@ -9,19 +9,16 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Response as OpenApiResponse;
-use App\Entity\Account;
+use App\ApiResource\Input\TransferInput;
 use App\Entity\AccountOperation;
 use App\OpenApi\ErrorResponseContent;
 use App\State\TransferProcessor;
-use App\Util\BusinessDateRange;
-use App\Validator\BusinessDate;
-use App\Validator\DecimalString;
-use App\Validator\NoNullCharacter;
-use App\Validator\RecordExists;
-use App\Validator\SelectableAccount;
-use App\Validator\TransferAmountTo;
-use Symfony\Component\Validator\Constraints as Assert;
 
+/**
+ * A transfer as the API answers it: the two operations it created, debit and credit, linked by one transaction UUID.
+ * Every field is always there (the description only when there is one), and the OpenAPI document says so. What a
+ * client sends is TransferInput (input: on POST), where any field may be missing until the validation says why.
+ */
 #[ApiResource(
     shortName: 'Transfer',
     description: 'Transfer/exchange between two of the user\'s own accounts. Creates two linked '
@@ -45,118 +42,67 @@ use Symfony\Component\Validator\Constraints as Assert;
             .'amountTo is generated automatically and must not be sent. If currencies differ, '
             .'amountTo is required. A hidden account cannot be chosen on either side: such a request is '
             .'rejected with 422 on fromAccountId or toAccountId.',
+            input: TransferInput::class,
             processor: TransferProcessor::class,
         ),
     ],
     security: "is_granted('ROLE_USER')",
 )]
-final class TransferResource
+final readonly class TransferResource
 {
-    #[ApiProperty(description: 'Id of the account being debited. Required; a hidden account is rejected.', example: 1)]
-    #[Assert\NotNull(message: 'transfer.from_account_required')]
-    #[RecordExists(Account::class, message: 'account.not_found')]
-    #[SelectableAccount]
-    public ?int $fromAccountId = null;
-
-    #[ApiProperty(
-        description: 'Id of the account being credited. Required, must differ from fromAccountId; '
-        .'a hidden account is rejected.',
-        example: 2,
-    )]
-    #[Assert\NotNull(message: 'transfer.to_account_required')]
-    #[RecordExists(Account::class, message: 'account.not_found')]
-    #[SelectableAccount]
-    public ?int $toAccountId = null;
-
-    #[ApiProperty(description: 'Transfer date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '
-        .BusinessDateRange::MAX_DATE.' inclusive. Required.', example: '2026-09-29')]
-    #[Assert\NotBlank(message: 'common.date_not_blank')]
-    #[BusinessDate]
-    public ?string $operationDate = null;
-
-    #[ApiProperty(
-        description: 'Positive amount debited from fromAccount, as a decimal string, e.g. "100.00". Required.',
-        example: '100.00',
-    )]
-    #[Assert\Sequentially([
-        new Assert\NotBlank(message: 'transfer.amount_from_required', normalizer: 'trim'),
-        new DecimalString(),
-        new Assert\Range(
-            notInRangeMessage: 'transfer.amount_out_of_range',
-            invalidMessage: 'common.numeric_invalid',
-            min: 0.01,
-            max: 999999.99,
-        ),
-    ])]
-    public ?string $amountFrom = null;
-
-    #[ApiProperty(
-        description: 'Positive amount credited to toAccount, as a decimal string. Required when fromAccount and '
-        .'toAccount use different currencies. With one currency it is generated automatically: do not send this field.',
-        schema: ['type' => 'string'],
-        example: '23.00',
-    )]
-    // Not typed as ?string: with one currency a value of any type must get the same clear error, not a generic 400.
-    #[TransferAmountTo]
-    public mixed $amountTo = null;
-
-    #[ApiProperty(
-        description: 'Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; '
-        .'a blank note is stored as null.',
-        example: 'Monthly savings transfer',
-    )]
-    #[Assert\Length(max: 255, normalizer: 'trim', maxMessage: 'common.description_max_length')]
-    #[NoNullCharacter]
-    public ?string $description = null;
-
-    #[ApiProperty(
-        description: 'Shared id linking the debit and credit operations. Read-only.',
-        writable: false,
-        example: null,
-    )]
-    public ?string $transactionUuid = null;
-
-    #[ApiProperty(description: 'Id of the created debit (out) operation. Read-only.', writable: false, example: null)]
-    public ?int $outOperationId = null;
-
-    #[ApiProperty(
-        description: 'Debited amount as recorded, negative decimal string. Read-only.',
-        writable: false,
-        example: null,
-    )]
-    public ?string $outAmount = null;
-
-    #[ApiProperty(description: 'Currency of the debit operation. Read-only.', writable: false, example: null)]
-    public ?string $outCurrencyCode = null;
-
-    #[ApiProperty(description: 'Id of the created credit (in) operation. Read-only.', writable: false, example: null)]
-    public ?int $inOperationId = null;
-
-    #[ApiProperty(
-        description: 'Credited amount as recorded, positive decimal string. Read-only.',
-        writable: false,
-        example: null,
-    )]
-    public ?string $inAmount = null;
-
-    #[ApiProperty(description: 'Currency of the credit operation. Read-only.', writable: false, example: null)]
-    public ?string $inCurrencyCode = null;
+    public function __construct(
+        #[ApiProperty(description: 'Id of the account debited.', required: true, example: 1)]
+        public int $fromAccountId,
+        #[ApiProperty(description: 'Id of the account credited.', required: true, example: 2)]
+        public int $toAccountId,
+        #[ApiProperty(description: 'Transfer date, format YYYY-MM-DD.', required: true, example: '2026-09-29')]
+        public string $operationDate,
+        #[ApiProperty(description: 'Free-text note; left out when there is none.', example: 'Monthly savings transfer')]
+        public ?string $description,
+        #[ApiProperty(
+            description: 'Shared id linking the debit and credit operations.',
+            required: true,
+            example: '01a1c8b2-262e-72a9-9ac6-1652e5dffefe',
+        )]
+        public string $transactionUuid,
+        #[ApiProperty(description: 'Id of the created debit (out) operation.', required: true, example: 101)]
+        public int $outOperationId,
+        #[ApiProperty(
+            description: 'Debited amount as recorded, negative decimal string.',
+            required: true,
+            example: '-100.00',
+        )]
+        public string $outAmount,
+        #[ApiProperty(description: 'Currency of the debit operation.', required: true, example: 'PLN')]
+        public string $outCurrencyCode,
+        #[ApiProperty(description: 'Id of the created credit (in) operation.', required: true, example: 102)]
+        public int $inOperationId,
+        #[ApiProperty(
+            description: 'Credited amount as recorded, positive decimal string.',
+            required: true,
+            example: '23.00',
+        )]
+        public string $inAmount,
+        #[ApiProperty(description: 'Currency of the credit operation.', required: true, example: 'CHF')]
+        public string $inCurrencyCode,
+    ) {
+    }
 
     public static function fromOperations(AccountOperation $out, AccountOperation $in): self
     {
-        $resource = new self();
-        $resource->fromAccountId = $out->getAccount()->getId();
-        $resource->toAccountId = $in->getAccount()->getId();
-        $resource->operationDate = $out->getOperationDate()->format('Y-m-d');
-        $resource->description = $out->getDescription();
-        $resource->transactionUuid = $out->getTransactionUuid()?->toRfc4122();
-        $resource->outOperationId = $out->getId();
-        $resource->outAmount = $out->getAmountAsMoney()->toDecimalString();
-        $resource->outCurrencyCode = $out->getCurrency()->getCode();
-        $resource->inOperationId = $in->getId();
-        $resource->inAmount = $in->getAmountAsMoney()->toDecimalString();
-        $resource->inCurrencyCode = $in->getCurrency()->getCode();
-
-        return $resource;
+        return new self(
+            fromAccountId: $out->getAccount()->getId(),
+            toAccountId: $in->getAccount()->getId(),
+            operationDate: $out->getOperationDate()->format('Y-m-d'),
+            description: $out->getDescription(),
+            transactionUuid: $out->getTransactionUuid()?->toRfc4122()
+                ?? throw new \LogicException('The two operations of a transfer always share a transaction UUID.'),
+            outOperationId: $out->getId(),
+            outAmount: $out->getAmountAsMoney()->toDecimalString(),
+            outCurrencyCode: $out->getCurrency()->getCode(),
+            inOperationId: $in->getId(),
+            inAmount: $in->getAmountAsMoney()->toDecimalString(),
+            inCurrencyCode: $in->getCurrency()->getCode(),
+        );
     }
 }

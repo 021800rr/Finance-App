@@ -49,7 +49,7 @@ final class TransferTypeTest extends KernelTestCase
     }
 
     /**
-     * The form and the API (TransferResource) report an empty amount with the same code.
+     * The form and the API (TransferInput) report an empty amount with the same code.
      */
     public function testEmptyAmountUsesTheSameCodeAsTheApi(): void
     {

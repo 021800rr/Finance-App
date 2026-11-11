@@ -38,6 +38,13 @@ final class OpenApiContractTest extends WebTestCase
         yield 'gold price' => ['GoldPrice', ['id', 'goldAssetId', 'priceDate', 'pricePln', 'currencyCode']];
         yield 'exchange rate' => ['CurrencyExchangeRate', ['id', 'bankId', 'currencyCode', 'rateDate', 'rateToPln']];
         yield 'contractor' => ['Contractor', ['id', 'name']];
+        yield 'transfer' => [
+            'Transfer',
+            [
+                'fromAccountId', 'toAccountId', 'operationDate', 'transactionUuid', 'outOperationId', 'outAmount',
+                'outCurrencyCode', 'inOperationId', 'inAmount', 'inCurrencyCode',
+            ],
+        ];
         yield 'account' => [
             'Account',
             [

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Post;
-use App\ApiResource\TransferResource;
+use App\ApiResource\Input\TransferInput;
 use App\Constant\Contractors;
 use App\Entity\AccountOperation;
 use App\Entity\Contractor;
@@ -17,6 +17,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
+use Symfony\Component\Uid\Uuid;
 
 final class TransferProcessorTest extends KernelTestCase
 {
@@ -52,17 +53,16 @@ final class TransferProcessorTest extends KernelTestCase
         $from = $this->createAccount('PLN');
         $to = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             fromAccountId: $from->getId(),
             toAccountId: $to->getId(),
             amountFrom: '100.00',
         );
 
-        $result = $this->processor->process($resource, new Post());
+        $result = $this->processor->process($input, new Post());
 
-        self::assertNotNull($result->transactionUuid);
-        self::assertNotNull($result->outOperationId);
-        self::assertNotNull($result->inOperationId);
+        self::assertTrue(Uuid::isValid($result->transactionUuid));
+        self::assertNotSame($result->outOperationId, $result->inOperationId);
         self::assertSame('-100.00', $result->outAmount);
         self::assertSame('100.00', $result->inAmount);
         self::assertSame('PLN', $result->outCurrencyCode);
@@ -79,14 +79,14 @@ final class TransferProcessorTest extends KernelTestCase
         $from = $this->createAccount('PLN');
         $to = $this->createAccount($this->createCurrency('EUR'));
 
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             fromAccountId: $from->getId(),
             toAccountId: $to->getId(),
             amountFrom: '100.00',
             amountTo: '23.00',
         );
 
-        $result = $this->processor->process($resource, new Post());
+        $result = $this->processor->process($input, new Post());
 
         self::assertSame('-100.00', $result->outAmount);
         self::assertSame('23.00', $result->inAmount);
@@ -100,7 +100,7 @@ final class TransferProcessorTest extends KernelTestCase
         $from = $this->createAccount('PLN');
         $to = $this->createAccount($this->createCurrency('EUR'));
 
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             fromAccountId: $from->getId(),
             toAccountId: $to->getId(),
             amountFrom: '100.00',
@@ -108,7 +108,7 @@ final class TransferProcessorTest extends KernelTestCase
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsWhenTransferringToSameAccount(): void
@@ -116,7 +116,7 @@ final class TransferProcessorTest extends KernelTestCase
         $this->ensureFixedContractor();
         $account = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             fromAccountId: $account->getId(),
             toAccountId: $account->getId(),
             amountFrom: '100.00',
@@ -124,7 +124,7 @@ final class TransferProcessorTest extends KernelTestCase
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsWhenAmountFromIsZero(): void
@@ -133,11 +133,11 @@ final class TransferProcessorTest extends KernelTestCase
         $from = $this->createAccount('PLN');
         $to = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(fromAccountId: $from->getId(), toAccountId: $to->getId(), amountFrom: '0.00');
+        $input = $this->buildInput(fromAccountId: $from->getId(), toAccountId: $to->getId(), amountFrom: '0.00');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     #[DataProvider('provideNonPositiveAmounts')]
@@ -148,7 +148,7 @@ final class TransferProcessorTest extends KernelTestCase
         $this->ensureFixedContractor();
         $from = $this->createAccount('PLN');
         $to = $this->createAccount('CHF');
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             fromAccountId: $from->getId(),
             toAccountId: $to->getId(),
             amountFrom: $amountFrom,
@@ -158,7 +158,7 @@ final class TransferProcessorTest extends KernelTestCase
         $countBefore = $operations->count([]);
 
         try {
-            $this->processor->process($resource, new Post());
+            $this->processor->process($input, new Post());
             self::fail('A non-positive transfer amount must be rejected.');
         } catch (UnprocessableEntityHttpException $exception) {
             self::assertSame(422, $exception->getStatusCode());
@@ -188,11 +188,11 @@ final class TransferProcessorTest extends KernelTestCase
         $this->ensureFixedContractor();
         $to = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(fromAccountId: null, toAccountId: $to->getId(), amountFrom: '10.00');
+        $input = $this->buildInput(fromAccountId: null, toAccountId: $to->getId(), amountFrom: '10.00');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenToAccountIdMissing(): void
@@ -200,11 +200,11 @@ final class TransferProcessorTest extends KernelTestCase
         $this->ensureFixedContractor();
         $from = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(fromAccountId: $from->getId(), toAccountId: null, amountFrom: '10.00');
+        $input = $this->buildInput(fromAccountId: $from->getId(), toAccountId: null, amountFrom: '10.00');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsNotFoundWhenFromAccountDoesNotExist(): void
@@ -212,11 +212,11 @@ final class TransferProcessorTest extends KernelTestCase
         $this->ensureFixedContractor();
         $to = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(fromAccountId: 999999999, toAccountId: $to->getId(), amountFrom: '10.00');
+        $input = $this->buildInput(fromAccountId: 999999999, toAccountId: $to->getId(), amountFrom: '10.00');
 
         $this->expectException(NotFoundHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsNotFoundWhenToAccountDoesNotExist(): void
@@ -224,11 +224,11 @@ final class TransferProcessorTest extends KernelTestCase
         $this->ensureFixedContractor();
         $from = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(fromAccountId: $from->getId(), toAccountId: 999999999, amountFrom: '10.00');
+        $input = $this->buildInput(fromAccountId: $from->getId(), toAccountId: 999999999, amountFrom: '10.00');
 
         $this->expectException(NotFoundHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsNotFoundWhenFromAccountIdAboveInt4Max(): void
@@ -236,12 +236,12 @@ final class TransferProcessorTest extends KernelTestCase
         $this->ensureFixedContractor();
         $to = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(fromAccountId: PHP_INT_MAX, toAccountId: $to->getId(), amountFrom: '10.00');
+        $input = $this->buildInput(fromAccountId: PHP_INT_MAX, toAccountId: $to->getId(), amountFrom: '10.00');
 
         $this->expectException(NotFoundHttpException::class);
         $this->expectExceptionMessage('fromAccountId');
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsNotFoundWhenToAccountIdAboveInt4Max(): void
@@ -249,12 +249,12 @@ final class TransferProcessorTest extends KernelTestCase
         $this->ensureFixedContractor();
         $from = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(fromAccountId: $from->getId(), toAccountId: PHP_INT_MAX, amountFrom: '10.00');
+        $input = $this->buildInput(fromAccountId: $from->getId(), toAccountId: PHP_INT_MAX, amountFrom: '10.00');
 
         $this->expectException(NotFoundHttpException::class);
         $this->expectExceptionMessage('toAccountId');
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessTreatsAMissingOperationDateAsABug(): void
@@ -263,7 +263,7 @@ final class TransferProcessorTest extends KernelTestCase
         $from = $this->createAccount('PLN');
         $to = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             fromAccountId: $from->getId(),
             toAccountId: $to->getId(),
             amountFrom: '10.00',
@@ -273,7 +273,7 @@ final class TransferProcessorTest extends KernelTestCase
         // The API validates the date first (NotBlank + BusinessDate), so reaching here is a bug.
         $this->expectException(\LogicException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessTreatsAnUnvalidatedOperationDateAsABug(): void
@@ -282,7 +282,7 @@ final class TransferProcessorTest extends KernelTestCase
         $from = $this->createAccount('PLN');
         $to = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             fromAccountId: $from->getId(),
             toAccountId: $to->getId(),
             amountFrom: '10.00',
@@ -292,7 +292,7 @@ final class TransferProcessorTest extends KernelTestCase
         // The API validates the date first (NotBlank + BusinessDate), so reaching here is a bug.
         $this->expectException(\LogicException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenAmountFromMissing(): void
@@ -301,14 +301,14 @@ final class TransferProcessorTest extends KernelTestCase
         $from = $this->createAccount('PLN');
         $to = $this->createAccount('PLN');
 
-        $resource = $this->buildResource(fromAccountId: $from->getId(), toAccountId: $to->getId(), amountFrom: null);
+        $input = $this->buildInput(fromAccountId: $from->getId(), toAccountId: $to->getId(), amountFrom: null);
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
-    public function testProcessThrowsWhenDataIsNotTransferResource(): void
+    public function testProcessThrowsWhenDataIsNotTransferInput(): void
     {
         $this->expectException(\InvalidArgumentException::class);
 
@@ -321,25 +321,25 @@ final class TransferProcessorTest extends KernelTestCase
      */
     private const string AUTO_DATE = '__auto_date__';
 
-    private function buildResource(
+    private function buildInput(
         ?int $fromAccountId = null,
         ?int $toAccountId = null,
         ?string $amountFrom = '10.00',
         ?string $amountTo = null,
         ?string $operationDate = self::AUTO_DATE,
         ?string $description = null,
-    ): TransferResource {
-        $resource = new TransferResource();
-        $resource->fromAccountId = $fromAccountId;
-        $resource->toAccountId = $toAccountId;
-        $resource->amountFrom = $amountFrom;
-        $resource->amountTo = $amountTo;
-        $resource->operationDate = self::AUTO_DATE === $operationDate
+    ): TransferInput {
+        $input = new TransferInput();
+        $input->fromAccountId = $fromAccountId;
+        $input->toAccountId = $toAccountId;
+        $input->amountFrom = $amountFrom;
+        $input->amountTo = $amountTo;
+        $input->operationDate = self::AUTO_DATE === $operationDate
             ? (new \DateTimeImmutable())->format('Y-m-d')
             : $operationDate;
-        $resource->description = $description;
+        $input->description = $description;
 
-        return $resource;
+        return $input;
     }
 
     private function ensureFixedContractor(): Contractor
