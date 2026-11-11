@@ -1477,10 +1477,33 @@ export interface components {
         /** @description Exchange rate of a currency to PLN for a given bank and date. */
         CurrencyExchangeRate: {
             /**
-             * @description Rate id. Read-only, ignored on write.
+             * @description Rate id.
              * @example 1
              */
-            readonly id?: number | null;
+            id: number;
+            /**
+             * @description Id of the bank this rate applies to.
+             * @example 1
+             */
+            bankId: number;
+            /**
+             * @description Currency code, e.g. "CHF".
+             * @example CHF
+             */
+            currencyCode: string;
+            /**
+             * @description Rate date, format YYYY-MM-DD.
+             * @example 2026-09-29
+             */
+            rateDate: string;
+            /**
+             * @description Exchange rate to PLN as a decimal string with 4 decimal places, e.g. "4.3210".
+             * @example 4.3210
+             */
+            rateToPln: string;
+        };
+        /** @description Adds a new exchange rate. Multiple rates for the same bank, currency and date are allowed; the most recent date (and, within a date, highest id) is treated as the current rate. As in the web form, the bank must have at least one visible (not hidden) account in a currency other than PLN, and the currency must not be PLN; otherwise the request is rejected with 422. */
+        "CurrencyExchangeRate.CurrencyExchangeRateInput": {
             /**
              * @description Id of the bank this rate applies to. Required; the bank must have at least one visible account in a currency other than PLN, otherwise it is rejected.
              * @example 1
@@ -1505,30 +1528,30 @@ export interface components {
         /** @description Exchange rate of a currency to PLN for a given bank and date. */
         "CurrencyExchangeRate.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
-             * @description Rate id. Read-only, ignored on write.
+             * @description Rate id.
              * @example 1
              */
-            readonly id?: number | null;
+            id: number;
             /**
-             * @description Id of the bank this rate applies to. Required; the bank must have at least one visible account in a currency other than PLN, otherwise it is rejected.
+             * @description Id of the bank this rate applies to.
              * @example 1
              */
-            bankId: number | null;
+            bankId: number;
             /**
-             * @description Currency code, e.g. "CHF". Required; any existing currency except PLN.
+             * @description Currency code, e.g. "CHF".
              * @example CHF
              */
-            currencyCode: string | null;
+            currencyCode: string;
             /**
-             * @description Rate date, format YYYY-MM-DD, from 2025-01-01 to 2070-12-31 inclusive. Required.
+             * @description Rate date, format YYYY-MM-DD.
              * @example 2026-09-29
              */
-            rateDate: string | null;
+            rateDate: string;
             /**
-             * @description Exchange rate to PLN as a decimal string, e.g. "4.3210". Range 0.0001-99.9999. Required.
+             * @description Exchange rate to PLN as a decimal string with 4 decimal places, e.g. "4.3210".
              * @example 4.3210
              */
-            rateToPln: string | null;
+            rateToPln: string;
         };
         /** @description A representation of common errors. */
         Error: {
@@ -1746,20 +1769,38 @@ export interface components {
         /** @description Lists all gold assets, ordered by id. */
         GoldAsset: {
             /**
-             * @description Gold asset id. Read-only, ignored on write.
+             * @description Gold asset id.
              * @example 1
              */
-            readonly id?: number | null;
+            id: number;
+            /**
+             * @description Id of the gold form.
+             * @example 1
+             */
+            formId: number;
+            /**
+             * @description Name of the gold form.
+             * @example Sztabka
+             */
+            formName: string;
+            /**
+             * @description Free-text description.
+             * @example Sztabka 1oz
+             */
+            description: string;
+            /**
+             * @description Weight in ounces as a decimal string with 4 decimal places, e.g. "1.5000".
+             * @example 1.0000
+             */
+            ounces: string;
+        };
+        /** @description Creates a new gold asset (formId, description, ounces). */
+        "GoldAsset.GoldAssetInput": {
             /**
              * @description Id of an existing gold form. Required.
              * @example 1
              */
             formId: number | null;
-            /**
-             * @description Gold form name. Read-only, ignored on write.
-             * @example Sztabka
-             */
-            readonly formName?: string | null;
             /**
              * @description Free-text description. Required, at most 255 characters.
              * @example Sztabka 1oz
@@ -1772,22 +1813,12 @@ export interface components {
             ounces: string | null;
         };
         /** @description A physical gold holding (form, ounces, description). Its value over time is tracked by GoldPrice entries. */
-        "GoldAsset.jsonMergePatch": {
-            /**
-             * @description Gold asset id. Read-only, ignored on write.
-             * @example 1
-             */
-            readonly id?: number | null;
+        "GoldAsset.GoldAssetInput.jsonMergePatch": {
             /**
              * @description Id of an existing gold form. Required.
              * @example 1
              */
             formId?: number | null;
-            /**
-             * @description Gold form name. Read-only, ignored on write.
-             * @example Sztabka
-             */
-            readonly formName?: string | null;
             /**
              * @description Free-text description. Required, at most 255 characters.
              * @example Sztabka 1oz
@@ -1802,30 +1833,30 @@ export interface components {
         /** @description Lists all gold assets, ordered by id. */
         "GoldAsset.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
-             * @description Gold asset id. Read-only, ignored on write.
+             * @description Gold asset id.
              * @example 1
              */
-            readonly id?: number | null;
+            id: number;
             /**
-             * @description Id of an existing gold form. Required.
+             * @description Id of the gold form.
              * @example 1
              */
-            formId: number | null;
+            formId: number;
             /**
-             * @description Gold form name. Read-only, ignored on write.
+             * @description Name of the gold form.
              * @example Sztabka
              */
-            readonly formName?: string | null;
+            formName: string;
             /**
-             * @description Free-text description. Required, at most 255 characters.
+             * @description Free-text description.
              * @example Sztabka 1oz
              */
-            description: string | null;
+            description: string;
             /**
-             * @description Weight in ounces as a decimal string, up to 4 decimal places, e.g. "1.5000". Required, 0.0001-999.9999.
+             * @description Weight in ounces as a decimal string with 4 decimal places, e.g. "1.5000".
              * @example 1.0000
              */
-            ounces: string | null;
+            ounces: string;
         };
         GoldForm: {
             /**
@@ -1854,10 +1885,33 @@ export interface components {
         /** @description A historical price point (in PLN) for a gold asset on a given date. */
         GoldPrice: {
             /**
-             * @description Gold price entry id. Read-only, ignored on write.
+             * @description Gold price entry id.
              * @example 1
              */
-            readonly id?: number | null;
+            id: number;
+            /**
+             * @description Id of the gold asset this price applies to.
+             * @example 1
+             */
+            goldAssetId: number;
+            /**
+             * @description Price date, format YYYY-MM-DD.
+             * @example 2026-09-29
+             */
+            priceDate: string;
+            /**
+             * @description Price in PLN as a decimal string, e.g. "250000.00".
+             * @example 250000.00
+             */
+            pricePln: string;
+            /**
+             * @description Currency code, always "PLN".
+             * @example PLN
+             */
+            currencyCode: string;
+        };
+        /** @description Adds a new gold price entry. Multiple entries for the same gold asset and date are allowed; the most recent date (and, within a date, highest id) is treated as the current price. */
+        "GoldPrice.GoldPriceInput": {
             /**
              * @description Id of an existing gold asset this price applies to. Required.
              * @example 1
@@ -1873,39 +1927,34 @@ export interface components {
              * @example 250000.00
              */
             pricePln: string | null;
-            /**
-             * @description Currency code. Always PLN. Read-only, ignored on write.
-             * @example PLN
-             */
-            readonly currencyCode?: string | null;
         };
         /** @description A historical price point (in PLN) for a gold asset on a given date. */
         "GoldPrice.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
-             * @description Gold price entry id. Read-only, ignored on write.
+             * @description Gold price entry id.
              * @example 1
              */
-            readonly id?: number | null;
+            id: number;
             /**
-             * @description Id of an existing gold asset this price applies to. Required.
+             * @description Id of the gold asset this price applies to.
              * @example 1
              */
-            goldAssetId: number | null;
+            goldAssetId: number;
             /**
-             * @description Price date, format YYYY-MM-DD, from 2025-01-01 to 2070-12-31 inclusive. Required.
+             * @description Price date, format YYYY-MM-DD.
              * @example 2026-09-29
              */
-            priceDate: string | null;
+            priceDate: string;
             /**
-             * @description Price in PLN as a decimal string, e.g. "250000.00". Required.
+             * @description Price in PLN as a decimal string, e.g. "250000.00".
              * @example 250000.00
              */
-            pricePln: string | null;
+            pricePln: string;
             /**
-             * @description Currency code. Always PLN. Read-only, ignored on write.
+             * @description Currency code, always "PLN".
              * @example PLN
              */
-            readonly currencyCode?: string | null;
+            currencyCode: string;
         };
         Household: {
             /**
@@ -4675,8 +4724,8 @@ export interface operations {
         /** @description The new CurrencyExchangeRate resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["CurrencyExchangeRate"];
-                "application/json": components["schemas"]["CurrencyExchangeRate"];
+                "application/ld+json": components["schemas"]["CurrencyExchangeRate.CurrencyExchangeRateInput"];
+                "application/json": components["schemas"]["CurrencyExchangeRate.CurrencyExchangeRateInput"];
             };
         };
         responses: {
@@ -6429,8 +6478,8 @@ export interface operations {
         /** @description The new GoldAsset resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["GoldAsset"];
-                "application/json": components["schemas"]["GoldAsset"];
+                "application/ld+json": components["schemas"]["GoldAsset.GoldAssetInput"];
+                "application/json": components["schemas"]["GoldAsset.GoldAssetInput"];
             };
         };
         responses: {
@@ -6854,7 +6903,7 @@ export interface operations {
         /** @description The updated GoldAsset resource */
         requestBody: {
             content: {
-                "application/merge-patch+json": components["schemas"]["GoldAsset.jsonMergePatch"];
+                "application/merge-patch+json": components["schemas"]["GoldAsset.GoldAssetInput.jsonMergePatch"];
             };
         };
         responses: {
@@ -7280,8 +7329,8 @@ export interface operations {
         /** @description The new GoldPrice resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["GoldPrice"];
-                "application/json": components["schemas"]["GoldPrice"];
+                "application/ld+json": components["schemas"]["GoldPrice.GoldPriceInput"];
+                "application/json": components["schemas"]["GoldPrice.GoldPriceInput"];
             };
         };
         responses: {

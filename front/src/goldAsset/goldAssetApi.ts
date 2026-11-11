@@ -3,21 +3,13 @@ import { deleteResource, getJson, patchJson, postJson } from '../api'
 import type { components } from '../generated/api'
 import { queryKeys, useInvalidate } from '../queryKeys'
 
-// One gold holding of GET /api/gold_assets: its form (bar, coin…), weight and description.
-export type GoldAsset = {
-  id: number
-  formId: number
-  formName: string
-  description: string
-  // a decimal string with four places, e.g. '1.5000'
-  ounces: string
-}
-
-// generated from the OpenAPI description of the API (npm run api-types)
+// The types of the API, generated from its OpenAPI description (npm run api-types): a gold asset as the API answers
+// it (its form, a bar or a coin, its weight in ounces with four places, its description) and the gold forms…
+export type GoldAsset = components['schemas']['GoldAsset']
 export type GoldForm = components['schemas']['GoldForm']
 
-// What the form sends; the API asks for whatever is missing.
-export type GoldAssetInput = { formId: number | null; ounces: string; description: string }
+// …and what the form sends: any field may be missing or null, and the API says which one is wrong.
+export type GoldAssetInput = components['schemas']['GoldAsset.GoldAssetInput']
 
 // Every gold asset, by id, as in the web app.
 export function useGoldAssets() {

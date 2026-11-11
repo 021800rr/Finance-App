@@ -1,20 +1,14 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { deleteResource, getJson, postJson } from '../api'
+import type { components } from '../generated/api'
 import { queryKeys, useInvalidate } from '../queryKeys'
 
-// One price of a gold asset, in PLN, on a day.
-export type GoldPrice = {
-  id: number
-  goldAssetId: number
-  // YYYY-MM-DD
-  priceDate: string
-  // a decimal string, e.g. '8650.00'
-  pricePln: string
-  currencyCode: string
-}
+// The types of the API, generated from its OpenAPI description (npm run api-types): a price of a gold asset as the
+// API answers it (in PLN, on a day)…
+export type GoldPrice = components['schemas']['GoldPrice']
 
-// What the form sends; the API asks for whatever is missing.
-export type GoldPriceInput = { goldAssetId: number | null; priceDate: string; pricePln: string }
+// …and what the form sends: any field may be missing or null, and the API says which one is wrong.
+export type GoldPriceInput = components['schemas']['GoldPrice.GoldPriceInput']
 
 // The latest prices, newest first, as many as the web list shows.
 export function useRecentGoldPrices() {

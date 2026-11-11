@@ -3,23 +3,14 @@ import { deleteResource, getJson, postJson } from '../api'
 import type { components } from '../generated/api'
 import { queryKeys, useInvalidate } from '../queryKeys'
 
-// One exchange rate of the API: what a bank sells a currency for, in PLN, on a day.
-export type Rate = {
-  id: number
-  bankId: number
-  currencyCode: string
-  // YYYY-MM-DD
-  rateDate: string
-  // a decimal string with four places, e.g. '4.5590'
-  rateToPln: string
-}
-
-// generated from the OpenAPI description of the API (npm run api-types)
+// The types of the API, generated from its OpenAPI description (npm run api-types): an exchange rate as the API
+// answers it (what a bank sells a currency for, in PLN, on a day), the banks and the currencies…
+export type Rate = components['schemas']['CurrencyExchangeRate']
 export type Bank = components['schemas']['Bank']
 type Currency = components['schemas']['Currency']
 
-// What the form sends; the API asks for whatever is missing.
-export type RateInput = { bankId: number | null; currencyCode: string; rateDate: string; rateToPln: string }
+// …and what the form sends: any field may be missing or null, and the API says which one is wrong.
+export type RateInput = components['schemas']['CurrencyExchangeRate.CurrencyExchangeRateInput']
 
 // The latest rates, newest first, as many as the web list shows.
 export function useRecentRates() {
