@@ -5,20 +5,20 @@ import { queryKeys, useInvalidate } from '../queryKeys'
 import type { Operation } from '../account/accountApi'
 
 // The types of the API, generated from its OpenAPI description (npm run api-types): an account of the list (without
-// its balances) and a contractor.
+// its balances), a contractor…
 export type AccountChoice = components['schemas']['Account']
 export type Contractor = components['schemas']['Contractor']
 
-// What the form sends. The contractor goes as contractorId (one from the list) or contractorName (a new one: the API
-// creates it).
-export type OperationInput = {
-  contractorId?: number
-  contractorName?: string
-  operationDate: string
-  amount: string
-  description: string | null
-  confirmed: boolean
-}
+// …what a new operation sends: its account, chosen once, on create, and the rest of the form. Any field may be missing
+// or null, and the API says which one is wrong. The contractor goes as contractorId (one from the list) or
+// contractorName (a new one: the API creates it)…
+export type NewOperationInput = components['schemas']['AccountOperation.NewAccountOperationInput']
+
+// …and what a change sends: a merge patch, where what is left out stays as it is; the account cannot change.
+export type OperationChanges = components['schemas']['AccountOperation.AccountOperationInput.jsonMergePatch']
+
+// What the form fills in for both: all but the account.
+export type OperationInput = Omit<NewOperationInput, 'accountId'>
 
 // Every account, ordered by bank, type, currency and number; a new operation can go only to one that is not hidden.
 export function useAccounts() {
@@ -47,8 +47,7 @@ export function useCreateOperation() {
   const invalidate = useInvalidate()
 
   return useMutation({
-    mutationFn: (input: OperationInput & { accountId: number }) =>
-      postJson<Operation>('/api/account_operations', input),
+    mutationFn: (input: NewOperationInput) => postJson<Operation>('/api/account_operations', input),
     onSuccess: () => invalidate('operations'),
   })
 }
@@ -57,7 +56,7 @@ export function useUpdateOperation(id: number) {
   const invalidate = useInvalidate()
 
   return useMutation({
-    mutationFn: (input: OperationInput) => patchJson(`/api/account_operations/${id}`, input),
+    mutationFn: (changes: OperationChanges) => patchJson(`/api/account_operations/${id}`, changes),
     onSuccess: () => invalidate('operations'),
   })
 }

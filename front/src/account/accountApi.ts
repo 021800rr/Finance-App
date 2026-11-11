@@ -11,22 +11,9 @@ type AccountAnswer = components['schemas']['Account']
 // …so the account of a history page, read with that GET, has them for sure.
 export type Account = AccountAnswer & Required<Pick<AccountAnswer, 'saldo' | 'saldoToday' | 'hasFutureOperations'>>
 
-// One row of GET /api/accounts/{id}/operations. The API leaves out the fields that are null.
-export type Operation = {
-  id: number
-  accountId: number
-  contractorId: number
-  contractorName: string
-  // YYYY-MM-DD
-  operationDate: string
-  // a decimal string, negative for an expense
-  amount: string
-  currencyCode: string
-  description?: string | null
-  confirmed: boolean
-  // set on both operations of a transfer
-  transactionUuid?: string | null
-}
+// An operation as the API answers it, a row of GET /api/accounts/{id}/operations among others: the description only
+// when there is one, the transaction UUID only on the two operations of a transfer.
+export type Operation = components['schemas']['AccountOperation']
 
 export function useAccount(id: string) {
   return useQuery({

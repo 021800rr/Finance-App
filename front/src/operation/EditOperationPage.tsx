@@ -5,7 +5,13 @@ import { formAmount } from '../ui/form'
 import { QueryResult } from '../ui/QueryResult'
 import { useGoBack } from '../ui/useGoBack'
 import { OperationForm } from './OperationForm'
-import { type AccountChoice, type OperationInput, useAccounts, useOperation, useUpdateOperation } from './operationApi'
+import {
+  type AccountChoice,
+  type OperationChanges,
+  useAccounts,
+  useOperation,
+  useUpdateOperation,
+} from './operationApi'
 
 // /operation/:id/edit: the same form; the account of an operation is fixed when it is created.
 export function EditOperationPage() {
@@ -48,7 +54,7 @@ function EditForm({ operation, accounts }: { operation: Operation; accounts: Acc
       }}
       save={async (input) => {
         // The contractor goes along only when it changes (PATCH /api/account_operations/{id}).
-        const changes: OperationInput = input.contractorId === operation.contractorId
+        const changes: OperationChanges = input.contractorId === operation.contractorId
           ? { ...input, contractorId: undefined }
           : input
         await update.mutateAsync(changes)

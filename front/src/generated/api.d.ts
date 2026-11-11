@@ -983,95 +983,63 @@ export interface components {
         /** @description Searches the operations of all accounts, newest first, 20 per page. The search text q is required; page must be a positive whole number. To list the operations of one account use /accounts/{accountId}/operations. */
         AccountOperation: {
             /**
+             * @description Operation id.
+             * @example 1
+             */
+            id: number;
+            /**
+             * @description Id of the account this operation belongs to.
+             * @example 1
+             */
+            accountId: number;
+            /**
+             * @description Id of the contractor.
+             * @example 10
+             */
+            contractorId: number;
+            /**
+             * @description Name of the contractor.
+             * @example Example contractor
+             */
+            contractorName: string;
+            /**
+             * @description Operation date, format YYYY-MM-DD.
+             * @example 2026-09-29
+             */
+            operationDate: string;
+            /**
+             * @description Amount as a decimal string: positive for income, negative for an expense.
+             * @example -50.00
+             */
+            amount: string;
+            /**
+             * @description Currency code, the one of the account.
+             * @example PLN
+             */
+            currencyCode: string;
+            /**
+             * @description Free-text note; left out when there is none.
+             * @example Rent for September
+             */
+            description?: string;
+            /**
+             * @description Whether the operation is confirmed.
+             * @example false
+             */
+            confirmed: boolean;
+            /**
+             * @description Id shared with the other operation of a transfer; left out for an operation that is not part of one.
+             * @example 01a17299-9aed-7df8-ba39-d49647205525
+             */
+            transactionUuid?: string;
+        };
+        /** @description Updates an existing operation. Send the contractor as in POST, but only when it changes: a contractorId or a contractorName that differs from the current contractor assigns the operation to that contractor (created when the name is new). The account of an operation is fixed at creation and cannot be changed. Operations of an account that was hidden later can still be updated. */
+        "AccountOperation.AccountOperationInput.jsonMergePatch": {
+            /**
              * @description Operation id. Read-only, ignored on write.
              * @example 1
              */
             readonly id?: number | null;
-            /**
-             * @description Id of the account this operation belongs to. Required on create; a hidden account is rejected; it cannot be changed afterwards, so it is not part of the update request.
-             * @example 1
-             */
-            accountId: number | null;
-            /**
-             * @description Id of an existing contractor. Send it alone, or with the name of the same contractor. Null is allowed only on update, together with contractorName, to replace the contractor.
-             * @example 10
-             */
-            contractorId?: number | null;
-            /**
-             * @description Contractor name, trimmed; letter case matters. Alone, it finds the contractor or creates a new one. With contractorId, it must be the name of that contractor. Null and a blank name are rejected.
-             * @example Example contractor
-             */
-            contractorName?: string | null;
-            /**
-             * @description Operation date, format YYYY-MM-DD, from 2025-01-01 to 2070-12-31 inclusive. Required.
-             * @example 2026-09-29
-             */
-            operationDate: string | null;
-            /**
-             * @description Amount as a decimal string, e.g. "50.00". Positive for income, negative for expense (exact sign convention follows the same rule as the Twig form). Cannot be zero. Required.
-             * @example 50.00
-             */
-            amount: string | null;
-            /**
-             * @description Currency code. Read-only, derived from the account's currency, ignored on write.
-             * @example PLN
-             */
-            readonly currencyCode?: string | null;
-            /**
-             * @description Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; a blank note is stored as null.
-             * @example Rent for September
-             */
-            description?: string | null;
-            /**
-             * @description Whether the operation is confirmed. Defaults to false.
-             * @default false
-             * @example false
-             */
-            confirmed: boolean;
-            /** @description Transaction UUID. Read-only, ignored on write. */
-            readonly transactionUuid?: string | null;
-        };
-        /** @description Creates a new operation. Give contractorId, contractorName or both (of the same contractor); a contractorName that matches no contractor creates one. A hidden account cannot be chosen: such a request is rejected with 422 on accountId. */
-        "AccountOperation-operation.create_operation.write_validation.Default_operation.create": {
-            /**
-             * @description Id of the account this operation belongs to. Required on create; a hidden account is rejected; it cannot be changed afterwards, so it is not part of the update request.
-             * @example 1
-             */
-            accountId: number | null;
-            /**
-             * @description Id of an existing contractor. Send it alone, or with the name of the same contractor. Null is allowed only on update, together with contractorName, to replace the contractor.
-             * @example 10
-             */
-            contractorId?: number | null;
-            /**
-             * @description Contractor name, trimmed; letter case matters. Alone, it finds the contractor or creates a new one. With contractorId, it must be the name of that contractor. Null and a blank name are rejected.
-             * @example Example contractor
-             */
-            contractorName?: string | null;
-            /**
-             * @description Operation date, format YYYY-MM-DD, from 2025-01-01 to 2070-12-31 inclusive. Required.
-             * @example 2026-09-29
-             */
-            operationDate: string | null;
-            /**
-             * @description Amount as a decimal string, e.g. "50.00". Positive for income, negative for expense (exact sign convention follows the same rule as the Twig form). Cannot be zero. Required.
-             * @example 50.00
-             */
-            amount: string | null;
-            /**
-             * @description Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; a blank note is stored as null.
-             * @example Rent for September
-             */
-            description?: string | null;
-            /**
-             * @description Whether the operation is confirmed. Defaults to false.
-             * @default false
-             * @example false
-             */
-            confirmed: boolean;
-        };
-        /** @description Updates an existing operation. Send the contractor as in POST, but only when it changes: a contractorId or a contractorName that differs from the current contractor assigns the operation to that contractor (created when the name is new). The account of an operation is fixed at creation and cannot be changed. Operations of an account that was hidden later can still be updated. */
-        "AccountOperation-operation.write.jsonMergePatch": {
             /**
              * @description Id of an existing contractor. Send it alone, or with the name of the same contractor. Null is allowed only on update, together with contractorName, to replace the contractor.
              * @example 10
@@ -1102,20 +1070,20 @@ export interface components {
              * @default false
              * @example false
              */
-            confirmed: boolean;
+            confirmed?: boolean;
         };
         /** @description Creates a new operation. Give contractorId, contractorName or both (of the same contractor); a contractorName that matches no contractor creates one. A hidden account cannot be chosen: such a request is rejected with 422 on accountId. */
-        "AccountOperation-validation.Default_operation.create": {
+        "AccountOperation.NewAccountOperationInput": {
+            /**
+             * @description Id of the account this operation belongs to. Required; a hidden account is rejected.
+             * @example 1
+             */
+            accountId: number | null;
             /**
              * @description Operation id. Read-only, ignored on write.
              * @example 1
              */
             readonly id?: number | null;
-            /**
-             * @description Id of the account this operation belongs to. Required on create; a hidden account is rejected; it cannot be changed afterwards, so it is not part of the update request.
-             * @example 1
-             */
-            accountId: number | null;
             /**
              * @description Id of an existing contractor. Send it alone, or with the name of the same contractor. Null is allowed only on update, together with contractorName, to replace the contractor.
              * @example 10
@@ -1137,11 +1105,6 @@ export interface components {
              */
             amount: string | null;
             /**
-             * @description Currency code. Read-only, derived from the account's currency, ignored on write.
-             * @example PLN
-             */
-            readonly currencyCode?: string | null;
-            /**
              * @description Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; a blank note is stored as null.
              * @example Rent for September
              */
@@ -1151,111 +1114,60 @@ export interface components {
              * @default false
              * @example false
              */
-            confirmed: boolean;
-            /** @description Transaction UUID. Read-only, ignored on write. */
-            readonly transactionUuid?: string | null;
+            confirmed?: boolean;
         };
         /** @description Searches the operations of all accounts, newest first, 20 per page. The search text q is required; page must be a positive whole number. To list the operations of one account use /accounts/{accountId}/operations. */
         "AccountOperation.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
-             * @description Operation id. Read-only, ignored on write.
+             * @description Operation id.
              * @example 1
              */
-            readonly id?: number | null;
+            id: number;
             /**
-             * @description Id of the account this operation belongs to. Required on create; a hidden account is rejected; it cannot be changed afterwards, so it is not part of the update request.
+             * @description Id of the account this operation belongs to.
              * @example 1
              */
-            accountId: number | null;
+            accountId: number;
             /**
-             * @description Id of an existing contractor. Send it alone, or with the name of the same contractor. Null is allowed only on update, together with contractorName, to replace the contractor.
+             * @description Id of the contractor.
              * @example 10
              */
-            contractorId?: number | null;
+            contractorId: number;
             /**
-             * @description Contractor name, trimmed; letter case matters. Alone, it finds the contractor or creates a new one. With contractorId, it must be the name of that contractor. Null and a blank name are rejected.
+             * @description Name of the contractor.
              * @example Example contractor
              */
-            contractorName?: string | null;
+            contractorName: string;
             /**
-             * @description Operation date, format YYYY-MM-DD, from 2025-01-01 to 2070-12-31 inclusive. Required.
+             * @description Operation date, format YYYY-MM-DD.
              * @example 2026-09-29
              */
-            operationDate: string | null;
+            operationDate: string;
             /**
-             * @description Amount as a decimal string, e.g. "50.00". Positive for income, negative for expense (exact sign convention follows the same rule as the Twig form). Cannot be zero. Required.
-             * @example 50.00
+             * @description Amount as a decimal string: positive for income, negative for an expense.
+             * @example -50.00
              */
-            amount: string | null;
+            amount: string;
             /**
-             * @description Currency code. Read-only, derived from the account's currency, ignored on write.
+             * @description Currency code, the one of the account.
              * @example PLN
              */
-            readonly currencyCode?: string | null;
+            currencyCode: string;
             /**
-             * @description Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; a blank note is stored as null.
+             * @description Free-text note; left out when there is none.
              * @example Rent for September
              */
-            description?: string | null;
+            description?: string;
             /**
-             * @description Whether the operation is confirmed. Defaults to false.
-             * @default false
+             * @description Whether the operation is confirmed.
              * @example false
              */
             confirmed: boolean;
-            /** @description Transaction UUID. Read-only, ignored on write. */
-            readonly transactionUuid?: string | null;
-        };
-        /** @description Creates a new operation. Give contractorId, contractorName or both (of the same contractor); a contractorName that matches no contractor creates one. A hidden account cannot be chosen: such a request is rejected with 422 on accountId. */
-        "AccountOperation.jsonld-validation.Default_operation.create": components["schemas"]["HydraItemBaseSchema"] & {
             /**
-             * @description Operation id. Read-only, ignored on write.
-             * @example 1
+             * @description Id shared with the other operation of a transfer; left out for an operation that is not part of one.
+             * @example 01a17299-9aed-7df8-ba39-d49647205525
              */
-            readonly id?: number | null;
-            /**
-             * @description Id of the account this operation belongs to. Required on create; a hidden account is rejected; it cannot be changed afterwards, so it is not part of the update request.
-             * @example 1
-             */
-            accountId: number | null;
-            /**
-             * @description Id of an existing contractor. Send it alone, or with the name of the same contractor. Null is allowed only on update, together with contractorName, to replace the contractor.
-             * @example 10
-             */
-            contractorId?: number | null;
-            /**
-             * @description Contractor name, trimmed; letter case matters. Alone, it finds the contractor or creates a new one. With contractorId, it must be the name of that contractor. Null and a blank name are rejected.
-             * @example Example contractor
-             */
-            contractorName?: string | null;
-            /**
-             * @description Operation date, format YYYY-MM-DD, from 2025-01-01 to 2070-12-31 inclusive. Required.
-             * @example 2026-09-29
-             */
-            operationDate: string | null;
-            /**
-             * @description Amount as a decimal string, e.g. "50.00". Positive for income, negative for expense (exact sign convention follows the same rule as the Twig form). Cannot be zero. Required.
-             * @example 50.00
-             */
-            amount: string | null;
-            /**
-             * @description Currency code. Read-only, derived from the account's currency, ignored on write.
-             * @example PLN
-             */
-            readonly currencyCode?: string | null;
-            /**
-             * @description Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; a blank note is stored as null.
-             * @example Rent for September
-             */
-            description?: string | null;
-            /**
-             * @description Whether the operation is confirmed. Defaults to false.
-             * @default false
-             * @example false
-             */
-            confirmed: boolean;
-            /** @description Transaction UUID. Read-only, ignored on write. */
-            readonly transactionUuid?: string | null;
+            transactionUuid?: string;
         };
         AccountType: {
             /**
@@ -1566,7 +1478,7 @@ export interface components {
              * @description Free-text note; left out when there is none.
              * @example Rent
              */
-            description?: string | null;
+            description?: string;
         };
         /** @description Creates a new fixed expense. Give contractorId, contractorName or both (of the same contractor); a contractorName that matches no contractor creates one. Amount must be negative and is always in PLN. */
         "FixedExpense.FixedExpenseInput": {
@@ -1670,7 +1582,7 @@ export interface components {
              * @description Free-text note; left out when there is none.
              * @example Rent
              */
-            description?: string | null;
+            description?: string;
         };
         /** @description Creates one operation on the main account for every fixed expense, dated in the next calendar month. Takes no request body. Responds with 409 when no account is marked as main, when the main account is hidden, or when a matching operation already exists (nothing is created then). */
         FixedExpensePlan: {
@@ -1998,7 +1910,7 @@ export interface components {
             byType?: unknown[];
             byHousehold?: unknown[];
             /** @default  */
-            ownFundsHouseholdName: string;
+            ownFundsHouseholdName?: string;
             gold?: unknown[] | null;
             retirementBalance?: unknown[] | null;
             retirementBalanceWithGold?: unknown[] | null;
@@ -2010,7 +1922,7 @@ export interface components {
             byType?: unknown[];
             byHousehold?: unknown[];
             /** @default  */
-            ownFundsHouseholdName: string;
+            ownFundsHouseholdName?: string;
             gold?: unknown[] | null;
             retirementBalance?: unknown[] | null;
             retirementBalanceWithGold?: unknown[] | null;
@@ -2037,7 +1949,7 @@ export interface components {
              * @description Free-text note; left out when there is none.
              * @example Monthly savings transfer
              */
-            description?: string | null;
+            description?: string;
             /**
              * @description Shared id linking the debit and credit operations.
              * @example 01a1c8b2-262e-72a9-9ac6-1652e5dffefe
@@ -2124,7 +2036,7 @@ export interface components {
              * @description Free-text note; left out when there is none.
              * @example Monthly savings transfer
              */
-            description?: string | null;
+            description?: string;
             /**
              * @description Shared id linking the debit and credit operations.
              * @example 01a1c8b2-262e-72a9-9ac6-1652e5dffefe
@@ -2777,8 +2689,8 @@ export interface operations {
         /** @description The new AccountOperation resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["AccountOperation-operation.create_operation.write_validation.Default_operation.create"];
-                "application/json": components["schemas"]["AccountOperation-operation.create_operation.write_validation.Default_operation.create"];
+                "application/ld+json": components["schemas"]["AccountOperation.NewAccountOperationInput"];
+                "application/json": components["schemas"]["AccountOperation.NewAccountOperationInput"];
             };
         };
         responses: {
@@ -2788,8 +2700,8 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["AccountOperation.jsonld-validation.Default_operation.create"];
-                    "application/json": components["schemas"]["AccountOperation-validation.Default_operation.create"];
+                    "application/ld+json": components["schemas"]["AccountOperation.jsonld"];
+                    "application/json": components["schemas"]["AccountOperation"];
                 };
             };
             /** @description Invalid input */
@@ -3237,7 +3149,7 @@ export interface operations {
         /** @description The updated AccountOperation resource */
         requestBody: {
             content: {
-                "application/merge-patch+json": components["schemas"]["AccountOperation-operation.write.jsonMergePatch"];
+                "application/merge-patch+json": components["schemas"]["AccountOperation.AccountOperationInput.jsonMergePatch"];
             };
         };
         responses: {
