@@ -6,6 +6,7 @@ namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Patch;
 use App\ApiResource\AccountResource;
+use App\ApiResource\Input\AccountInput;
 use App\Entity\Account;
 use App\State\AccountProcessor;
 use App\Tests\DatabaseTestTrait;
@@ -43,7 +44,7 @@ final class AccountProcessorTest extends KernelTestCase
         self::assertFalse($account->isHidden());
 
         $result = $this->processor->process(
-            $this->buildResource(true),
+            $this->buildInput(true),
             new Patch(),
             ['id' => $account->getId()],
         );
@@ -64,7 +65,7 @@ final class AccountProcessorTest extends KernelTestCase
         $this->em()->flush();
 
         $result = $this->processor->process(
-            $this->buildResource(false),
+            $this->buildInput(false),
             new Patch(),
             ['id' => $account->getId()],
         );
@@ -82,7 +83,7 @@ final class AccountProcessorTest extends KernelTestCase
         $account = $this->createAccount();
 
         $result = $this->processor->process(
-            $this->buildResource(true),
+            $this->buildInput(true),
             new Patch(),
             ['id' => $account->getId()],
         );
@@ -101,17 +102,17 @@ final class AccountProcessorTest extends KernelTestCase
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($this->buildResource(null), new Patch(), ['id' => $account->getId()]);
+        $this->processor->process($this->buildInput(null), new Patch(), ['id' => $account->getId()]);
     }
 
     public function testProcessThrowsNotFoundWhenAccountDoesNotExist(): void
     {
         $this->expectException(NotFoundHttpException::class);
 
-        $this->processor->process($this->buildResource(true), new Patch(), ['id' => 999999999]);
+        $this->processor->process($this->buildInput(true), new Patch(), ['id' => 999999999]);
     }
 
-    public function testProcessThrowsWhenDataIsNotAccountResource(): void
+    public function testProcessThrowsWhenDataIsNotAccountInput(): void
     {
         $account = $this->createAccount();
 
@@ -120,11 +121,11 @@ final class AccountProcessorTest extends KernelTestCase
         $this->processor->process(new \stdClass(), new Patch(), ['id' => $account->getId()]);
     }
 
-    private function buildResource(?bool $hidden): AccountResource
+    private function buildInput(?bool $hidden): AccountInput
     {
-        $resource = new AccountResource();
-        $resource->hidden = $hidden;
+        $input = new AccountInput();
+        $input->hidden = $hidden;
 
-        return $resource;
+        return $input;
     }
 }

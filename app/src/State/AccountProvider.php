@@ -9,13 +9,14 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\AccountResource;
+use App\ApiResource\Input\AccountInput;
 use App\Entity\Account;
 use App\Exception\RecordNotFoundException;
 use App\Repository\AccountRepository;
 use App\Service\AccountOperationSummaryService;
 
 /**
- * @implements ProviderInterface<AccountResource>
+ * @implements ProviderInterface<AccountResource|AccountInput>
  */
 final readonly class AccountProvider implements ProviderInterface
 {
@@ -26,13 +27,19 @@ final readonly class AccountProvider implements ProviderInterface
     }
 
     /**
+     * The list gives the accounts without balances. GET of one account answers with its balances; PATCH gets the
+     * current values as AccountInput and lays the request over them.
+     *
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      *
-     * @return AccountResource|list<AccountResource>
+     * @return AccountResource|AccountInput|list<AccountResource>
      */
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): AccountResource|array
-    {
+    public function provide(
+        Operation $operation,
+        array $uriVariables = [],
+        array $context = [],
+    ): AccountResource|AccountInput|array {
         if ($operation instanceof CollectionOperationInterface) {
             /** @var list<Account> $accounts */
             $accounts = $this->accountRepository->createOrderedForSelectQueryBuilder()->getQuery()->getResult();
@@ -45,16 +52,13 @@ final readonly class AccountProvider implements ProviderInterface
             throw RecordNotFoundException::account()->asHttp();
         }
 
-        $resource = AccountResource::fromEntity($account);
-
-        // PATCH loads the resource through this provider too, but it neither needs nor returns balances.
-        if ($operation instanceof Get) {
-            $balances = $this->summaryService->getBalances($account);
-            $resource->saldo = $balances['saldoAll']->toArray();
-            $resource->saldoToday = $balances['saldoToday']->toArray();
-            $resource->hasFutureOperations = $balances['showSaldoToday'];
+        if (!$operation instanceof Get) {
+            return AccountInput::fromEntity($account);
         }
 
-        return $resource;
+        $balances = $this->summaryService->getBalances($account);
+
+        return AccountResource::fromEntity($account)
+            ->withBalances($balances['saldoAll'], $balances['saldoToday'], $balances['showSaldoToday']);
     }
 }

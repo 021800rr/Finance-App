@@ -37,6 +37,14 @@ final class OpenApiContractTest extends WebTestCase
         yield 'gold asset' => ['GoldAsset', ['id', 'formId', 'formName', 'description', 'ounces']];
         yield 'gold price' => ['GoldPrice', ['id', 'goldAssetId', 'priceDate', 'pricePln', 'currencyCode']];
         yield 'exchange rate' => ['CurrencyExchangeRate', ['id', 'bankId', 'currencyCode', 'rateDate', 'rateToPln']];
+        yield 'contractor' => ['Contractor', ['id', 'name']];
+        yield 'account' => [
+            'Account',
+            [
+                'id', 'accountNumber', 'hidden', 'isMain', 'bankName', 'currencyCode', 'typeName', 'householdName',
+                'displayLabel',
+            ],
+        ];
     }
 
     /**
@@ -47,16 +55,55 @@ final class OpenApiContractTest extends WebTestCase
         string $schema,
         array $alwaysThere,
     ): void {
-        $client = self::createClient();
-        $client->request('GET', '/api/docs.jsonopenapi');
+        $answer = $this->schema($schema);
 
-        self::assertResponseIsSuccessful();
-        $document = self::decodeObject((string) $client->getResponse()->getContent());
-        $answer = self::objectAt($document, 'components', 'schemas', $schema);
         self::assertSame($alwaysThere, $answer['required'] ?? []);
         foreach ($alwaysThere as $field) {
             // One type, not a list of types with "null" in it.
             self::assertIsString(self::objectAt($answer, 'properties', $field)['type'] ?? null, $schema.'.'.$field);
         }
+    }
+
+    /**
+     * Fields some answers leave out: not required, but never null when they are there.
+     *
+     * @return iterable<string, array{string, list<string>}>
+     */
+    public static function fieldsSomeAnswersLeaveOut(): iterable
+    {
+        // Only GET /api/accounts/{id} works out the balances; the list and the answer to PATCH leave them out.
+        yield 'balances of an account' => ['Account', ['saldo', 'saldoToday', 'hasFutureOperations']];
+    }
+
+    /**
+     * @param list<string> $sometimesThere
+     */
+    #[DataProvider('fieldsSomeAnswersLeaveOut')]
+    public function testAFieldSomeAnswersLeaveOutIsNotRequiredButNeverNull(string $schema, array $sometimesThere): void
+    {
+        $answer = $this->schema($schema);
+        $required = $answer['required'] ?? [];
+        self::assertIsArray($required);
+
+        foreach ($sometimesThere as $field) {
+            self::assertNotContains($field, $required, $schema.'.'.$field);
+            self::assertIsString(self::objectAt($answer, 'properties', $field)['type'] ?? null, $schema.'.'.$field);
+        }
+    }
+
+    /**
+     * One schema of the components of the OpenAPI document, as clients read it.
+     *
+     * @return array<string, mixed>
+     */
+    private function schema(string $name): array
+    {
+        $client = self::createClient();
+        $client->request('GET', '/api/docs.jsonopenapi');
+
+        self::assertResponseIsSuccessful();
+        $document = self::decodeObject((string) $client->getResponse()->getContent());
+
+        return self::objectAt($document, 'components', 'schemas', $name);
     }
 }

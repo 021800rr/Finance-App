@@ -10,12 +10,18 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use App\ApiResource\Input\AccountInput;
 use App\Entity\Account;
 use App\State\AccountProcessor;
 use App\State\AccountProvider;
-use App\Validator\TrueOrOmitted;
-use Symfony\Component\Validator\Constraints as Assert;
+use App\ValueObject\Money;
 
+/**
+ * An account as the API returns it: every field is always there, and the OpenAPI document says so (a generated client
+ * gets types without needless nulls). Only GET /api/accounts/{id} adds the balances: the list and the answer to PATCH
+ * leave them out, as working them out takes two sums per account. What a client sends is AccountInput (input: on
+ * PATCH).
+ */
 #[ApiResource(
     shortName: 'Account',
     description: 'A bank account. Write access is limited to toggling "hidden" and "isMain", mirroring the web app.',
@@ -37,126 +43,130 @@ use Symfony\Component\Validator\Constraints as Assert;
             description: 'Updates an account. "hidden" mirrors the web app\'s "Hide"/"Show" toggle. '
             .'"isMain" mirrors the ☆ toggle: true makes this the main account and unsets the previous one. '
             .'No other edits are supported.',
+            input: AccountInput::class,
             provider: AccountProvider::class,
             processor: AccountProcessor::class,
         ),
     ],
     security: "is_granted('ROLE_USER')",
 )]
-final class AccountResource
+final readonly class AccountResource
 {
     private const string SALDO_DESCRIPTION =
-        'Balance including operations dated in the future. Read-only, returned only by GET.';
+        'Balance including operations dated in the future. Only in GET /api/accounts/{id}.';
     private const string SALDO_TODAY_DESCRIPTION =
-        'Balance counting only operations dated today or earlier. Read-only, returned only by GET.';
-    private const string IS_MAIN_DESCRIPTION =
-        'Send true to make this the main account; the previous main account is unset automatically. '
-        .'Leave this field out to keep the current state.';
+        'Balance counting only operations dated today or earlier. Only in GET /api/accounts/{id}.';
+    private const string FUTURE_DESCRIPTION =
+        'True when saldo and saldoToday differ, i.e. future-dated operations exist. Only in GET /api/accounts/{id}.';
 
-    #[ApiProperty(description: 'Account id. Read-only, ignored on write.', writable: false, example: 1)]
-    public ?int $id = null;
-
-    #[ApiProperty(
-        description: 'Account number. Read-only, ignored on write.',
-        writable: false,
-        example: '12 3456 7890 1234 5678 9012 3456')]
-    public ?string $accountNumber = null;
-
-    #[ApiProperty(
-        description: 'Whether the account is hidden from the summary/list views. A hidden account cannot be chosen '
-        .'for a new operation or transfer; its existing operations can still be updated. Writable.',
-        example: false,
-    )]
-    #[Assert\NotNull(message: 'account.hidden_not_null')]
-    public ?bool $hidden = null;
-
-    // Not ?bool: a value of another type has to reach TrueOrOmitted instead of ending as a generic 400.
-    #[ApiProperty(
-        description: self::IS_MAIN_DESCRIPTION,
-        example: true,
-        schema: ['type' => 'boolean', 'description' => self::IS_MAIN_DESCRIPTION, 'example' => true],
-    )]
-    #[TrueOrOmitted]
-    public mixed $isMain = null;
-
-    #[ApiProperty(description: 'Bank name. Read-only, ignored on write.', writable: false, example: 'mBank')]
-    public ?string $bankName = null;
-
-    #[ApiProperty(description: 'Currency code. Read-only, ignored on write.', writable: false, example: 'PLN')]
-    public ?string $currencyCode = null;
-
-    #[ApiProperty(
-        description: 'Account type name. Read-only, ignored on write.',
-        writable: false,
-        example: 'Konto osobiste')]
-    public ?string $typeName = null;
-
-    #[ApiProperty(description: 'Household name. Read-only, ignored on write.', writable: false, example: 'Dom')]
-    public ?string $householdName = null;
-
-    #[ApiProperty(
-        description: 'Human-readable label combining bank, type, currency and account number. Read-only.',
-        writable: false,
-        example: 'mBank / Konto osobiste / PLN / 12 3456 7890 1234 5678 9012 3456')]
-    public ?string $displayLabel = null;
-
-    /** @var array{amount: string, currency: string}|null */
-    #[ApiProperty(
-        description: self::SALDO_DESCRIPTION,
-        writable: false,
-        example: ['amount' => '4935.00', 'currency' => 'PLN'],
-        schema: [
-            'type' => ['object', 'null'],
-            'readOnly' => true,
-            'description' => self::SALDO_DESCRIPTION,
-            'example' => ['amount' => '4935.00', 'currency' => 'PLN'],
-            'properties' => [
-                'amount' => ['type' => 'string', 'example' => '4935.00'],
-                'currency' => ['type' => 'string', 'example' => 'PLN'],
+    /**
+     * @param array{amount: string, currency: string}|null $saldo      left out of the list and of the PATCH answer
+     * @param array{amount: string, currency: string}|null $saldoToday left out of the list and of the PATCH answer
+     */
+    public function __construct(
+        #[ApiProperty(description: 'Account id.', required: true, example: 1)]
+        public int $id,
+        #[ApiProperty(description: 'Account number.', required: true, example: '12 3456 7890 1234 5678 9012 3456')]
+        public string $accountNumber,
+        #[ApiProperty(
+            description: 'Whether the account is hidden from the summary/list views. A hidden account cannot be chosen '
+            .'for a new operation or transfer.',
+            required: true,
+            example: false,
+        )]
+        public bool $hidden,
+        #[ApiProperty(description: 'Whether this is the main account.', required: true, example: true)]
+        public bool $isMain,
+        #[ApiProperty(description: 'Bank name.', required: true, example: 'mBank')]
+        public string $bankName,
+        #[ApiProperty(description: 'Currency code.', required: true, example: 'PLN')]
+        public string $currencyCode,
+        #[ApiProperty(description: 'Account type name.', required: true, example: 'Konto osobiste')]
+        public string $typeName,
+        #[ApiProperty(description: 'Household name.', required: true, example: 'Dom')]
+        public string $householdName,
+        #[ApiProperty(
+            description: 'Human-readable label combining bank, type, currency and account number.',
+            required: true,
+            example: 'mBank / Konto osobiste / PLN / 12 3456 7890 1234 5678 9012 3456',
+        )]
+        public string $displayLabel,
+        // The balances are left out when absent, never sent as null: the schema says object, not object or null.
+        #[ApiProperty(
+            description: self::SALDO_DESCRIPTION,
+            example: ['amount' => '4935.00', 'currency' => 'PLN'],
+            schema: [
+                'type' => 'object',
+                'description' => self::SALDO_DESCRIPTION,
+                'example' => ['amount' => '4935.00', 'currency' => 'PLN'],
+                'required' => ['amount', 'currency'],
+                'properties' => [
+                    'amount' => ['type' => 'string', 'example' => '4935.00'],
+                    'currency' => ['type' => 'string', 'example' => 'PLN'],
+                ],
             ],
-        ],
-    )]
-    public ?array $saldo = null;
-
-    /** @var array{amount: string, currency: string}|null */
-    #[ApiProperty(
-        description: self::SALDO_TODAY_DESCRIPTION,
-        writable: false,
-        example: ['amount' => '4965.00', 'currency' => 'PLN'],
-        schema: [
-            'type' => ['object', 'null'],
-            'readOnly' => true,
-            'description' => self::SALDO_TODAY_DESCRIPTION,
-            'example' => ['amount' => '4965.00', 'currency' => 'PLN'],
-            'properties' => [
-                'amount' => ['type' => 'string', 'example' => '4965.00'],
-                'currency' => ['type' => 'string', 'example' => 'PLN'],
+        )]
+        public ?array $saldo = null,
+        #[ApiProperty(
+            description: self::SALDO_TODAY_DESCRIPTION,
+            example: ['amount' => '4965.00', 'currency' => 'PLN'],
+            schema: [
+                'type' => 'object',
+                'description' => self::SALDO_TODAY_DESCRIPTION,
+                'example' => ['amount' => '4965.00', 'currency' => 'PLN'],
+                'required' => ['amount', 'currency'],
+                'properties' => [
+                    'amount' => ['type' => 'string', 'example' => '4965.00'],
+                    'currency' => ['type' => 'string', 'example' => 'PLN'],
+                ],
             ],
-        ],
-    )]
-    public ?array $saldoToday = null;
+        )]
+        public ?array $saldoToday = null,
+        #[ApiProperty(
+            description: self::FUTURE_DESCRIPTION,
+            example: true,
+            schema: ['type' => 'boolean', 'description' => self::FUTURE_DESCRIPTION, 'example' => true],
+        )]
+        public ?bool $hasFutureOperations = null,
+    ) {
+    }
 
-    #[ApiProperty(
-        description: 'True when saldo and saldoToday differ, i.e. future-dated operations exist. '
-        .'Read-only, returned only by GET.',
-        writable: false,
-        example: true,
-    )]
-    public ?bool $hasFutureOperations = null;
-
+    /**
+     * The account without its balances, as the list and the answer to PATCH give it.
+     */
     public static function fromEntity(Account $account): self
     {
-        $resource = new self();
-        $resource->id = $account->getId();
-        $resource->accountNumber = $account->getAccountNumber();
-        $resource->hidden = $account->isHidden();
-        $resource->isMain = $account->isMain();
-        $resource->bankName = $account->getBankName();
-        $resource->currencyCode = $account->getCurrencyCode();
-        $resource->typeName = $account->getTypeName();
-        $resource->householdName = $account->getHouseholdName();
-        $resource->displayLabel = $account->getDisplayLabel();
+        return new self(
+            id: $account->getId(),
+            accountNumber: $account->getAccountNumber(),
+            hidden: $account->isHidden(),
+            isMain: $account->isMain(),
+            bankName: $account->getBankName(),
+            currencyCode: $account->getCurrencyCode(),
+            typeName: $account->getTypeName(),
+            householdName: $account->getHouseholdName(),
+            displayLabel: $account->getDisplayLabel(),
+        );
+    }
 
-        return $resource;
+    /**
+     * The same account with its balances, as GET /api/accounts/{id} answers it.
+     */
+    public function withBalances(Money $saldo, Money $saldoToday, bool $hasFutureOperations): self
+    {
+        return new self(
+            id: $this->id,
+            accountNumber: $this->accountNumber,
+            hidden: $this->hidden,
+            isMain: $this->isMain,
+            bankName: $this->bankName,
+            currencyCode: $this->currencyCode,
+            typeName: $this->typeName,
+            householdName: $this->householdName,
+            displayLabel: $this->displayLabel,
+            saldo: $saldo->toArray(),
+            saldoToday: $saldoToday->toArray(),
+            hasFutureOperations: $hasFutureOperations,
+        );
     }
 }

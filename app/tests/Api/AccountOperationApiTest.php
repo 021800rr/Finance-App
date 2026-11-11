@@ -277,7 +277,14 @@ final class AccountOperationApiTest extends WebTestCase
         $docs = self::decodeObject((string) $this->client->getResponse()->getContent());
         $create = self::objectAt($docs, 'paths', '/api/account_operations', 'post');
         $update = self::objectAt($docs, 'paths', '/api/account_operations/{id}', 'patch');
-        $hidden = self::objectAt($docs, 'components', 'schemas', 'Account.jsonMergePatch', 'properties', 'hidden');
+        $hidden = self::objectAt(
+            $docs,
+            'components',
+            'schemas',
+            'Account.AccountInput.jsonMergePatch',
+            'properties',
+            'hidden',
+        );
 
         self::assertIsString($create['description'] ?? null);
         self::assertStringContainsString('hidden account cannot be chosen', $create['description']);

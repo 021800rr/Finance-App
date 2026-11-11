@@ -111,21 +111,17 @@ final class AccountBalanceApiTest extends WebTestCase
         self::assertSame(['amount' => '10.00', 'currency' => 'PLN'], $data['saldo']);
     }
 
-    public function testOpenApiMarksTheBalanceFieldsReadOnlyInThePatchRequestSchema(): void
+    public function testOpenApiOffersOnlyHiddenAndIsMainInThePatchRequestAndTheBalancesInTheAnswer(): void
     {
         $this->client->request('GET', '/api/docs.jsonopenapi');
         $document = self::decodeObject((string) $this->client->getResponse()->getContent());
-        $properties = self::objectAt($document, 'components', 'schemas', 'Account.jsonMergePatch', 'properties');
 
-        foreach (['saldo', 'saldoToday', 'hasFutureOperations'] as $field) {
-            self::assertTrue(
-                self::objectAt($properties, $field)['readOnly'] ?? false,
-                "{$field} must be read-only in the PATCH request schema.",
-            );
-        }
-        self::assertArrayNotHasKey('readOnly', self::objectAt($properties, 'hidden'));
-        self::assertArrayNotHasKey('readOnly', self::objectAt($properties, 'isMain'));
-        $saldo = self::objectAt($properties, 'saldo');
+        // What a PATCH can send: the two toggles of the web app, nothing about the balances.
+        $sent = self::objectAt($document, 'components', 'schemas', 'Account.AccountInput.jsonMergePatch', 'properties');
+        self::assertSame(['hidden', 'isMain'], array_keys($sent));
+
+        // What GET of one account answers: the balances, described with an example.
+        $saldo = self::objectAt($document, 'components', 'schemas', 'Account', 'properties', 'saldo');
         self::assertNotEmpty($saldo['description'] ?? null);
         self::assertSame('PLN', self::objectAt($saldo, 'example')['currency'] ?? null);
     }
