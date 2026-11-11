@@ -18,7 +18,7 @@ export function amountSeparators(): { group: string; decimal: string } {
 export function formatAmount(amount: string): string {
   const { group, decimal } = amountSeparators()
   const negative = amount.startsWith('-')
-  const [whole, fraction] = (negative ? amount.slice(1) : amount).split('.')
+  const [whole = '', fraction] = (negative ? amount.slice(1) : amount).split('.')
   const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, group)
 
   return (negative ? '-' : '') + grouped + (fraction === undefined ? '' : decimal + fraction)

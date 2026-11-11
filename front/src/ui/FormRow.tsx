@@ -13,7 +13,7 @@ export function FormRow({ label, htmlFor, error, children }: {
         {label}
       </label>
       {children}
-      {error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p id={`${htmlFor}-error`} className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
     </div>
   )
 }

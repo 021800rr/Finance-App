@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { type ContractorChoice, ContractorField } from '../operation/ContractorField'
 import { AmountInput } from '../ui/AmountInput'
 import { Alert } from '../ui/Feedback'
-import { inputClass, toApiAmount } from '../ui/form'
+import { fieldErrorProps, inputClass, toApiAmount } from '../ui/form'
 import { FormButtons } from '../ui/FormButtons'
 import { FormRow } from '../ui/FormRow'
 import { useApiForm } from '../ui/useApiForm'
@@ -78,6 +78,7 @@ export function FixedExpenseForm({ initial, save, submitLabel, onCancel }: Props
         <div className="w-24">
           <input
             id="day"
+            {...fieldErrorProps('day', errors.day)}
             type="text"
             inputMode="numeric"
             maxLength={2}
@@ -91,6 +92,7 @@ export function FixedExpenseForm({ initial, save, submitLabel, onCancel }: Props
       <FormRow label={t('form.contractor')} htmlFor="contractor">
         <ContractorField
           id="contractor"
+          {...fieldErrorProps('contractor', errors.contractor)}
           value={values.contractor}
           onChange={(contractor) => set('contractor', contractor)}
           error={errors.contractor}
@@ -100,6 +102,7 @@ export function FixedExpenseForm({ initial, save, submitLabel, onCancel }: Props
       <FormRow label={t('form.amount')} htmlFor="amount" error={errors.amount}>
         <AmountInput
           id="amount"
+          {...fieldErrorProps('amount', errors.amount)}
           value={values.amount}
           onChange={(amount) => set('amount', amount)}
           allowMinus
@@ -110,6 +113,7 @@ export function FixedExpenseForm({ initial, save, submitLabel, onCancel }: Props
       <FormRow label={t('form.description')} htmlFor="description" error={errors.description}>
         <input
           id="description"
+          {...fieldErrorProps('description', errors.description)}
           type="text"
           maxLength={255}
           value={values.description}

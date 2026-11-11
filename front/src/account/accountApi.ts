@@ -1,4 +1,4 @@
-import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { deleteResource, getJson, getPage, patchJson } from '../api'
 import type { components } from '../generated/api'
 import { queryKeys, useInvalidate } from '../queryKeys'
@@ -27,7 +27,7 @@ export function useAccountOperations(id: string, page: number) {
   return useQuery({
     queryKey: queryKeys.accountOperations(id, page),
     queryFn: () => getPage<Operation>(`/api/accounts/${encodeURIComponent(id)}/operations?page=${page}`),
-    placeholderData: keepPreviousData,
+    placeholderData: (previous, query) => query?.queryKey[1] === id ? previous : undefined,
   })
 }
 
@@ -53,6 +53,8 @@ export function useDeleteOperation() {
 }
 
 // The other operation of a transfer, for the 🔗 of the web app.
-export function findOtherSide(operationId: number): Promise<Operation> {
-  return getJson<Operation>(`/api/account_operations/${operationId}/other-side`)
+type OtherSide = Operation & Required<Pick<Operation, 'accountHistoryPage'>>
+
+export function findOtherSide(operationId: number): Promise<OtherSide> {
+  return getJson<OtherSide>(`/api/account_operations/${operationId}/other-side`)
 }

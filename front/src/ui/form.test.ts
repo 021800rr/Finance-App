@@ -60,10 +60,10 @@ describe('dateFromValue', () => {
 describe('fieldErrors', () => {
   it('puts the first error of each field in Polish, the API text when the code has no translation', () => {
     const errors = fieldErrors([
-      { propertyPath: 'amount', message: 'Enter an amount.', code: 'fixed_expense.amount_not_blank' },
-      { propertyPath: 'amount', message: 'second error of the field' },
-      { propertyPath: 'day', message: 'Text of the API.', code: 'no.such.code' },
-      { propertyPath: 'notAField', message: 'ignored' },
+      { propertyPath: 'amount', message: 'Enter an amount.', code: 'fixed_expense.amount_not_blank', params: {} },
+      { propertyPath: 'amount', message: 'second error of the field', code: 'unknown', params: {} },
+      { propertyPath: 'day', message: 'Text of the API.', code: 'no.such.code', params: {} },
+      { propertyPath: 'notAField', message: 'ignored', code: 'unknown', params: {} },
     ], { amount: 'amount', day: 'day' })
 
     expect(errors).toEqual({ amount: 'Podaj kwotę.', day: 'Text of the API.' })

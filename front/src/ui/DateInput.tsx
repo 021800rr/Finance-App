@@ -1,3 +1,4 @@
+import type { AriaAttributes } from 'react'
 import { CalendarDaysIcon } from '@heroicons/react/24/outline'
 import * as React from 'react'
 import { DayPicker } from 'react-day-picker'
@@ -6,7 +7,7 @@ import 'react-day-picker/style.css'
 import { useTranslation } from 'react-i18next'
 import { dateFromValue, valueFromDate } from './form'
 
-type Props = {
+type Props = Pick<AriaAttributes, 'aria-invalid' | 'aria-describedby'> & {
   id: string
   // 'YYYY-MM-DD', as the API takes it
   value: string
@@ -19,10 +20,12 @@ type Props = {
 // A date typed as YYYY-MM-DD (as the tables and the API show it) or picked in a calendar. The calendar of
 // <input type="date"> speaks the language of the browser; this one follows the language of the app, with its first
 // day of the week, and offers no day outside min-max.
-export function DateInput({ id, value, onChange, min, max, className }: Props) {
+export function DateInput({ id, value, onChange, min, max, className, ...aria }: Props) {
   const { t, i18n } = useTranslation()
   const [open, setOpen] = React.useState(false)
   const box = React.useRef<HTMLDivElement>(null)
+  const button = React.useRef<HTMLButtonElement>(null)
+  const calendarId = React.useId()
   const selected = dateFromValue(value)
   const first = dateFromValue(min)
   const last = dateFromValue(max)
@@ -39,7 +42,9 @@ export function DateInput({ id, value, onChange, min, max, className }: Props) {
     }
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
+        event.preventDefault()
         setOpen(false)
+        button.current?.focus()
       }
     }
     document.addEventListener('mousedown', onMouseDown)
@@ -56,6 +61,7 @@ export function DateInput({ id, value, onChange, min, max, className }: Props) {
       <div className="flex gap-2">
         <input
           id={id}
+          {...aria}
           type="text"
           inputMode="numeric"
           value={value}
@@ -65,11 +71,14 @@ export function DateInput({ id, value, onChange, min, max, className }: Props) {
           className={`${className} tabular-nums`}
         />
         <button
+          ref={button}
           type="button"
           onClick={() => setOpen(!open)}
           title={t('app.choose_date')}
           aria-label={t('app.choose_date')}
           aria-expanded={open}
+          aria-haspopup="dialog"
+          aria-controls={open ? calendarId : undefined}
           className="shrink-0 cursor-pointer rounded-md border border-slate-300 dark:border-slate-600 px-2
             text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
         >
@@ -77,7 +86,8 @@ export function DateInput({ id, value, onChange, min, max, className }: Props) {
         </button>
       </div>
       {open && (
-        <div className="absolute z-20 mt-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white
+        <div id={calendarId} role="dialog" aria-label={t('app.choose_date')}
+          className="absolute z-20 mt-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white
           dark:bg-slate-900 p-3 shadow-lg">
           <DayPicker
             mode="single"
@@ -87,6 +97,7 @@ export function DateInput({ id, value, onChange, min, max, className }: Props) {
               if (date !== undefined) {
                 onChange(valueFromDate(date))
                 setOpen(false)
+                button.current?.focus()
               }
             }}
             locale={i18n.resolvedLanguage === 'en' ? enUS : pl}

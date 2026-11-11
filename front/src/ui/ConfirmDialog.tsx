@@ -5,11 +5,11 @@ type Props = {
   open: boolean
   message: string
   onConfirm: () => void
-  onCancel: () => void
+  onClose: () => void
   disabled?: boolean
 }
 
-export function ConfirmDialog({ open, message, onConfirm, onCancel, disabled }: Props) {
+export function ConfirmDialog({ open, message, onConfirm, onClose, disabled }: Props) {
   const { t } = useTranslation()
   const dialog = React.useRef<HTMLDialogElement>(null)
   const cancelButton = React.useRef<HTMLButtonElement>(null)
@@ -33,7 +33,7 @@ export function ConfirmDialog({ open, message, onConfirm, onCancel, disabled }: 
       aria-labelledby={messageId}
       onCancel={(event) => {
         event.preventDefault()
-        onCancel()
+        onClose()
       }}
       className="m-auto w-[calc(100%_-_2rem)] max-w-sm rounded-xl bg-white p-6 text-slate-900 shadow-xl
         backdrop:bg-black/40 dark:bg-slate-900 dark:text-slate-100"
@@ -43,7 +43,7 @@ export function ConfirmDialog({ open, message, onConfirm, onCancel, disabled }: 
         <button
           ref={cancelButton}
           type="button"
-          onClick={onCancel}
+          onClick={onClose}
           className="cursor-pointer rounded-md border border-slate-300 px-4 py-2 text-sm font-medium
             hover:bg-slate-100 dark:border-slate-600 dark:hover:bg-slate-800"
         >
@@ -53,7 +53,7 @@ export function ConfirmDialog({ open, message, onConfirm, onCancel, disabled }: 
           type="button"
           disabled={disabled}
           onClick={() => {
-            onCancel()
+            onClose()
             onConfirm()
           }}
           className="cursor-pointer rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white

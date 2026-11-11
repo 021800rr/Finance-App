@@ -1056,6 +1056,11 @@ export interface components {
              * @example 01a17299-9aed-7df8-ba39-d49647205525
              */
             transactionUuid?: string;
+            /**
+             * @description Page in account history (newest date/id first). Only in GET other-side.
+             * @example 2
+             */
+            accountHistoryPage?: number;
         };
         /** @description Updates an existing operation. Send the contractor as in POST, but only when it changes: a contractorId or a contractorName that differs from the current contractor assigns the operation to that contractor (created when the name is new). The account of an operation is fixed at creation and cannot be changed. Operations of an account that was hidden later can still be updated. */
         "AccountOperation.AccountOperationInput.jsonMergePatch": {
@@ -1192,6 +1197,11 @@ export interface components {
              * @example 01a17299-9aed-7df8-ba39-d49647205525
              */
             transactionUuid?: string;
+            /**
+             * @description Page in account history (newest date/id first). Only in GET other-side.
+             * @example 2
+             */
+            accountHistoryPage?: number;
         };
         AccountType: {
             /**

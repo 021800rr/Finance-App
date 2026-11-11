@@ -21,12 +21,13 @@ export function AccountOperationsPage() {
   const operations = useAccountOperations(id, page)
 
   return (
-    <QueryResult query={account} failure={t('app.account_load_failed')} notFound>
+    <QueryResult query={account} failure={t('app.account_load_failed')} notFound fresh={highlight !== null}>
       {(found) => (
         <Card title={t('account.history')}>
           <AccountDetails account={found} />
           <QueryResult
             query={operations}
+            fresh={highlight !== null}
             failure={t('app.operations_load_failed')}
             loading={t('app.loading_operations')}
           >

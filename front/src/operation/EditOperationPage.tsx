@@ -54,11 +54,12 @@ function EditForm({ operation, accounts }: { operation: Operation; accounts: Acc
       }}
       save={async (input) => {
         // The contractor goes along only when it changes (PATCH /api/account_operations/{id}).
-        const changes: OperationChanges = input.contractorId === operation.contractorId
-          ? { ...input, contractorId: undefined }
+        const { contractorId, ...rest } = input
+        const changes: OperationChanges = contractorId === operation.contractorId
+          ? rest
           : input
         await update.mutateAsync(changes)
-        navigate(`/account/${operation.accountId}/operations?highlight=${operation.id}`)
+        await navigate(`/account/${operation.accountId}/operations?highlight=${operation.id}`)
       }}
       onCancel={goBack}
     />

@@ -1,4 +1,4 @@
-import { CheckCircleIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
+import { CheckCircleIcon, LinkIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams } from 'react-router'
@@ -67,7 +67,9 @@ export function OperationsTable({
     setFollowing(true)
     try {
       const otherSide = await findOtherSide(operation.id)
-      navigate(`/account/${otherSide.accountId}/operations?highlight=${otherSide.id}`)
+      await navigate(
+        `/account/${otherSide.accountId}/operations?page=${otherSide.accountHistoryPage}&highlight=${otherSide.id}`,
+      )
     } catch (error) {
       setOtherSideMessage(errorMessage(error, t('app.other_side_failed')))
       setParams({ ...Object.fromEntries(params), highlight: String(operation.id) })
@@ -114,10 +116,10 @@ export function OperationsTable({
                       {operation.transactionUuid && (
                         <IconButton
                           label={t('operation.show_other_side')}
-                          onClick={() => goToOtherSide(operation)}
+                          onClick={() => { void goToOtherSide(operation) }}
                           disabled={following}
                         >
-                          🔗
+                          <LinkIcon className="size-5" />
                         </IconButton>
                       )}
                     </span>

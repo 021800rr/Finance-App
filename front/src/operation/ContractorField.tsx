@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
+import { fieldErrorProps } from '../ui/form'
 import { useDebouncedValue } from '../ui/useDebouncedValue'
 import { useContractorSearch } from './operationApi'
 
@@ -82,7 +83,7 @@ export function ContractorField({ id, value, onChange, error, inputClassName }: 
         aria-expanded={listShown}
         aria-controls={listId}
         aria-activedescendant={listShown && active >= 0 ? `${listId}-${active}` : undefined}
-        aria-invalid={error !== undefined}
+        {...fieldErrorProps(id, error)}
         value={text}
         onChange={(event) => {
           setText(event.target.value)
@@ -123,7 +124,7 @@ export function ContractorField({ id, value, onChange, error, inputClassName }: 
           ))}
         </ul>
       )}
-      {error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p id={`${id}-error`} className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
       {!error && value?.id === null && (
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           {t('app.new_contractor', { name: value.name })}

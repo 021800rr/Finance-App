@@ -27,7 +27,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 /**
  * An operation as the API returns it: every field is always there, and the OpenAPI document says so (a generated
  * client gets types without needless nulls); the description and the transaction UUID are left out when there are
- * none. What a client sends is NewAccountOperationInput to create one (input: on POST) and AccountOperationInput, the
+ * none. accountHistoryPage is included only by GET other-side. What a client sends is NewAccountOperationInput to
+ * create one (input: on POST) and AccountOperationInput, the
  * same without the account, to change one (input: on PATCH); there any field may be missing until the validation
  * says why.
  */
@@ -123,6 +124,8 @@ final readonly class AccountOperationResource
     private const string DESCRIPTION = 'Free-text note; left out when there is none.';
     private const string TRANSACTION_UUID =
         'Id shared with the other operation of a transfer; left out for an operation that is not part of one.';
+    private const string HISTORY_PAGE =
+        'Page in account history (newest date/id first). Only in GET other-side.';
 
     public function __construct(
         #[ApiProperty(description: 'Operation id.', required: true, example: 1)]
@@ -162,11 +165,18 @@ final readonly class AccountOperationResource
             ],
         )]
         public ?string $transactionUuid,
+        #[ApiProperty(
+            description: self::HISTORY_PAGE,
+            schema: ['type' => 'integer', 'minimum' => 1, 'description' => self::HISTORY_PAGE, 'example' => 2],
+        )]
+        public ?int $accountHistoryPage = null,
     ) {
     }
 
-    public static function fromEntity(AccountOperation $accountOperation): self
-    {
+    public static function fromEntity(
+        AccountOperation $accountOperation,
+        ?int $accountHistoryPage = null,
+    ): self {
         return new self(
             id: $accountOperation->getId(),
             accountId: $accountOperation->getAccount()->getId(),
@@ -178,6 +188,7 @@ final readonly class AccountOperationResource
             description: $accountOperation->getDescription(),
             confirmed: $accountOperation->isConfirmed(),
             transactionUuid: $accountOperation->getTransactionUuid()?->toRfc4122(),
+            accountHistoryPage: $accountHistoryPage,
         );
     }
 }

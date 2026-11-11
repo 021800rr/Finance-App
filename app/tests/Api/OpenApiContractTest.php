@@ -105,6 +105,7 @@ final class OpenApiContractTest extends WebTestCase
         yield 'balances of an account' => ['Account', ['saldo', 'saldoToday', 'hasFutureOperations']];
         // A note only when there is one; the transaction UUID only on the two operations of a transfer.
         yield 'note and transfer link of an operation' => ['AccountOperation', ['description', 'transactionUuid']];
+        yield 'history location of a transfer side' => ['AccountOperation', ['accountHistoryPage']];
         yield 'note of a fixed expense' => ['FixedExpense', ['description']];
         yield 'note of a transfer' => ['Transfer', ['description']];
         // The rate to PLN only for an account in another currency, and only when its bank has one stored.

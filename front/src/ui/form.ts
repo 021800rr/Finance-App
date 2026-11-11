@@ -94,3 +94,11 @@ export function fieldErrors<F extends string>(
 
   return errors
 }
+
+// Connect the actual input (including inputs inside custom controls) to the error rendered by FormRow.
+export function fieldErrorProps(id: string, error: string | undefined) {
+  return {
+    'aria-invalid': error ? true : undefined,
+    'aria-describedby': error ? `${id}-error` : undefined,
+  } as const
+}

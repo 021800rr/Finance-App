@@ -3,11 +3,54 @@ import type { components } from './generated/api'
 // The backend keeps both tokens in HttpOnly cookies (BEARER and refresh_token). The browser stores them and sends
 // them with every request to /api by itself; this code never sees them.
 
-// One field error of a 422 answer: the field (e.g. "amount"), a stable code and the values of its message.
-export type Violation = { propertyPath: string; message: string; code?: string; params?: Record<string, string> }
+// Error types come from OpenAPI; untrusted responses are normalized separately below.
+type Problem = Partial<components['schemas']['ConstraintViolation'] & components['schemas']['Error']>
+export type Violation = NonNullable<Problem['violations']>[number]
 
-// The error body of the API (RFC 9457 Problem Details): errorCode is stable, detail is English text for curl.
-type Problem = { detail?: string; errorCode?: string; params?: Record<string, string>; violations?: Violation[] }
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function stringParams(value: unknown): Record<string, string> {
+  return isRecord(value)
+    ? Object.fromEntries(
+      Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+    )
+    : {}
+}
+
+// A proxy may send HTML, null or JSON unrelated to our API. Keep usable details without trusting that shape.
+function readProblem(value: unknown): Problem {
+  if (!isRecord(value)) {
+    return {}
+  }
+  const violations: Violation[] = []
+  if (Array.isArray(value.violations)) {
+    const items: unknown[] = value.violations
+    for (const item of items) {
+      if (isRecord(item) && typeof item.propertyPath === 'string' && typeof item.message === 'string') {
+        violations.push({
+          propertyPath: item.propertyPath,
+          message: item.message,
+          code: typeof item.code === 'string' ? item.code : '',
+          params: stringParams(item.params),
+        })
+      }
+    }
+  }
+
+  return {
+    ...(typeof value.errorCode === 'string' && { errorCode: value.errorCode }),
+    ...(typeof value.detail === 'string' && { detail: value.detail }),
+    params: stringParams(value.params),
+    violations,
+  }
+}
+
+// Successful payloads follow the generated API contract; this assertion does not validate JSON at runtime.
+function readJson<T>(response: Response): Promise<T> {
+  return response.json() as Promise<T>
+}
 
 // An answer of the API other than 2xx: the errorCode of its body with the values of its message, and for 422 the
 // field errors.
@@ -34,7 +77,8 @@ export class ApiError extends Error {
 
 async function apiError(method: string, path: string, response: Response): Promise<ApiError> {
   // A proxy in between may answer with something that is not JSON.
-  const problem: Problem = await response.json().catch(() => ({}))
+  const body: unknown = await response.json().catch(() => undefined)
+  const problem = readProblem(body)
 
   return new ApiError(
     response.status,
@@ -88,7 +132,7 @@ export async function getJson<T>(path: string): Promise<T> {
     throw await apiError('GET', path, response)
   }
 
-  return response.json()
+  return readJson<T>(response)
 }
 
 // One page of a list of the API.
@@ -103,7 +147,7 @@ export async function getPage<T>(path: string): Promise<Page<T>> {
   if (!response.ok) {
     throw await apiError('GET', path, response)
   }
-  const collection: JsonLdCollection<T> = await response.json()
+  const collection = await readJson<JsonLdCollection<T>>(response)
   const last = collection.view?.last
 
   return {
@@ -124,7 +168,7 @@ export async function postJson<T>(path: string, body: object): Promise<T> {
     throw await apiError('POST', path, response)
   }
 
-  return response.json()
+  return readJson<T>(response)
 }
 
 // Changes some fields of a resource: the fields sent change, the others stay (JSON Merge Patch).
@@ -177,7 +221,7 @@ export async function currentUser(): Promise<string | null> {
   if (!response.ok) {
     throw new Error(`GET /api/me answered ${response.status}.`)
   }
-  const me: Me = await response.json()
+  const me = await readJson<Me>(response)
 
   return me.email
 }

@@ -1,16 +1,6 @@
-import * as React from 'react'
-
-const DARK = '(prefers-color-scheme: dark)'
+import { useMediaQuery } from './useMediaQuery'
 
 // Whether the system asks for dark colours (e.g. Ubuntu's "Dark" style); a change there shows at once.
 export function usePrefersDark(): boolean {
-  return React.useSyncExternalStore(
-    (onChange) => {
-      const media = window.matchMedia(DARK)
-      media.addEventListener('change', onChange)
-
-      return () => media.removeEventListener('change', onChange)
-    },
-    () => window.matchMedia(DARK).matches,
-  )
+  return useMediaQuery('(prefers-color-scheme: dark)')
 }

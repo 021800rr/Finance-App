@@ -9,6 +9,7 @@ use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\AccountOperationResource;
 use App\Exception\RecordNotFoundException;
 use App\Repository\AccountOperationRepository;
+use App\Service\Paginator;
 
 /**
  * GET /api/account_operations/{id}/other-side: the other operation of a transfer, found as the web app's 🔗 link
@@ -36,6 +37,11 @@ final readonly class AccountOperationOtherSideProvider implements ProviderInterf
         $otherSide = $this->accountOperationRepository->findOtherSide($accountOperation)
             ?? throw RecordNotFoundException::accountOperationOtherSide()->asHttp();
 
-        return AccountOperationResource::fromEntity($otherSide);
+        $page = intdiv(
+            $this->accountOperationRepository->countBeforeInAccountHistory($otherSide),
+            Paginator::DEFAULT_PER_PAGE,
+        ) + 1;
+
+        return AccountOperationResource::fromEntity($otherSide, accountHistoryPage: $page);
     }
 }

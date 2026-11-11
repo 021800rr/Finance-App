@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { AmountInput } from '../ui/AmountInput'
 import { DateInput } from '../ui/DateInput'
 import { Alert } from '../ui/Feedback'
-import { inputClass, MAX_DATE, MIN_DATE, toApiDecimal, today } from '../ui/form'
+import { fieldErrorProps, inputClass, MAX_DATE, MIN_DATE, toApiDecimal, today } from '../ui/form'
 import { FormButtons } from '../ui/FormButtons'
 import { FormRow } from '../ui/FormRow'
 import { useApiForm } from '../ui/useApiForm'
@@ -50,6 +50,7 @@ export function RateForm({ banks, currencies, save }: Props) {
       <FormRow label={t('account.bank')} htmlFor="bank" error={errors.bank}>
         <select
           id="bank"
+          {...fieldErrorProps('bank', errors.bank)}
           value={bankId ?? ''}
           onChange={(event) => setBankId(Number(event.target.value))}
           className={inputClass(errors.bank)}
@@ -60,6 +61,7 @@ export function RateForm({ banks, currencies, save }: Props) {
       <FormRow label={t('account.currency')} htmlFor="currency" error={errors.currency}>
         <select
           id="currency"
+          {...fieldErrorProps('currency', errors.currency)}
           value={currencyCode}
           onChange={(event) => setCurrencyCode(event.target.value)}
           className={inputClass(errors.currency)}
@@ -70,6 +72,7 @@ export function RateForm({ banks, currencies, save }: Props) {
       <FormRow label={t('form.date')} htmlFor="date" error={errors.date}>
         <DateInput
           id="date"
+          {...fieldErrorProps('date', errors.date)}
           value={rateDate}
           min={MIN_DATE}
           max={MAX_DATE}
@@ -80,6 +83,7 @@ export function RateForm({ banks, currencies, save }: Props) {
       <FormRow label={t('rate.value')} htmlFor="rate" error={errors.rate}>
         <AmountInput
           id="rate"
+          {...fieldErrorProps('rate', errors.rate)}
           value={rate}
           onChange={setRate}
           allowMinus={false}

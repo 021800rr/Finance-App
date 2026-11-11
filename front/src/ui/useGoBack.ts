@@ -9,9 +9,9 @@ export function useGoBack(fallback: string): () => void {
 
   return () => {
     if (location.key === 'default') {
-      navigate(fallback)
+      void navigate(fallback)
     } else {
-      navigate(-1)
+      void navigate(-1)
     }
   }
 }

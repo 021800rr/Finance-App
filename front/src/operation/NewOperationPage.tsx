@@ -57,7 +57,7 @@ function NewOperation({ accounts }: { accounts: AccountChoice[] }) {
       }}
       save={async (input, accountId) => {
         const operation = await create.mutateAsync({ ...input, accountId })
-        navigate(`/account/${operation.accountId}/operations?highlight=${operation.id}`)
+        await navigate(`/account/${operation.accountId}/operations?highlight=${operation.id}`)
       }}
       onCancel={goBack}
     />

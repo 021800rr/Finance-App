@@ -4,7 +4,7 @@ import { Card } from '../ui/Card'
 import { formAmount } from '../ui/form'
 import { QueryResult } from '../ui/QueryResult'
 import { FixedExpenseForm } from './FixedExpenseForm'
-import { type FixedExpense, type FixedExpenseInput, useFixedExpense, useUpdateFixedExpense } from './fixedExpenseApi'
+import { type FixedExpense, type FixedExpenseChanges, useFixedExpense, useUpdateFixedExpense } from './fixedExpenseApi'
 
 // /fixed-expense/:id/edit: the same form with the values of one fixed expense; back to the list after a save.
 export function EditFixedExpensePage() {
@@ -35,14 +35,15 @@ function EditForm({ fixedExpense }: { fixedExpense: FixedExpense }) {
         }}
         save={async (input) => {
           // The contractor goes along only when it changes (PATCH /api/fixed_expenses/{id}).
-          const changes: FixedExpenseInput = input.contractorId === fixedExpense.contractorId
-            ? { ...input, contractorId: undefined }
+          const { contractorId, ...rest } = input
+          const changes: FixedExpenseChanges = contractorId === fixedExpense.contractorId
+            ? rest
             : input
           await update.mutateAsync(changes)
-          navigate('/fixed-expense')
+          await navigate('/fixed-expense')
         }}
         // As in the web app: back to the list.
-        onCancel={() => navigate('/fixed-expense')}
+        onCancel={() => { void navigate('/fixed-expense') }}
       />
     </Card>
   )

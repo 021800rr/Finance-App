@@ -2,7 +2,7 @@ import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 import { AmountInput } from '../ui/AmountInput'
 import { Alert } from '../ui/Feedback'
-import { inputClass, toApiDecimal } from '../ui/form'
+import { fieldErrorProps, inputClass, toApiDecimal } from '../ui/form'
 import { FormButtons } from '../ui/FormButtons'
 import { FormRow } from '../ui/FormRow'
 import { useApiForm } from '../ui/useApiForm'
@@ -54,6 +54,7 @@ export function GoldAssetForm({ forms, initial, save, submitLabel, onCancel }: P
       <FormRow label={t('gold_asset.shape')} htmlFor="form" error={errors.form}>
         <select
           id="form"
+          {...fieldErrorProps('form', errors.form)}
           value={values.formId ?? ''}
           onChange={(event) => set('formId', Number(event.target.value))}
           className={inputClass(errors.form)}
@@ -64,6 +65,7 @@ export function GoldAssetForm({ forms, initial, save, submitLabel, onCancel }: P
       <FormRow label={t('gold_asset.ounces')} htmlFor="ounces" error={errors.ounces}>
         <AmountInput
           id="ounces"
+          {...fieldErrorProps('ounces', errors.ounces)}
           value={values.ounces}
           onChange={(ounces) => set('ounces', ounces)}
           allowMinus={false}
@@ -74,6 +76,7 @@ export function GoldAssetForm({ forms, initial, save, submitLabel, onCancel }: P
       <FormRow label={t('form.description')} htmlFor="description" error={errors.description}>
         <input
           id="description"
+          {...fieldErrorProps('description', errors.description)}
           type="text"
           maxLength={255}
           value={values.description}

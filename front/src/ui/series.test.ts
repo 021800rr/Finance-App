@@ -5,7 +5,7 @@ type Price = { assetId: number; date: string; price: string }
 
 const reading = (names: Record<number, string>) => ({
   line: (row: Price) => row.assetId,
-  label: (assetId: number) => names[assetId],
+  label: (assetId: number) => names[assetId] ?? `#${assetId}`,
   date: (row: Price) => row.date,
   value: (row: Price) => row.price,
 })

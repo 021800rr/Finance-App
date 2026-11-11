@@ -4,7 +4,7 @@ import type { GoldAsset } from '../goldAsset/goldAssetApi'
 import { AmountInput } from '../ui/AmountInput'
 import { DateInput } from '../ui/DateInput'
 import { Alert } from '../ui/Feedback'
-import { inputClass, MAX_DATE, MIN_DATE, toApiAmount, today } from '../ui/form'
+import { fieldErrorProps, inputClass, MAX_DATE, MIN_DATE, toApiAmount, today } from '../ui/form'
 import { FormButtons } from '../ui/FormButtons'
 import { FormRow } from '../ui/FormRow'
 import { useApiForm } from '../ui/useApiForm'
@@ -47,6 +47,7 @@ export function GoldPriceForm({ assets, save }: Props) {
       <FormRow label={t('gold_price.asset')} htmlFor="asset" error={errors.asset}>
         <select
           id="asset"
+          {...fieldErrorProps('asset', errors.asset)}
           value={goldAssetId ?? ''}
           onChange={(event) => setGoldAssetId(Number(event.target.value))}
           className={inputClass(errors.asset)}
@@ -57,6 +58,7 @@ export function GoldPriceForm({ assets, save }: Props) {
       <FormRow label={t('form.date')} htmlFor="date" error={errors.date}>
         <DateInput
           id="date"
+          {...fieldErrorProps('date', errors.date)}
           value={priceDate}
           min={MIN_DATE}
           max={MAX_DATE}
@@ -67,6 +69,7 @@ export function GoldPriceForm({ assets, save }: Props) {
       <FormRow label={t('gold_price.price_pln')} htmlFor="price" error={errors.price}>
         <AmountInput
           id="price"
+          {...fieldErrorProps('price', errors.price)}
           value={price}
           onChange={setPrice}
           allowMinus={false}

@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import type { Operation } from '../account/accountApi'
 import { getPage } from '../api'
 import { queryKeys } from '../queryKeys'
@@ -10,6 +10,6 @@ export function useOperationSearch(phrase: string, page: number) {
     queryKey: queryKeys.search(phrase, page),
     queryFn: () => getPage<Operation>(`/api/account_operations?q=${encodeURIComponent(phrase)}&page=${page}`),
     enabled: phrase !== '',
-    placeholderData: keepPreviousData,
+    placeholderData: (previous, query) => query?.queryKey[1] === phrase ? previous : undefined,
   })
 }

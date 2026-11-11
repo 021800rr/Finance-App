@@ -10,6 +10,7 @@ export type FixedExpense = components['schemas']['FixedExpense']
 // …what the form sends: any field may be missing or null, and the API says which one is wrong. The contractor goes as
 // in an operation: contractorId (one from the list) or contractorName (a new one: the API creates it)…
 export type FixedExpenseInput = components['schemas']['FixedExpense.FixedExpenseInput']
+export type FixedExpenseChanges = components['schemas']['FixedExpense.FixedExpenseInput.jsonMergePatch']
 
 // …and what "Zaplanuj wydatki" did: the operations of the month (YYYY-MM) went to the main account.
 export type Plan = components['schemas']['FixedExpensePlan']
@@ -42,7 +43,7 @@ export function useUpdateFixedExpense(id: number) {
   const invalidate = useInvalidate()
 
   return useMutation({
-    mutationFn: (input: FixedExpenseInput) => patchJson(`/api/fixed_expenses/${id}`, input),
+    mutationFn: (input: FixedExpenseChanges) => patchJson(`/api/fixed_expenses/${id}`, input),
     onSuccess: () => invalidate('fixedExpenses'),
   })
 }

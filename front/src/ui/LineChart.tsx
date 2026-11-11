@@ -39,8 +39,6 @@ export function LineChart({ series, colors, xTitle, yTitle }: Props) {
       .filter((date) => dateFromValue(date) !== undefined)
       .sort()
     const timestamps = dates.map(timestampOf)
-    // As in the web app: every date labelled up to 10 of them (5 on a phone), otherwise that many spread evenly.
-    const labelled = spread(timestamps, window.matchMedia('(min-width: 992px)').matches ? 10 : 5)
     const tickFormat = new Intl.DateTimeFormat(locale, { year: '2-digit', month: '2-digit', day: '2-digit' })
 
     // The vertical line at the date nearest to the cursor; it tells the page which date that is.
@@ -49,14 +47,17 @@ export function LineChart({ series, colors, xTitle, yTitle }: Props) {
       id: 'hoverLine',
       afterEvent(chart, { event, inChartArea }) {
         const axis = chart.scales.x
+        if (axis === undefined) {
+          return
+        }
         const value = inChartArea && event.type !== 'mouseout' && event.x !== null
           ? axis.getValueForPixel(event.x)
           : undefined
         const index = value === undefined ? -1 : nearestIndex(timestamps, value)
-        const x = index === -1 ? null : axis.getPixelForValue(timestamps[index])
+        const x = index === -1 ? null : axis.getPixelForValue(timestamps[index]!)
         if (x !== hoverX) {
           hoverX = x
-          setHovered(index === -1 ? null : dates[index])
+          setHovered(index === -1 ? null : dates[index] ?? null)
           chart.draw()
         }
       },
@@ -80,7 +81,7 @@ export function LineChart({ series, colors, xTitle, yTitle }: Props) {
       type: 'line',
       data: {
         datasets: series.map((line, index) => {
-          const color = colors[index % colors.length]
+          const color = colors[index % colors.length] ?? 'rgb(75, 192, 192)'
 
           return {
             label: line.label,
@@ -107,9 +108,10 @@ export function LineChart({ series, colors, xTitle, yTitle }: Props) {
             min: timestamps[0],
             max: timestamps[timestamps.length - 1],
             afterBuildTicks: (axis) => {
-              axis.ticks = labelled.map((value) => ({ value }))
+              axis.ticks = timestamps.map((value) => ({ value }))
             },
             ticks: {
+              autoSkip: false,
               minRotation: 45,
               maxRotation: 45,
               callback: (value) => tickFormat.format(new Date(Number(value))),
@@ -137,7 +139,19 @@ export function LineChart({ series, colors, xTitle, yTitle }: Props) {
   return (
     <div>
       <div className="relative h-[25rem]">
-        <canvas ref={canvas} />
+        <canvas
+          ref={canvas}
+          role="img"
+          aria-label={`${yTitle} / ${xTitle}: ${series.map((line) => line.label).join(', ')}`}
+        />
+        <dl className="sr-only">
+          {series.flatMap((line, index) => Object.entries(line.values).map(([date, value]) => (
+            <div key={`${index}-${date}`}>
+              <dt>{line.label}: {date}</dt>
+              <dd>{formatAmount(value)}</dd>
+            </div>
+          )))}
+        </dl>
       </div>
       {/* The values of the date under the cursor. The box keeps its place without one, so the page does not jump. */}
       <div
@@ -169,21 +183,10 @@ function timestampOf(date: string): number {
   return dateFromValue(date)?.getTime() ?? Number.NaN
 }
 
-// At most `most` of the values, the first and the last among them, the others evenly between.
-function spread(values: number[], most: number): number[] {
-  if (values.length <= most) {
-    return values
-  }
-
-  const picked = Array.from({ length: most }, (_, i) => values[Math.round((i * (values.length - 1)) / (most - 1))])
-
-  return [...new Set(picked)]
-}
-
 function nearestIndex(values: number[], value: number): number {
   let nearest = -1
   values.forEach((current, index) => {
-    if (nearest === -1 || Math.abs(current - value) < Math.abs(values[nearest] - value)) {
+    if (nearest === -1 || Math.abs(current - value) < Math.abs(values[nearest]! - value)) {
       nearest = index
     }
   })

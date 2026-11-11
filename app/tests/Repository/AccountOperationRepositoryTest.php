@@ -284,6 +284,22 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         self::assertNull($this->repository->findOtherSide($operation));
     }
 
+    public function testCountBeforeInAccountHistoryUsesDateThenIdAndExcludesOtherAccounts(): void
+    {
+        $account = $this->createAccount();
+        $date = new \DateTimeImmutable('2026-10-22');
+        $this->createOperation($account, date: $date);
+        $target = $this->createOperation($account, date: $date);
+        self::assertSame(0, $this->repository->countBeforeInAccountHistory($target));
+
+        $this->createOperation($account, date: $date);
+        $this->createOperation($account, date: $date->modify('+1 day'));
+        $this->createOperation($account, date: $date->modify('-1 day'));
+        $this->createOperation($this->createAccount(), date: $date->modify('+1 day'));
+
+        self::assertSame(2, $this->repository->countBeforeInAccountHistory($target));
+    }
+
     public function testFindOtherSideReturnsRelatedOperationWithSameUuid(): void
     {
         $accountA = $this->createAccount();

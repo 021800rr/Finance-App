@@ -4,7 +4,7 @@ import { AmountInput } from '../ui/AmountInput'
 import { Card } from '../ui/Card'
 import { DateInput } from '../ui/DateInput'
 import { Alert } from '../ui/Feedback'
-import { inputClass, MAX_DATE, MIN_DATE, toApiAmount } from '../ui/form'
+import { fieldErrorProps, inputClass, MAX_DATE, MIN_DATE, toApiAmount } from '../ui/form'
 import { FormButtons } from '../ui/FormButtons'
 import { FormRow } from '../ui/FormRow'
 import { useApiForm } from '../ui/useApiForm'
@@ -85,6 +85,7 @@ export function OperationForm({ title, initial, accounts, accountFixed, save, on
         <FormRow label={t('form.account')} htmlFor="account" error={errors.account}>
           <select
             id="account"
+            {...fieldErrorProps('account', errors.account)}
             value={values.accountId ?? ''}
             onChange={(event) => set('accountId', Number(event.target.value))}
             disabled={accountFixed}
@@ -98,6 +99,7 @@ export function OperationForm({ title, initial, accounts, accountFixed, save, on
         <FormRow label={t('form.contractor')} htmlFor="contractor">
           <ContractorField
             id="contractor"
+            {...fieldErrorProps('contractor', errors.contractor)}
             value={values.contractor}
             onChange={(contractor) => set('contractor', contractor)}
             error={errors.contractor}
@@ -107,6 +109,7 @@ export function OperationForm({ title, initial, accounts, accountFixed, save, on
         <FormRow label={t('form.date')} htmlFor="date" error={errors.date}>
           <DateInput
             id="date"
+            {...fieldErrorProps('date', errors.date)}
             value={values.operationDate}
             min={MIN_DATE}
             max={MAX_DATE}
@@ -117,6 +120,7 @@ export function OperationForm({ title, initial, accounts, accountFixed, save, on
         <FormRow label={t('form.amount')} htmlFor="amount" error={errors.amount}>
           <AmountInput
             id="amount"
+            {...fieldErrorProps('amount', errors.amount)}
             value={values.amount}
             onChange={(amount) => set('amount', amount)}
             allowMinus
@@ -127,6 +131,7 @@ export function OperationForm({ title, initial, accounts, accountFixed, save, on
         <FormRow label={t('form.description')} htmlFor="description" error={errors.description}>
           <input
             id="description"
+            {...fieldErrorProps('description', errors.description)}
             type="text"
             maxLength={255}
             value={values.description}

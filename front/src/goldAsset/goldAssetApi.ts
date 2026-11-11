@@ -10,6 +10,7 @@ export type GoldForm = components['schemas']['GoldForm']
 
 // …and what the form sends: any field may be missing or null, and the API says which one is wrong.
 export type GoldAssetInput = components['schemas']['GoldAsset.GoldAssetInput']
+export type GoldAssetChanges = components['schemas']['GoldAsset.GoldAssetInput.jsonMergePatch']
 
 // Every gold asset, by id, as in the web app.
 export function useGoldAssets() {
@@ -40,7 +41,7 @@ export function useUpdateGoldAsset(id: number) {
   const invalidate = useInvalidate()
 
   return useMutation({
-    mutationFn: (input: GoldAssetInput) => patchJson(`/api/gold_assets/${id}`, input),
+    mutationFn: (input: GoldAssetChanges) => patchJson(`/api/gold_assets/${id}`, input),
     onSuccess: () => invalidate('gold'),
   })
 }

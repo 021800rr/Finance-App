@@ -22,7 +22,9 @@ const refuse = (error: unknown) => async () => {
 describe('useApiForm', () => {
   it('puts the field errors of the API under their fields', async () => {
     const form = renderForm()
-    const violation = { propertyPath: 'amount', message: 'Enter an amount.', code: 'fixed_expense.amount_not_blank' }
+    const violation = {
+      propertyPath: 'amount', message: 'Enter an amount.', code: 'fixed_expense.amount_not_blank', params: {},
+    }
 
     await act(() => form.current.submit(refuse(new ApiError(422, 'validation.failed', 'Invalid', {}, [violation]))))
 

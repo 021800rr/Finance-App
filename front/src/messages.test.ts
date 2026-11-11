@@ -34,6 +34,8 @@ describe('errorMessage', () => {
 
 describe('violationMessage', () => {
   it('gives the English text of the API for a code without a translation', () => {
-    expect(violationMessage({ propertyPath: 'amount', message: 'Too big.', code: 'no.such.code' })).toBe('Too big.')
+    expect(violationMessage({
+      propertyPath: 'amount', message: 'Too big.', code: 'no.such.code', params: {},
+    })).toBe('Too big.')
   })
 })

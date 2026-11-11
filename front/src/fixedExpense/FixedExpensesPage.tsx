@@ -26,7 +26,7 @@ export function FixedExpensesPage() {
 
   function planNextMonth() {
     // Afterwards the history of the main account, with the new operations, as in the web app.
-    plan.mutate(undefined, { onSuccess: (result) => navigate(`/account/${result.accountId}/operations`) })
+    plan.mutate(undefined, { onSuccess: (result) => { void navigate(`/account/${result.accountId}/operations`) } })
   }
 
   return (
@@ -56,7 +56,7 @@ export function FixedExpensesPage() {
         open={confirmingPlan}
         message={t('fixed_expense.confirm_plan')}
         onConfirm={planNextMonth}
-        onCancel={() => setConfirmingPlan(false)}
+        onClose={() => setConfirmingPlan(false)}
         disabled={plan.isPending}
       />
     </div>

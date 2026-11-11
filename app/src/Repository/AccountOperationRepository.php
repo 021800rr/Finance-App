@@ -129,6 +129,20 @@ final class AccountOperationRepository extends ServiceEntityRepository
         return $result;
     }
 
+    // The same date/id order as findByAccountOrderedPaged, counting only rows ahead of this operation.
+    public function countBeforeInAccountHistory(AccountOperation $operation): int
+    {
+        return (int) $this->createQueryBuilder('o')
+            ->select('COUNT(o.id)')
+            ->where('o.account = :account')
+            ->andWhere('o.operationDate > :date OR (o.operationDate = :date AND o.id > :id)')
+            ->setParameter('account', $operation->getAccount())
+            ->setParameter('date', $operation->getOperationDate(), Types::DATE_IMMUTABLE)
+            ->setParameter('id', $operation->getId())
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function existsForContractorAndDate(
         Account $account,
         Contractor $contractor,

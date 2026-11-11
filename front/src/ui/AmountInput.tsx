@@ -1,6 +1,7 @@
+import type { AriaAttributes } from 'react'
 import { amountCharacters } from './form'
 
-type Props = {
+type Props = Pick<AriaAttributes, 'aria-invalid' | 'aria-describedby'> & {
   id: string
   value: string
   onChange: (value: string) => void
@@ -12,12 +13,13 @@ type Props = {
 }
 
 // A field that takes only an amount: digits, a comma or a dot, and a leading minus when allowed.
-export function AmountInput({ id, value, onChange, allowMinus, className, placeholder, disabled }: Props) {
+export function AmountInput({ id, value, onChange, allowMinus, className, placeholder, disabled, ...aria }: Props) {
   const character = allowMinus ? /^[\d,.-]$/ : /^[\d,.]$/
 
   return (
     <input
       id={id}
+      {...aria}
       type="text"
       inputMode="decimal"
       value={value}

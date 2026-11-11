@@ -36,10 +36,10 @@ function EditForm({ asset, forms }: { asset: GoldAsset; forms: GoldForm[] }) {
         initial={{ formId: asset.formId, ounces: formAmount(asset.ounces), description: asset.description }}
         save={async (input) => {
           await update.mutateAsync(input)
-          navigate('/gold-assets')
+          await navigate('/gold-assets')
         }}
         // As in the web app: back to the list.
-        onCancel={() => navigate('/gold-assets')}
+        onCancel={() => { void navigate('/gold-assets') }}
       />
     </Card>
   )

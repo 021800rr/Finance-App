@@ -6,7 +6,7 @@ import { AmountInput } from '../ui/AmountInput'
 import { Card } from '../ui/Card'
 import { DateInput } from '../ui/DateInput'
 import { Alert } from '../ui/Feedback'
-import { inputClass, MAX_DATE, MIN_DATE, toApiAmount, today } from '../ui/form'
+import { fieldErrorProps, inputClass, MAX_DATE, MIN_DATE, toApiAmount, today } from '../ui/form'
 import { FormButtons } from '../ui/FormButtons'
 import { FormRow } from '../ui/FormRow'
 import { QueryResult } from '../ui/QueryResult'
@@ -85,7 +85,7 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
     void form.submit(async () => {
       const transfer = await create.mutateAsync(input)
       // As in the web app: the history of the first account, with the operation that left it framed.
-      navigate(`/account/${transfer.fromAccountId}/operations?highlight=${transfer.outOperationId}`)
+      await navigate(`/account/${transfer.fromAccountId}/operations?highlight=${transfer.outOperationId}`)
     })
   }
 
@@ -101,6 +101,7 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
         <FormRow label={t('transfer.from_account')} htmlFor="from" error={errors.from}>
           <select
             id="from"
+            {...fieldErrorProps('from', errors.from)}
             value={fromId ?? ''}
             onChange={(event) => setFromId(Number(event.target.value))}
             className={inputClass(errors.from)}
@@ -111,6 +112,7 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
         <FormRow label={t('transfer.to_account')} htmlFor="to" error={errors.to}>
           <select
             id="to"
+            {...fieldErrorProps('to', errors.to)}
             value={toId ?? ''}
             onChange={(event) => setToId(Number(event.target.value))}
             className={inputClass(errors.to)}
@@ -121,6 +123,7 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
         <FormRow label={t('transfer.debit')} htmlFor="amountFrom" error={errors.amountFrom}>
           <AmountInput
             id="amountFrom"
+            {...fieldErrorProps('amountFrom', errors.amountFrom)}
             value={amountFrom}
             onChange={setAmountFrom}
             allowMinus={false}
@@ -130,6 +133,7 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
         <FormRow label={t('transfer.credit')} htmlFor="amountTo" error={sameCurrency ? undefined : errors.amountTo}>
           <AmountInput
             id="amountTo"
+            {...fieldErrorProps('amountTo', sameCurrency ? undefined : errors.amountTo)}
             value={sameCurrency ? '' : amountTo}
             onChange={setAmountTo}
             allowMinus={false}
@@ -141,6 +145,7 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
         <FormRow label={t('form.date')} htmlFor="date" error={errors.date}>
           <DateInput
             id="date"
+            {...fieldErrorProps('date', errors.date)}
             value={date}
             min={MIN_DATE}
             max={MAX_DATE}
@@ -151,6 +156,7 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
         <FormRow label={t('form.description')} htmlFor="description" error={errors.description}>
           <input
             id="description"
+            {...fieldErrorProps('description', errors.description)}
             type="text"
             maxLength={255}
             value={description}

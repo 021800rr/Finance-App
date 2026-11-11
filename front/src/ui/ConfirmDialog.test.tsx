@@ -63,7 +63,7 @@ describe('ConfirmDialog', () => {
   it('blocks confirmation while the action is disabled', async () => {
     const onConfirm = vi.fn()
     render(
-      <ConfirmDialog open message="Zaplanować wydatki?" onConfirm={onConfirm} onCancel={vi.fn()} disabled />,
+      <ConfirmDialog open message="Zaplanować wydatki?" onConfirm={onConfirm} onClose={vi.fn()} disabled />,
     )
 
     await userEvent.click(screen.getByRole('button', { name: 'Potwierdź' }))

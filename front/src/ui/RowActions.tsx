@@ -64,13 +64,15 @@ export function DeleteButton({ onDelete, disabled }: { onDelete: () => void; dis
       <IconButton label={t('operation.delete')} onClick={() => setConfirming(true)} disabled={disabled}>
         <TrashIcon className="size-5 text-red-600 dark:text-red-400" />
       </IconButton>
-      <ConfirmDialog
-        open={confirming}
-        message={t('operation.confirm_delete')}
-        onConfirm={onDelete}
-        onCancel={() => setConfirming(false)}
-        disabled={disabled}
-      />
+      {confirming && (
+        <ConfirmDialog
+          open
+          message={t('operation.confirm_delete')}
+          onConfirm={onDelete}
+          onClose={() => setConfirming(false)}
+          disabled={disabled}
+        />
+      )}
     </>
   )
 }

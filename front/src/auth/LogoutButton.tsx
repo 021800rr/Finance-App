@@ -27,7 +27,7 @@ export function LogoutButton() {
       {failed && <span role="alert" className="text-red-600 dark:text-red-400">{t('app.server_down')}</span>}
       <button
         type="button"
-        onClick={handleClick}
+        onClick={() => { void handleClick() }}
         disabled={pending}
         className="cursor-pointer rounded-md border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-slate-700
           dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:cursor-wait disabled:opacity-50"

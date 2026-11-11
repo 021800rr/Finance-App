@@ -32,12 +32,12 @@ export function Pagination({ page, lastPage }: { page: number; lastPage: number 
   const groupSize = 10
   const start = Math.floor((page - 1) / groupSize) * groupSize + 1
   const end = Math.min(start + groupSize - 1, last)
-  const pages: (number | string)[] = [
-    ...(start > 1 ? [1] : []),
-    ...(start > 2 ? ['start-gap'] : []),
-    ...Array.from({ length: end - start + 1 }, (_, index) => start + index),
-    ...(end < last - 1 ? ['end-gap'] : []),
-    ...(end < last ? [last] : []),
+  const pages: { kind: 'page' | 'gap'; page: number }[] = [
+    ...(start > 1 ? [{ kind: 'page' as const, page: 1 }] : []),
+    ...(start > 2 ? [{ kind: 'gap' as const, page: Math.max(1, start - groupSize) }] : []),
+    ...Array.from({ length: end - start + 1 }, (_, index) => ({ kind: 'page' as const, page: start + index })),
+    ...(end < last - 1 ? [{ kind: 'gap' as const, page: end + 1 }] : []),
+    ...(end < last ? [{ kind: 'page' as const, page: last }] : []),
   ]
 
   return (
@@ -46,16 +46,16 @@ export function Pagination({ page, lastPage }: { page: number; lastPage: number 
         {page > 1
           ? <Link to={pageAddress(page - 1)} aria-label={t('pagination.previous')} className={LINK}>‹</Link>
           : <span aria-disabled="true" aria-label={t('pagination.previous')} className={OFF}>‹</span>}
-        {pages.map((target) => typeof target === 'string'
+        {pages.map(({ kind, page: target }) => kind === 'gap'
           ? (
             <Link
-              key={target}
-              to={pageAddress(target === 'start-gap' ? Math.max(1, start - groupSize) : end + 1)}
+              key={`${kind}-${target}`}
+              to={pageAddress(target)}
               aria-label={t('pagination.page', {
-                page: target === 'start-gap' ? Math.max(1, start - groupSize) : end + 1,
+                page: target,
               })}
               title={t('pagination.page', {
-                page: target === 'start-gap' ? Math.max(1, start - groupSize) : end + 1,
+                page: target,
               })}
               className={LINK}
             >
@@ -65,7 +65,7 @@ export function Pagination({ page, lastPage }: { page: number; lastPage: number 
           : target === page
             ? (
               <span
-                key={target}
+                key={`${kind}-${target}`}
                 aria-current="page"
                 aria-label={t('pagination.page', { page: target })}
                 className="rounded-md border border-indigo-600 bg-indigo-600 px-3 py-1 text-white"
@@ -75,7 +75,7 @@ export function Pagination({ page, lastPage }: { page: number; lastPage: number 
             )
             : (
               <Link
-                key={target}
+                key={`${kind}-${target}`}
                 to={pageAddress(target)}
                 aria-label={t('pagination.page', { page: target })}
                 className={LINK}
@@ -83,12 +83,12 @@ export function Pagination({ page, lastPage }: { page: number; lastPage: number 
                 {target}
               </Link>
             ))}
-        {page < lastPage
+        {page < last
           ? <Link to={pageAddress(page + 1)} aria-label={t('pagination.next')} className={LINK}>›</Link>
           : <span aria-disabled="true" aria-label={t('pagination.next')} className={OFF}>›</span>}
       </nav>
       <span className="text-slate-500 dark:text-slate-400">
-        {t('pagination.page_of', { page, totalPages: lastPage })}
+        {t('pagination.page_of', { page, totalPages: last })}
       </span>
     </div>
   )
