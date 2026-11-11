@@ -13,11 +13,6 @@ use App\ApiResource\Summary\SummaryAccount;
 use App\ApiResource\Summary\SummaryTypeTotal;
 use App\OpenApi\MoneySchema;
 use App\State\SummaryProvider;
-use Symfony\Component\TypeInfo\Type\BuiltinType;
-use Symfony\Component\TypeInfo\Type\CollectionType;
-use Symfony\Component\TypeInfo\Type\GenericType;
-use Symfony\Component\TypeInfo\Type\ObjectType;
-use Symfony\Component\TypeInfo\TypeIdentifier;
 
 /**
  * The summary of all accounts as the API returns it: every field is always there, and the OpenAPI document says so
@@ -25,6 +20,7 @@ use Symfony\Component\TypeInfo\TypeIdentifier;
  */
 #[ApiResource(
     shortName: 'Summary',
+    description: 'The financial summary of all accounts, as on the home page of the web app. Read-only.',
     operations: [
         new Get(
             uriTemplate: '/summary',
@@ -62,9 +58,6 @@ final readonly class SummaryResource
     private const array RETIREMENT_EXAMPLE = ['amount' => '1365.00', 'currency' => 'PLN'];
     private const string RETIREMENT_WITH_GOLD_DESCRIPTION = 'retirementBalance plus gold.';
     private const array RETIREMENT_WITH_GOLD_EXAMPLE = ['amount' => '10015.00', 'currency' => 'PLN'];
-    private const string MISSING_RATE_DESCRIPTION = 'The bank and number of each account in another currency whose '
-        .'bank has no rate to PLN stored, as "<bank> <account number>".';
-    private const array MISSING_RATE_EXAMPLE = ['mBank 12 3456 7890 1234 5678 9012 3456'];
 
     /**
      * @param list<SummaryAccount>                                   $accounts
@@ -76,33 +69,16 @@ final readonly class SummaryResource
      * @param list<string>                                           $accountsMissingRate
      */
     public function __construct(
-        // API Platform reads no PHPDoc types (there is no PHPDoc parser among the dependencies): nativeType tells it
-        // what the items are, so that the OpenAPI document describes them.
         #[ApiProperty(
             description: 'The accounts, in the order of the web app: their sort order, then account number.',
             required: true,
             genId: false,
-            nativeType: new CollectionType(
-                new GenericType(
-                    new BuiltinType(TypeIdentifier::ARRAY),
-                    new BuiltinType(TypeIdentifier::INT),
-                    new ObjectType(SummaryAccount::class),
-                ),
-                isList: true,
-            ),
         )]
         public array $accounts,
         #[ApiProperty(
             description: 'The totals of the own-funds accounts, by account type name.',
             required: true,
             genId: false,
-            nativeType: new CollectionType(
-                new GenericType(
-                    new BuiltinType(TypeIdentifier::ARRAY),
-                    new BuiltinType(TypeIdentifier::STRING),
-                    new ObjectType(SummaryTypeTotal::class),
-                ),
-            ),
         )]
         public array $byType,
         #[ApiProperty(
@@ -153,15 +129,10 @@ final readonly class SummaryResource
         )]
         public array $retirementBalanceWithGold,
         #[ApiProperty(
-            description: self::MISSING_RATE_DESCRIPTION,
+            description: 'The bank and number of each account in another currency whose bank has no rate to PLN '
+            .'stored, as "<bank> <account number>".',
             required: true,
-            example: self::MISSING_RATE_EXAMPLE,
-            schema: [
-                'type' => 'array',
-                'description' => self::MISSING_RATE_DESCRIPTION,
-                'example' => self::MISSING_RATE_EXAMPLE,
-                'items' => ['type' => 'string'],
-            ],
+            example: ['mBank 12 3456 7890 1234 5678 9012 3456'],
         )]
         public array $accountsMissingRate,
     ) {
