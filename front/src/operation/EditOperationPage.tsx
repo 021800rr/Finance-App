@@ -14,7 +14,7 @@ export function EditOperationPage() {
   const accounts = useAccounts()
 
   return (
-    <QueryResult query={operation} failure={t('app.operation_load_failed')} notFound>
+    <QueryResult query={operation} failure={t('app.operation_load_failed')} notFound fresh>
       {(found) => (
         <QueryResult query={accounts} failure={t('app.accounts_load_failed')}>
           {(all) => <EditForm operation={found} accounts={all} />}

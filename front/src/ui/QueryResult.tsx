@@ -12,6 +12,10 @@ type Props<T> = {
   loading?: string
   // a 404 shows the "no such page" page: the address names a record that does not exist
   notFound?: boolean
+  // for a form that copies the data into its fields once, when it opens: waits for the data read after the page
+  // opened, never starts from a copy kept since an earlier visit, which may be older (an account hidden since, an
+  // operation confirmed since)
+  fresh?: boolean
   // what to show once the data is there
   children: (data: T) => React.ReactNode
 }
@@ -21,8 +25,8 @@ type Props<T> = {
 //   <QueryResult query={useAccount(id)} failure={t('app.account_load_failed')} notFound>
 //     {(account) => <AccountDetails account={account} />}
 //   </QueryResult>
-export function QueryResult<T>({ query, failure, loading, notFound = false, children }: Props<T>) {
-  if (query.isPending) {
+export function QueryResult<T>({ query, failure, loading, notFound = false, fresh = false, children }: Props<T>) {
+  if (query.isPending || (fresh && query.isStale && !query.isFetchedAfterMount)) {
     return <Loading text={loading} />
   }
   if (query.isError) {

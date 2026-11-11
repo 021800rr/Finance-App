@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { deleteResource, getJson, postJson } from '../api'
+import { queryKeys, useInvalidate } from '../queryKeys'
 
 // One price of a gold asset, in PLN, on a day.
 export type GoldPrice = {
@@ -18,7 +19,7 @@ export type GoldPriceInput = { goldAssetId: number | null; priceDate: string; pr
 // The latest prices, newest first, as many as the web list shows.
 export function useRecentGoldPrices() {
   return useQuery({
-    queryKey: ['goldPrices', 'recent'],
+    queryKey: queryKeys.recentGoldPrices(),
     queryFn: () => getJson<GoldPrice[]>('/api/gold_prices/recent'),
   })
 }
@@ -26,26 +27,25 @@ export function useRecentGoldPrices() {
 // The prices of the chart: the last price of every asset and day, oldest first.
 export function useChartGoldPrices() {
   return useQuery({
-    queryKey: ['goldPrices', 'chart'],
+    queryKey: queryKeys.chartGoldPrices(),
     queryFn: () => getJson<GoldPrice[]>('/api/gold_prices/chart'),
   })
 }
 
-// After a change the list and the chart are read again.
 export function useCreateGoldPrice() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: (input: GoldPriceInput) => postJson<GoldPrice>('/api/gold_prices', input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['goldPrices'] }),
+    onSuccess: () => invalidate('gold'),
   })
 }
 
 export function useDeleteGoldPrice() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: (id: number) => deleteResource(`/api/gold_prices/${id}`),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['goldPrices'] }),
+    onSettled: () => invalidate('gold'),
   })
 }

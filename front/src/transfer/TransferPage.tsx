@@ -36,7 +36,7 @@ export function TransferPage() {
   const accounts = useAccounts()
 
   return (
-    <QueryResult query={accounts} failure={t('app.accounts_load_failed')}>
+    <QueryResult query={accounts} failure={t('app.accounts_load_failed')} fresh>
       {(all) => <TransferForm accounts={all.filter((account) => !account.hidden)} />}
     </QueryResult>
   )

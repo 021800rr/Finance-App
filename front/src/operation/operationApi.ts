@@ -1,5 +1,6 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { getJson, patchJson, postJson } from '../api'
+import { queryKeys, useInvalidate } from '../queryKeys'
 import type { Operation } from '../account/accountApi'
 
 // One row of GET /api/accounts.
@@ -28,16 +29,13 @@ export type OperationInput = {
 
 // Every account, ordered by bank, type, currency and number; a new operation can go only to one that is not hidden.
 export function useAccounts() {
-  return useQuery({ queryKey: ['accounts'], queryFn: () => getJson<AccountChoice[]>('/api/accounts') })
+  return useQuery({ queryKey: queryKeys.accounts(), queryFn: () => getJson<AccountChoice[]>('/api/accounts') })
 }
 
 export function useOperation(id: string) {
   return useQuery({
-    queryKey: ['operation', id],
+    queryKey: queryKeys.operation(id),
     queryFn: () => getJson<Operation>(`/api/account_operations/${encodeURIComponent(id)}`),
-    // An edit form copies the values once, when it opens: never from a copy kept since an earlier visit, which may be
-    // older than the record. Dropped as soon as the form closes, so every edit waits for the API.
-    gcTime: 0,
   })
 }
 
@@ -45,38 +43,28 @@ export function useOperation(id: string) {
 // previous ones while the next load, instead of blinking empty.
 export function useContractorSearch(text: string) {
   return useQuery({
-    queryKey: ['contractors', text],
+    queryKey: queryKeys.contractors(text),
     queryFn: () => getJson<Contractor[]>(`/api/contractors?name=${encodeURIComponent(text)}`),
     enabled: text !== '',
     placeholderData: keepPreviousData,
   })
 }
 
-// After a save the balances, the history, the search results and the contractors (maybe a new one) are read again.
-function useInvalidateAfterSave() {
-  const queryClient = useQueryClient()
-
-  return () => Promise.all(
-    [['account'], ['summary'], ['operation'], ['search'], ['contractors']]
-      .map((queryKey) => queryClient.invalidateQueries({ queryKey })),
-  )
-}
-
 export function useCreateOperation() {
-  const invalidate = useInvalidateAfterSave()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: (input: OperationInput & { accountId: number }) =>
       postJson<Operation>('/api/account_operations', input),
-    onSuccess: invalidate,
+    onSuccess: () => invalidate('operations'),
   })
 }
 
 export function useUpdateOperation(id: number) {
-  const invalidate = useInvalidateAfterSave()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: (input: OperationInput) => patchJson(`/api/account_operations/${id}`, input),
-    onSuccess: invalidate,
+    onSuccess: () => invalidate('operations'),
   })
 }

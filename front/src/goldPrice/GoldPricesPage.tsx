@@ -28,7 +28,7 @@ export function GoldPricesPage() {
   const assets = useGoldAssets()
 
   return (
-    <QueryResult query={assets} failure={t('app.gold_assets_load_failed')}>
+    <QueryResult query={assets} failure={t('app.gold_assets_load_failed')} fresh>
       {(all) => <GoldPrices assets={all} />}
     </QueryResult>
   )

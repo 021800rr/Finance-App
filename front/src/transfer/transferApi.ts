@@ -1,5 +1,6 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { postJson } from '../api'
+import { useInvalidate } from '../queryKeys'
 
 export type TransferInput = {
   fromAccountId: number
@@ -16,14 +17,11 @@ export type TransferInput = {
 export type Transfer = { outOperationId: number; inOperationId: number; fromAccountId: number }
 
 export function useCreateTransfer() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: (input: TransferInput) => postJson<Transfer>('/api/transfers', input),
-    // Two balances change: the account pages and the summary are read again.
-    onSuccess: () => Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['account'] }),
-      queryClient.invalidateQueries({ queryKey: ['summary'] }),
-    ]),
+    // Two new operations on two accounts.
+    onSuccess: () => invalidate('operations'),
   })
 }

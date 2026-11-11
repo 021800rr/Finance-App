@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { deleteResource, getJson, patchJson, postJson } from '../api'
+import { queryKeys, useInvalidate } from '../queryKeys'
 
 // One row of GET /api/fixed_expenses: an expense of every month, always negative and in PLN. The API leaves out the
 // fields that are null.
@@ -30,65 +31,53 @@ export type Plan = { accountId: number; month: string; createdCount: number }
 
 // Every fixed expense, by day, as in the web app; the list has no pages.
 export function useFixedExpenses() {
-  return useQuery({ queryKey: ['fixedExpenses'], queryFn: () => getJson<FixedExpense[]>('/api/fixed_expenses') })
+  return useQuery({
+    queryKey: queryKeys.fixedExpenses(),
+    queryFn: () => getJson<FixedExpense[]>('/api/fixed_expenses'),
+  })
 }
 
 export function useFixedExpense(id: string) {
   return useQuery({
-    queryKey: ['fixedExpenses', id],
+    queryKey: queryKeys.fixedExpense(id),
     queryFn: () => getJson<FixedExpense>(`/api/fixed_expenses/${encodeURIComponent(id)}`),
-    // An edit form copies the values once, when it opens: never from a copy kept since an earlier visit, which may be
-    // older than the record. Dropped as soon as the form closes, so every edit waits for the API.
-    gcTime: 0,
   })
 }
 
-// After a save the list is read again, and the contractors too (the save may have added one).
-function useInvalidateAfterSave() {
-  const queryClient = useQueryClient()
-
-  return () => Promise.all(
-    [['fixedExpenses'], ['contractors']].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
-  )
-}
-
 export function useCreateFixedExpense() {
-  const invalidate = useInvalidateAfterSave()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: (input: FixedExpenseInput) => postJson<FixedExpense>('/api/fixed_expenses', input),
-    onSuccess: invalidate,
+    onSuccess: () => invalidate('fixedExpenses'),
   })
 }
 
 export function useUpdateFixedExpense(id: number) {
-  const invalidate = useInvalidateAfterSave()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: (input: FixedExpenseInput) => patchJson(`/api/fixed_expenses/${id}`, input),
-    onSuccess: invalidate,
+    onSuccess: () => invalidate('fixedExpenses'),
   })
 }
 
 export function useDeleteFixedExpense() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: (id: number) => deleteResource(`/api/fixed_expenses/${id}`),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['fixedExpenses'] }),
+    onSettled: () => invalidate('fixedExpenses'),
   })
 }
 
 // "Zaplanuj wydatki": one operation on the main account for every fixed expense, dated in the next month. The API
 // refuses (409, nothing created) when there is no main account it can use, or when such an operation already exists.
 export function usePlanFixedExpenses() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: () => postJson<Plan>('/api/fixed_expenses/plan', {}),
-    // New operations: the balances, the account histories and the search results change.
-    onSuccess: () => Promise.all(
-      [['account'], ['summary'], ['search']].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
-    ),
+    onSuccess: () => invalidate('operations'),
   })
 }

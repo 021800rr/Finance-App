@@ -1,5 +1,6 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { deleteResource, getJson, getPage, patchJson } from '../api'
+import { queryKeys, useInvalidate } from '../queryKeys'
 import type { Money } from '../money'
 
 // GET /api/accounts/{id}
@@ -39,7 +40,7 @@ export type Operation = {
 
 export function useAccount(id: string) {
   return useQuery({
-    queryKey: ['account', id],
+    queryKey: queryKeys.account(id),
     queryFn: () => getJson<Account>(`/api/accounts/${encodeURIComponent(id)}`),
   })
 }
@@ -47,7 +48,7 @@ export function useAccount(id: string) {
 // One page of the account's operations, newest first. The previous page stays on the screen while the next loads.
 export function useAccountOperations(id: string, page: number) {
   return useQuery({
-    queryKey: ['account', id, 'operations', page],
+    queryKey: queryKeys.accountOperations(id, page),
     queryFn: () => getPage<Operation>(`/api/accounts/${encodeURIComponent(id)}/operations?page=${page}`),
     placeholderData: keepPreviousData,
   })
@@ -55,30 +56,22 @@ export function useAccountOperations(id: string, page: number) {
 
 // The ✓ / ? of the web app: the operation is confirmed (e.g. seen on the bank statement) or still to be checked.
 export function useSetOperationConfirmed() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: ({ operationId, confirmed }: { operationId: number; confirmed: boolean }) =>
       patchJson(`/api/account_operations/${operationId}`, { confirmed }),
-    // The account pages and the search results show the status.
-    onSettled: () => Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['account'] }),
-      queryClient.invalidateQueries({ queryKey: ['search'] }),
-    ]),
+    // Also after a failure: the table shows what the API holds.
+    onSettled: () => invalidate('operations'),
   })
 }
 
 export function useDeleteOperation() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: (operationId: number) => deleteResource(`/api/account_operations/${operationId}`),
-    // The balances change too: the account pages, the summary and the search results are read again.
-    onSettled: () => Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['account'] }),
-      queryClient.invalidateQueries({ queryKey: ['summary'] }),
-      queryClient.invalidateQueries({ queryKey: ['search'] }),
-    ]),
+    onSettled: () => invalidate('operations'),
   })
 }
 

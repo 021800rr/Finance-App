@@ -1,5 +1,6 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { getJson, patchJson } from '../api'
+import { queryKeys, useInvalidate } from '../queryKeys'
 import type { Money } from '../money'
 
 // One row of GET /api/summary "accounts".
@@ -37,7 +38,7 @@ export type Summary = {
 // showing the previous one instead of blinking empty.
 export function useSummary(showHidden: boolean) {
   return useQuery({
-    queryKey: ['summary', showHidden],
+    queryKey: queryKeys.summary(showHidden),
     queryFn: () => getJson<Summary>(`/api/summary?showHidden=${showHidden}`),
     placeholderData: keepPreviousData,
   })
@@ -45,23 +46,23 @@ export function useSummary(showHidden: boolean) {
 
 // The ☆ of the web app: makes the account the main one; the backend takes the ★ from the previous one.
 export function useSetMainAccount() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: (accountId: number) => patchJson(`/api/accounts/${accountId}`, { isMain: true }),
-    // Read the summary again (with and without hidden accounts), also after a failure: on a conflict another
-    // request has just moved the ★, and the table should show where.
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['summary'] }),
+    // Read again also after a failure: on a conflict another request has just moved the ★, and the table should show
+    // where.
+    onSettled: () => invalidate('accounts'),
   })
 }
 
 // The eye of the web app: hides the account from the summary (and from choosing it in forms), or shows it again.
 export function useSetAccountHidden() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: ({ accountId, hidden }: { accountId: number; hidden: boolean }) =>
       patchJson(`/api/accounts/${accountId}`, { hidden }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['summary'] }),
+    onSettled: () => invalidate('accounts'),
   })
 }

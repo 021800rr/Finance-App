@@ -14,7 +14,7 @@ export function EditGoldAssetPage() {
   const forms = useGoldForms()
 
   return (
-    <QueryResult query={asset} failure={t('app.gold_asset_load_failed')} notFound>
+    <QueryResult query={asset} failure={t('app.gold_asset_load_failed')} notFound fresh>
       {(found) => (
         <QueryResult query={forms} failure={t('app.gold_forms_load_failed')}>
           {(shapes) => <EditForm asset={found} forms={shapes} />}

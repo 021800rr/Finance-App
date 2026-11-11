@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { deleteResource, getJson, postJson } from '../api'
+import { queryKeys, useInvalidate } from '../queryKeys'
 
 // One exchange rate of the API: what a bank sells a currency for, in PLN, on a day.
 export type Rate = {
@@ -20,7 +21,7 @@ export type RateInput = { bankId: number | null; currencyCode: string; rateDate:
 // The latest rates, newest first, as many as the web list shows.
 export function useRecentRates() {
   return useQuery({
-    queryKey: ['rates', 'recent'],
+    queryKey: queryKeys.recentRates(),
     queryFn: () => getJson<Rate[]>('/api/currency_exchange_rates/recent'),
   })
 }
@@ -28,38 +29,37 @@ export function useRecentRates() {
 // The rates of the chart: the tracked currency (CHF), the last rate of every bank and day, oldest first.
 export function useChartRates() {
   return useQuery({
-    queryKey: ['rates', 'chart'],
+    queryKey: queryKeys.chartRates(),
     queryFn: () => getJson<Rate[]>('/api/currency_exchange_rates/chart'),
   })
 }
 
 export function useBanks() {
-  return useQuery({ queryKey: ['banks'], queryFn: () => getJson<Bank[]>('/api/banks') })
+  return useQuery({ queryKey: queryKeys.banks(), queryFn: () => getJson<Bank[]>('/api/banks') })
 }
 
 // Every currency code, PLN too, in alphabetical order.
 export function useCurrencies() {
   return useQuery({
-    queryKey: ['currencies'],
+    queryKey: queryKeys.currencies(),
     queryFn: async () => (await getJson<{ code: string }[]>('/api/currencies')).map((currency) => currency.code),
   })
 }
 
-// After a change the list and the chart are read again.
 export function useCreateRate() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: (input: RateInput) => postJson<Rate>('/api/currency_exchange_rates', input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rates'] }),
+    onSuccess: () => invalidate('rates'),
   })
 }
 
 export function useDeleteRate() {
-  const queryClient = useQueryClient()
+  const invalidate = useInvalidate()
 
   return useMutation({
     mutationFn: (id: number) => deleteResource(`/api/currency_exchange_rates/${id}`),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['rates'] }),
+    onSettled: () => invalidate('rates'),
   })
 }

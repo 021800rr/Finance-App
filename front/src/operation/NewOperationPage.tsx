@@ -11,7 +11,7 @@ export function NewOperationPage() {
   const accounts = useAccounts()
 
   return (
-    <QueryResult query={accounts} failure={t('app.accounts_load_failed')}>
+    <QueryResult query={accounts} failure={t('app.accounts_load_failed')} fresh>
       {(all) => <NewOperation accounts={all} />}
     </QueryResult>
   )

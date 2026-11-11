@@ -13,7 +13,7 @@ export function EditFixedExpensePage() {
   const fixedExpense = useFixedExpense(id)
 
   return (
-    <QueryResult query={fixedExpense} failure={t('app.fixed_expense_load_failed')} notFound>
+    <QueryResult query={fixedExpense} failure={t('app.fixed_expense_load_failed')} notFound fresh>
       {(found) => <EditForm fixedExpense={found} />}
     </QueryResult>
   )

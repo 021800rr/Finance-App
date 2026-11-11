@@ -92,7 +92,7 @@ function NewRate({ banks }: { banks: Bank[] }) {
   const [formKey, setFormKey] = React.useState(0)
 
   return (
-    <QueryResult query={accounts} failure={t('app.rate_form_load_failed')}>
+    <QueryResult query={accounts} failure={t('app.rate_form_load_failed')} fresh>
       {(allAccounts) => (
         <QueryResult query={currencies} failure={t('app.rate_form_load_failed')}>
           {(codes) => (
