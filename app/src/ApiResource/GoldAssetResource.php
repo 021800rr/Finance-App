@@ -12,15 +12,16 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use App\ApiResource\Input\GoldAssetInput;
 use App\Entity\GoldAsset;
-use App\Entity\GoldForm;
 use App\State\GoldAssetProcessor;
 use App\State\GoldAssetProvider;
-use App\Validator\DecimalString;
-use App\Validator\NoNullCharacter;
-use App\Validator\RecordExists;
-use Symfony\Component\Validator\Constraints as Assert;
 
+/**
+ * A gold asset as the API returns it: every field is always there, and the OpenAPI document says so (a generated
+ * client gets types without needless nulls). What a client sends is GoldAssetInput (input: on POST and PATCH), where
+ * any field may be missing until the validation says why.
+ */
 #[ApiResource(
     shortName: 'GoldAsset',
     description: 'A physical gold holding (form, ounces, description). '
@@ -39,6 +40,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Post(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Creates a new gold asset (formId, description, ounces).',
+            input: GoldAssetInput::class,
             processor: GoldAssetProcessor::class,
         ),
         new Patch(
@@ -48,6 +50,7 @@ use Symfony\Component\Validator\Constraints as Assert;
                 .'Omitted fields keep their current values. Its price history is preserved.',
                 security: [['JWT' => []]],
             ),
+            input: GoldAssetInput::class,
             provider: GoldAssetProvider::class,
             processor: GoldAssetProcessor::class,
         ),
@@ -60,51 +63,34 @@ use Symfony\Component\Validator\Constraints as Assert;
     ],
     security: "is_granted('ROLE_USER')",
 )]
-final class GoldAssetResource
+final readonly class GoldAssetResource
 {
-    #[ApiProperty(description: 'Gold asset id. Read-only, ignored on write.', writable: false, example: 1)]
-    public ?int $id = null;
-
-    #[ApiProperty(description: 'Id of an existing gold form. Required.', example: 1)]
-    #[Assert\NotNull(message: 'gold_asset.form_not_null')]
-    #[RecordExists(GoldForm::class, message: 'gold_form.not_found')]
-    public ?int $formId = null;
-
-    #[ApiProperty(description: 'Gold form name. Read-only, ignored on write.', writable: false, example: 'Sztabka')]
-    public ?string $formName = null;
-
-    #[ApiProperty(description: 'Free-text description. Required, at most 255 characters.', example: 'Sztabka 1oz')]
-    #[Assert\NotBlank(message: 'gold_asset.description_not_blank', normalizer: 'trim')]
-    #[Assert\Length(max: 255, maxMessage: 'gold_asset.description_max_length', normalizer: 'trim')]
-    #[NoNullCharacter]
-    public ?string $description = null;
-
-    #[ApiProperty(
-        description: 'Weight in ounces as a decimal string, up to 4 decimal places, e.g. "1.5000". '
-        .'Required, 0.0001-999.9999.',
-        example: '1.0000',
-    )]
-    #[Assert\Sequentially([
-        new Assert\NotBlank(message: 'gold_asset.ounces_not_blank', normalizer: 'trim'),
-        new DecimalString(),
-        new Assert\Range(
-            notInRangeMessage: 'gold_asset.ounces_out_of_range',
-            invalidMessage: 'common.numeric_invalid',
-            min: 0.0001,
-            max: 999.9999,
-        ),
-    ])]
-    public ?string $ounces = null;
+    public function __construct(
+        #[ApiProperty(description: 'Gold asset id.', required: true, example: 1)]
+        public int $id,
+        #[ApiProperty(description: 'Id of the gold form.', required: true, example: 1)]
+        public int $formId,
+        #[ApiProperty(description: 'Name of the gold form.', required: true, example: 'Sztabka')]
+        public string $formName,
+        #[ApiProperty(description: 'Free-text description.', required: true, example: 'Sztabka 1oz')]
+        public string $description,
+        #[ApiProperty(
+            description: 'Weight in ounces as a decimal string with 4 decimal places, e.g. "1.5000".',
+            required: true,
+            example: '1.0000',
+        )]
+        public string $ounces,
+    ) {
+    }
 
     public static function fromEntity(GoldAsset $goldAsset): self
     {
-        $resource = new self();
-        $resource->id = $goldAsset->getId();
-        $resource->formId = $goldAsset->getForm()->getId();
-        $resource->formName = $goldAsset->getForm()->getName();
-        $resource->description = $goldAsset->getDescription();
-        $resource->ounces = $goldAsset->getOuncesAsQuantity()->toDecimalString();
-
-        return $resource;
+        return new self(
+            id: $goldAsset->getId(),
+            formId: $goldAsset->getForm()->getId(),
+            formName: $goldAsset->getForm()->getName(),
+            description: $goldAsset->getDescription(),
+            ounces: $goldAsset->getOuncesAsQuantity()->toDecimalString(),
+        );
     }
 }

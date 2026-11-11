@@ -13,10 +13,10 @@ use ApiPlatform\State\ProcessorInterface;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\AccountOperationResource;
 use App\ApiResource\AccountResource;
-use App\ApiResource\CurrencyExchangeRateResource;
-use App\ApiResource\GoldAssetResource;
-use App\ApiResource\GoldPriceResource;
+use App\ApiResource\Input\CurrencyExchangeRateInput;
 use App\ApiResource\Input\FixedExpenseInput;
+use App\ApiResource\Input\GoldAssetInput;
+use App\ApiResource\Input\GoldPriceInput;
 use App\ApiResource\TransferResource;
 use App\Service\ContractorResolver;
 use App\State\AccountOperationProcessor;
@@ -128,15 +128,15 @@ final class IdOutOfRangeTest extends KernelTestCase
         $operation->accountId = PHP_INT_MAX;
         yield 'account operation: accountId' => [AccountOperationProcessor::class, $operation];
 
-        $rate = new CurrencyExchangeRateResource();
+        $rate = new CurrencyExchangeRateInput();
         $rate->bankId = PHP_INT_MAX;
         yield 'currency exchange rate: bankId' => [CurrencyExchangeRateProcessor::class, $rate];
 
-        $asset = new GoldAssetResource();
+        $asset = new GoldAssetInput();
         $asset->formId = PHP_INT_MAX;
         yield 'gold asset: formId' => [GoldAssetProcessor::class, $asset];
 
-        $price = new GoldPriceResource();
+        $price = new GoldPriceInput();
         $price->goldAssetId = PHP_INT_MAX;
         yield 'gold price: goldAssetId' => [GoldPriceProcessor::class, $price];
 

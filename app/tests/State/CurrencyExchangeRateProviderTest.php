@@ -66,7 +66,7 @@ final class CurrencyExchangeRateProviderTest extends KernelTestCase
         self::assertNotEmpty($result);
         self::assertSame($second->getId(), $result[0]->id);
 
-        $ids = array_map(static fn (CurrencyExchangeRateResource $r): ?int => $r->id, $result);
+        $ids = array_map(static fn (CurrencyExchangeRateResource $r): int => $r->id, $result);
         $positionOfFirst = array_search($first->getId(), $ids, true);
         $positionOfSecond = array_search($second->getId(), $ids, true);
         self::assertIsInt($positionOfFirst);
@@ -87,7 +87,7 @@ final class CurrencyExchangeRateProviderTest extends KernelTestCase
 
         self::assertCount(20, $result);
         // The oldest of the 21 created rates must have been dropped.
-        $returnedIds = array_map(static fn (CurrencyExchangeRateResource $r): ?int => $r->id, $result);
+        $returnedIds = array_map(static fn (CurrencyExchangeRateResource $r): int => $r->id, $result);
         self::assertNotContains($ids[0], $returnedIds);
         self::assertContains($ids[count($ids) - 1], $returnedIds);
     }

@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\CurrencyExchangeRateResource;
+use App\ApiResource\Input\CurrencyExchangeRateInput;
 use App\Constant\Currencies;
 use App\Entity\Bank;
 use App\Entity\Currency;
@@ -51,8 +52,8 @@ final readonly class CurrencyExchangeRateProcessor implements ProcessorInterface
             return null;
         }
 
-        if (!$data instanceof CurrencyExchangeRateResource) {
-            throw new \InvalidArgumentException('Expected instance of CurrencyExchangeRateResource.');
+        if (!$data instanceof CurrencyExchangeRateInput) {
+            throw new \InvalidArgumentException('Expected instance of CurrencyExchangeRateInput.');
         }
 
         $bank = $this->resolveBank($data->bankId);

@@ -11,19 +11,19 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use App\ApiResource\Input\GoldPriceInput;
 use App\Constant\Currencies;
-use App\Entity\GoldAsset;
 use App\Entity\GoldPrice;
 use App\State\GoldPriceHistoryProvider;
 use App\State\GoldPriceProcessor;
 use App\State\GoldPriceProvider;
-use App\Util\BusinessDateRange;
-use App\Validator\BusinessDate;
-use App\Validator\DecimalString;
-use App\Validator\RecordExists;
 use App\ValueObject\Money;
-use Symfony\Component\Validator\Constraints as Assert;
 
+/**
+ * A gold price as the API returns it: every field is always there, and the OpenAPI document says so (a generated
+ * client gets types without needless nulls). What a client sends is GoldPriceInput (input: on POST), where any field
+ * may be missing until the validation says why.
+ */
 #[ApiResource(
     shortName: 'GoldPrice',
     description: 'A historical price point (in PLN) for a gold asset on a given date.',
@@ -59,6 +59,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Adds a new gold price entry. Multiple entries for the same gold asset and date are '
             .'allowed; the most recent date (and, within a date, highest id) is treated as the current price.',
+            input: GoldPriceInput::class,
             processor: GoldPriceProcessor::class,
         ),
         new Delete(
@@ -70,55 +71,35 @@ use Symfony\Component\Validator\Constraints as Assert;
     ],
     security: "is_granted('ROLE_USER')",
 )]
-final class GoldPriceResource
+final readonly class GoldPriceResource
 {
-    #[ApiProperty(description: 'Gold price entry id. Read-only, ignored on write.', writable: false, example: 1)]
-    public ?int $id = null;
-
-    #[ApiProperty(description: 'Id of an existing gold asset this price applies to. Required.', example: 1)]
-    #[Assert\NotNull(message: 'gold_price.asset_not_null')]
-    #[RecordExists(GoldAsset::class, message: 'gold_asset.not_found')]
-    public ?int $goldAssetId = null;
-
-    #[ApiProperty(description: 'Price date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '
-        .BusinessDateRange::MAX_DATE.' inclusive. Required.', example: '2026-09-29')]
-    #[Assert\NotBlank(message: 'common.date_not_blank')]
-    #[BusinessDate]
-    public ?string $priceDate = null;
-
-    #[ApiProperty(
-        description: 'Price in PLN as a decimal string, e.g. "250000.00". Required.',
-        example: '250000.00',
-    )]
-    #[Assert\Sequentially([
-        new Assert\NotBlank(message: 'gold_price.price_not_blank', normalizer: 'trim'),
-        new DecimalString(),
-        new Assert\Range(
-            min: 0.01,
-            max: 999999.99,
-            notInRangeMessage: 'gold_price.price_out_of_range',
-            invalidMessage: 'common.numeric_invalid',
-        ),
-    ])]
-    public ?string $pricePln = null;
-
-    #[ApiProperty(
-        description: 'Currency code. Always PLN. Read-only, ignored on write.',
-        writable: false,
-        example: 'PLN',
-    )]
-    public ?string $currencyCode = null;
+    public function __construct(
+        #[ApiProperty(description: 'Gold price entry id.', required: true, example: 1)]
+        public int $id,
+        #[ApiProperty(description: 'Id of the gold asset this price applies to.', required: true, example: 1)]
+        public int $goldAssetId,
+        #[ApiProperty(description: 'Price date, format YYYY-MM-DD.', required: true, example: '2026-09-29')]
+        public string $priceDate,
+        #[ApiProperty(
+            description: 'Price in PLN as a decimal string, e.g. "250000.00".',
+            required: true,
+            example: '250000.00',
+        )]
+        public string $pricePln,
+        #[ApiProperty(description: 'Currency code, always "PLN".', required: true, example: 'PLN')]
+        public string $currencyCode,
+    ) {
+    }
 
     public static function fromEntity(GoldPrice $goldPrice): self
     {
-        $resource = new self();
-        $resource->id = $goldPrice->getId();
-        $resource->goldAssetId = $goldPrice->getGoldAsset()->getId();
-        $resource->priceDate = $goldPrice->getPriceDate()->format('Y-m-d');
-        $resource->pricePln = $goldPrice->getPricePlnAsMoney()->toDecimalString();
-        $resource->currencyCode = $goldPrice->getCurrency()->getCode();
-
-        return $resource;
+        return new self(
+            id: $goldPrice->getId(),
+            goldAssetId: $goldPrice->getGoldAsset()->getId(),
+            priceDate: $goldPrice->getPriceDate()->format('Y-m-d'),
+            pricePln: $goldPrice->getPricePlnAsMoney()->toDecimalString(),
+            currencyCode: $goldPrice->getCurrency()->getCode(),
+        );
     }
 
     /**
@@ -134,17 +115,16 @@ final class GoldPriceResource
      */
     public static function fromRow(array $row): self
     {
-        $resource = new self();
-        $resource->id = (int) $row['id'];
-        $resource->goldAssetId = (int) $row['gold_asset_id'];
-        $resource->priceDate = $row['price_date'];
-        $resource->pricePln = Money::fromMinorUnits(
-            (int) $row['price_pln_minor_units'],
-            $row['currency_code'],
-            Currencies::MINOR_UNIT_SCALE,
-        )->toDecimalString();
-        $resource->currencyCode = $row['currency_code'];
-
-        return $resource;
+        return new self(
+            id: (int) $row['id'],
+            goldAssetId: (int) $row['gold_asset_id'],
+            priceDate: $row['price_date'],
+            pricePln: Money::fromMinorUnits(
+                (int) $row['price_pln_minor_units'],
+                $row['currency_code'],
+                Currencies::MINOR_UNIT_SCALE,
+            )->toDecimalString(),
+            currencyCode: $row['currency_code'],
+        );
     }
 }

@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\GoldAssetResource;
+use App\ApiResource\Input\GoldAssetInput;
 use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\Repository\GoldAssetRepository;
@@ -86,7 +87,7 @@ final class GoldAssetProcessorTest extends KernelTestCase
     {
         $form = $this->createGoldForm();
 
-        $result = $this->processor->process($this->resource($form, '1.5'), new Post());
+        $result = $this->processor->process($this->input($form, '1.5'), new Post());
 
         self::assertInstanceOf(GoldAssetResource::class, $result);
         self::assertSame('1.5000', $result->ounces);
@@ -98,19 +99,19 @@ final class GoldAssetProcessorTest extends KernelTestCase
 
     public function testProcessPatchThrowsNotFoundWhenAssetDoesNotExist(): void
     {
-        $resource = $this->resource($this->createGoldForm(), '1.5');
+        $input = $this->input($this->createGoldForm(), '1.5');
 
         $this->expectException(NotFoundHttpException::class);
 
-        $this->processor->process($resource, new Patch(), ['id' => 999999999]);
+        $this->processor->process($input, new Patch(), ['id' => 999999999]);
     }
 
     public function testProcessPostAcceptsSmallestAndLargestQuantity(): void
     {
         $form = $this->createGoldForm();
 
-        $smallest = $this->processor->process($this->resource($form, '0.0001'), new Post());
-        $largest = $this->processor->process($this->resource($form, '999.9999'), new Post());
+        $smallest = $this->processor->process($this->input($form, '0.0001'), new Post());
+        $largest = $this->processor->process($this->input($form, '999.9999'), new Post());
 
         self::assertInstanceOf(GoldAssetResource::class, $smallest);
         self::assertInstanceOf(GoldAssetResource::class, $largest);
@@ -140,16 +141,16 @@ final class GoldAssetProcessorTest extends KernelTestCase
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($this->resource($form, $ounces), new Post());
+        $this->processor->process($this->input($form, $ounces), new Post());
     }
 
-    private function resource(GoldForm $form, ?string $ounces): GoldAssetResource
+    private function input(GoldForm $form, ?string $ounces): GoldAssetInput
     {
-        $resource = new GoldAssetResource();
-        $resource->formId = $form->getId();
-        $resource->description = 'Asset '.uniqid();
-        $resource->ounces = $ounces;
+        $input = new GoldAssetInput();
+        $input->formId = $form->getId();
+        $input->description = 'Asset '.uniqid();
+        $input->ounces = $ounces;
 
-        return $resource;
+        return $input;
     }
 }

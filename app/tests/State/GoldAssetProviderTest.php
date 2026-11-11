@@ -6,7 +6,9 @@ namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use App\ApiResource\GoldAssetResource;
+use App\ApiResource\Input\GoldAssetInput;
 use App\State\GoldAssetProvider;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\TestDataTrait;
@@ -58,6 +60,18 @@ final class GoldAssetProviderTest extends KernelTestCase
         self::assertSame('1.5000', $result->ounces);
     }
 
+    public function testProvideGivesPatchTheCurrentValuesToLayTheRequestOver(): void
+    {
+        $goldAsset = $this->createGoldAsset($this->createGoldForm(), description: 'Current asset', ounces: 15000);
+
+        $result = $this->provider->provide(new Patch(), ['id' => $goldAsset->getId()]);
+
+        self::assertInstanceOf(GoldAssetInput::class, $result);
+        self::assertSame($goldAsset->getForm()->getId(), $result->formId);
+        self::assertSame('Current asset', $result->description);
+        self::assertSame('1.5000', $result->ounces);
+    }
+
     public function testProvideThrowsNotFoundForNonExistentId(): void
     {
         $this->expectException(NotFoundHttpException::class);
@@ -74,7 +88,7 @@ final class GoldAssetProviderTest extends KernelTestCase
         /** @var list<GoldAssetResource> $result */
         $result = $this->provider->provide(new GetCollection());
 
-        $ids = array_map(static fn (GoldAssetResource $r): ?int => $r->id, $result);
+        $ids = array_map(static fn (GoldAssetResource $r): int => $r->id, $result);
         $positionOfFirst = array_search($first->getId(), $ids, true);
         $positionOfSecond = array_search($second->getId(), $ids, true);
 

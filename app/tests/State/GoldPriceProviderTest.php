@@ -65,7 +65,7 @@ final class GoldPriceProviderTest extends KernelTestCase
         /** @var list<GoldPriceResource> $result */
         $result = $this->provider->provide(new GetCollection());
 
-        $ids = array_map(static fn (GoldPriceResource $r): ?int => $r->id, $result);
+        $ids = array_map(static fn (GoldPriceResource $r): int => $r->id, $result);
         $positionOfOlder = array_search($older->getId(), $ids, true);
         $positionOfNewer = array_search($newer->getId(), $ids, true);
 

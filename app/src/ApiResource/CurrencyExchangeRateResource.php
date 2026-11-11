@@ -12,21 +12,19 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Response as OpenApiResponse;
+use App\ApiResource\Input\CurrencyExchangeRateInput;
 use App\Constant\Currencies;
-use App\Entity\Bank;
-use App\Entity\Currency;
 use App\Entity\CurrencyExchangeRate;
 use App\State\CurrencyExchangeRateHistoryProvider;
 use App\State\CurrencyExchangeRateProcessor;
 use App\State\CurrencyExchangeRateProvider;
-use App\Util\BusinessDateRange;
-use App\Validator\BusinessDate;
-use App\Validator\DecimalString;
-use App\Validator\RateBank;
-use App\Validator\RecordExists;
 use App\ValueObject\Money;
-use Symfony\Component\Validator\Constraints as Assert;
 
+/**
+ * An exchange rate as the API returns it: every field is always there, and the OpenAPI document says so (a generated
+ * client gets types without needless nulls). What a client sends is CurrencyExchangeRateInput (input: on POST), where
+ * any field may be missing until the validation says why.
+ */
 #[ApiResource(
     shortName: 'CurrencyExchangeRate',
     description: 'Exchange rate of a currency to PLN for a given bank and date.',
@@ -69,6 +67,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             .'allowed; the most recent date (and, within a date, highest id) is treated as the current rate. '
             .'As in the web form, the bank must have at least one visible (not hidden) account in a currency '
             .'other than PLN, and the currency must not be PLN; otherwise the request is rejected with 422.',
+            input: CurrencyExchangeRateInput::class,
             processor: CurrencyExchangeRateProcessor::class,
         ),
         new Delete(
@@ -80,68 +79,35 @@ use Symfony\Component\Validator\Constraints as Assert;
     ],
     security: "is_granted('ROLE_USER')",
 )]
-final class CurrencyExchangeRateResource
+final readonly class CurrencyExchangeRateResource
 {
-    #[ApiProperty(description: 'Rate id. Read-only, ignored on write.', writable: false, example: 1)]
-    public ?int $id = null;
-
-    #[ApiProperty(
-        description: 'Id of the bank this rate applies to. Required; the bank must have at least one visible '
-        .'account in a currency other than PLN, otherwise it is rejected.',
-        example: 1,
-    )]
-    #[Assert\NotNull(message: 'currency_exchange_rate.bank_required')]
-    #[RecordExists(Bank::class, message: 'bank.not_found')]
-    #[RateBank]
-    public ?int $bankId = null;
-
-    #[ApiProperty(
-        description: 'Currency code, e.g. "CHF". Required; any existing currency except PLN.',
-        example: 'CHF',
-    )]
-    #[Assert\NotBlank(message: 'currency_exchange_rate.currency_required')]
-    #[RecordExists(Currency::class, message: 'currency.not_found')]
-    // Same trim() as the processor uses to look the currency up, so " PLN " or "PLN\0" cannot slip through.
-    #[Assert\Regex(
-        pattern: '/^'.Currencies::SETTLEMENT_CURRENCY_CODE.'$/D',
-        message: 'currency_exchange_rate.currency_pln_not_allowed',
-        match: false,
-        normalizer: 'trim',
-    )]
-    public ?string $currencyCode = null;
-
-    #[ApiProperty(description: 'Rate date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '
-        .BusinessDateRange::MAX_DATE.' inclusive. Required.', example: '2026-09-29')]
-    #[Assert\NotBlank(message: 'common.date_not_blank')]
-    #[BusinessDate]
-    public ?string $rateDate = null;
-
-    #[ApiProperty(
-        description: 'Exchange rate to PLN as a decimal string, e.g. "4.3210". Range 0.0001-99.9999. Required.',
-        example: '4.3210',
-    )]
-    #[Assert\Sequentially([
-        new Assert\NotBlank(message: 'currency_exchange_rate.rate_not_blank', normalizer: 'trim'),
-        new DecimalString(),
-        new Assert\Range(
-            min: 0.0001,
-            max: 99.9999,
-            notInRangeMessage: 'currency_exchange_rate.rate_out_of_range',
-            invalidMessage: 'common.numeric_invalid',
-        ),
-    ])]
-    public ?string $rateToPln = null;
+    public function __construct(
+        #[ApiProperty(description: 'Rate id.', required: true, example: 1)]
+        public int $id,
+        #[ApiProperty(description: 'Id of the bank this rate applies to.', required: true, example: 1)]
+        public int $bankId,
+        #[ApiProperty(description: 'Currency code, e.g. "CHF".', required: true, example: 'CHF')]
+        public string $currencyCode,
+        #[ApiProperty(description: 'Rate date, format YYYY-MM-DD.', required: true, example: '2026-09-29')]
+        public string $rateDate,
+        #[ApiProperty(
+            description: 'Exchange rate to PLN as a decimal string with 4 decimal places, e.g. "4.3210".',
+            required: true,
+            example: '4.3210',
+        )]
+        public string $rateToPln,
+    ) {
+    }
 
     public static function fromEntity(CurrencyExchangeRate $rate): self
     {
-        $resource = new self();
-        $resource->id = $rate->getId();
-        $resource->bankId = $rate->getBank()->getId();
-        $resource->currencyCode = $rate->getCurrency()->getCode();
-        $resource->rateDate = $rate->getRateDate()->format('Y-m-d');
-        $resource->rateToPln = $rate->getRateToPlnAsMoney()->toDecimalString();
-
-        return $resource;
+        return new self(
+            id: $rate->getId(),
+            bankId: $rate->getBank()->getId(),
+            currencyCode: $rate->getCurrency()->getCode(),
+            rateDate: $rate->getRateDate()->format('Y-m-d'),
+            rateToPln: $rate->getRateToPlnAsMoney()->toDecimalString(),
+        );
     }
 
     /**
@@ -157,17 +123,16 @@ final class CurrencyExchangeRateResource
      */
     public static function fromRow(array $row): self
     {
-        $resource = new self();
-        $resource->id = (int) $row['id'];
-        $resource->bankId = (int) $row['bank_id'];
-        $resource->currencyCode = $row['currency_code'];
-        $resource->rateDate = $row['rate_date'];
-        $resource->rateToPln = Money::fromMinorUnits(
-            (int) $row['rate_to_pln_minor_units'],
-            Currencies::SETTLEMENT_CURRENCY_CODE,
-            Currencies::EXCHANGE_RATE_SCALE,
-        )->toDecimalString();
-
-        return $resource;
+        return new self(
+            id: (int) $row['id'],
+            bankId: (int) $row['bank_id'],
+            currencyCode: $row['currency_code'],
+            rateDate: $row['rate_date'],
+            rateToPln: Money::fromMinorUnits(
+                (int) $row['rate_to_pln_minor_units'],
+                Currencies::SETTLEMENT_CURRENCY_CODE,
+                Currencies::EXCHANGE_RATE_SCALE,
+            )->toDecimalString(),
+        );
     }
 }

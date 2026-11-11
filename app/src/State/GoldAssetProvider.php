@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace App\State;
 
+use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\GoldAssetResource;
+use App\ApiResource\Input\GoldAssetInput;
 use App\Exception\RecordNotFoundException;
 use App\Repository\GoldAssetRepository;
 
 /**
- * @implements ProviderInterface<GoldAssetResource>
+ * @implements ProviderInterface<GoldAssetResource|GoldAssetInput>
  */
 final readonly class GoldAssetProvider implements ProviderInterface
 {
@@ -20,16 +22,19 @@ final readonly class GoldAssetProvider implements ProviderInterface
     }
 
     /**
+     * GET answers with GoldAssetResource. PATCH and DELETE get the current values as GoldAssetInput: PATCH lays the
+     * request over them (what it leaves out stays), and the processor reads the record they belong to.
+     *
      * @param array<string, mixed> $uriVariables
      * @param array<string, mixed> $context
      *
-     * @return GoldAssetResource|list<GoldAssetResource>
+     * @return GoldAssetResource|GoldAssetInput|list<GoldAssetResource>
      */
     public function provide(
         Operation $operation,
         array $uriVariables = [],
         array $context = [],
-    ): GoldAssetResource|array {
+    ): GoldAssetResource|GoldAssetInput|array {
         if (isset($uriVariables['id'])) {
             $goldAsset = $this->goldAssetRepository->findByIdOrNull($uriVariables['id']);
 
@@ -37,7 +42,9 @@ final readonly class GoldAssetProvider implements ProviderInterface
                 throw RecordNotFoundException::goldAsset()->asHttp();
             }
 
-            return GoldAssetResource::fromEntity($goldAsset);
+            return $operation instanceof Get
+                ? GoldAssetResource::fromEntity($goldAsset)
+                : GoldAssetInput::fromEntity($goldAsset);
         }
 
         $goldAssets = $this->goldAssetRepository->findAllOrdered();

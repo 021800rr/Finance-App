@@ -7,6 +7,7 @@ namespace App\Tests\State;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\CurrencyExchangeRateResource;
+use App\ApiResource\Input\CurrencyExchangeRateInput;
 use App\Entity\CurrencyExchangeRate;
 use App\State\CurrencyExchangeRateProcessor;
 use App\Tests\DatabaseTestTrait;
@@ -42,12 +43,12 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     {
         $bank = $this->createBank();
 
-        $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '4.3210');
+        $input = $this->buildInput(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '4.3210');
 
-        $result = $this->processor->process($resource, new Post());
+        $result = $this->processor->process($input, new Post());
 
         self::assertInstanceOf(CurrencyExchangeRateResource::class, $result);
-        self::assertNotNull($result->id);
+        self::assertGreaterThan(0, $result->id);
         self::assertSame($bank->getId(), $result->bankId);
         self::assertSame('CHF', $result->currencyCode);
         self::assertSame('4.3210', $result->rateToPln);
@@ -58,7 +59,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
         $bank = $this->createBank();
 
         $first = $this->processor->process(
-            $this->buildResource(
+            $this->buildInput(
                 bankId: $bank->getId(),
                 currencyCode: 'CHF',
                 rateDate: '2026-09-29',
@@ -68,7 +69,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
         );
 
         $second = $this->processor->process(
-            $this->buildResource(
+            $this->buildInput(
                 bankId: $bank->getId(),
                 currencyCode: 'CHF',
                 rateDate: '2026-09-29',
@@ -88,46 +89,46 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
 
     public function testProcessThrowsUnprocessableWhenBankIdMissing(): void
     {
-        $resource = $this->buildResource(bankId: null, currencyCode: 'CHF', rateToPln: '4.3210');
+        $input = $this->buildInput(bankId: null, currencyCode: 'CHF', rateToPln: '4.3210');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsNotFoundWhenBankDoesNotExist(): void
     {
-        $resource = $this->buildResource(bankId: 999999999, currencyCode: 'CHF', rateToPln: '4.3210');
+        $input = $this->buildInput(bankId: 999999999, currencyCode: 'CHF', rateToPln: '4.3210');
 
         $this->expectException(NotFoundHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenCurrencyCodeMissing(): void
     {
         $bank = $this->createBank();
-        $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: null, rateToPln: '4.3210');
+        $input = $this->buildInput(bankId: $bank->getId(), currencyCode: null, rateToPln: '4.3210');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsNotFoundWhenCurrencyDoesNotExist(): void
     {
         $bank = $this->createBank();
-        $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'ZZZ', rateToPln: '4.3210');
+        $input = $this->buildInput(bankId: $bank->getId(), currencyCode: 'ZZZ', rateToPln: '4.3210');
 
         $this->expectException(NotFoundHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessTreatsAMissingRateDateAsABug(): void
     {
         $bank = $this->createBank();
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             bankId: $bank->getId(),
             currencyCode: 'CHF',
             rateToPln: '4.3210',
@@ -137,13 +138,13 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
         // The API validates the date first (NotBlank + BusinessDate), so reaching here is a bug.
         $this->expectException(\LogicException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessTreatsAnUnvalidatedRateDateAsABug(): void
     {
         $bank = $this->createBank();
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             bankId: $bank->getId(),
             currencyCode: 'CHF',
             rateToPln: '4.3210',
@@ -153,40 +154,40 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
         // The API validates the date first (NotBlank + BusinessDate), so reaching here is a bug.
         $this->expectException(\LogicException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenRateToPlnMissing(): void
     {
         $bank = $this->createBank();
-        $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: null);
+        $input = $this->buildInput(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: null);
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenRateToPlnNotDecimal(): void
     {
         $bank = $this->createBank();
-        $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: 'string');
+        $input = $this->buildInput(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: 'string');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenRateToPlnOutOfRange(): void
     {
         $bank = $this->createBank();
-        $resource = $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '150.0000');
+        $input = $this->buildInput(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '150.0000');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
-    public function testProcessThrowsWhenDataIsNotCurrencyExchangeRateResource(): void
+    public function testProcessThrowsWhenDataIsNotCurrencyExchangeRateInput(): void
     {
         $this->expectException(\InvalidArgumentException::class);
 
@@ -197,7 +198,7 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
     {
         $bank = $this->createBank();
         $created = $this->processor->process(
-            $this->buildResource(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '4.3210'),
+            $this->buildInput(bankId: $bank->getId(), currencyCode: 'CHF', rateToPln: '4.3210'),
             new Post(),
         );
         self::assertInstanceOf(CurrencyExchangeRateResource::class, $created);
@@ -221,20 +222,20 @@ final class CurrencyExchangeRateProcessorTest extends KernelTestCase
      */
     private const string AUTO_DATE = '__auto_date__';
 
-    private function buildResource(
+    private function buildInput(
         ?int $bankId = null,
         ?string $currencyCode = null,
         ?string $rateToPln = '4.3210',
         ?string $rateDate = self::AUTO_DATE,
-    ): CurrencyExchangeRateResource {
-        $resource = new CurrencyExchangeRateResource();
-        $resource->bankId = $bankId;
-        $resource->currencyCode = $currencyCode;
-        $resource->rateToPln = $rateToPln;
-        $resource->rateDate = self::AUTO_DATE === $rateDate
+    ): CurrencyExchangeRateInput {
+        $input = new CurrencyExchangeRateInput();
+        $input->bankId = $bankId;
+        $input->currencyCode = $currencyCode;
+        $input->rateToPln = $rateToPln;
+        $input->rateDate = self::AUTO_DATE === $rateDate
             ? (new \DateTimeImmutable())->format('Y-m-d')
             : $rateDate;
 
-        return $resource;
+        return $input;
     }
 }
