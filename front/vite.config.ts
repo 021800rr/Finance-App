@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
@@ -10,5 +11,10 @@ export default defineConfig({
     proxy: {
       '/api': 'http://finance-nginx-dev',
     },
+  },
+  // npm test: the *.test.ts(x) files next to the code, in a browser simulated by jsdom.
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['src/test/setup.ts'],
   },
 })
