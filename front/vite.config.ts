@@ -1,0 +1,20 @@
+/// <reference types="vitest/config" />
+import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  server: {
+    // The browser asks the front for /api; Vite passes it on to the backend, so no CORS is needed.
+    proxy: {
+      '/api': 'http://finance-nginx-dev',
+    },
+  },
+  // npm test: the *.test.ts(x) files next to the code, in a browser simulated by jsdom.
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['src/test/setup.ts'],
+  },
+})

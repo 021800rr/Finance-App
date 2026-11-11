@@ -1,0 +1,96 @@
+{
+  "account": {
+    "not_found": "This account does not exist.",
+    "hidden_not_null": "Please specify whether the account is hidden (true or false).",
+    "hidden_not_selectable": "This account is hidden. Please select an account that is not hidden.",
+    "is_main_must_be_true": "The only allowed value is true. If you do not want to set this account as main, do not send this field."
+  },
+  "account_operation": {
+    "not_found": "This account operation does not exist.",
+    "other_side_not_found": "Related operation not found."
+  },
+  "account_type": {
+    "not_found": "This account type does not exist."
+  },
+  "bank": {
+    "not_found": "This bank does not exist."
+  },
+  "common": {
+    "amount_cannot_be_zero": "The amount cannot be zero.",
+    "amount_not_blank": "Please enter an amount.",
+    "amount_out_of_range": "The amount must be between -999,999.99 and 999,999.99.",
+    "date_not_blank": "Please enter a date.",
+    "description_max_length": "The description cannot be longer than 255 characters.",
+    "date_out_of_range": "Date must be between {{ min }} and {{ max }} (inclusive).",
+    "date_invalid": "Please enter a real date in the format YYYY-MM-DD.",
+    "page_invalid": "The page number must be a positive whole number.",
+    "numeric_invalid": "Please enter a valid number.",
+    "text_contains_null_character": "The text contains a forbidden character."
+  },
+  "contractor": {
+    "id_name_mismatch": "This name is not the name of the contractor with the given contractorId.",
+    "null_not_allowed": "Do not send null here. Leave this field out if you do not want to set it.",
+    "not_found": "This contractor does not exist.",
+    "id_or_name_required": "Either contractorId or contractorName is required.",
+    "name_max_length": "The contractor name cannot be longer than 255 characters.",
+    "name_not_blank": "Please enter a contractor name.",
+    "name_not_unique": "The contractor already exists — select it from the list.",
+    "required": "Please select a contractor from the list."
+  },
+  "currency": {
+    "not_found": "This currency does not exist."
+  },
+  "currency_exchange_rate": {
+    "not_found": "This exchange rate does not exist.",
+    "bank_required": "Please select a bank.",
+    "bank_without_foreign_account": "This bank has no visible foreign-currency account. Please select another bank.",
+    "currency_pln_not_allowed": "A rate cannot be added for PLN. Please select another currency.",
+    "currency_required": "Please select a currency.",
+    "rate_not_blank": "Please enter an exchange rate.",
+    "rate_out_of_range": "The rate must be between 0.0001 and 99.9999."
+  },
+  "fixed_expense": {
+    "not_found": "This fixed expense does not exist.",
+    "amount_must_be_negative": "The amount must be negative, between -999,999.99 and -0.01.",
+    "amount_not_blank": "Please enter an amount.",
+    "amount_out_of_range": "The amount must be negative, between -999,999.99 and -0.01.",
+    "day_out_of_range": "Day must be between 1 and 28.",
+    "day_required": "Please enter the day of the month."
+  },
+  "gold_asset": {
+    "not_found": "This gold asset does not exist.",
+    "description_max_length": "The description cannot be longer than 255 characters.",
+    "description_not_blank": "Please enter a description.",
+    "form_not_null": "Please select a form.",
+    "ounces_not_blank": "Please enter the number of ounces.",
+    "ounces_out_of_range": "The number of ounces must be between 0.0001 and 999.9999."
+  },
+  "gold_form": {
+    "not_found": "This gold form does not exist."
+  },
+  "gold_price": {
+    "not_found": "This gold price entry does not exist.",
+    "asset_not_null": "Please select an asset.",
+    "price_not_blank": "Please enter a price.",
+    "price_out_of_range": "The price must be between 0.01 and 999,999.99."
+  },
+  "household": {
+    "not_found": "This household does not exist."
+  },
+  "operation": {
+    "account_required": "Please select an account.",
+    "amount_not_blank": "Please enter an amount.",
+    "date_not_blank": "Please enter a date."
+  },
+  "rate": "None",
+  "transfer": {
+    "accounts_must_differ": "Choose a different destination account.",
+    "amount_from_required": "Please enter the amount to transfer.",
+    "amount_must_be_positive": "The transfer amount must be greater than zero.",
+    "amount_out_of_range": "The transfer amount must be between 0.01 and 999,999.99.",
+    "amount_to_not_allowed_for_same_currency": "Both accounts use the same currency, so this amount is generated automatically. Do not send this field.",
+    "amount_to_required_for_currency_exchange": "Please enter the amount to receive when exchanging between different currencies.",
+    "from_account_required": "Please select the source account.",
+    "to_account_required": "Please select the destination account."
+  }
+}
