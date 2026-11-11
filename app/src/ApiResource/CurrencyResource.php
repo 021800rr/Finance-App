@@ -23,16 +23,16 @@ use App\State\CurrencyProvider;
     ],
     security: "is_granted('ROLE_USER')",
 )]
-final class CurrencyResource
+final readonly class CurrencyResource
 {
-    #[ApiProperty(description: 'ISO 4217 currency code. Read-only, ignored on write.', writable: false, example: 'PLN')]
-    public ?string $code = null;
+    public function __construct(
+        #[ApiProperty(description: 'ISO 4217 currency code.', required: true, example: 'PLN')]
+        public string $code,
+    ) {
+    }
 
     public static function fromEntity(Currency $currency): self
     {
-        $resource = new self();
-        $resource->code = $currency->getCode();
-
-        return $resource;
+        return new self($currency->getCode());
     }
 }

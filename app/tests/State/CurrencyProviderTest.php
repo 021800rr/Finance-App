@@ -36,7 +36,7 @@ final class CurrencyProviderTest extends KernelTestCase
     {
         $result = $this->provider->provide(new GetCollection());
 
-        $codes = array_map(static fn (CurrencyResource $r): ?string => $r->code, $result);
+        $codes = array_map(static fn (CurrencyResource $r): string => $r->code, $result);
         $positionOfChf = array_search('CHF', $codes, true);
         $positionOfPln = array_search('PLN', $codes, true);
 

@@ -26,19 +26,18 @@ use App\State\BankProvider;
     ],
     security: "is_granted('ROLE_USER')",
 )]
-final class BankResource
+final readonly class BankResource
 {
-    #[ApiProperty(writable: false)]
-    public ?int $id = null;
-
-    public ?string $name = null;
+    public function __construct(
+        #[ApiProperty(description: 'Bank id.', required: true, example: 1)]
+        public int $id,
+        #[ApiProperty(description: 'Bank name.', required: true, example: 'Example bank')]
+        public string $name,
+    ) {
+    }
 
     public static function fromEntity(Bank $bank): self
     {
-        $resource = new self();
-        $resource->id = $bank->getId();
-        $resource->name = $bank->getName();
-
-        return $resource;
+        return new self($bank->getId(), $bank->getName());
     }
 }

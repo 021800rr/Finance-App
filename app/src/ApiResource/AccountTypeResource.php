@@ -26,22 +26,20 @@ use App\State\AccountTypeProvider;
     ],
     security: "is_granted('ROLE_USER')",
 )]
-final class AccountTypeResource
+final readonly class AccountTypeResource
 {
-    #[ApiProperty(writable: false)]
-    public ?int $id = null;
-
-    public ?string $name = null;
-
-    public bool $isRetirement = false;
+    public function __construct(
+        #[ApiProperty(description: 'Account type id.', required: true, example: 1)]
+        public int $id,
+        #[ApiProperty(description: 'Name of the type.', required: true, example: 'ROR')]
+        public string $name,
+        #[ApiProperty(description: 'Whether the accounts of this type count as retirement savings.', required: true)]
+        public bool $isRetirement,
+    ) {
+    }
 
     public static function fromEntity(AccountType $accountType): self
     {
-        $resource = new self();
-        $resource->id = $accountType->getId();
-        $resource->name = $accountType->getName();
-        $resource->isRetirement = $accountType->isRetirement();
-
-        return $resource;
+        return new self($accountType->getId(), $accountType->getName(), $accountType->isRetirement());
     }
 }

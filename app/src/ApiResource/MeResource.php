@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\ApiResource;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
@@ -27,7 +28,11 @@ use App\State\MeProvider;
     ],
     security: "is_granted('ROLE_USER')",
 )]
-final class MeResource
+final readonly class MeResource
 {
-    public string $email = '';
+    public function __construct(
+        #[ApiProperty(description: 'Email of the logged-in user.', required: true, example: 'user@example.com')]
+        public string $email,
+    ) {
+    }
 }

@@ -26,22 +26,20 @@ use App\State\HouseholdProvider;
     ],
     security: "is_granted('ROLE_USER')",
 )]
-final class HouseholdResource
+final readonly class HouseholdResource
 {
-    #[ApiProperty(writable: false)]
-    public ?int $id = null;
-
-    public ?string $name = null;
-
-    public bool $isOwnFunds = true;
+    public function __construct(
+        #[ApiProperty(description: 'Household id.', required: true, example: 1)]
+        public int $id,
+        #[ApiProperty(description: 'Name of the household.', required: true, example: 'Nasze')]
+        public string $name,
+        #[ApiProperty(description: 'Whether its accounts count as own funds in the summary.', required: true)]
+        public bool $isOwnFunds,
+    ) {
+    }
 
     public static function fromEntity(Household $household): self
     {
-        $resource = new self();
-        $resource->id = $household->getId();
-        $resource->name = $household->getName();
-        $resource->isOwnFunds = $household->isOwnFunds();
-
-        return $resource;
+        return new self($household->getId(), $household->getName(), $household->isOwnFunds());
     }
 }
