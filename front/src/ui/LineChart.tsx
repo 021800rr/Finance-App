@@ -19,7 +19,7 @@ type Props = {
   yTitle: string
 }
 
-// The line chart of the web app (assets/js/line-chart.js): one line per series over the dates, the labels at dates of
+// The line chart of the web app (assets/js/line-chart.mjs): one line per series over the dates, the labels at dates of
 // the data, and under the cursor a vertical line at the nearest date, whose values appear under the chart.
 export function LineChart({ series, colors, xTitle, yTitle }: Props) {
   const { i18n } = useTranslation()

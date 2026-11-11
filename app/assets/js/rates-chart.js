@@ -1,4 +1,4 @@
-import { initLineChart } from './line-chart';
+import { initLineChart } from './line-chart.mjs';
 
 // The rates of each bank, {bank: {date: rate}}, with four decimal places.
 initLineChart({

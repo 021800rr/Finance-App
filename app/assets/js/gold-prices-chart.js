@@ -1,4 +1,4 @@
-import { initLineChart } from './line-chart';
+import { initLineChart } from './line-chart.mjs';
 
 // The prices of each gold asset, [{assetId, label, prices: {date: price}}], with two decimal places. Two assets may
 // have the same label, so each gets its own line.

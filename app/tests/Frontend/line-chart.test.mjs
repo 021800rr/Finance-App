@@ -5,7 +5,7 @@ import {
     collectDates,
     desktopTickIndexes,
     findNearestTimestamp,
-} from '../../assets/js/line-chart.js';
+} from '../../assets/js/line-chart.mjs';
 
 const colors = ['rgb(1, 2, 3)', 'rgb(4, 5, 6)'];
 
