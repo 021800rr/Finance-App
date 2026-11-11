@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Get;
+use App\ApiResource\Summary\SummaryAccount;
 use App\ApiResource\SummaryResource;
-use App\Entity\Bank;
-use App\Entity\Currency;
-use App\Entity\Household;
 use App\State\SummaryProvider;
 use App\Tests\DatabaseTestTrait;
 use App\Tests\TestDataTrait;
@@ -77,8 +75,8 @@ final class SummaryProviderTest extends KernelTestCase
 
         self::assertNotNull($visibleRow);
         self::assertNotNull($hiddenRow);
-        self::assertFalse($visibleRow['hidden']);
-        self::assertTrue($hiddenRow['hidden']);
+        self::assertFalse($visibleRow->hidden);
+        self::assertTrue($hiddenRow->hidden);
     }
 
     public function testProvideTreatsShowHiddenFalseSameAsOmitted(): void
@@ -109,8 +107,8 @@ final class SummaryProviderTest extends KernelTestCase
         self::assertInstanceOf(SummaryResource::class, $result);
         $row = $this->findAccountRow($result, $accountNumber);
         self::assertNotNull($row);
-        self::assertSame(['amount' => '4.1234', 'currency' => 'PLN'], $row['rate']);
-        self::assertFalse($row['missing_rate']);
+        self::assertSame(['amount' => '4.1234', 'currency' => 'PLN'], $row->rate);
+        self::assertFalse($row->missingRate);
     }
 
     public function testProvideReturnsNoRateForPlnAccounts(): void
@@ -125,8 +123,8 @@ final class SummaryProviderTest extends KernelTestCase
         self::assertInstanceOf(SummaryResource::class, $result);
         $row = $this->findAccountRow($result, $accountNumber);
         self::assertNotNull($row);
-        self::assertNull($row['rate']);
-        self::assertFalse($row['missing_rate']);
+        self::assertNull($row->rate);
+        self::assertFalse($row->missingRate);
     }
 
     public function testProvideReturnsNoRateAndFlagsMissingRateWhenTheBankHasNone(): void
@@ -141,8 +139,8 @@ final class SummaryProviderTest extends KernelTestCase
         self::assertInstanceOf(SummaryResource::class, $result);
         $row = $this->findAccountRow($result, $accountNumber);
         self::assertNotNull($row);
-        self::assertNull($row['rate']);
-        self::assertTrue($row['missing_rate']);
+        self::assertNull($row->rate);
+        self::assertTrue($row->missingRate);
     }
 
     public function testProvideMarksOnlyTheMainAccountAsMain(): void
@@ -161,11 +159,11 @@ final class SummaryProviderTest extends KernelTestCase
         $otherRow = $this->findAccountRow($result, $otherNumber);
         self::assertNotNull($mainRow);
         self::assertNotNull($otherRow);
-        self::assertTrue($mainRow['is_main']);
-        self::assertFalse($otherRow['is_main']);
+        self::assertTrue($mainRow->isMain);
+        self::assertFalse($otherRow->isMain);
         self::assertCount(
             1,
-            array_filter($result->accounts, static fn (array $account): bool => true === $account['is_main']),
+            array_filter($result->accounts, static fn (SummaryAccount $account): bool => $account->isMain),
         );
     }
 
@@ -177,46 +175,11 @@ final class SummaryProviderTest extends KernelTestCase
         $this->requestStack->push(new Request(query: $query));
     }
 
-    /**
-     * @return array{
-     *     id: int,
-     *     bank: string,
-     *     type: string,
-     *     currency: string,
-     *     account_number: string,
-     *     hidden: bool,
-     *     household: string,
-     *     is_own_funds: bool,
-     *     is_retirement: bool,
-     *     is_main: bool,
-     *     saldo: mixed,
-     *     rate: mixed,
-     *     missing_rate: bool
-     * }|null
-     */
-    private function findAccountRow(SummaryResource $resource, string $accountNumber): ?array
+    private function findAccountRow(SummaryResource $resource, string $accountNumber): ?SummaryAccount
     {
         foreach ($resource->accounts as $account) {
-            if ($account['account_number'] === $accountNumber) {
-                /** @var array{
-                 *     id: int,
-                 *     bank: string,
-                 *     type: string,
-                 *     currency: string,
-                 *     account_number: string,
-                 *     hidden: bool,
-                 *     household: string,
-                 *     is_own_funds: bool,
-                 *     is_retirement: bool,
-                 *     is_main: bool,
-                 *     saldo: mixed,
-                 *     rate: mixed,
-                 *     missing_rate: bool
-                 * } $row
-                 */
-                $row = $account;
-
-                return $row;
+            if ($account->accountNumber === $accountNumber) {
+                return $account;
             }
         }
 

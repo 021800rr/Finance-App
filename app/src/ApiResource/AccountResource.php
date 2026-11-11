@@ -12,6 +12,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use App\ApiResource\Input\AccountInput;
 use App\Entity\Account;
+use App\OpenApi\MoneySchema;
 use App\State\AccountProcessor;
 use App\State\AccountProvider;
 use App\ValueObject\Money;
@@ -54,8 +55,10 @@ final readonly class AccountResource
 {
     private const string SALDO_DESCRIPTION =
         'Balance including operations dated in the future. Only in GET /api/accounts/{id}.';
+    private const array SALDO_EXAMPLE = ['amount' => '4935.00', 'currency' => 'PLN'];
     private const string SALDO_TODAY_DESCRIPTION =
         'Balance counting only operations dated today or earlier. Only in GET /api/accounts/{id}.';
+    private const array SALDO_TODAY_EXAMPLE = ['amount' => '4965.00', 'currency' => 'PLN'];
     private const string FUTURE_DESCRIPTION =
         'True when saldo and saldoToday differ, i.e. future-dated operations exist. Only in GET /api/accounts/{id}.';
 
@@ -94,31 +97,21 @@ final readonly class AccountResource
         // The balances are left out when absent, never sent as null: the schema says object, not object or null.
         #[ApiProperty(
             description: self::SALDO_DESCRIPTION,
-            example: ['amount' => '4935.00', 'currency' => 'PLN'],
+            example: self::SALDO_EXAMPLE,
             schema: [
-                'type' => 'object',
+                ...MoneySchema::OBJECT,
                 'description' => self::SALDO_DESCRIPTION,
-                'example' => ['amount' => '4935.00', 'currency' => 'PLN'],
-                'required' => ['amount', 'currency'],
-                'properties' => [
-                    'amount' => ['type' => 'string', 'example' => '4935.00'],
-                    'currency' => ['type' => 'string', 'example' => 'PLN'],
-                ],
+                'example' => self::SALDO_EXAMPLE,
             ],
         )]
         public ?array $saldo = null,
         #[ApiProperty(
             description: self::SALDO_TODAY_DESCRIPTION,
-            example: ['amount' => '4965.00', 'currency' => 'PLN'],
+            example: self::SALDO_TODAY_EXAMPLE,
             schema: [
-                'type' => 'object',
+                ...MoneySchema::OBJECT,
                 'description' => self::SALDO_TODAY_DESCRIPTION,
-                'example' => ['amount' => '4965.00', 'currency' => 'PLN'],
-                'required' => ['amount', 'currency'],
-                'properties' => [
-                    'amount' => ['type' => 'string', 'example' => '4965.00'],
-                    'currency' => ['type' => 'string', 'example' => 'PLN'],
-                ],
+                'example' => self::SALDO_TODAY_EXAMPLE,
             ],
         )]
         public ?array $saldoToday = null,

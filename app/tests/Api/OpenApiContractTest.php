@@ -59,6 +59,22 @@ final class OpenApiContractTest extends WebTestCase
                 'displayLabel',
             ],
         ];
+        yield 'summary' => [
+            'Summary',
+            [
+                'accounts', 'byType', 'byHousehold', 'ownFundsHouseholdName', 'gold', 'retirementBalance',
+                'retirementBalanceWithGold', 'accountsMissingRate',
+            ],
+        ];
+        // In JSON-LD the rows and totals of the summary get no generated @id (genId: false), hence "_noid".
+        yield 'account of the summary' => [
+            'SummaryAccount_noid',
+            [
+                'id', 'bankName', 'typeName', 'currencyCode', 'accountNumber', 'hidden', 'householdName', 'isOwnFunds',
+                'isRetirement', 'saldo', 'missingRate', 'isMain',
+            ],
+        ];
+        yield 'total of a type in the summary' => ['SummaryTypeTotal_noid', ['raw', 'pln']];
     }
 
     /**
@@ -91,6 +107,8 @@ final class OpenApiContractTest extends WebTestCase
         yield 'note and transfer link of an operation' => ['AccountOperation', ['description', 'transactionUuid']];
         yield 'note of a fixed expense' => ['FixedExpense', ['description']];
         yield 'note of a transfer' => ['Transfer', ['description']];
+        // The rate to PLN only for an account in another currency, and only when its bank has one stored.
+        yield 'rate of an account of the summary' => ['SummaryAccount_noid', ['rate']];
     }
 
     /**
