@@ -14,24 +14,21 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\QueryParameter;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Response as OpenApiResponse;
-use App\Entity\Account;
+use App\ApiResource\Input\AccountOperationInput;
 use App\Entity\AccountOperation;
-use App\Entity\Contractor;
 use App\Service\Paginator;
 use App\State\AccountOperationOtherSideProvider;
 use App\State\AccountOperationProcessor;
 use App\State\AccountOperationProvider;
-use App\Util\BusinessDateRange;
-use App\Validator\BusinessDate;
-use App\Validator\ContractorGiven;
-use App\Validator\DecimalString;
 use App\Validator\NoNullCharacter;
-use App\Validator\NonZeroAmount;
-use App\Validator\RecordExists;
-use App\Validator\SelectableAccount;
-use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
+/**
+ * An operation as the API returns it: every field is always there, and the OpenAPI document says so (a generated
+ * client gets types without needless nulls); the description and the transaction UUID are left out when there are
+ * none. What a client sends is AccountOperationInput (input: on POST and PATCH), where any field may be missing until
+ * the validation says why.
+ */
 #[ApiResource(
     shortName: 'AccountOperation',
     description: 'A single account transaction (income or expense).',
@@ -98,6 +95,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             .'A hidden account cannot be chosen: such a request is rejected with 422 on accountId.',
             denormalizationContext: ['groups' => ['operation:create', 'operation:write']],
             validationContext: ['groups' => ['Default', 'operation:create']],
+            input: AccountOperationInput::class,
             processor: AccountOperationProcessor::class,
         ),
         new Patch(
@@ -108,6 +106,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             .'The account of an operation is fixed at creation and cannot be changed. '
             .'Operations of an account that was hidden later can still be updated.',
             denormalizationContext: ['groups' => ['operation:write']],
+            input: AccountOperationInput::class,
             provider: AccountOperationProvider::class,
             processor: AccountOperationProcessor::class,
         ),
@@ -120,106 +119,66 @@ use Symfony\Component\Validator\Constraints as Assert;
     ],
     security: "is_granted('ROLE_USER')",
 )]
-#[ContractorGiven]
-final class AccountOperationResource
+final readonly class AccountOperationResource
 {
-    #[ApiProperty(description: 'Operation id. Read-only, ignored on write.', writable: false, example: 1)]
-    public ?int $id = null;
+    private const string DESCRIPTION = 'Free-text note; left out when there is none.';
+    private const string TRANSACTION_UUID =
+        'Id shared with the other operation of a transfer; left out for an operation that is not part of one.';
 
-    #[ApiProperty(
-        description: 'Id of the account this operation belongs to. Required on create; a hidden account is rejected; '
-        .'it cannot be changed afterwards, so it is not part of the update request.',
-        example: 1
-    )]
-    #[Assert\NotNull(message: 'operation.account_required')]
-    #[RecordExists(Account::class, message: 'account.not_found', groups: ['operation:create'])]
-    #[SelectableAccount(groups: ['operation:create'])]
-    #[Groups(['operation:create'])]
-    public ?int $accountId = null;
-
-    #[ApiProperty(
-        description: 'Id of an existing contractor. Send it alone, or with the name of the same contractor. '
-        .'Null is allowed only on update, together with contractorName, to replace the contractor.',
-        example: 10,
-    )]
-    #[RecordExists(Contractor::class, message: 'contractor.not_found')]
-    #[Groups(['operation:write'])]
-    public ?int $contractorId = null;
-
-    #[ApiProperty(
-        description: 'Contractor name, trimmed; letter case matters. Alone, it finds the contractor or creates a new '
-        .'one. With contractorId, it must be the name of that contractor. Null and a blank name are rejected.',
-        example: 'Example contractor',
-    )]
-    #[Assert\Length(max: 255, maxMessage: 'contractor.name_max_length')]
-    #[NoNullCharacter]
-    #[Groups(['operation:write'])]
-    public ?string $contractorName = null;
-
-    #[ApiProperty(description: 'Operation date, format YYYY-MM-DD, from '.BusinessDateRange::MIN_DATE.' to '
-        .BusinessDateRange::MAX_DATE.' inclusive. Required.', example: '2026-09-29')]
-    #[Assert\NotBlank(message: 'operation.date_not_blank')]
-    #[BusinessDate]
-    #[Groups(['operation:write'])]
-    public ?string $operationDate = null;
-
-    #[ApiProperty(
-        description: 'Amount as a decimal string, e.g. "50.00". Positive for income, negative for expense '
-        .'(exact sign convention follows the same rule as the Twig form). Cannot be zero. Required.',
-        example: '50.00',
-    )]
-    #[Assert\Sequentially([
-        new Assert\NotBlank(message: 'operation.amount_not_blank', normalizer: 'trim'),
-        new DecimalString(),
-        new Assert\Range(
-            notInRangeMessage: 'common.amount_out_of_range',
-            invalidMessage: 'common.numeric_invalid',
-            min: -999999.99,
-            max: 999999.99,
-        ),
-        new NonZeroAmount(),
-    ])]
-    #[Groups(['operation:write'])]
-    public ?string $amount = null;
-
-    #[ApiProperty(
-        description: 'Currency code. Read-only, derived from the account\'s currency, ignored on write.',
-        writable: false,
-        example: 'PLN',
-    )]
-    public ?string $currencyCode = null;
-
-    #[ApiProperty(
-        description: 'Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; '
-        .'a blank note is stored as null.',
-        example: 'Rent for September',
-    )]
-    #[Assert\Length(max: 255, normalizer: 'trim', maxMessage: 'common.description_max_length')]
-    #[NoNullCharacter]
-    #[Groups(['operation:write'])]
-    public ?string $description = null;
-
-    #[ApiProperty(description: 'Whether the operation is confirmed. Defaults to false.', example: false)]
-    #[Groups(['operation:write'])]
-    public bool $confirmed = false;
-
-    #[ApiProperty(description: 'Transaction UUID. Read-only, ignored on write.', writable: false, example: null)]
-    public ?string $transactionUuid = null;
+    public function __construct(
+        #[ApiProperty(description: 'Operation id.', required: true, example: 1)]
+        public int $id,
+        #[ApiProperty(description: 'Id of the account this operation belongs to.', required: true, example: 1)]
+        public int $accountId,
+        #[ApiProperty(description: 'Id of the contractor.', required: true, example: 10)]
+        public int $contractorId,
+        #[ApiProperty(description: 'Name of the contractor.', required: true, example: 'Example contractor')]
+        public string $contractorName,
+        #[ApiProperty(description: 'Operation date, format YYYY-MM-DD.', required: true, example: '2026-09-29')]
+        public string $operationDate,
+        #[ApiProperty(
+            description: 'Amount as a decimal string: positive for income, negative for an expense.',
+            required: true,
+            example: '-50.00',
+        )]
+        public string $amount,
+        #[ApiProperty(description: 'Currency code, the one of the account.', required: true, example: 'PLN')]
+        public string $currencyCode,
+        // Left out when absent, never sent as null: the schema says string, not string or null.
+        #[ApiProperty(
+            description: self::DESCRIPTION,
+            example: 'Rent for September',
+            schema: ['type' => 'string', 'description' => self::DESCRIPTION, 'example' => 'Rent for September'],
+        )]
+        public ?string $description,
+        #[ApiProperty(description: 'Whether the operation is confirmed.', required: true, example: false)]
+        public bool $confirmed,
+        #[ApiProperty(
+            description: self::TRANSACTION_UUID,
+            example: '01a17299-9aed-7df8-ba39-d49647205525',
+            schema: [
+                'type' => 'string',
+                'description' => self::TRANSACTION_UUID,
+                'example' => '01a17299-9aed-7df8-ba39-d49647205525',
+            ],
+        )]
+        public ?string $transactionUuid,
+    ) {
+    }
 
     public static function fromEntity(AccountOperation $accountOperation): self
     {
-        $resource = new self();
-        $resource->id = $accountOperation->getId();
-        $resource->accountId = $accountOperation->getAccount()->getId();
-        $resource->contractorId = $accountOperation->getContractor()->getId();
-        $resource->contractorName = $accountOperation->getContractor()->getName();
-        $resource->operationDate = $accountOperation->getOperationDate()->format('Y-m-d');
-        $resource->amount = $accountOperation->getAmountAsMoney()->toDecimalString();
-        $resource->currencyCode = $accountOperation->getCurrency()->getCode();
-        $resource->description = $accountOperation->getDescription();
-        $resource->confirmed = $accountOperation->isConfirmed();
-        $resource->transactionUuid = $accountOperation->getTransactionUuid()?->toRfc4122();
-
-        return $resource;
+        return new self(
+            id: $accountOperation->getId(),
+            accountId: $accountOperation->getAccount()->getId(),
+            contractorId: $accountOperation->getContractor()->getId(),
+            contractorName: $accountOperation->getContractor()->getName(),
+            operationDate: $accountOperation->getOperationDate()->format('Y-m-d'),
+            amount: $accountOperation->getAmountAsMoney()->toDecimalString(),
+            currencyCode: $accountOperation->getCurrency()->getCode(),
+            description: $accountOperation->getDescription(),
+            confirmed: $accountOperation->isConfirmed(),
+            transactionUuid: $accountOperation->getTransactionUuid()?->toRfc4122(),
+        );
     }
 }

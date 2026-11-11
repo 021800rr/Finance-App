@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\ApiResource\AccountOperationResource;
+use App\ApiResource\Input\AccountOperationInput;
 use App\Entity\Account;
 use App\Entity\AccountOperation;
 use App\Repository\ContractorRepository;
@@ -54,16 +55,16 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor('Existing Contractor');
 
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             accountId: $account->getId(),
             contractorId: $contractor->getId(),
             amount: '150.50',
         );
 
-        $result = $this->processor->process($resource, new Post());
+        $result = $this->processor->process($input, new Post());
 
         self::assertInstanceOf(AccountOperationResource::class, $result);
-        self::assertNotNull($result->id);
+        self::assertGreaterThan(0, $result->id);
         self::assertSame($account->getId(), $result->accountId);
         self::assertSame($contractor->getId(), $result->contractorId);
         self::assertSame('150.50', $result->amount);
@@ -75,16 +76,15 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $account = $this->createAccount();
         $newName = 'Brand New Contractor '.uniqid();
 
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             accountId: $account->getId(),
             contractorName: $newName,
             amount: '10.00',
         );
 
-        $result = $this->processor->process($resource, new Post());
+        $result = $this->processor->process($input, new Post());
 
         self::assertInstanceOf(AccountOperationResource::class, $result);
-        self::assertNotNull($result->contractorId);
         self::assertSame($newName, $result->contractorName);
         self::assertNotNull($this->contractorRepository->find($result->contractorId));
     }
@@ -94,13 +94,13 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor('Reused Contractor '.uniqid());
 
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             accountId: $account->getId(),
             contractorName: $contractor->getName(),
             amount: '10.00',
         );
 
-        $result = $this->processor->process($resource, new Post());
+        $result = $this->processor->process($input, new Post());
 
         self::assertInstanceOf(AccountOperationResource::class, $result);
         self::assertSame($contractor->getId(), $result->contractorId);
@@ -108,40 +108,40 @@ final class AccountOperationProcessorTest extends KernelTestCase
 
     public function testProcessThrowsUnprocessableWhenAccountIdMissing(): void
     {
-        $resource = $this->buildResource(accountId: null, contractorId: 1, amount: '10.00');
+        $input = $this->buildInput(accountId: null, contractorId: 1, amount: '10.00');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsNotFoundWhenAccountDoesNotExist(): void
     {
-        $resource = $this->buildResource(accountId: 999999999, contractorId: 1, amount: '10.00');
+        $input = $this->buildInput(accountId: 999999999, contractorId: 1, amount: '10.00');
 
         $this->expectException(NotFoundHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsNotFoundWhenContractorIdDoesNotExist(): void
     {
         $account = $this->createAccount();
-        $resource = $this->buildResource(accountId: $account->getId(), contractorId: 999999999, amount: '10.00');
+        $input = $this->buildInput(accountId: $account->getId(), contractorId: 999999999, amount: '10.00');
 
         $this->expectException(NotFoundHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenNeitherContractorIdNorNameGiven(): void
     {
         $account = $this->createAccount();
-        $resource = $this->buildResource(accountId: $account->getId(), amount: '10.00');
+        $input = $this->buildInput(accountId: $account->getId(), amount: '10.00');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessTreatsAMissingOperationDateAsABug(): void
@@ -149,7 +149,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor('Contractor');
 
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             accountId: $account->getId(),
             contractorId: $contractor->getId(),
             amount: '10.00',
@@ -159,7 +159,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         // The API validates the date first (NotBlank + BusinessDate), so reaching here is a bug.
         $this->expectException(\LogicException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessTreatsAnUnvalidatedOperationDateAsABug(): void
@@ -167,7 +167,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor('Contractor');
 
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             accountId: $account->getId(),
             contractorId: $contractor->getId(),
             amount: '10.00',
@@ -177,7 +177,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         // The API validates the date first (NotBlank + BusinessDate), so reaching here is a bug.
         $this->expectException(\LogicException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessUpdatesExistingOperationOnPatch(): void
@@ -185,13 +185,13 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor('Original Contractor');
         $created = $this->processor->process(
-            $this->buildResource(accountId: $account->getId(), contractorId: $contractor->getId(), amount: '10.00'),
+            $this->buildInput(accountId: $account->getId(), contractorId: $contractor->getId(), amount: '10.00'),
             new Post(),
         );
         self::assertInstanceOf(AccountOperationResource::class, $created);
 
         $newContractor = $this->createContractor('New Contractor');
-        $update = $this->buildResource(
+        $update = $this->buildInput(
             accountId: $account->getId(),
             contractorId: $newContractor->getId(),
             amount: '99.99',
@@ -213,13 +213,13 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $chfAccount = $this->createAccount('CHF');
         $contractor = $this->createContractor('Mover');
         $created = $this->processor->process(
-            $this->buildResource(accountId: $plnAccount->getId(), contractorId: $contractor->getId(), amount: '10.00'),
+            $this->buildInput(accountId: $plnAccount->getId(), contractorId: $contractor->getId(), amount: '10.00'),
             new Post(),
         );
         self::assertInstanceOf(AccountOperationResource::class, $created);
 
         $result = $this->processor->process(
-            $this->buildResource(accountId: $chfAccount->getId(), contractorId: $contractor->getId(), amount: '25.50'),
+            $this->buildInput(accountId: $chfAccount->getId(), contractorId: $contractor->getId(), amount: '25.50'),
             new Patch(),
             ['id' => $created->id],
         );
@@ -256,7 +256,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
 
         try {
             $this->processor->process(
-                $this->buildResource(
+                $this->buildInput(
                     accountId: $account->getId(),
                     contractorName: $contractorName,
                     amount: $amount,
@@ -285,7 +285,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $this->expectExceptionMessage('Amount is required.');
 
         $this->processor->process(
-            $this->buildResource(accountId: $account->getId(), contractorId: $contractor->getId(), amount: null),
+            $this->buildInput(accountId: $account->getId(), contractorId: $contractor->getId(), amount: null),
             new Post(),
         );
     }
@@ -296,7 +296,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor('Original Contractor');
         $created = $this->processor->process(
-            $this->buildResource(accountId: $account->getId(), contractorId: $contractor->getId(), amount: '10.00'),
+            $this->buildInput(accountId: $account->getId(), contractorId: $contractor->getId(), amount: '10.00'),
             new Post(),
         );
         self::assertInstanceOf(AccountOperationResource::class, $created);
@@ -305,7 +305,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
 
         try {
             $this->processor->process(
-                $this->buildResource(
+                $this->buildInput(
                     accountId: $account->getId(),
                     contractorId: $contractor->getId(),
                     contractorName: $contractorName,
@@ -339,18 +339,22 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $account = $this->createAccount();
         $originalContractor = $this->createContractor('Original Contractor');
         $created = $this->processor->process(
-            $this->buildResource(accountId: $account->getId(), contractorId: $originalContractor->getId()),
+            $this->buildInput(accountId: $account->getId(), contractorId: $originalContractor->getId()),
             new Post(),
         );
         self::assertInstanceOf(AccountOperationResource::class, $created);
+        $existing = $this->em()->find(AccountOperation::class, $created->id);
+        self::assertNotNull($existing);
+        // As a PATCH comes to the processor: the current values from the provider, with the request laid over them.
+        $update = AccountOperationInput::fromEntity($existing);
         $newName = 'New contractor on update '.uniqid();
-        $created->contractorName = $newName;
-        $created->amount = '-99.99';
-        $created->operationDate = '2028-02-29';
-        $created->description = 'Updated';
-        $created->confirmed = true;
+        $update->contractorName = $newName;
+        $update->amount = '-99.99';
+        $update->operationDate = '2028-02-29';
+        $update->description = 'Updated';
+        $update->confirmed = true;
 
-        $result = $this->processor->process($created, new Patch(), ['id' => $created->id]);
+        $result = $this->processor->process($update, new Patch(), ['id' => $created->id]);
 
         self::assertInstanceOf(AccountOperationResource::class, $result);
         $this->em()->clear();
@@ -369,21 +373,22 @@ final class AccountOperationProcessorTest extends KernelTestCase
     public function testWriteFailureRollsBackTheContractorAndOperation(bool $patch, bool $afterOperation): void
     {
         $account = $this->createAccount();
-        $resource = $this->buildResource(accountId: $account->getId());
+        $input = $this->buildInput(accountId: $account->getId());
         $uriVariables = [];
         if ($patch) {
             $contractor = $this->createContractor('Original Contractor');
-            $resource->contractorId = $contractor->getId();
-            $created = $this->processor->process($resource, new Post());
+            $input->contractorId = $contractor->getId();
+            $created = $this->processor->process($input, new Post());
             self::assertInstanceOf(AccountOperationResource::class, $created);
-            $resource = $created;
+            // As the provider gives it to a PATCH: the values of the record, with its id.
+            $input->id = $created->id;
             $uriVariables = ['id' => $created->id];
         }
-        $resource->contractorName = 'Rollback contractor '.uniqid();
-        $resource->amount = '25.50';
-        $resource->operationDate = '2028-02-29';
-        $resource->description = 'Rollback operation '.uniqid();
-        $resource->confirmed = true;
+        $input->contractorName = 'Rollback contractor '.uniqid();
+        $input->amount = '25.50';
+        $input->operationDate = '2028-02-29';
+        $input->description = 'Rollback operation '.uniqid();
+        $input->confirmed = true;
 
         $connection = $this->em()->getConnection();
         $nestingBefore = $connection->getTransactionNestingLevel();
@@ -391,7 +396,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $operationsBefore = $connection->fetchAllAssociative('SELECT * FROM account_operation ORDER BY id');
 
         // Fail after SQL has run, so the assertions below test database rollback, not just validation.
-        $listener = new class($resource->contractorName, $resource->description, $afterOperation) {
+        $listener = new class($input->contractorName, $input->description, $afterOperation) {
             public bool $triggered = false;
 
             public function __construct(
@@ -423,7 +428,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $events = $this->em()->getEventManager();
         $events->addEventListener([Events::postFlush], $listener);
         try {
-            $this->processor->process($resource, $patch ? new Patch() : new Post(), $uriVariables);
+            $this->processor->process($input, $patch ? new Patch() : new Post(), $uriVariables);
             self::fail('The write must fail after reaching the database.');
         } catch (\RuntimeException $exception) {
             self::assertSame('Forced failure after database write.', $exception->getMessage());
@@ -457,7 +462,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
     {
         $account = $this->createAccount();
         $contractor = $this->createContractor('Contractor');
-        $resource = $this->buildResource(
+        $input = $this->buildInput(
             accountId: $account->getId(),
             contractorId: $contractor->getId(),
             amount: '10.00',
@@ -465,7 +470,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
 
         $this->expectException(NotFoundHttpException::class);
 
-        $this->processor->process($resource, new Patch(), ['id' => 999999999]);
+        $this->processor->process($input, new Patch(), ['id' => 999999999]);
     }
 
     public function testProcessDeletesExistingOperationOnDelete(): void
@@ -473,7 +478,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $account = $this->createAccount();
         $contractor = $this->createContractor('Contractor');
         $created = $this->processor->process(
-            $this->buildResource(accountId: $account->getId(), contractorId: $contractor->getId(), amount: '10.00'),
+            $this->buildInput(accountId: $account->getId(), contractorId: $contractor->getId(), amount: '10.00'),
             new Post(),
         );
         self::assertInstanceOf(AccountOperationResource::class, $created);
@@ -491,7 +496,7 @@ final class AccountOperationProcessorTest extends KernelTestCase
         $this->processor->process(null, new Delete(), ['id' => 999999999]);
     }
 
-    public function testProcessThrowsWhenDataIsNotAccountOperationResource(): void
+    public function testProcessThrowsWhenDataIsNotAccountOperationInput(): void
     {
         $this->expectException(\InvalidArgumentException::class);
 
@@ -504,24 +509,24 @@ final class AccountOperationProcessorTest extends KernelTestCase
      */
     private const string AUTO_DATE = '__auto_date__';
 
-    private function buildResource(
+    private function buildInput(
         ?int $accountId = null,
         ?int $contractorId = null,
         ?string $contractorName = null,
         ?string $amount = '10.00',
         ?string $operationDate = self::AUTO_DATE,
         ?string $description = null,
-    ): AccountOperationResource {
-        $resource = new AccountOperationResource();
-        $resource->accountId = $accountId;
-        $resource->contractorId = $contractorId;
-        $resource->contractorName = $contractorName;
-        $resource->amount = $amount;
-        $resource->operationDate = self::AUTO_DATE === $operationDate
+    ): AccountOperationInput {
+        $input = new AccountOperationInput();
+        $input->accountId = $accountId;
+        $input->contractorId = $contractorId;
+        $input->contractorName = $contractorName;
+        $input->amount = $amount;
+        $input->operationDate = self::AUTO_DATE === $operationDate
             ? (new \DateTimeImmutable())->format('Y-m-d')
             : $operationDate;
-        $resource->description = $description;
+        $input->description = $description;
 
-        return $resource;
+        return $input;
     }
 }

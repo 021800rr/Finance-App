@@ -50,6 +50,8 @@ use App\State\TransferProcessor;
 )]
 final readonly class TransferResource
 {
+    private const string DESCRIPTION = 'Free-text note; left out when there is none.';
+
     public function __construct(
         #[ApiProperty(description: 'Id of the account debited.', required: true, example: 1)]
         public int $fromAccountId,
@@ -57,7 +59,12 @@ final readonly class TransferResource
         public int $toAccountId,
         #[ApiProperty(description: 'Transfer date, format YYYY-MM-DD.', required: true, example: '2026-09-29')]
         public string $operationDate,
-        #[ApiProperty(description: 'Free-text note; left out when there is none.', example: 'Monthly savings transfer')]
+        // Left out when absent, never sent as null: the schema says string, not string or null.
+        #[ApiProperty(
+            description: self::DESCRIPTION,
+            example: 'Monthly savings transfer',
+            schema: ['type' => 'string', 'description' => self::DESCRIPTION, 'example' => 'Monthly savings transfer'],
+        )]
         public ?string $description,
         #[ApiProperty(
             description: 'Shared id linking the debit and credit operations.',

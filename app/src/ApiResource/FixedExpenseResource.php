@@ -64,6 +64,8 @@ use App\State\FixedExpenseProvider;
 )]
 final readonly class FixedExpenseResource
 {
+    private const string DESCRIPTION = 'Free-text note; left out when there is none.';
+
     public function __construct(
         #[ApiProperty(description: 'Fixed expense id.', required: true, example: 1)]
         public int $id,
@@ -81,7 +83,12 @@ final readonly class FixedExpenseResource
         public string $amount,
         #[ApiProperty(description: 'Currency code, always "PLN".', required: true, example: 'PLN')]
         public string $currencyCode,
-        #[ApiProperty(description: 'Free-text note; left out when there is none.', example: 'Rent')]
+        // Left out when absent, never sent as null: the schema says string, not string or null.
+        #[ApiProperty(
+            description: self::DESCRIPTION,
+            example: 'Rent',
+            schema: ['type' => 'string', 'description' => self::DESCRIPTION, 'example' => 'Rent'],
+        )]
         public ?string $description,
     ) {
     }
