@@ -147,14 +147,19 @@ export function LineChart({ series, colors, xTitle, yTitle }: Props) {
         <div className="mb-1 font-semibold">
           {hoveredDate === undefined ? '\u00a0' : dateFormat.format(hoveredDate)}
         </div>
-        {series.map((line, index) => (
-          <div key={index} className="flex items-center gap-2">
-            <span className="inline-block size-2 rounded-full" style={{ background: colors[index % colors.length] }} />
-            {line.label}: {hovered !== null && line.values[hovered] !== undefined
-              ? formatAmount(line.values[hovered])
-              : '—'}
-          </div>
-        ))}
+        {series.map((line, index) => {
+          const value = hovered === null ? undefined : line.values[hovered]
+          if (value === undefined) {
+            return null
+          }
+
+          return (
+            <div key={index} className="flex items-center gap-2">
+              <span className="inline-block size-2 rounded-full" style={{ background: colors[index % colors.length] }} />
+              {line.label}: {formatAmount(value)}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

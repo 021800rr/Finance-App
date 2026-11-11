@@ -6,7 +6,7 @@ import enValidators from './locales/en/validators.json'
 import plMessages from './locales/pl/messages.json'
 import plValidators from './locales/pl/validators.json'
 
-// The languages of the app, Polish first: the one used when the browser asks for any other.
+// The languages of the app, Polish by default.
 export const LANGUAGES = ['pl', 'en'] as const
 
 // The texts come from the backend's translations, under the same keys and in the same two domains: "messages"
@@ -27,8 +27,8 @@ void i18n
     nonExplicitSupportedLngs: true,
     ns: ['messages', 'validators'],
     defaultNS: 'messages',
-    // The language chosen in the header is remembered in this browser; at first the browser's own is used.
-    detection: { order: ['localStorage', 'navigator'], caches: ['localStorage'] },
+    // Remember the user's choice; without one start in Polish, regardless of the browser's language.
+    detection: { order: ['localStorage'], caches: ['localStorage'] },
     // React escapes what it shows anyway.
     interpolation: { escapeValue: false },
     initAsync: false,

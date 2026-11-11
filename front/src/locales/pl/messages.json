@@ -205,6 +205,7 @@
     "delete_fixed_expense_failed": "Nie udało się usunąć opłaty stałej.",
     "plan_failed": "Nie udało się zaplanować wydatków.",
     "planning": "Planuję…",
+    "confirm": "Potwierdź",
     "day_placeholder": "1–28",
     "fixed_amount_placeholder": "-200,00",
     "rates_load_failed": "Nie udało się wczytać kursów.",

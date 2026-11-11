@@ -2,6 +2,7 @@ import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
+import { ConfirmDialog } from './ConfirmDialog'
 
 // The icons at the end of a table row: grey, darker under the mouse; a waiting cursor while the table is busy.
 const ICON = 'cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 '
@@ -53,21 +54,23 @@ export function EditLink({ to }: { to: string }) {
   )
 }
 
-// 🗑 with the browser's own "Usunąć?" first, as in the web app.
+// 🗑 asks for confirmation before deleting the row.
 export function DeleteButton({ onDelete, disabled }: { onDelete: () => void; disabled?: boolean }) {
   const { t } = useTranslation()
+  const [confirming, setConfirming] = React.useState(false)
 
   return (
-    <IconButton
-      label={t('operation.delete')}
-      onClick={() => {
-        if (window.confirm(t('operation.confirm_delete'))) {
-          onDelete()
-        }
-      }}
-      disabled={disabled}
-    >
-      <TrashIcon className="size-5 text-red-600 dark:text-red-400" />
-    </IconButton>
+    <>
+      <IconButton label={t('operation.delete')} onClick={() => setConfirming(true)} disabled={disabled}>
+        <TrashIcon className="size-5 text-red-600 dark:text-red-400" />
+      </IconButton>
+      <ConfirmDialog
+        open={confirming}
+        message={t('operation.confirm_delete')}
+        onConfirm={onDelete}
+        onCancel={() => setConfirming(false)}
+        disabled={disabled}
+      />
+    </>
   )
 }

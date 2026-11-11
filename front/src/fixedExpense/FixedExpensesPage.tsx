@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
 import { errorMessage } from '../messages'
 import { Card } from '../ui/Card'
+import { ConfirmDialog } from '../ui/ConfirmDialog'
 import { Alert } from '../ui/Feedback'
 import { QueryResult } from '../ui/QueryResult'
 import { FixedExpenseForm, type FixedExpenseFormValues } from './FixedExpenseForm'
@@ -21,12 +22,9 @@ export function FixedExpensesPage() {
   const plan = usePlanFixedExpenses()
   // A new key gives a new, empty form after every fixed expense added.
   const [formKey, setFormKey] = React.useState(0)
+  const [confirmingPlan, setConfirmingPlan] = React.useState(false)
 
   function planNextMonth() {
-    // The browser's own question, as in the web app.
-    if (!window.confirm(t('fixed_expense.confirm_plan'))) {
-      return
-    }
     // Afterwards the history of the main account, with the new operations, as in the web app.
     plan.mutate(undefined, { onSuccess: (result) => navigate(`/account/${result.accountId}/operations`) })
   }
@@ -35,7 +33,7 @@ export function FixedExpensesPage() {
     <div className="space-y-6">
       <Card
         title={t('fixed_expense.add_title')}
-        aside={<PlanButton planning={plan.isPending} onClick={planNextMonth} />}
+        aside={<PlanButton planning={plan.isPending} onClick={() => setConfirmingPlan(true)} />}
       >
         {/* Why the API refused to plan, e.g. the operations of that month are already there. */}
         {plan.isError && <Alert tone="warning">{errorMessage(plan.error, t('app.plan_failed'))}</Alert>}
@@ -54,6 +52,13 @@ export function FixedExpensesPage() {
           {(rows) => <FixedExpensesTable fixedExpenses={rows} />}
         </QueryResult>
       </Card>
+      <ConfirmDialog
+        open={confirmingPlan}
+        message={t('fixed_expense.confirm_plan')}
+        onConfirm={planNextMonth}
+        onCancel={() => setConfirmingPlan(false)}
+        disabled={plan.isPending}
+      />
     </div>
   )
 }
