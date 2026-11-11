@@ -812,96 +812,86 @@ export interface components {
         /** @description Lists all accounts, ordered by bank, type, currency and account number. */
         Account: {
             /**
-             * @description Account id. Read-only, ignored on write.
+             * @description Account id.
              * @example 1
              */
-            readonly id?: number | null;
+            id: number;
             /**
-             * @description Account number. Read-only, ignored on write.
+             * @description Account number.
              * @example 12 3456 7890 1234 5678 9012 3456
              */
-            readonly accountNumber?: string | null;
+            accountNumber: string;
             /**
-             * @description Whether the account is hidden from the summary/list views. A hidden account cannot be chosen for a new operation or transfer; its existing operations can still be updated. Writable.
+             * @description Whether the account is hidden from the summary/list views. A hidden account cannot be chosen for a new operation or transfer.
              * @example false
              */
-            hidden: boolean | null;
+            hidden: boolean;
             /**
-             * @description Send true to make this the main account; the previous main account is unset automatically. Leave this field out to keep the current state.
+             * @description Whether this is the main account.
              * @example true
              */
-            isMain?: boolean;
+            isMain: boolean;
             /**
-             * @description Bank name. Read-only, ignored on write.
+             * @description Bank name.
              * @example mBank
              */
-            readonly bankName?: string | null;
+            bankName: string;
             /**
-             * @description Currency code. Read-only, ignored on write.
+             * @description Currency code.
              * @example PLN
              */
-            readonly currencyCode?: string | null;
+            currencyCode: string;
             /**
-             * @description Account type name. Read-only, ignored on write.
+             * @description Account type name.
              * @example Konto osobiste
              */
-            readonly typeName?: string | null;
+            typeName: string;
             /**
-             * @description Household name. Read-only, ignored on write.
+             * @description Household name.
              * @example Dom
              */
-            readonly householdName?: string | null;
+            householdName: string;
             /**
-             * @description Human-readable label combining bank, type, currency and account number. Read-only.
+             * @description Human-readable label combining bank, type, currency and account number.
              * @example mBank / Konto osobiste / PLN / 12 3456 7890 1234 5678 9012 3456
              */
-            readonly displayLabel?: string | null;
+            displayLabel: string;
             /**
-             * @description Balance including operations dated in the future. Read-only, returned only by GET.
+             * @description Balance including operations dated in the future. Only in GET /api/accounts/{id}.
              * @example {
              *       "amount": "4935.00",
              *       "currency": "PLN"
              *     }
              */
-            readonly saldo?: {
+            saldo?: {
                 /** @example 4935.00 */
-                amount?: string;
+                amount: string;
                 /** @example PLN */
-                currency?: string;
-            } | null;
+                currency: string;
+            };
             /**
-             * @description Balance counting only operations dated today or earlier. Read-only, returned only by GET.
+             * @description Balance counting only operations dated today or earlier. Only in GET /api/accounts/{id}.
              * @example {
              *       "amount": "4965.00",
              *       "currency": "PLN"
              *     }
              */
-            readonly saldoToday?: {
+            saldoToday?: {
                 /** @example 4965.00 */
-                amount?: string;
+                amount: string;
                 /** @example PLN */
-                currency?: string;
-            } | null;
+                currency: string;
+            };
             /**
-             * @description True when saldo and saldoToday differ, i.e. future-dated operations exist. Read-only, returned only by GET.
+             * @description True when saldo and saldoToday differ, i.e. future-dated operations exist. Only in GET /api/accounts/{id}.
              * @example true
              */
-            readonly hasFutureOperations?: boolean | null;
+            hasFutureOperations?: boolean;
         };
         /** @description Updates an account. "hidden" mirrors the web app's "Hide"/"Show" toggle. "isMain" mirrors the ☆ toggle: true makes this the main account and unsets the previous one. No other edits are supported. */
-        "Account.jsonMergePatch": {
+        "Account.AccountInput.jsonMergePatch": {
             /**
-             * @description Account id. Read-only, ignored on write.
-             * @example 1
-             */
-            readonly id?: number | null;
-            /**
-             * @description Account number. Read-only, ignored on write.
-             * @example 12 3456 7890 1234 5678 9012 3456
-             */
-            readonly accountNumber?: string | null;
-            /**
-             * @description Whether the account is hidden from the summary/list views. A hidden account cannot be chosen for a new operation or transfer; its existing operations can still be updated. Writable.
+             * @description Whether the account is hidden from the summary/list views. A hidden account cannot be chosen for a new operation or transfer; its existing operations can still be updated.
              * @example false
              */
             hidden?: boolean | null;
@@ -910,141 +900,85 @@ export interface components {
              * @example true
              */
             isMain?: boolean;
-            /**
-             * @description Bank name. Read-only, ignored on write.
-             * @example mBank
-             */
-            readonly bankName?: string | null;
-            /**
-             * @description Currency code. Read-only, ignored on write.
-             * @example PLN
-             */
-            readonly currencyCode?: string | null;
-            /**
-             * @description Account type name. Read-only, ignored on write.
-             * @example Konto osobiste
-             */
-            readonly typeName?: string | null;
-            /**
-             * @description Household name. Read-only, ignored on write.
-             * @example Dom
-             */
-            readonly householdName?: string | null;
-            /**
-             * @description Human-readable label combining bank, type, currency and account number. Read-only.
-             * @example mBank / Konto osobiste / PLN / 12 3456 7890 1234 5678 9012 3456
-             */
-            readonly displayLabel?: string | null;
-            /**
-             * @description Balance including operations dated in the future. Read-only, returned only by GET.
-             * @example {
-             *       "amount": "4935.00",
-             *       "currency": "PLN"
-             *     }
-             */
-            readonly saldo?: {
-                /** @example 4935.00 */
-                amount?: string;
-                /** @example PLN */
-                currency?: string;
-            } | null;
-            /**
-             * @description Balance counting only operations dated today or earlier. Read-only, returned only by GET.
-             * @example {
-             *       "amount": "4965.00",
-             *       "currency": "PLN"
-             *     }
-             */
-            readonly saldoToday?: {
-                /** @example 4965.00 */
-                amount?: string;
-                /** @example PLN */
-                currency?: string;
-            } | null;
-            /**
-             * @description True when saldo and saldoToday differ, i.e. future-dated operations exist. Read-only, returned only by GET.
-             * @example true
-             */
-            readonly hasFutureOperations?: boolean | null;
         };
         /** @description Lists all accounts, ordered by bank, type, currency and account number. */
         "Account.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
-             * @description Account id. Read-only, ignored on write.
+             * @description Account id.
              * @example 1
              */
-            readonly id?: number | null;
+            id: number;
             /**
-             * @description Account number. Read-only, ignored on write.
+             * @description Account number.
              * @example 12 3456 7890 1234 5678 9012 3456
              */
-            readonly accountNumber?: string | null;
+            accountNumber: string;
             /**
-             * @description Whether the account is hidden from the summary/list views. A hidden account cannot be chosen for a new operation or transfer; its existing operations can still be updated. Writable.
+             * @description Whether the account is hidden from the summary/list views. A hidden account cannot be chosen for a new operation or transfer.
              * @example false
              */
-            hidden: boolean | null;
+            hidden: boolean;
             /**
-             * @description Send true to make this the main account; the previous main account is unset automatically. Leave this field out to keep the current state.
+             * @description Whether this is the main account.
              * @example true
              */
-            isMain?: boolean;
+            isMain: boolean;
             /**
-             * @description Bank name. Read-only, ignored on write.
+             * @description Bank name.
              * @example mBank
              */
-            readonly bankName?: string | null;
+            bankName: string;
             /**
-             * @description Currency code. Read-only, ignored on write.
+             * @description Currency code.
              * @example PLN
              */
-            readonly currencyCode?: string | null;
+            currencyCode: string;
             /**
-             * @description Account type name. Read-only, ignored on write.
+             * @description Account type name.
              * @example Konto osobiste
              */
-            readonly typeName?: string | null;
+            typeName: string;
             /**
-             * @description Household name. Read-only, ignored on write.
+             * @description Household name.
              * @example Dom
              */
-            readonly householdName?: string | null;
+            householdName: string;
             /**
-             * @description Human-readable label combining bank, type, currency and account number. Read-only.
+             * @description Human-readable label combining bank, type, currency and account number.
              * @example mBank / Konto osobiste / PLN / 12 3456 7890 1234 5678 9012 3456
              */
-            readonly displayLabel?: string | null;
+            displayLabel: string;
             /**
-             * @description Balance including operations dated in the future. Read-only, returned only by GET.
+             * @description Balance including operations dated in the future. Only in GET /api/accounts/{id}.
              * @example {
              *       "amount": "4935.00",
              *       "currency": "PLN"
              *     }
              */
-            readonly saldo?: {
+            saldo?: {
                 /** @example 4935.00 */
-                amount?: string;
+                amount: string;
                 /** @example PLN */
-                currency?: string;
-            } | null;
+                currency: string;
+            };
             /**
-             * @description Balance counting only operations dated today or earlier. Read-only, returned only by GET.
+             * @description Balance counting only operations dated today or earlier. Only in GET /api/accounts/{id}.
              * @example {
              *       "amount": "4965.00",
              *       "currency": "PLN"
              *     }
              */
-            readonly saldoToday?: {
+            saldoToday?: {
                 /** @example 4965.00 */
-                amount?: string;
+                amount: string;
                 /** @example PLN */
-                currency?: string;
-            } | null;
+                currency: string;
+            };
             /**
-             * @description True when saldo and saldoToday differ, i.e. future-dated operations exist. Read-only, returned only by GET.
+             * @description True when saldo and saldoToday differ, i.e. future-dated operations exist. Only in GET /api/accounts/{id}.
              * @example true
              */
-            readonly hasFutureOperations?: boolean | null;
+            hasFutureOperations?: boolean;
         };
         /** @description Searches the operations of all accounts, newest first, 20 per page. The search text q is required; page must be a positive whole number. To list the operations of one account use /accounts/{accountId}/operations. */
         AccountOperation: {
@@ -1435,10 +1369,18 @@ export interface components {
         /** @description Lists contractors, optionally filtered by a partial name match. */
         Contractor: {
             /**
-             * @description Contractor id. Read-only, ignored on write.
+             * @description Contractor id.
              * @example 1
              */
-            readonly id?: number | null;
+            id: number;
+            /**
+             * @description Contractor name, unique.
+             * @example ACME Sp. z o.o.
+             */
+            name: string;
+        };
+        /** @description Creates a new contractor. Fails with 409 and errorCode "contractor.name_not_unique" if a contractor with this name already exists. */
+        "Contractor.ContractorInput": {
             /**
              * @description Contractor name. Must be unique. Required, 1-255 characters.
              * @example ACME Sp. z o.o.
@@ -1448,15 +1390,15 @@ export interface components {
         /** @description Lists contractors, optionally filtered by a partial name match. */
         "Contractor.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
-             * @description Contractor id. Read-only, ignored on write.
+             * @description Contractor id.
              * @example 1
              */
-            readonly id?: number | null;
+            id: number;
             /**
-             * @description Contractor name. Must be unique. Required, 1-255 characters.
+             * @description Contractor name, unique.
              * @example ACME Sp. z o.o.
              */
-            name: string | null;
+            name: string;
         };
         /** @description Lists all currencies, ordered by code. */
         Currency: {
@@ -2407,7 +2349,7 @@ export interface operations {
         /** @description The updated Account resource */
         requestBody: {
             content: {
-                "application/merge-patch+json": components["schemas"]["Account.jsonMergePatch"];
+                "application/merge-patch+json": components["schemas"]["Account.AccountInput.jsonMergePatch"];
             };
         };
         responses: {
@@ -4297,8 +4239,8 @@ export interface operations {
         /** @description The new Contractor resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["Contractor"];
-                "application/json": components["schemas"]["Contractor"];
+                "application/ld+json": components["schemas"]["Contractor.ContractorInput"];
+                "application/json": components["schemas"]["Contractor.ContractorInput"];
             };
         };
         responses: {

@@ -1,20 +1,13 @@
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { getJson, patchJson, postJson } from '../api'
+import type { components } from '../generated/api'
 import { queryKeys, useInvalidate } from '../queryKeys'
 import type { Operation } from '../account/accountApi'
 
-// One row of GET /api/accounts.
-export type AccountChoice = {
-  id: number
-  hidden: boolean
-  isMain: boolean
-  displayLabel: string
-  bankName: string
-  currencyCode: string
-  accountNumber: string
-}
-
-export type Contractor = { id: number; name: string }
+// The types of the API, generated from its OpenAPI description (npm run api-types): an account of the list (without
+// its balances) and a contractor.
+export type AccountChoice = components['schemas']['Account']
+export type Contractor = components['schemas']['Contractor']
 
 // What the form sends. The contractor goes as contractorId (one from the list) or contractorName (a new one: the API
 // creates it).

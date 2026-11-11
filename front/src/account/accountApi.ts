@@ -1,25 +1,15 @@
 import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { deleteResource, getJson, getPage, patchJson } from '../api'
+import type { components } from '../generated/api'
 import { queryKeys, useInvalidate } from '../queryKeys'
-import type { Money } from '../money'
 
-// GET /api/accounts/{id}
-export type Account = {
-  id: number
-  accountNumber: string
-  hidden: boolean
-  isMain: boolean
-  bankName: string
-  currencyCode: string
-  typeName: string
-  householdName: string
-  displayLabel: string
-  // with the operations dated in the future
-  saldo: Money
-  // only the operations dated today or earlier
-  saldoToday: Money
-  hasFutureOperations: boolean
-}
+// The types of the API, generated from its OpenAPI description (npm run api-types): an account as the API answers it.
+// Only GET /api/accounts/{id} adds the balances (saldo with the operations dated in the future, saldoToday with those
+// dated today or earlier); the list and the answer to PATCH leave them out…
+type AccountAnswer = components['schemas']['Account']
+
+// …so the account of a history page, read with that GET, has them for sure.
+export type Account = AccountAnswer & Required<Pick<AccountAnswer, 'saldo' | 'saldoToday' | 'hasFutureOperations'>>
 
 // One row of GET /api/accounts/{id}/operations. The API leaves out the fields that are null.
 export type Operation = {
