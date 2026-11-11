@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { today } from '../ui/form'
 import { QueryResult } from '../ui/QueryResult'
+import { useGoBack } from '../ui/useGoBack'
 import { OperationForm } from './OperationForm'
 import { type AccountChoice, useAccounts, useCreateOperation } from './operationApi'
 
@@ -26,6 +27,7 @@ function NewOperation({ accounts }: { accounts: AccountChoice[] }) {
   const visible = accounts.filter((account) => !account.hidden)
   const wanted = params.get('account')
   const preselected = wanted === null ? undefined : accounts.find((account) => String(account.id) === wanted)
+  const goBack = useGoBack(preselected === undefined ? '/' : `/account/${preselected.id}/operations`)
   // As in the web app: an account in the address that is missing or hidden is not offered instead of another one.
   if (wanted !== null && (preselected === undefined || preselected.hidden)) {
     return (
@@ -57,7 +59,7 @@ function NewOperation({ accounts }: { accounts: AccountChoice[] }) {
         const operation = await create.mutateAsync({ ...input, accountId })
         navigate(`/account/${operation.accountId}/operations?highlight=${operation.id}`)
       }}
-      onCancel={() => navigate(-1)}
+      onCancel={goBack}
     />
   )
 }

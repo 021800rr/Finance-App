@@ -221,6 +221,8 @@
     "gold_prices_load_failed": "Could not load the gold prices.",
     "save_gold_price_failed": "Could not save the gold price.",
     "delete_gold_price_failed": "Could not delete the gold price.",
-    "price_placeholder": "8650.00"
+    "price_placeholder": "8650.00",
+    "page_failed_title": "Something went wrong",
+    "page_failed": "This page could not be shown. Go to another page from the menu or reload the browser."
   }
 }

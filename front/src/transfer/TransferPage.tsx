@@ -11,6 +11,7 @@ import { FormButtons } from '../ui/FormButtons'
 import { FormRow } from '../ui/FormRow'
 import { QueryResult } from '../ui/QueryResult'
 import { useApiForm } from '../ui/useApiForm'
+import { useGoBack } from '../ui/useGoBack'
 import { type TransferInput, useCreateTransfer } from './transferApi'
 
 type Field = 'from' | 'to' | 'amountFrom' | 'amountTo' | 'date' | 'description'
@@ -49,6 +50,7 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const create = useCreateTransfer()
+  const goBack = useGoBack('/')
   const [fromId, setFromId] = React.useState(accounts[0]?.id ?? null)
   // Another account than the first one, so the form does not start with a transfer to itself.
   const [toId, setToId] = React.useState(accounts[1]?.id ?? accounts[0]?.id ?? null)
@@ -156,7 +158,7 @@ function TransferForm({ accounts }: { accounts: AccountChoice[] }) {
             className={inputClass(errors.description)}
           />
         </FormRow>
-        <FormButtons sending={form.sending} onCancel={() => navigate(-1)} />
+        <FormButtons sending={form.sending} onCancel={goBack} />
       </form>
     </Card>
   )

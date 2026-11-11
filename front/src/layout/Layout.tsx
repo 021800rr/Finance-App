@@ -1,7 +1,10 @@
+import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useLocation, useSearchParams } from 'react-router'
 import { LogoutButton } from '../auth/LogoutButton'
 import { SearchBox } from '../search/SearchBox'
+import { ErrorBoundary } from '../ui/ErrorBoundary'
+import { Loading } from '../ui/Feedback'
 import { LanguageSwitcher } from './LanguageSwitcher'
 
 // The same menu as in the web app (templates/partials/_navbar.html.twig), with the same addresses and texts.
@@ -51,7 +54,13 @@ export function Layout() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <Outlet />
+        {/* A page that fails keeps the header; another address starts afresh. A page loaded on demand says
+            "Wczytuję…" meanwhile. */}
+        <ErrorBoundary resetKey={location.pathname}>
+          <React.Suspense fallback={<Loading />}>
+            <Outlet />
+          </React.Suspense>
+        </ErrorBoundary>
       </main>
     </div>
   )

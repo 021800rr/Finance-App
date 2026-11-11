@@ -221,6 +221,8 @@
     "gold_prices_load_failed": "Nie udało się wczytać cen złota.",
     "save_gold_price_failed": "Nie udało się zapisać ceny złota.",
     "delete_gold_price_failed": "Nie udało się usunąć ceny złota.",
-    "price_placeholder": "8650,00"
+    "price_placeholder": "8650,00",
+    "page_failed_title": "Coś poszło nie tak",
+    "page_failed": "Tej strony nie udało się wyświetlić. Przejdź na inną stronę z menu albo odśwież przeglądarkę."
   }
 }

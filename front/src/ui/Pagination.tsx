@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Link, useSearchParams } from 'react-router'
+import { Link, Navigate, useSearchParams } from 'react-router'
 
 const LINK = 'rounded-md border border-slate-300 dark:border-slate-600 px-3 py-1 text-slate-700 dark:text-slate-300 '
   + 'hover:bg-slate-50 dark:hover:bg-slate-800'
@@ -11,15 +11,21 @@ const OFF = 'rounded-md border border-slate-200 dark:border-slate-700 px-3 py-1 
 export function Pagination({ page, lastPage }: { page: number; lastPage: number }) {
   const { t } = useTranslation()
   const [params] = useSearchParams()
-  if (lastPage <= 1) {
-    return null
-  }
 
   function pageAddress(target: number): string {
     const next = new URLSearchParams(params)
     next.set('page', String(target))
 
     return `?${next}`
+  }
+
+  // A page past the last one (its last rows were just deleted, or an old link): the last page instead of an empty one.
+  const last = Math.max(lastPage, 1)
+  if (page > last) {
+    return <Navigate to={pageAddress(last)} replace />
+  }
+  if (last === 1) {
+    return null
   }
 
   return (

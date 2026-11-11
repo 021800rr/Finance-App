@@ -11,6 +11,7 @@ Chart.register(LineController, LineElement, PointElement, LinearScale, Legend)
 export type Series = { label: string; values: Record<string, string> }
 
 type Props = {
+  // pass it memoized (useMemo): every new array draws the chart anew
   series: Series[]
   // the colours of the lines, used again in turn when there are more lines
   colors: string[]

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router'
 import type { Operation } from '../account/accountApi'
 import { formAmount } from '../ui/form'
 import { QueryResult } from '../ui/QueryResult'
+import { useGoBack } from '../ui/useGoBack'
 import { OperationForm } from './OperationForm'
 import { type AccountChoice, type OperationInput, useAccounts, useOperation, useUpdateOperation } from './operationApi'
 
@@ -28,6 +29,7 @@ function EditForm({ operation, accounts }: { operation: Operation; accounts: Acc
   const { t } = useTranslation()
   const navigate = useNavigate()
   const update = useUpdateOperation(operation.id)
+  const goBack = useGoBack(`/account/${operation.accountId}/operations`)
   // Only its own account, shown but fixed; it may have been hidden since, and still is the right one.
   const own = accounts.filter((account) => account.id === operation.accountId)
 
@@ -52,7 +54,7 @@ function EditForm({ operation, accounts }: { operation: Operation; accounts: Acc
         await update.mutateAsync(changes)
         navigate(`/account/${operation.accountId}/operations?highlight=${operation.id}`)
       }}
-      onCancel={() => navigate(-1)}
+      onCancel={goBack}
     />
   )
 }

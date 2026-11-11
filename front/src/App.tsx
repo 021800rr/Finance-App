@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Route, Routes } from 'react-router'
 import { useAuth } from './auth/AuthContext'
@@ -8,14 +9,21 @@ import { EditFixedExpensePage } from './fixedExpense/EditFixedExpensePage'
 import { FixedExpensesPage } from './fixedExpense/FixedExpensesPage'
 import { EditGoldAssetPage } from './goldAsset/EditGoldAssetPage'
 import { GoldAssetsPage } from './goldAsset/GoldAssetsPage'
-import { GoldPricesPage } from './goldPrice/GoldPricesPage'
 import { EditOperationPage } from './operation/EditOperationPage'
 import { NewOperationPage } from './operation/NewOperationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
-import { RatesPage } from './rate/RatesPage'
 import { SearchPage } from './search/SearchPage'
 import { TransferPage } from './transfer/TransferPage'
 import { SummaryPage } from './summary/SummaryPage'
+
+// The two pages with a chart are loaded when first opened: chart.js comes with them, and the rest of the app starts
+// without it.
+const RatesPage = React.lazy(async () => ({
+  default: (await import('./rate/RatesPage')).RatesPage,
+}))
+const GoldPricesPage = React.lazy(async () => ({
+  default: (await import('./goldPrice/GoldPricesPage')).GoldPricesPage,
+}))
 
 // The login form until the user is logged in, whatever the address; afterwards the page of the address, so a link
 // opened while logged out lands where it pointed.

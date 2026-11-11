@@ -43,6 +43,8 @@ export function OperationsTable({
   const setConfirmed = useSetOperationConfirmed()
   const remove = useDeleteOperation()
   const [otherSideMessage, setOtherSideMessage] = React.useState('')
+  // true while the other side of a transfer is looked for: one click, one request
+  const [following, setFollowing] = React.useState(false)
   // One change at a time: the buttons wait until the table shows the result of the previous one.
   const busy = setConfirmed.isPending || remove.isPending
   const failure = remove.isError
@@ -62,12 +64,15 @@ export function OperationsTable({
   // side (it was deleted), the message says so and the operation itself is framed.
   async function goToOtherSide(operation: Operation) {
     clearMessages()
+    setFollowing(true)
     try {
       const otherSide = await findOtherSide(operation.id)
       navigate(`/account/${otherSide.accountId}/operations?highlight=${otherSide.id}`)
     } catch (error) {
       setOtherSideMessage(errorMessage(error, t('app.other_side_failed')))
       setParams({ ...Object.fromEntries(params), highlight: String(operation.id) })
+    } finally {
+      setFollowing(false)
     }
   }
 
@@ -107,7 +112,11 @@ export function OperationsTable({
                   {otherSideLinks && (
                     <span className="w-5 text-center">
                       {operation.transactionUuid && (
-                        <IconButton label={t('operation.show_other_side')} onClick={() => goToOtherSide(operation)}>
+                        <IconButton
+                          label={t('operation.show_other_side')}
+                          onClick={() => goToOtherSide(operation)}
+                          disabled={following}
+                        >
                           🔗
                         </IconButton>
                       )}
