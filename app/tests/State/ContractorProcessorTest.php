@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\State;
 
 use ApiPlatform\Metadata\Post;
-use App\ApiResource\ContractorResource;
+use App\ApiResource\Input\ContractorInput;
 use App\Entity\Contractor;
 use App\State\ContractorProcessor;
 use App\Tests\DatabaseTestTrait;
@@ -37,55 +37,55 @@ final class ContractorProcessorTest extends KernelTestCase
 
     public function testProcessCreatesContractorSuccessfully(): void
     {
-        $resource = $this->buildResource('New Contractor '.uniqid());
+        $input = $this->buildInput('New Contractor '.uniqid());
 
-        $result = $this->processor->process($resource, new Post());
+        $result = $this->processor->process($input, new Post());
 
-        self::assertNotNull($result->id);
-        self::assertSame($resource->name, $result->name);
+        self::assertGreaterThan(0, $result->id);
+        self::assertSame($input->name, $result->name);
         self::assertNotNull($this->em()->getRepository(Contractor::class)->find($result->id));
     }
 
     public function testProcessThrowsConflictOnDuplicateName(): void
     {
         $name = 'Duplicate Contractor '.uniqid();
-        $this->processor->process($this->buildResource($name), new Post());
+        $this->processor->process($this->buildInput($name), new Post());
 
         $this->expectException(ConflictHttpException::class);
 
-        $this->processor->process($this->buildResource($name), new Post());
+        $this->processor->process($this->buildInput($name), new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenNameMissing(): void
     {
-        $resource = $this->buildResource(null);
+        $input = $this->buildInput(null);
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
     public function testProcessThrowsUnprocessableWhenNameBlank(): void
     {
-        $resource = $this->buildResource('   ');
+        $input = $this->buildInput('   ');
 
         $this->expectException(UnprocessableEntityHttpException::class);
 
-        $this->processor->process($resource, new Post());
+        $this->processor->process($input, new Post());
     }
 
-    public function testProcessThrowsWhenDataIsNotContractorResource(): void
+    public function testProcessThrowsWhenDataIsNotContractorInput(): void
     {
         $this->expectException(\InvalidArgumentException::class);
 
         $this->processor->process(new \stdClass(), new Post());
     }
 
-    private function buildResource(?string $name): ContractorResource
+    private function buildInput(?string $name): ContractorInput
     {
-        $resource = new ContractorResource();
-        $resource->name = $name;
+        $input = new ContractorInput();
+        $input->name = $name;
 
-        return $resource;
+        return $input;
     }
 }

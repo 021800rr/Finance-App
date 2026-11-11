@@ -7,6 +7,7 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\AccountResource;
+use App\ApiResource\Input\AccountInput;
 use App\Entity\Account;
 use App\Exception\AccountException;
 use App\Repository\AccountRepository;
@@ -37,8 +38,8 @@ final readonly class AccountProcessor implements ProcessorInterface
         array $uriVariables = [],
         array $context = [],
     ): AccountResource {
-        if (!$data instanceof AccountResource) {
-            throw new \InvalidArgumentException('Expected instance of AccountResource.');
+        if (!$data instanceof AccountInput) {
+            throw new \InvalidArgumentException('Expected instance of AccountInput.');
         }
 
         $account = $this->loadExisting($uriVariables);

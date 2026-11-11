@@ -7,6 +7,7 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\ContractorResource;
+use App\ApiResource\Input\ContractorInput;
 use App\Entity\Contractor;
 use App\Exception\ContractorException;
 use App\Repository\ContractorRepository;
@@ -33,8 +34,8 @@ final readonly class ContractorProcessor implements ProcessorInterface
         array $uriVariables = [],
         array $context = [],
     ): ContractorResource {
-        if (!$data instanceof ContractorResource) {
-            throw new \InvalidArgumentException('Expected instance of ContractorResource.');
+        if (!$data instanceof ContractorInput) {
+            throw new \InvalidArgumentException('Expected instance of ContractorInput.');
         }
 
         $trimmedName = trim((string) $data->name);

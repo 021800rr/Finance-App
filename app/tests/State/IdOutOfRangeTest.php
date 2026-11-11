@@ -12,7 +12,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
 use ApiPlatform\State\ProviderInterface;
 use App\ApiResource\AccountOperationResource;
-use App\ApiResource\AccountResource;
+use App\ApiResource\Input\AccountInput;
 use App\ApiResource\Input\CurrencyExchangeRateInput;
 use App\ApiResource\Input\FixedExpenseInput;
 use App\ApiResource\Input\GoldAssetInput;
@@ -93,7 +93,7 @@ final class IdOutOfRangeTest extends KernelTestCase
             new Patch(),
             new AccountOperationResource(),
         ];
-        yield 'account patch' => [AccountProcessor::class, new Patch(), new AccountResource()];
+        yield 'account patch' => [AccountProcessor::class, new Patch(), new AccountInput()];
         yield 'currency exchange rate delete' => [CurrencyExchangeRateProcessor::class, new Delete(), null];
         yield 'fixed expense delete' => [FixedExpenseProcessor::class, new Delete(), null];
         yield 'fixed expense patch' => [FixedExpenseProcessor::class, new Patch(), new FixedExpenseInput()];

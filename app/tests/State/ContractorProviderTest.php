@@ -63,7 +63,7 @@ final class ContractorProviderTest extends KernelTestCase
         /** @var list<ContractorResource> $result */
         $result = $this->provider->provide(new GetCollection());
 
-        $names = array_map(static fn (ContractorResource $r): ?string => $r->name, $result);
+        $names = array_map(static fn (ContractorResource $r): string => $r->name, $result);
         $positionOfAlpha = array_search($alpha->getName(), $names, true);
         $positionOfZebra = array_search($zebra->getName(), $names, true);
 
@@ -80,7 +80,6 @@ final class ContractorProviderTest extends KernelTestCase
         /** @var list<ContractorResource> $result */
         $result = $this->provider->provide(new GetCollection(), [], ['filters' => ['name' => 'Éc']]);
 
-        self::assertNotNull($result[0]->name);
         self::assertStringStartsWith('Écolier', $result[0]->name);
     }
 
