@@ -142,6 +142,7 @@ test:
 	docker exec finance-php-dev vendor/bin/phpstan analyse --memory-limit 1G
 	docker exec finance-php-dev vendor/bin/php-cs-fixer fix
 	docker exec finance-node-dev sh -c 'node --test tests/Frontend/*.test.mjs'
+	docker exec finance-front-dev sh -c 'npm test'
 	docker exec finance-php-dev php -r 'echo date("H:i"), PHP_EOL;'
 
 phpstan:

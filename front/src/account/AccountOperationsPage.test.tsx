@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import userEvent from '@testing-library/user-event'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -132,8 +132,11 @@ it('keeps the source page and reports a genuinely missing other side', async () 
   await userEvent.click(await screen.findByRole('button', { name: 'Pokaż drugą stronę transakcji' }))
 
   expect(await screen.findByRole('alert')).toHaveTextContent(/drugiej|powiązanej/)
-  expect(screen.getByText('Source').closest('tr')).toHaveClass('[&>td]:border-blue-500')
-  expect(screen.getByLabelText('Strona 3')).toHaveAttribute('aria-current', 'page')
+  // The error can render before React Router commits the highlight parameter.
+  await waitFor(() => {
+    expect(screen.getByText('Source').closest('tr')).toHaveClass('[&>td]:border-blue-500')
+    expect(screen.getByLabelText('Strona 3')).toHaveAttribute('aria-current', 'page')
+  })
   unmount()
   client.clear()
 })
