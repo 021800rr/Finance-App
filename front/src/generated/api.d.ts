@@ -2019,6 +2019,64 @@ export interface components {
         /** @description Creates a transfer. If fromAccount and toAccount have the same currency, amountTo is generated automatically and must not be sent. If currencies differ, amountTo is required. A hidden account cannot be chosen on either side: such a request is rejected with 422 on fromAccountId or toAccountId. */
         Transfer: {
             /**
+             * @description Id of the account debited.
+             * @example 1
+             */
+            fromAccountId: number;
+            /**
+             * @description Id of the account credited.
+             * @example 2
+             */
+            toAccountId: number;
+            /**
+             * @description Transfer date, format YYYY-MM-DD.
+             * @example 2026-09-29
+             */
+            operationDate: string;
+            /**
+             * @description Free-text note; left out when there is none.
+             * @example Monthly savings transfer
+             */
+            description?: string | null;
+            /**
+             * @description Shared id linking the debit and credit operations.
+             * @example 01a1c8b2-262e-72a9-9ac6-1652e5dffefe
+             */
+            transactionUuid: string;
+            /**
+             * @description Id of the created debit (out) operation.
+             * @example 101
+             */
+            outOperationId: number;
+            /**
+             * @description Debited amount as recorded, negative decimal string.
+             * @example -100.00
+             */
+            outAmount: string;
+            /**
+             * @description Currency of the debit operation.
+             * @example PLN
+             */
+            outCurrencyCode: string;
+            /**
+             * @description Id of the created credit (in) operation.
+             * @example 102
+             */
+            inOperationId: number;
+            /**
+             * @description Credited amount as recorded, positive decimal string.
+             * @example 23.00
+             */
+            inAmount: string;
+            /**
+             * @description Currency of the credit operation.
+             * @example CHF
+             */
+            inCurrencyCode: string;
+        };
+        /** @description Creates a transfer. If fromAccount and toAccount have the same currency, amountTo is generated automatically and must not be sent. If currencies differ, amountTo is required. A hidden account cannot be chosen on either side: such a request is rejected with 422 on fromAccountId or toAccountId. */
+        "Transfer.TransferInput": {
+            /**
              * @description Id of the account being debited. Required; a hidden account is rejected.
              * @example 1
              */
@@ -2044,63 +2102,64 @@ export interface components {
              * @example Monthly savings transfer
              */
             description?: string | null;
-            /** @description Shared id linking the debit and credit operations. Read-only. */
-            readonly transactionUuid?: string | null;
-            /** @description Id of the created debit (out) operation. Read-only. */
-            readonly outOperationId?: number | null;
-            /** @description Debited amount as recorded, negative decimal string. Read-only. */
-            readonly outAmount?: string | null;
-            /** @description Currency of the debit operation. Read-only. */
-            readonly outCurrencyCode?: string | null;
-            /** @description Id of the created credit (in) operation. Read-only. */
-            readonly inOperationId?: number | null;
-            /** @description Credited amount as recorded, positive decimal string. Read-only. */
-            readonly inAmount?: string | null;
-            /** @description Currency of the credit operation. Read-only. */
-            readonly inCurrencyCode?: string | null;
         };
         /** @description Creates a transfer. If fromAccount and toAccount have the same currency, amountTo is generated automatically and must not be sent. If currencies differ, amountTo is required. A hidden account cannot be chosen on either side: such a request is rejected with 422 on fromAccountId or toAccountId. */
         "Transfer.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
-             * @description Id of the account being debited. Required; a hidden account is rejected.
+             * @description Id of the account debited.
              * @example 1
              */
-            fromAccountId: number | null;
+            fromAccountId: number;
             /**
-             * @description Id of the account being credited. Required, must differ from fromAccountId; a hidden account is rejected.
+             * @description Id of the account credited.
              * @example 2
              */
-            toAccountId: number | null;
+            toAccountId: number;
             /**
-             * @description Transfer date, format YYYY-MM-DD, from 2025-01-01 to 2070-12-31 inclusive. Required.
+             * @description Transfer date, format YYYY-MM-DD.
              * @example 2026-09-29
              */
-            operationDate: string | null;
+            operationDate: string;
             /**
-             * @description Positive amount debited from fromAccount, as a decimal string, e.g. "100.00". Required.
-             * @example 100.00
-             */
-            amountFrom: string | null;
-            amountTo?: string;
-            /**
-             * @description Free-text note. Optional, at most 255 characters after trimming. Surrounding spaces are removed; a blank note is stored as null.
+             * @description Free-text note; left out when there is none.
              * @example Monthly savings transfer
              */
             description?: string | null;
-            /** @description Shared id linking the debit and credit operations. Read-only. */
-            readonly transactionUuid?: string | null;
-            /** @description Id of the created debit (out) operation. Read-only. */
-            readonly outOperationId?: number | null;
-            /** @description Debited amount as recorded, negative decimal string. Read-only. */
-            readonly outAmount?: string | null;
-            /** @description Currency of the debit operation. Read-only. */
-            readonly outCurrencyCode?: string | null;
-            /** @description Id of the created credit (in) operation. Read-only. */
-            readonly inOperationId?: number | null;
-            /** @description Credited amount as recorded, positive decimal string. Read-only. */
-            readonly inAmount?: string | null;
-            /** @description Currency of the credit operation. Read-only. */
-            readonly inCurrencyCode?: string | null;
+            /**
+             * @description Shared id linking the debit and credit operations.
+             * @example 01a1c8b2-262e-72a9-9ac6-1652e5dffefe
+             */
+            transactionUuid: string;
+            /**
+             * @description Id of the created debit (out) operation.
+             * @example 101
+             */
+            outOperationId: number;
+            /**
+             * @description Debited amount as recorded, negative decimal string.
+             * @example -100.00
+             */
+            outAmount: string;
+            /**
+             * @description Currency of the debit operation.
+             * @example PLN
+             */
+            outCurrencyCode: string;
+            /**
+             * @description Id of the created credit (in) operation.
+             * @example 102
+             */
+            inOperationId: number;
+            /**
+             * @description Credited amount as recorded, positive decimal string.
+             * @example 23.00
+             */
+            inAmount: string;
+            /**
+             * @description Currency of the credit operation.
+             * @example CHF
+             */
+            inCurrencyCode: string;
         };
     };
     responses: never;
@@ -8550,8 +8609,8 @@ export interface operations {
         /** @description The new Transfer resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["Transfer"];
-                "application/json": components["schemas"]["Transfer"];
+                "application/ld+json": components["schemas"]["Transfer.TransferInput"];
+                "application/json": components["schemas"]["Transfer.TransferInput"];
             };
         };
         responses: {

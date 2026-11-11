@@ -1,20 +1,15 @@
 import { useMutation } from '@tanstack/react-query'
 import { postJson } from '../api'
+import type { components } from '../generated/api'
 import { useInvalidate } from '../queryKeys'
 
-export type TransferInput = {
-  fromAccountId: number
-  toAccountId: number
-  operationDate: string
-  // positive; what leaves the first account
-  amountFrom: string
-  // positive; what reaches the second one, only between different currencies (the API refuses it otherwise)
-  amountTo?: string
-  description: string | null
-}
+// The types of the API, generated from its OpenAPI description (npm run api-types): what the form sends (amountFrom
+// leaves the first account; amountTo reaches the second one, only between different currencies, the API refuses it
+// otherwise)…
+export type TransferInput = components['schemas']['Transfer.TransferInput']
 
-// What POST /api/transfers returns: the two operations it created, linked by one transactionUuid.
-export type Transfer = { outOperationId: number; inOperationId: number; fromAccountId: number }
+// …and what POST /api/transfers answers: the two operations it created, linked by one transactionUuid.
+export type Transfer = components['schemas']['Transfer']
 
 export function useCreateTransfer() {
   const invalidate = useInvalidate()
