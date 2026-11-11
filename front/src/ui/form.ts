@@ -4,8 +4,10 @@ import { amountSeparators } from '../money'
 
 // What the forms share: the look of their fields, the date range, the amount rules, the API's field errors.
 
-const INPUT = 'block w-full rounded-md border px-3 py-2 text-slate-900 dark:text-slate-100 focus:outline-none '
-  + 'focus:ring-1 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-500 '
+// A background of its own, not see-through: the list a select opens takes it in some browsers (Firefox), and would
+// be white under the light text of the dark style.
+const INPUT = 'block w-full rounded-md border bg-white dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 '
+  + 'focus:outline-none focus:ring-1 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-500 '
   + 'dark:disabled:text-slate-400 '
 const INPUT_OK = `${INPUT}border-slate-300 dark:border-slate-600 focus:border-indigo-500 focus:ring-indigo-500`
 const INPUT_ERROR = `${INPUT}border-red-500 focus:border-red-500 focus:ring-red-500`

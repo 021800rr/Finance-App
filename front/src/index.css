@@ -23,3 +23,12 @@ body .rdp-root {
     --rdp-accent-background-color: var(--color-indigo-950);
   }
 }
+
+/* The list a select opens is drawn by the browser, not by the page. In the dark style its lines get the colours of
+   the dark style, whatever background the browser starts from. */
+@media (prefers-color-scheme: dark) {
+  option {
+    background-color: var(--color-slate-900);
+    color: var(--color-slate-100);
+  }
+}
