@@ -9,7 +9,8 @@ const WAKACJE = 'Wakacje'
 
 const CELL = 'px-3 py-2'
 
-function Amount({ money }: { money: Money | null | undefined }) {
+// A total, or a note when the summary has no accounts of its type.
+function Amount({ money }: { money: Money | undefined }) {
   const { t } = useTranslation()
 
   return money

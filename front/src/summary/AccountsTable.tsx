@@ -24,12 +24,12 @@ type Column = {
 
 // The sortable columns of the web app's table; the balance and the rate sort as numbers.
 const COLUMNS: Column[] = [
-  { key: 'bank', label: 'account.bank', value: (account) => account.bank },
-  { key: 'type', label: 'account.type', value: (account) => account.type },
-  { key: 'number', label: 'account.number', value: (account) => account.account_number },
+  { key: 'bank', label: 'account.bank', value: (account) => account.bankName },
+  { key: 'type', label: 'account.type', value: (account) => account.typeName },
+  { key: 'number', label: 'account.number', value: (account) => account.accountNumber },
   { key: 'rate', label: 'home.rate', value: (account) => Number(account.rate?.amount ?? 0), right: true },
   { key: 'saldo', label: 'account.balance', value: (account) => Number(account.saldo.amount), right: true },
-  { key: 'currency', label: 'account.currency', value: (account) => account.currency },
+  { key: 'currency', label: 'account.currency', value: (account) => account.currencyCode },
 ]
 
 export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
@@ -81,11 +81,11 @@ export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
               key={account.id}
               className={account.hidden ? 'text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200'}
             >
-              <td className={CELL}>{account.bank}</td>
-              <td className={CELL}>{account.type}</td>
-              <td className={CELL}><Code>{account.account_number}</Code></td>
+              <td className={CELL}>{account.bankName}</td>
+              <td className={CELL}>{account.typeName}</td>
+              <td className={CELL}><Code>{account.accountNumber}</Code></td>
               <td className={`${CELL} text-right`}>
-                {account.missing_rate ? (
+                {account.missingRate ? (
                   <span className="rounded bg-red-600 px-2 py-0.5 text-xs text-white">{t('home.missing_rate')}</span>
                 ) : (
                   account.rate && (
@@ -96,10 +96,10 @@ export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
                 )}
               </td>
               <td className={`${CELL} text-right font-semibold tabular-nums`}>{formatAmount(account.saldo.amount)}</td>
-              <td className={CELL}>{account.currency}</td>
+              <td className={CELL}>{account.currencyCode}</td>
               <td className={CELL}>
                 <div className="flex items-center justify-end gap-3">
-                  {account.is_main ? (
+                  {account.isMain ? (
                     <span title={t('home.main_account')}>★</span>
                   ) : (
                     <IconButton label={t('home.set_main')} onClick={() => makeMain(account)} disabled={busy}>

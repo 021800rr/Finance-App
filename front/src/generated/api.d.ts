@@ -774,7 +774,7 @@ export interface paths {
         };
         /**
          * Retrieves a Summary resource.
-         * @description Financial summary across all accounts. By default hidden accounts are excluded from both the accounts list and all totals, mirroring the web app's "Show hidden" toggle. Pass ?showHidden=true to include them. Each account row carries "rate": the bank's latest stored rate to PLN for accounts in another currency, or null for PLN accounts and when no rate is stored (see "missing_rate"). "is_main" marks the main account (the ★ in the web app); at most one account has it. "byType", "retirementBalance" and "retirementBalanceWithGold" cover only own-funds accounts; "byHousehold" splits the totals of all accounts (and our gold) by household.
+         * @description Financial summary across all accounts. By default hidden accounts are excluded from both the accounts list and all totals, mirroring the web app's "Show hidden" toggle. Pass ?showHidden=true to include them. An account row in another currency carries "rate": the bank's latest stored rate to PLN; a PLN account and one whose bank has no rate stored (see "missingRate") have none. "isMain" marks the main account (the ★ in the web app); at most one account has it. "byType", "retirementBalance" and "retirementBalanceWithGold" cover only own-funds accounts; "byHousehold" splits the totals of all accounts (and our gold) by household.
          */
         get: operations["api_summary_get"];
         put?: never;
@@ -864,9 +864,15 @@ export interface components {
              *     }
              */
             saldo?: {
-                /** @example 4935.00 */
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
                 amount: string;
-                /** @example PLN */
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
                 currency: string;
             };
             /**
@@ -877,9 +883,15 @@ export interface components {
              *     }
              */
             saldoToday?: {
-                /** @example 4965.00 */
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
                 amount: string;
-                /** @example PLN */
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
                 currency: string;
             };
             /**
@@ -956,9 +968,15 @@ export interface components {
              *     }
              */
             saldo?: {
-                /** @example 4935.00 */
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
                 amount: string;
-                /** @example PLN */
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
                 currency: string;
             };
             /**
@@ -969,9 +987,15 @@ export interface components {
              *     }
              */
             saldoToday?: {
-                /** @example 4965.00 */
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
                 amount: string;
-                /** @example PLN */
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
                 currency: string;
             };
             /**
@@ -1904,29 +1928,501 @@ export interface components {
              */
             email: string;
         };
-        /** @description Financial summary across all accounts. By default hidden accounts are excluded from both the accounts list and all totals, mirroring the web app's "Show hidden" toggle. Pass ?showHidden=true to include them. Each account row carries "rate": the bank's latest stored rate to PLN for accounts in another currency, or null for PLN accounts and when no rate is stored (see "missing_rate"). "is_main" marks the main account (the ★ in the web app); at most one account has it. "byType", "retirementBalance" and "retirementBalanceWithGold" cover only own-funds accounts; "byHousehold" splits the totals of all accounts (and our gold) by household. */
+        /** @description Financial summary across all accounts. By default hidden accounts are excluded from both the accounts list and all totals, mirroring the web app's "Show hidden" toggle. Pass ?showHidden=true to include them. An account row in another currency carries "rate": the bank's latest stored rate to PLN; a PLN account and one whose bank has no rate stored (see "missingRate") have none. "isMain" marks the main account (the ★ in the web app); at most one account has it. "byType", "retirementBalance" and "retirementBalanceWithGold" cover only own-funds accounts; "byHousehold" splits the totals of all accounts (and our gold) by household. */
         Summary: {
-            accounts?: unknown[];
-            byType?: unknown[];
-            byHousehold?: unknown[];
-            /** @default  */
-            ownFundsHouseholdName?: string;
-            gold?: unknown[] | null;
-            retirementBalance?: unknown[] | null;
-            retirementBalanceWithGold?: unknown[] | null;
-            accountsMissingRate?: unknown[];
+            /** @description The accounts, in the order of the web app: their sort order, then account number. */
+            accounts: components["schemas"]["SummaryAccount_noid"][];
+            /** @description The totals of the own-funds accounts, by account type name. */
+            byType: {
+                [key: string]: components["schemas"]["SummaryTypeTotal_noid"];
+            };
+            /**
+             * @description The total in PLN of each household, by household name; our gold counts in the own-funds one.
+             * @example {
+             *       "Dom": {
+             *         "amount": "15224.09",
+             *         "currency": "PLN"
+             *       },
+             *       "Matka": {
+             *         "amount": "4690.00",
+             *         "currency": "PLN"
+             *       }
+             *     }
+             */
+            byHousehold: {
+                [key: string]: {
+                    /**
+                     * @description A decimal string.
+                     * @example 4935.00
+                     */
+                    amount: string;
+                    /**
+                     * @description Currency code.
+                     * @example PLN
+                     */
+                    currency: string;
+                };
+            };
+            /**
+             * @description Name of the household of our own funds.
+             * @example Dom
+             */
+            ownFundsHouseholdName: string;
+            /**
+             * @description The value in PLN of our gold, by its latest stored prices.
+             * @example {
+             *       "amount": "8650.00",
+             *       "currency": "PLN"
+             *     }
+             */
+            gold: {
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
+                amount: string;
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
+                currency: string;
+            };
+            /**
+             * @description The total in PLN of the own-funds retirement accounts.
+             * @example {
+             *       "amount": "1365.00",
+             *       "currency": "PLN"
+             *     }
+             */
+            retirementBalance: {
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
+                amount: string;
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
+                currency: string;
+            };
+            /**
+             * @description retirementBalance plus gold.
+             * @example {
+             *       "amount": "10015.00",
+             *       "currency": "PLN"
+             *     }
+             */
+            retirementBalanceWithGold: {
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
+                amount: string;
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
+                currency: string;
+            };
+            /**
+             * @description The bank and number of each account in another currency whose bank has no rate to PLN stored, as "<bank> <account number>".
+             * @example [
+             *       "mBank 12 3456 7890 1234 5678 9012 3456"
+             *     ]
+             */
+            accountsMissingRate: string[];
         };
-        /** @description Financial summary across all accounts. By default hidden accounts are excluded from both the accounts list and all totals, mirroring the web app's "Show hidden" toggle. Pass ?showHidden=true to include them. Each account row carries "rate": the bank's latest stored rate to PLN for accounts in another currency, or null for PLN accounts and when no rate is stored (see "missing_rate"). "is_main" marks the main account (the ★ in the web app); at most one account has it. "byType", "retirementBalance" and "retirementBalanceWithGold" cover only own-funds accounts; "byHousehold" splits the totals of all accounts (and our gold) by household. */
+        /** @description Financial summary across all accounts. By default hidden accounts are excluded from both the accounts list and all totals, mirroring the web app's "Show hidden" toggle. Pass ?showHidden=true to include them. An account row in another currency carries "rate": the bank's latest stored rate to PLN; a PLN account and one whose bank has no rate stored (see "missingRate") have none. "isMain" marks the main account (the ★ in the web app); at most one account has it. "byType", "retirementBalance" and "retirementBalanceWithGold" cover only own-funds accounts; "byHousehold" splits the totals of all accounts (and our gold) by household. */
         "Summary.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            accounts?: unknown[];
-            byType?: unknown[];
-            byHousehold?: unknown[];
-            /** @default  */
-            ownFundsHouseholdName?: string;
-            gold?: unknown[] | null;
-            retirementBalance?: unknown[] | null;
-            retirementBalanceWithGold?: unknown[] | null;
-            accountsMissingRate?: unknown[];
+            /** @description The accounts, in the order of the web app: their sort order, then account number. */
+            accounts: components["schemas"]["SummaryAccount.jsonld_noid"][];
+            /** @description The totals of the own-funds accounts, by account type name. */
+            byType: {
+                [key: string]: components["schemas"]["SummaryTypeTotal.jsonld_noid"];
+            };
+            /**
+             * @description The total in PLN of each household, by household name; our gold counts in the own-funds one.
+             * @example {
+             *       "Dom": {
+             *         "amount": "15224.09",
+             *         "currency": "PLN"
+             *       },
+             *       "Matka": {
+             *         "amount": "4690.00",
+             *         "currency": "PLN"
+             *       }
+             *     }
+             */
+            byHousehold: {
+                [key: string]: {
+                    /**
+                     * @description A decimal string.
+                     * @example 4935.00
+                     */
+                    amount: string;
+                    /**
+                     * @description Currency code.
+                     * @example PLN
+                     */
+                    currency: string;
+                };
+            };
+            /**
+             * @description Name of the household of our own funds.
+             * @example Dom
+             */
+            ownFundsHouseholdName: string;
+            /**
+             * @description The value in PLN of our gold, by its latest stored prices.
+             * @example {
+             *       "amount": "8650.00",
+             *       "currency": "PLN"
+             *     }
+             */
+            gold: {
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
+                amount: string;
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
+                currency: string;
+            };
+            /**
+             * @description The total in PLN of the own-funds retirement accounts.
+             * @example {
+             *       "amount": "1365.00",
+             *       "currency": "PLN"
+             *     }
+             */
+            retirementBalance: {
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
+                amount: string;
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
+                currency: string;
+            };
+            /**
+             * @description retirementBalance plus gold.
+             * @example {
+             *       "amount": "10015.00",
+             *       "currency": "PLN"
+             *     }
+             */
+            retirementBalanceWithGold: {
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
+                amount: string;
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
+                currency: string;
+            };
+            /**
+             * @description The bank and number of each account in another currency whose bank has no rate to PLN stored, as "<bank> <account number>".
+             * @example [
+             *       "mBank 12 3456 7890 1234 5678 9012 3456"
+             *     ]
+             */
+            accountsMissingRate: string[];
+        };
+        "SummaryAccount.jsonld_noid": {
+            /**
+             * @description Account id.
+             * @example 3
+             */
+            id: number;
+            /**
+             * @description Bank name.
+             * @example mBank
+             */
+            bankName: string;
+            /**
+             * @description Account type name.
+             * @example Wakacje
+             */
+            typeName: string;
+            /**
+             * @description Currency code.
+             * @example CHF
+             */
+            currencyCode: string;
+            /**
+             * @description Account number.
+             * @example 12 3456 7890 1234 5678 9012 3456
+             */
+            accountNumber: string;
+            /**
+             * @description Whether the account is hidden; a hidden one is listed only with ?showHidden=true.
+             * @example false
+             */
+            hidden: boolean;
+            /**
+             * @description Household name.
+             * @example Dom
+             */
+            householdName: string;
+            /**
+             * @description Whether the account holds our own funds: only these count in byType and the retirement balances.
+             * @example true
+             */
+            isOwnFunds: boolean;
+            /**
+             * @description Whether the account type is a retirement one.
+             * @example false
+             */
+            isRetirement: boolean;
+            /**
+             * @description Balance, in the currency of the account.
+             * @example {
+             *       "amount": "1629.00",
+             *       "currency": "CHF"
+             *     }
+             */
+            saldo: {
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
+                amount: string;
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
+                currency: string;
+            };
+            /**
+             * @description True for an account in another currency whose bank has no rate to PLN stored: its balance is left out of the totals in PLN.
+             * @example false
+             */
+            missingRate: boolean;
+            /**
+             * @description Whether this is the main account (the ★ in the web app); at most one account is.
+             * @example false
+             */
+            isMain: boolean;
+            /**
+             * @description The bank's latest stored rate to PLN, for an account in another currency; left out for a PLN account and when the bank has no rate stored (see missingRate).
+             * @example {
+             *       "amount": "4.5590",
+             *       "currency": "PLN"
+             *     }
+             */
+            rate?: {
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
+                amount: string;
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
+                currency: string;
+            };
+        };
+        SummaryAccount_noid: {
+            /**
+             * @description Account id.
+             * @example 3
+             */
+            id: number;
+            /**
+             * @description Bank name.
+             * @example mBank
+             */
+            bankName: string;
+            /**
+             * @description Account type name.
+             * @example Wakacje
+             */
+            typeName: string;
+            /**
+             * @description Currency code.
+             * @example CHF
+             */
+            currencyCode: string;
+            /**
+             * @description Account number.
+             * @example 12 3456 7890 1234 5678 9012 3456
+             */
+            accountNumber: string;
+            /**
+             * @description Whether the account is hidden; a hidden one is listed only with ?showHidden=true.
+             * @example false
+             */
+            hidden: boolean;
+            /**
+             * @description Household name.
+             * @example Dom
+             */
+            householdName: string;
+            /**
+             * @description Whether the account holds our own funds: only these count in byType and the retirement balances.
+             * @example true
+             */
+            isOwnFunds: boolean;
+            /**
+             * @description Whether the account type is a retirement one.
+             * @example false
+             */
+            isRetirement: boolean;
+            /**
+             * @description Balance, in the currency of the account.
+             * @example {
+             *       "amount": "1629.00",
+             *       "currency": "CHF"
+             *     }
+             */
+            saldo: {
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
+                amount: string;
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
+                currency: string;
+            };
+            /**
+             * @description True for an account in another currency whose bank has no rate to PLN stored: its balance is left out of the totals in PLN.
+             * @example false
+             */
+            missingRate: boolean;
+            /**
+             * @description Whether this is the main account (the ★ in the web app); at most one account is.
+             * @example false
+             */
+            isMain: boolean;
+            /**
+             * @description The bank's latest stored rate to PLN, for an account in another currency; left out for a PLN account and when the bank has no rate stored (see missingRate).
+             * @example {
+             *       "amount": "4.5590",
+             *       "currency": "PLN"
+             *     }
+             */
+            rate?: {
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
+                amount: string;
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
+                currency: string;
+            };
+        };
+        "SummaryTypeTotal.jsonld_noid": {
+            /**
+             * @description The balance in each currency, by currency code.
+             * @example {
+             *       "CHF": {
+             *         "amount": "1629.00",
+             *         "currency": "CHF"
+             *       },
+             *       "PLN": {
+             *         "amount": "1625.04",
+             *         "currency": "PLN"
+             *       }
+             *     }
+             */
+            raw: {
+                [key: string]: {
+                    /**
+                     * @description A decimal string.
+                     * @example 4935.00
+                     */
+                    amount: string;
+                    /**
+                     * @description Currency code.
+                     * @example PLN
+                     */
+                    currency: string;
+                };
+            };
+            /**
+             * @description The sum in PLN; an account whose bank has no rate to PLN is left out.
+             * @example {
+             *       "amount": "9051.65",
+             *       "currency": "PLN"
+             *     }
+             */
+            pln: {
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
+                amount: string;
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
+                currency: string;
+            };
+        };
+        SummaryTypeTotal_noid: {
+            /**
+             * @description The balance in each currency, by currency code.
+             * @example {
+             *       "CHF": {
+             *         "amount": "1629.00",
+             *         "currency": "CHF"
+             *       },
+             *       "PLN": {
+             *         "amount": "1625.04",
+             *         "currency": "PLN"
+             *       }
+             *     }
+             */
+            raw: {
+                [key: string]: {
+                    /**
+                     * @description A decimal string.
+                     * @example 4935.00
+                     */
+                    amount: string;
+                    /**
+                     * @description Currency code.
+                     * @example PLN
+                     */
+                    currency: string;
+                };
+            };
+            /**
+             * @description The sum in PLN; an account whose bank has no rate to PLN is left out.
+             * @example {
+             *       "amount": "9051.65",
+             *       "currency": "PLN"
+             *     }
+             */
+            pln: {
+                /**
+                 * @description A decimal string.
+                 * @example 4935.00
+                 */
+                amount: string;
+                /**
+                 * @description Currency code.
+                 * @example PLN
+                 */
+                currency: string;
+            };
         };
         /** @description Creates a transfer. If fromAccount and toAccount have the same currency, amountTo is generated automatically and must not be sent. If currencies differ, amountTo is required. A hidden account cannot be chosen on either side: such a request is rejected with 422 on fromAccountId or toAccountId. */
         Transfer: {
