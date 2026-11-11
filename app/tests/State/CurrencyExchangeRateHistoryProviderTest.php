@@ -47,7 +47,7 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
         /** @var list<CurrencyExchangeRateResource> $result */
         $result = $this->provider->provide(new GetCollection());
 
-        $returnedIds = array_map(static fn (CurrencyExchangeRateResource $r): ?int => $r->id, $result);
+        $returnedIds = array_map(static fn (CurrencyExchangeRateResource $r): int => $r->id, $result);
         foreach ($ids as $id) {
             self::assertContains($id, $returnedIds);
         }
@@ -61,7 +61,7 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
         /** @var list<CurrencyExchangeRateResource> $result */
         $result = $this->provider->provide(new GetCollection());
 
-        $ids = array_map(static fn (CurrencyExchangeRateResource $r): ?int => $r->id, $result);
+        $ids = array_map(static fn (CurrencyExchangeRateResource $r): int => $r->id, $result);
         $positionOfEarlier = array_search($earlier->getId(), $ids, true);
         $positionOfLater = array_search($later->getId(), $ids, true);
 
@@ -78,7 +78,7 @@ final class CurrencyExchangeRateHistoryProviderTest extends KernelTestCase
         /** @var list<CurrencyExchangeRateResource> $result */
         $result = $this->provider->provide(new GetCollection());
 
-        $ids = array_map(static fn (CurrencyExchangeRateResource $r): ?int => $r->id, $result);
+        $ids = array_map(static fn (CurrencyExchangeRateResource $r): int => $r->id, $result);
         self::assertContains($tracked->getId(), $ids);
         self::assertNotContains($untracked->getId(), $ids);
     }

@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\GoldAssetResource;
+use App\ApiResource\Input\GoldAssetInput;
 use App\Entity\GoldAsset;
 use App\Entity\GoldForm;
 use App\Repository\GoldAssetRepository;
@@ -48,8 +49,8 @@ final readonly class GoldAssetProcessor implements ProcessorInterface
             return null;
         }
 
-        if (!$data instanceof GoldAssetResource) {
-            throw new \InvalidArgumentException('Expected instance of GoldAssetResource.');
+        if (!$data instanceof GoldAssetInput) {
+            throw new \InvalidArgumentException('Expected instance of GoldAssetInput.');
         }
 
         $goldAsset = $operation instanceof Patch ? $this->loadExisting($uriVariables) : null;

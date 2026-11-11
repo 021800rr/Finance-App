@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\GoldPriceResource;
+use App\ApiResource\Input\GoldPriceInput;
 use App\Constant\Currencies;
 use App\Entity\GoldAsset;
 use App\Entity\GoldPrice;
@@ -50,8 +51,8 @@ final readonly class GoldPriceProcessor implements ProcessorInterface
             return null;
         }
 
-        if (!$data instanceof GoldPriceResource) {
-            throw new \InvalidArgumentException('Expected instance of GoldPriceResource.');
+        if (!$data instanceof GoldPriceInput) {
+            throw new \InvalidArgumentException('Expected instance of GoldPriceInput.');
         }
 
         $goldAsset = $this->resolveGoldAsset($data->goldAssetId);
