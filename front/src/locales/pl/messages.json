@@ -179,7 +179,6 @@
     "login_failed": "Logowanie nie powiodło się.",
     "logging_in": "Loguję…",
     "saving": "Zapisuję…",
-    "soon": "Wkrótce.",
     "actions": "Akcje",
     "language": "Język",
     "confirmed": "Potwierdzona",
@@ -218,6 +217,10 @@
     "gold_forms_load_failed": "Nie udało się wczytać form złota.",
     "save_gold_asset_failed": "Nie udało się zapisać aktywa złota.",
     "delete_gold_asset_failed": "Nie udało się usunąć aktywa złota.",
-    "ounces_placeholder": "1,0000"
+    "ounces_placeholder": "1,0000",
+    "gold_prices_load_failed": "Nie udało się wczytać cen złota.",
+    "save_gold_price_failed": "Nie udało się zapisać ceny złota.",
+    "delete_gold_price_failed": "Nie udało się usunąć ceny złota.",
+    "price_placeholder": "8650,00"
   }
 }

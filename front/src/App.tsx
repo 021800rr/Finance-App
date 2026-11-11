@@ -8,10 +8,10 @@ import { EditFixedExpensePage } from './fixedExpense/EditFixedExpensePage'
 import { FixedExpensesPage } from './fixedExpense/FixedExpensesPage'
 import { EditGoldAssetPage } from './goldAsset/EditGoldAssetPage'
 import { GoldAssetsPage } from './goldAsset/GoldAssetsPage'
+import { GoldPricesPage } from './goldPrice/GoldPricesPage'
 import { EditOperationPage } from './operation/EditOperationPage'
 import { NewOperationPage } from './operation/NewOperationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
-import { PagePlaceholder } from './pages/PagePlaceholder'
 import { RatesPage } from './rate/RatesPage'
 import { SearchPage } from './search/SearchPage'
 import { TransferPage } from './transfer/TransferPage'
@@ -44,7 +44,7 @@ function App() {
         <Route path="rate" element={<RatesPage />} />
         <Route path="gold-assets" element={<GoldAssetsPage />} />
         <Route path="gold-assets/:id/edit" element={<EditGoldAssetPage />} />
-        <Route path="gold-prices" element={<PagePlaceholder title={t('nav.gold_prices')} />} />
+        <Route path="gold-prices" element={<GoldPricesPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

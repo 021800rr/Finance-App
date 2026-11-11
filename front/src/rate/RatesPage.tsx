@@ -26,6 +26,14 @@ export function RatesPage() {
   const banks = useBanks()
   const bankNames = React.useMemo(() => new Map(banks.data?.map((bank) => [bank.id, bank.name])), [banks.data])
 
+  // The chart, the form and the list all name the banks: nothing until their names are there (no '#1' meanwhile).
+  if (banks.isPending) {
+    return <p className="text-slate-500">{t('app.loading')}</p>
+  }
+  if (banks.isError) {
+    return <p role="alert" className="text-red-600">{errorMessage(banks.error, t('app.rate_form_load_failed'))}</p>
+  }
+
   return (
     <div className="space-y-6">
       <section className={CARD}>
@@ -34,7 +42,7 @@ export function RatesPage() {
       </section>
       <section className={CARD}>
         <h2 className="mb-4 text-lg font-semibold text-slate-900">{t('rate.add_title')}</h2>
-        <NewRate banks={banks.data} banksError={banks.error} />
+        <NewRate banks={banks.data} />
       </section>
       <section className={CARD}>
         <h2 className="mb-4 text-lg font-semibold text-slate-900">{t('rate.list_title')}</h2>
@@ -77,7 +85,7 @@ function bankSeries(rates: Rate[], bankNames: Map<number, string>): Series[] {
   return [...byBank.values()]
 }
 
-function NewRate({ banks, banksError }: { banks: Bank[] | undefined; banksError: Error | null }) {
+function NewRate({ banks }: { banks: Bank[] }) {
   const { t } = useTranslation()
   const accounts = useAccounts()
   const currencies = useCurrencies()
@@ -85,11 +93,11 @@ function NewRate({ banks, banksError }: { banks: Bank[] | undefined; banksError:
   // A new key gives a new, empty form after every rate added.
   const [formKey, setFormKey] = React.useState(0)
 
-  const error = banksError ?? accounts.error ?? currencies.error
+  const error = accounts.error ?? currencies.error
   if (error) {
     return <p role="alert" className="text-red-600">{errorMessage(error, t('app.rate_form_load_failed'))}</p>
   }
-  if (banks === undefined || accounts.data === undefined || currencies.data === undefined) {
+  if (accounts.data === undefined || currencies.data === undefined) {
     return <p className="text-slate-500">{t('app.loading')}</p>
   }
 

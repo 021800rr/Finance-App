@@ -179,7 +179,6 @@
     "login_failed": "Login failed.",
     "logging_in": "Logging in…",
     "saving": "Saving…",
-    "soon": "Coming soon.",
     "actions": "Actions",
     "language": "Language",
     "confirmed": "Confirmed",
@@ -218,6 +217,10 @@
     "gold_forms_load_failed": "Could not load the gold forms.",
     "save_gold_asset_failed": "Could not save the gold asset.",
     "delete_gold_asset_failed": "Could not delete the gold asset.",
-    "ounces_placeholder": "1.0000"
+    "ounces_placeholder": "1.0000",
+    "gold_prices_load_failed": "Could not load the gold prices.",
+    "save_gold_price_failed": "Could not save the gold price.",
+    "delete_gold_price_failed": "Could not delete the gold price.",
+    "price_placeholder": "8650.00"
   }
 }
