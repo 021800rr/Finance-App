@@ -16,5 +16,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['src/test/setup.ts'],
+    // At most 4 test files at once. By default there is one per CPU core: on a 16-core machine 15 simulated browsers
+    // start together, and the slowest interface tests then miss their 5 s limit though nothing is wrong.
+    maxWorkers: 4,
   },
 })
