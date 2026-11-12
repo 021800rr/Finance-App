@@ -55,7 +55,8 @@ jobs:
           php-version: "8.5"
           extensions: ctype, iconv, intl, mbstring, pdo_pgsql, xml
           tools: composer:v2
-          coverage: none
+          # PCOV measures the test coverage of the PHP code (much faster than Xdebug)
+          coverage: pcov
 
       - name: Get the Composer cache directory
         id: composer-cache
@@ -104,8 +105,8 @@ jobs:
       - name: Lint Twig templates
         run: php bin/console lint:twig templates --env=test
 
-      - name: PHPUnit
-        run: vendor/bin/phpunit --colors=always
+      - name: PHPUnit (with coverage)
+        run: vendor/bin/phpunit --colors=always --coverage-text --only-summary-for-coverage-text
 
       - name: PHPStan (max level)
         run: vendor/bin/phpstan analyse --memory-limit 1G --no-progress
@@ -121,9 +122,9 @@ jobs:
         working-directory: front
         run: npm run lint
 
-      - name: React Vitest
+      - name: React Vitest (with coverage)
         working-directory: front
-        run: npm test
+        run: npm run coverage
 
       - name: React TypeScript and production build
         working-directory: front

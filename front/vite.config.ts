@@ -22,5 +22,13 @@ export default defineConfig({
     // Each worker builds its simulated browser (jsdom) once and runs every test file in a fresh context of it, so the
     // files stay isolated but no longer pay for a new browser each: the whole run takes about a third of the time.
     pool: 'vmThreads',
+    // npm run coverage: which code the tests run, as a summary in the terminal and as coverage/index.html. Every source
+    // file counts, also one that no test opens; the generated API types and the tests themselves do not.
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/generated/**', 'src/test/**', 'src/**/*.test.{ts,tsx}'],
+      reporter: ['text-summary', 'html'],
+    },
   },
 })

@@ -34,6 +34,7 @@ help:
 	@echo "  make token           - generate a JWT for the API for default user $(APP_USER_EMAIL)/$(APP_USER_PASSWORD)"
 	@echo ""
 	@echo "  make test            - full test suite (lint:twig, phpunit, phpstan, php-cs-fixer) on a clean database"
+	@echo "  make coverage        - test coverage of the backend and React: summary + HTML reports"
 	@echo "  make phpstan         - phpstan"
 	@echo "  make php-cs-fixer    - php-cs-fixer"
 	@echo ""
@@ -138,12 +139,27 @@ test:
 	docker exec finance-php-dev php bin/console doctrine:fixtures:load -n --env=test
 	docker exec finance-php-dev php bin/console cache:clear -n --env=test
 	docker exec finance-php-dev php bin/console lint:twig templates --env=test
-	docker exec -t finance-php-dev vendor/bin/phpunit --colors=always tests/$(TEST_PATH)
+	docker exec -t finance-php-dev vendor/bin/phpunit --colors=always --coverage-text --only-summary-for-coverage-text tests/$(TEST_PATH)
 	docker exec finance-php-dev vendor/bin/phpstan analyse --memory-limit 1G
 	docker exec finance-php-dev vendor/bin/php-cs-fixer fix
 	docker exec finance-node-dev sh -c 'node --test tests/Frontend/*.test.mjs'
 	docker exec finance-front-dev sh -c 'npm test'
 	docker exec finance-php-dev php -r 'echo date("H:i"), PHP_EOL;'
+
+# Which code the tests run: a summary in the terminal and HTML reports. Xdebug measures the backend in its coverage
+# mode for this run only (it debugs otherwise), so the PHP tests take a few times longer than in make test.
+coverage:
+	docker exec finance-php-dev php bin/console cache:clear -n --env=test
+	docker exec finance-php-dev php bin/console doctrine:database:drop --force --env=test || true
+	docker exec finance-php-dev php bin/console doctrine:database:create --env=test
+	docker exec finance-php-dev php bin/console doctrine:migrations:migrate -n --env=test
+	docker exec finance-php-dev php bin/console doctrine:fixtures:load -n --env=test
+	docker exec finance-php-dev php bin/console cache:clear -n --env=test
+	docker exec -t -e XDEBUG_MODE=coverage finance-php-dev vendor/bin/phpunit --colors=always \
+		--coverage-html var/coverage --coverage-text --only-summary-for-coverage-text
+	docker exec finance-front-dev sh -c 'npm run coverage'
+	@echo ""
+	@echo "Reports: app/var/coverage/index.html (backend), front/coverage/index.html (React)"
 
 phpstan:
 	docker exec finance-php-dev vendor/bin/phpstan analyse --memory-limit 1G

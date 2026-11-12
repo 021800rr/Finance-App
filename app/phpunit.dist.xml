@@ -31,6 +31,11 @@
         <include>
             <directory>src</directory>
         </include>
+        <!-- The fixtures load the test data from the console before the tests run; the tests never execute them, so
+             they are left out of the coverage. -->
+        <exclude>
+            <directory>src/DataFixtures</directory>
+        </exclude>
 
         <deprecationTrigger>
             <method>Doctrine\Deprecations\Deprecation::trigger</method>
