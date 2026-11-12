@@ -51,8 +51,8 @@ final readonly class FixedExpensePlanResource
     ) {
     }
 
-    public static function fromResult(int $accountId, FixedExpensePlanResult $result): self
+    public static function fromResult(FixedExpensePlanResult $result): self
     {
-        return new self($accountId, $result->month->format('Y-m'), $result->createdCount);
+        return new self($result->accountId, $result->month->format('Y-m'), $result->createdCount);
     }
 }

@@ -45,6 +45,7 @@ final class FixedExpensePlannerServiceTest extends KernelTestCase
 
         $result = $this->planner->planNextMonth();
 
+        self::assertSame($this->mainAccount->getId(), $result->accountId);
         self::assertSame(2, $result->createdCount);
         self::assertSame(
             new \DateTimeImmutable('first day of this month')->modify('+1 month')->format('Y-m'),

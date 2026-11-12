@@ -52,7 +52,7 @@ final readonly class FixedExpensePlannerService
 
         $this->persistAccountOperations($operationsToCreate, $account);
 
-        return new FixedExpensePlanResult($targetMonth, count($operationsToCreate));
+        return new FixedExpensePlanResult($account->getId(), $targetMonth, count($operationsToCreate));
     }
 
     /**

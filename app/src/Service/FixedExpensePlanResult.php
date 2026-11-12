@@ -10,6 +10,8 @@ namespace App\Service;
 final readonly class FixedExpensePlanResult
 {
     public function __construct(
+        /** The main account the operations were created on, as locked during the planning. */
+        public int $accountId,
         public \DateTimeImmutable $month,
         public int $createdCount,
     ) {

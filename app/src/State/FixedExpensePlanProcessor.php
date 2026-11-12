@@ -8,7 +8,6 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\ApiResource\FixedExpensePlanResource;
 use App\Exception\FixedExpensePlanningException;
-use App\Repository\AccountRepository;
 use App\Service\FixedExpensePlannerService;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -19,7 +18,6 @@ final readonly class FixedExpensePlanProcessor implements ProcessorInterface
 {
     public function __construct(
         private FixedExpensePlannerService $planner,
-        private AccountRepository $accountRepository,
     ) {
     }
 
@@ -40,11 +38,6 @@ final readonly class FixedExpensePlanProcessor implements ProcessorInterface
             throw new ConflictHttpException($exception->getMessage(), $exception);
         }
 
-        $mainAccountId = $this->accountRepository->findMain()?->getId();
-        if (null === $mainAccountId) {
-            throw new \LogicException('The planner succeeded, so a main account must exist.');
-        }
-
-        return FixedExpensePlanResource::fromResult($mainAccountId, $result);
+        return FixedExpensePlanResource::fromResult($result);
     }
 }
