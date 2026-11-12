@@ -128,3 +128,16 @@ jobs:
       - name: React TypeScript and production build
         working-directory: front
         run: npm run build
+
+      # Known vulnerabilities, checked last so that the tests above always run. Any advisory fails the job, also one
+      # published after the last change. Composer checks every locked package and fails on an abandoned one too; npm
+      # checks what reaches the browser, the build tools (dev) left out.
+      - name: Audit PHP dependencies
+        run: composer audit
+
+      - name: Audit Twig front-end dependencies
+        run: npm audit --omit=dev
+
+      - name: Audit React dependencies
+        working-directory: front
+        run: npm audit --omit=dev
