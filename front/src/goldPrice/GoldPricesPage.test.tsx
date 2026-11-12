@@ -4,18 +4,11 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import { formatAmount } from '../money'
+import { type Answer, fakeApi, sentJson } from '../test/fakeApi'
 import { today } from '../ui/form'
-import type { Series } from '../ui/LineChart'
 import { GoldPricesPage } from './GoldPricesPage'
 
-// jsdom has no canvas to draw on: the chart lists its lines instead, so a test sees what the page asks it to draw.
-vi.mock('../ui/LineChart', () => ({
-  LineChart: ({ series }: { series: Series[] }) => (
-    <ul aria-label="chart">
-      {series.map((line) => <li key={line.label}>{line.label}: {JSON.stringify(line.values)}</li>)}
-    </ul>
-  ),
-}))
+vi.mock('../ui/LineChart', () => import('../test/LineChartStandIn'))
 
 const ASSETS = [
   { id: 1, formId: 1, formName: 'moneta', description: 'Krugerrand 1 oz', ounces: '1.0000' },
@@ -28,24 +21,11 @@ const price = (id: number, goldAssetId: number, priceDate: string, pricePln: str
   { id, goldAssetId, priceDate, pricePln, currencyCode: 'PLN' }
 )
 
-// The API of the page: the assets, and the same prices for the chart and the list. `answer` replies to anything else
-// (saving, deleting); a request nobody answers fails the test.
-function serve(prices: Price[], answer: (method: string, path: string) => Response | undefined = () => undefined) {
-  const fetch = vi.fn((path: string, init?: RequestInit) => {
-    const method = init?.method ?? 'GET'
-    const response = answer(method, path) ?? (method !== 'GET' ? undefined
-      : path === '/api/gold_assets' ? Response.json(ASSETS)
-        : path === '/api/gold_prices/recent' || path === '/api/gold_prices/chart' ? Response.json(prices)
-          : undefined)
-    if (response === undefined) {
-      throw new Error(`Unexpected request: ${method} ${path}`)
-    }
-
-    return Promise.resolve(response)
-  })
-  vi.stubGlobal('fetch', fetch)
-
-  return fetch
+// The API of the page: the assets, and the same prices for the chart and the list.
+function serve(prices: Price[], answer?: Answer) {
+  return fakeApi({
+    '/api/gold_assets': ASSETS, '/api/gold_prices/recent': prices, '/api/gold_prices/chart': prices,
+  }, answer)
 }
 
 function showPage() {
@@ -95,10 +75,7 @@ describe('GoldPricesPage', () => {
     await user.click(screen.getByRole('button', { name: i18n.t('common.add') }))
 
     await waitFor(() => { expect(screen.getByLabelText(i18n.t('gold_price.price_pln'))).toHaveValue('') })
-    const body = fetch.mock.calls.find(([, init]) => init?.method === 'POST')?.[1]?.body
-    expect(JSON.parse(typeof body === 'string' ? body : '')).toEqual({
-      goldAssetId: 2, priceDate: today(), pricePln: '8650.00',
-    })
+    expect(sentJson(fetch, 'POST')).toEqual({ goldAssetId: 2, priceDate: today(), pricePln: '8650.00' })
     // the chart and the list read the prices again, the new one with them
     expect(fetch.mock.calls.filter(([path]) => path === '/api/gold_prices/recent').length).toBeGreaterThan(1)
   })
