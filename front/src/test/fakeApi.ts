@@ -21,9 +21,10 @@ export function fakeApi(reads: Record<string, unknown>, answer: Answer = () => u
   return fetch
 }
 
-// The JSON the page sent with the first request of the method.
-export function sentJson(fetch: ReturnType<typeof fakeApi>, method: string): unknown {
-  const body = fetch.mock.calls.find(([, init]) => init?.method === method)?.[1]?.body
+// The JSON the page sent with the first request of the method, to the path when one is given.
+export function sentJson(fetch: ReturnType<typeof fakeApi>, method: string, path?: string): unknown {
+  const body = fetch.mock.calls
+    .find(([sentTo, init]) => init?.method === method && (path === undefined || sentTo === path))?.[1]?.body
 
   return JSON.parse(typeof body === 'string' ? body : '')
 }
