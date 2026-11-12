@@ -38,21 +38,18 @@ final readonly class ContractorProcessor implements ProcessorInterface
             throw new \InvalidArgumentException('Expected instance of ContractorInput.');
         }
 
-        $trimmedName = trim((string) $data->name);
-        if ('' === $trimmedName) {
-            throw new UnprocessableEntityHttpException('Contractor name is required.');
+        $name = trim((string) $data->name);
+
+        try {
+            $contractor = new Contractor($name);
+        } catch (\InvalidArgumentException $exception) {
+            throw new UnprocessableEntityHttpException($exception->getMessage(), $exception);
         }
 
-        if (null !== $this->contractorRepository->findOneByName($trimmedName)) {
+        if (null !== $this->contractorRepository->findOneByName($name)) {
             $exception = ContractorException::nameNotUnique();
 
             throw new ConflictHttpException($exception->getMessage(), $exception);
-        }
-
-        try {
-            $contractor = new Contractor($trimmedName);
-        } catch (\InvalidArgumentException $exception) {
-            throw new UnprocessableEntityHttpException($exception->getMessage(), $exception);
         }
 
         try {
