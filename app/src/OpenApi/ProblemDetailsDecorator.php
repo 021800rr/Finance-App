@@ -113,11 +113,12 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
             security: [['JWT' => []]],
         )));
 
-        foreach ($openApi->getPaths()->getPaths() as $path => $pathItem) {
-            if ($pathItem instanceof PathItem) {
-                $pathItem = $this->withErrors($pathItem, $path);
-                $openApi->getPaths()->addPath($path, $this->withStatusExamples($pathItem, $path));
-            }
+        // Paths::addPath() takes nothing but a PathItem; getPaths() just does not say so in its type.
+        /** @var array<string, PathItem> $pathItems */
+        $pathItems = $openApi->getPaths()->getPaths();
+        foreach ($pathItems as $path => $pathItem) {
+            $pathItem = $this->withErrors($pathItem, $path);
+            $openApi->getPaths()->addPath($path, $this->withStatusExamples($pathItem, $path));
         }
 
         return $openApi;

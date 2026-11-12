@@ -78,13 +78,13 @@ final readonly class JwtDecorator implements OpenApiFactoryInterface
     private function withTokenPaths(Paths $paths): Paths
     {
         $documented = new Paths();
-        foreach ($paths->getPaths() as $path => $pathItem) {
-            if (!$pathItem instanceof PathItem) {
-                continue;
-            }
+        // Paths::addPath() takes nothing but a PathItem; getPaths() just does not say so in its type.
+        /** @var array<string, PathItem> $pathItems */
+        $pathItems = $paths->getPaths();
+        foreach ($pathItems as $path => $pathItem) {
             $refresh = self::REFRESH_ROUTE === $path ? $pathItem->getPost() : null;
             null === $refresh
-                ? $documented->addPath((string) $path, $pathItem)
+                ? $documented->addPath($path, $pathItem)
                 : $documented->addPath('/api/token/refresh', $pathItem->withPost(
                     $refresh->withDescription(self::REFRESH_DESCRIPTION)->withRequestBody($this->refreshTokenBody()),
                 ));
