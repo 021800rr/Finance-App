@@ -2,6 +2,7 @@ import { Chart, Legend, LinearScale, LineController, LineElement, type Plugin, P
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatAmount } from '../money'
+import { labelledTicks } from './chartTicks'
 import { dateFromValue } from './form'
 import { usePrefersDark } from './usePrefersDark'
 
@@ -107,11 +108,12 @@ export function LineChart({ series, colors, xTitle, yTitle }: Props) {
             type: 'linear',
             min: timestamps[0],
             max: timestamps[timestamps.length - 1],
+            // As in the web app: every date labelled up to 10 of them, otherwise the first, the last and 8 spread
+            // evenly between them. On a narrow screen Chart.js may still leave out the ones that do not fit.
             afterBuildTicks: (axis) => {
-              axis.ticks = timestamps.map((value) => ({ value }))
+              axis.ticks = labelledTicks(timestamps).map((value) => ({ value }))
             },
             ticks: {
-              autoSkip: false,
               minRotation: 45,
               maxRotation: 45,
               callback: (value) => tickFormat.format(new Date(Number(value))),

@@ -99,7 +99,6 @@ export function OperationForm({ title, initial, accounts, accountFixed, save, on
         <FormRow label={t('form.contractor')} htmlFor="contractor">
           <ContractorField
             id="contractor"
-            {...fieldErrorProps('contractor', errors.contractor)}
             value={values.contractor}
             onChange={(contractor) => set('contractor', contractor)}
             error={errors.contractor}

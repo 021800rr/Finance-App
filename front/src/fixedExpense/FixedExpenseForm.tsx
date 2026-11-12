@@ -92,7 +92,6 @@ export function FixedExpenseForm({ initial, save, submitLabel, onCancel }: Props
       <FormRow label={t('form.contractor')} htmlFor="contractor">
         <ContractorField
           id="contractor"
-          {...fieldErrorProps('contractor', errors.contractor)}
           value={values.contractor}
           onChange={(contractor) => set('contractor', contractor)}
           error={errors.contractor}
