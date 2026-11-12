@@ -50,6 +50,28 @@ final class ContractorRepositoryTest extends KernelTestCase
         self::assertNull($result);
     }
 
+    public function testFindOrCreateByNameReturnsTheExistingContractor(): void
+    {
+        $existing = $this->createContractor('System Contractor '.uniqid());
+
+        $contractor = $this->repository->findOrCreateByName($existing->getName());
+
+        self::assertSame($existing->getId(), $contractor->getId());
+    }
+
+    /**
+     * A migration seeds the system contractors (App\Constant\Contractors); one missing is created, not a failure.
+     */
+    public function testFindOrCreateByNameSavesAMissingContractor(): void
+    {
+        $name = 'System Contractor '.uniqid();
+
+        $contractor = $this->repository->findOrCreateByName($name);
+
+        $this->em()->clear();
+        self::assertSame($name, $this->repository->find($contractor->getId())?->getName());
+    }
+
     public function testSearchByNameFindsPartialMatch(): void
     {
         $contractor = $this->createContractor('Écolier Unique '.uniqid());
