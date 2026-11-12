@@ -35,6 +35,9 @@ final class ViolationCodes
         // Not "{{ compared_value }}": compared with another field (propertyPath), it is that field's submitted value.
     ];
 
+    /**
+     * @codeCoverageIgnore The class has only static members: no instance is ever made, so this never runs.
+     */
     private function __construct()
     {
     }
