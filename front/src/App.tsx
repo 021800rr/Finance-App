@@ -4,26 +4,29 @@ import { Route, Routes } from 'react-router'
 import { useAuth } from './auth/AuthContext'
 import { LoginForm } from './auth/LoginForm'
 import { Layout } from './layout/Layout'
-import { AccountOperationsPage } from './account/AccountOperationsPage'
-import { EditFixedExpensePage } from './fixedExpense/EditFixedExpensePage'
-import { FixedExpensesPage } from './fixedExpense/FixedExpensesPage'
-import { EditGoldAssetPage } from './goldAsset/EditGoldAssetPage'
-import { GoldAssetsPage } from './goldAsset/GoldAssetsPage'
-import { EditOperationPage } from './operation/EditOperationPage'
-import { NewOperationPage } from './operation/NewOperationPage'
 import { NotFoundPage } from './pages/NotFoundPage'
-import { SearchPage } from './search/SearchPage'
-import { TransferPage } from './transfer/TransferPage'
 import { SummaryPage } from './summary/SummaryPage'
 
-// The two pages with a chart are loaded when first opened: chart.js comes with them, and the rest of the app starts
-// without it.
-const RatesPage = React.lazy(async () => ({
-  default: (await import('./rate/RatesPage')).RatesPage,
-}))
-const GoldPricesPage = React.lazy(async () => ({
-  default: (await import('./goldPrice/GoldPricesPage')).GoldPricesPage,
-}))
+// A page loaded when it is first opened. React.lazy wants a module with a default export; the pages are exported
+// under their names, so this picks the named one.
+function lazyPage<Name extends string>(load: () => Promise<Record<Name, React.ComponentType>>, name: Name) {
+  return React.lazy(async () => ({ default: (await load())[name] }))
+}
+
+// The home page comes with the app; every other page is loaded when it is first opened, with what only it needs
+// (chart.js for the charts, the calendar for the forms), so the app starts with much less to download. Meanwhile
+// Layout shows "Wczytuję…".
+const AccountOperationsPage = lazyPage(() => import('./account/AccountOperationsPage'), 'AccountOperationsPage')
+const NewOperationPage = lazyPage(() => import('./operation/NewOperationPage'), 'NewOperationPage')
+const EditOperationPage = lazyPage(() => import('./operation/EditOperationPage'), 'EditOperationPage')
+const TransferPage = lazyPage(() => import('./transfer/TransferPage'), 'TransferPage')
+const SearchPage = lazyPage(() => import('./search/SearchPage'), 'SearchPage')
+const FixedExpensesPage = lazyPage(() => import('./fixedExpense/FixedExpensesPage'), 'FixedExpensesPage')
+const EditFixedExpensePage = lazyPage(() => import('./fixedExpense/EditFixedExpensePage'), 'EditFixedExpensePage')
+const RatesPage = lazyPage(() => import('./rate/RatesPage'), 'RatesPage')
+const GoldAssetsPage = lazyPage(() => import('./goldAsset/GoldAssetsPage'), 'GoldAssetsPage')
+const EditGoldAssetPage = lazyPage(() => import('./goldAsset/EditGoldAssetPage'), 'EditGoldAssetPage')
+const GoldPricesPage = lazyPage(() => import('./goldPrice/GoldPricesPage'), 'GoldPricesPage')
 
 // The login form until the user is logged in, whatever the address; afterwards the page of the address, so a link
 // opened while logged out lands where it pointed.
