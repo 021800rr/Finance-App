@@ -41,10 +41,8 @@ final readonly class LoginRateLimiter implements RequestRateLimiterInterface
 
     private function normalized(Request $request): Request
     {
+        /** @var string $username Set by LoginThrottlingListener from UserBadge before the limiter runs. */
         $username = $request->attributes->get(SecurityRequestAttributes::LAST_USERNAME);
-        if (!is_string($username)) {
-            return $request;
-        }
 
         // A copy: the request itself keeps the address as typed, e.g. for the login form to show it back.
         $copy = $request->duplicate();
