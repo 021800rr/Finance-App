@@ -1,27 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { ConfirmDialog } from './ConfirmDialog'
 import { DeleteButton } from './RowActions'
-
-// jsdom does not implement modal dialogs; the browser supplies focus trapping and the backdrop.
-beforeAll(() => {
-  Object.defineProperties(HTMLDialogElement.prototype, {
-    showModal: {
-      configurable: true,
-      value(this: HTMLDialogElement) { this.setAttribute('open', '') },
-    },
-    close: {
-      configurable: true,
-      value(this: HTMLDialogElement) { this.removeAttribute('open') },
-    },
-  })
-})
-
-afterAll(() => {
-  Reflect.deleteProperty(HTMLDialogElement.prototype, 'showModal')
-  Reflect.deleteProperty(HTMLDialogElement.prototype, 'close')
-})
 
 describe('confirmation before deleting', () => {
   it('waits for confirmation and cancels without deleting', async () => {

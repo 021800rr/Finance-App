@@ -7,6 +7,18 @@ import i18n from '../i18n'
 // whatever language jsdom reports.
 await i18n.changeLanguage('pl')
 
+// jsdom does not implement modal dialogs; the browser supplies focus trapping and the backdrop.
+Object.defineProperties(HTMLDialogElement.prototype, {
+  showModal: {
+    configurable: true,
+    value(this: HTMLDialogElement) { this.setAttribute('open', '') },
+  },
+  close: {
+    configurable: true,
+    value(this: HTMLDialogElement) { this.removeAttribute('open') },
+  },
+})
+
 // Every test starts with an empty page.
 afterEach(() => {
   cleanup()
