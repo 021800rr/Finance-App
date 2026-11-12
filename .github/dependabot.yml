@@ -1,0 +1,13 @@
+# Dependabot keeps the actions of the CI workflow up to date: once a week it checks for new versions and opens one
+# pull request with all of them. Composer and npm packages are updated by hand.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
