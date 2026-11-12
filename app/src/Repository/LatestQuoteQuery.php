@@ -6,6 +6,9 @@ namespace App\Repository;
 
 final class LatestQuoteQuery
 {
+    /**
+     * @codeCoverageIgnore The class has only static members: no instance is ever made, so this never runs.
+     */
     private function __construct()
     {
     }

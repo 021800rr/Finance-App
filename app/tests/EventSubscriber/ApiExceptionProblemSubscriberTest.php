@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\EventListener\ErrorListener;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -39,6 +40,32 @@ final class ApiExceptionProblemSubscriberTest extends KernelTestCase
         self::assertIsInt($logs);
         self::assertIsInt($answers);
         self::assertLessThan($answers, $logs);
+    }
+
+    /**
+     * After Symfony's ErrorListener has logged the exception (priority 0), before API Platform (-96) and Symfony's
+     * error page (-128) would answer it.
+     */
+    public function testListensToExceptionsBetweenTheLoggingAndTheOtherAnswers(): void
+    {
+        $listener = ApiExceptionProblemSubscriber::getSubscribedEvents()[KernelEvents::EXCEPTION] ?? null;
+        self::assertIsArray($listener);
+        $priority = $listener[1] ?? null;
+
+        self::assertSame('onException', $listener[0] ?? null);
+        self::assertIsInt($priority);
+        self::assertLessThan(0, $priority);
+        self::assertGreaterThan(-96, $priority);
+    }
+
+    public function testKeepsAHeaderWithSeveralValues(): void
+    {
+        $links = ['</api/docs>; rel="help"', '</api/login_check>; rel="login"'];
+        $event = $this->exceptionEvent('/api/login_check', new HttpException(503, headers: ['Link' => $links]));
+
+        (new ApiExceptionProblemSubscriber(false))->onException($event);
+
+        self::assertSame($links, $event->getResponse()?->headers->all('link'));
     }
 
     public function testKeepsNonStringHeadersSuchAsRetryAfter(): void

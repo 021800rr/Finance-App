@@ -12,6 +12,9 @@ final class BusinessDateRange
     public const string MAX_DATE = self::MAX_YEAR.'-12-31';
     public const string ERROR_MESSAGE = 'Date must be between '.self::MIN_DATE.' and '.self::MAX_DATE.' (inclusive).';
 
+    /**
+     * @codeCoverageIgnore The class has only static members: no instance is ever made, so this never runs.
+     */
     private function __construct()
     {
     }

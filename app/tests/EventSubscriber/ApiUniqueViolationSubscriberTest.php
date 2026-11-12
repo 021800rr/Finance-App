@@ -13,9 +13,25 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\HttpKernel\KernelEvents;
 
 final class ApiUniqueViolationSubscriberTest extends TestCase
 {
+    /**
+     * Above 0: the conflict replaces the SQL error before Symfony's ErrorListener logs it (priority 0) and before
+     * API Platform answers, so neither the log nor the answer shows the SQL.
+     */
+    public function testReplacesTheExceptionBeforeItIsLoggedAndAnswered(): void
+    {
+        $listener = ApiUniqueViolationSubscriber::getSubscribedEvents()[KernelEvents::EXCEPTION] ?? null;
+        self::assertIsArray($listener);
+        $priority = $listener[1] ?? null;
+
+        self::assertSame('onException', $listener[0] ?? null);
+        self::assertIsInt($priority);
+        self::assertGreaterThan(0, $priority);
+    }
+
     #[DataProvider('apiPaths')]
     public function testUniqueViolationUnderApiBecomesAConflictWithoutSql(string $path): void
     {
