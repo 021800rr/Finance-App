@@ -19,5 +19,8 @@ export default defineConfig({
     // At most 4 test files at once. By default there is one per CPU core: on a 16-core machine 15 simulated browsers
     // start together, and the slowest interface tests then miss their 5 s limit though nothing is wrong.
     maxWorkers: 4,
+    // Each worker builds its simulated browser (jsdom) once and runs every test file in a fresh context of it, so the
+    // files stay isolated but no longer pay for a new browser each: the whole run takes about a third of the time.
+    pool: 'vmThreads',
   },
 })
