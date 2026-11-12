@@ -31,17 +31,19 @@ jobs:
           POSTGRES_PASSWORD: finance
         ports:
           - 5432:5432
+        # As in docker-compose.yml: checked every second, so the job goes on as soon as the database is up (about a
+        # second) instead of after the first check at 5 s; failures within the start period do not count.
         options: >-
           --health-cmd "pg_isready -U finance -d finance"
-          --health-interval 5s
+          --health-interval 1s
           --health-timeout 5s
           --health-retries 10
+          --health-start-period 30s
 
     env:
       APP_ENV: test
       # The compose file reaches the database as "postgres"; on the runner it is published on localhost.
       DATABASE_URL: postgresql://finance:finance@127.0.0.1:5432/finance?serverVersion=16&charset=utf8
-      PHP_CS_FIXER_IGNORE_ENV: "1"
 
     steps:
       - name: Check out the code
@@ -51,7 +53,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.5"
-          extensions: bcmath, ctype, iconv, intl, mbstring, pdo_pgsql, xml
+          extensions: ctype, iconv, intl, mbstring, pdo_pgsql, xml
           tools: composer:v2
           coverage: none
 

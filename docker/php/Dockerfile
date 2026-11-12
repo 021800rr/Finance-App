@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-install -j"$(nproc)" \
         pdo \
         pdo_pgsql \
-        bcmath \
         intl \
         zip \
     && pecl install xdebug \
