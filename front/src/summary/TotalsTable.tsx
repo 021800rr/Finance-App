@@ -1,13 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { formatAmount, type Money } from '../money'
-import { HEAD } from '../ui/tableStyle'
+import { BODY, CELL, HEAD, TABLE } from '../ui/tableStyle'
 import type { Summary } from './summaryApi'
 
 // The account types the web app sums up separately (App\Constant\AccountTypeNames).
 const ROR = 'ROR'
 const WAKACJE = 'Wakacje'
-
-const CELL = 'px-3 py-2'
 
 // A total, or a note when the summary has no accounts of its type.
 function Amount({ money }: { money: Money | undefined }) {
@@ -30,14 +28,14 @@ export function TotalsTable({ summary }: { summary: Summary }) {
 
   return (
     <div className="inline-block overflow-x-auto rounded-xl bg-white dark:bg-slate-900 shadow">
-      <table className="text-sm">
+      <table className={TABLE}>
         <thead className={HEAD}>
           <tr>
             <th className={CELL}>{t('account.type')}</th>
             <th className={`${CELL} text-right`}>{t('home.currency_pln')}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+        <tbody className={BODY}>
           {rows.map((row) => (
             <tr
               key={row.label}

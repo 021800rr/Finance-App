@@ -4,14 +4,16 @@ import { useTranslation } from 'react-i18next'
 import { errorMessage } from '../messages'
 import { formatAmount } from '../money'
 import { Code } from '../ui/Code'
+import { EmptyRow } from '../ui/EmptyRow'
 import { Alert } from '../ui/Feedback'
 import { IconButton, IconLink } from '../ui/RowActions'
 import { SortHeader } from '../ui/SortHeader'
 import { sortRows, type SortState } from '../ui/sorting'
-import { HEAD } from '../ui/tableStyle'
+import { AMOUNT, BODY, CELL, HEAD, ROW, TABLE } from '../ui/tableStyle'
 import { type SummaryAccount, useSetAccountHidden, useSetMainAccount } from './summaryApi'
 
-const CELL = 'px-3 py-2'
+// A hidden account (listed with "Pokaż ukryte") in a paler grey than the others.
+const HIDDEN = 'text-slate-400 dark:text-slate-500'
 
 type Column = {
   key: string
@@ -60,7 +62,7 @@ export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
   return (
     <div className="overflow-x-auto rounded-xl bg-white dark:bg-slate-900 shadow">
       {failure && <Alert tone="warning">{failure}</Alert>}
-      <table className="min-w-full text-sm">
+      <table className={TABLE}>
         <thead className={HEAD}>
           <tr>
             {COLUMNS.map((item) => (
@@ -75,12 +77,9 @@ export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
             <th className={CELL}><span className="sr-only">{t('app.actions')}</span></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+        <tbody className={BODY}>
           {rows.map((account) => (
-            <tr
-              key={account.id}
-              className={account.hidden ? 'text-slate-400 dark:text-slate-500' : 'text-slate-800 dark:text-slate-200'}
-            >
+            <tr key={account.id} className={account.hidden ? `${ROW} ${HIDDEN}` : ROW}>
               <td className={CELL}>{account.bankName}</td>
               <td className={CELL}>{account.typeName}</td>
               <td className={CELL}><Code>{account.accountNumber}</Code></td>
@@ -95,12 +94,16 @@ export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
                   )
                 )}
               </td>
-              <td className={`${CELL} text-right font-semibold tabular-nums`}>{formatAmount(account.saldo.amount)}</td>
+              <td className={`${CELL} ${AMOUNT}`}>{formatAmount(account.saldo.amount)}</td>
               <td className={CELL}>{account.currencyCode}</td>
               <td className={CELL}>
                 <div className="flex items-center justify-end gap-3">
                   {account.isMain ? (
-                    <span title={t('home.main_account')}>★</span>
+                    // A screen reader says "Konto główne", not the name of the star character.
+                    <span title={t('home.main_account')}>
+                      <span aria-hidden="true">★</span>
+                      <span className="sr-only">{t('home.main_account')}</span>
+                    </span>
                   ) : (
                     <IconButton label={t('home.set_main')} onClick={() => makeMain(account)} disabled={busy}>
                       ☆
@@ -120,6 +123,7 @@ export function AccountsTable({ accounts }: { accounts: SummaryAccount[] }) {
               </td>
             </tr>
           ))}
+          {accounts.length === 0 && <EmptyRow columns={COLUMNS.length + 1} text={t('app.no_accounts')} />}
         </tbody>
       </table>
     </div>
