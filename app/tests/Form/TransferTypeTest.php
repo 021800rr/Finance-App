@@ -117,6 +117,20 @@ final class TransferTypeTest extends KernelTestCase
         self::assertTrue($form->isValid());
     }
 
+    /**
+     * A crafted request can send the whole form as one value (transfer=abc) instead of its fields. The listener that
+     * drops the second amount leaves it alone, and the form rejects it instead of failing.
+     */
+    public function testRejectsTheFormSentAsASingleValue(): void
+    {
+        $form = $this->createTransferForm();
+        $form->submit('abc');
+
+        self::assertTrue($form->isSubmitted());
+        self::assertFalse($form->isSynchronized());
+        self::assertFalse($form->isValid());
+    }
+
     private function createTransferForm(): FormInterface
     {
         /** @var FormFactoryInterface $formFactory */
