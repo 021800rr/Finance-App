@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes, useParams } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import { formatAmount } from '../money'
-import { type Answer, fakeApi, sentJson } from '../test/fakeApi'
+import { type Answer, contractorSearch, fakeApi, sentJson } from '../test/fakeApi'
 import { FixedExpensesPage } from './FixedExpensesPage'
 
 type FixedExpense = {
@@ -22,15 +22,8 @@ const CONTRACTORS = [{ id: 4, name: 'Netflix' }]
 
 // The API of the page: the fixed expenses, and the contractors whose name contains the text typed. `answer` replies
 // to anything else (saving, planning, deleting).
-function serve(fixedExpenses: FixedExpense[], answer: Answer = () => undefined) {
-  return fakeApi({ '/api/fixed_expenses': fixedExpenses }, (method, path) => {
-    const text = new URL(path, 'http://localhost').searchParams.get('name')
-    if (method === 'GET' && path.startsWith('/api/contractors?') && text !== null) {
-      return Response.json(CONTRACTORS.filter((contractor) => contractor.name.includes(text)))
-    }
-
-    return answer(method, path)
-  })
+function serve(fixedExpenses: FixedExpense[], answer?: Answer) {
+  return fakeApi({ '/api/fixed_expenses': fixedExpenses }, contractorSearch(CONTRACTORS), answer)
 }
 
 // Where planning leads: the history of the main account.

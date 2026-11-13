@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
-import { type Answer, fakeApi, sentJson } from '../test/fakeApi'
+import { type Answer, contractorSearch, fakeApi, sentJson } from '../test/fakeApi'
 import { EditFixedExpensePage } from './EditFixedExpensePage'
 
 const NETFLIX = {
@@ -14,15 +14,8 @@ const NETFLIX = {
 
 // The API of the page: fixed expense 7, and the contractors whose name contains the text typed. (An unchanged
 // contractor staying out of the changes: formRequests.test.tsx.)
-function serve(answer: Answer = () => undefined) {
-  return fakeApi({ '/api/fixed_expenses/7': NETFLIX }, (method, path) => {
-    const text = new URL(path, 'http://localhost').searchParams.get('name')
-    if (method === 'GET' && path.startsWith('/api/contractors?') && text !== null) {
-      return Response.json([{ id: 5, name: 'Netflix Premium' }].filter((found) => found.name.includes(text)))
-    }
-
-    return answer(method, path)
-  })
+function serve(answer?: Answer) {
+  return fakeApi({ '/api/fixed_expenses/7': NETFLIX }, contractorSearch([{ id: 5, name: 'Netflix Premium' }]), answer)
 }
 
 // The edit of fixed expense 7; the list stands for where the page goes back to.
