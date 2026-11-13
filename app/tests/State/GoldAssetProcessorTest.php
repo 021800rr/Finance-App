@@ -119,6 +119,23 @@ final class GoldAssetProcessorTest extends KernelTestCase
         self::assertSame('999.9999', $largest->ounces);
     }
 
+    public function testProcessThrowsWhenDataIsNotGoldAssetInput(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        $this->processor->process(new \stdClass(), new Post());
+    }
+
+    public function testProcessPostRejectsAMissingGoldForm(): void
+    {
+        $input = $this->input($this->createGoldForm(), '1.0');
+        $input->formId = null;
+
+        $this->expectException(UnprocessableEntityHttpException::class);
+
+        $this->processor->process($input, new Post());
+    }
+
     /**
      * @return iterable<string, array{?string}>
      */
