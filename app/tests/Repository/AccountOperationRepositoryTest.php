@@ -364,6 +364,19 @@ final class AccountOperationRepositoryTest extends KernelTestCase
         yield 'negative 33 digits' => ['-'.str_repeat('9', 33)];
     }
 
+    /**
+     * PHP takes 1e3 for a number, but no amount is written so: the query is text only, not 1000.00.
+     */
+    public function testExponentNotationQueryIsSearchedAsTextOnly(): void
+    {
+        $account = $this->createAccount();
+        $textMatch = $this->createOperation($account, 100, new \DateTimeImmutable(), description: 'Invoice 1e3');
+        $this->createOperation($account, 100000, new \DateTimeImmutable(), description: 'One thousand');
+
+        self::assertSame(1, $this->repository->countByQuery('1e3'));
+        self::assertSame([$textMatch->getId()], $this->idsOf($this->repository->searchByQueryPaged('1e3', 10, 0)));
+    }
+
     #[DataProvider('boundaryAmountQueries')]
     public function testAmountQueryStillMatchesAtTheLimits(string $query, int $minorUnits): void
     {
