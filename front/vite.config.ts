@@ -23,11 +23,12 @@ export default defineConfig({
     // files stay isolated but no longer pay for a new browser each: the whole run takes about a third of the time.
     pool: 'vmThreads',
     // npm run coverage: which code the tests run, as a summary in the terminal and as coverage/index.html. Every source
-    // file counts, also one that no test opens; the generated API types and the tests themselves do not.
+    // file counts, also one that no test opens; the generated API types, the tests themselves and main.tsx do not
+    // (it only starts the app in the browser; its rules live in modules with tests, e.g. queryClient.ts).
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/generated/**', 'src/test/**', 'src/**/*.test.{ts,tsx}'],
+      exclude: ['src/generated/**', 'src/test/**', 'src/**/*.test.{ts,tsx}', 'src/main.tsx'],
       reporter: ['text-summary', 'html'],
     },
   },
