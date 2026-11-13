@@ -159,7 +159,7 @@ coverage:
 		--coverage-html var/coverage --coverage-text --only-summary-for-coverage-text
 	docker exec finance-front-dev sh -c 'npm run coverage'
 	@echo ""
-	@echo "Reports: app/var/coverage/index.html (backend), front/coverage/index.html (React)"
+	@echo "Reports: backend/var/coverage/index.html (backend), frontend/coverage/index.html (React)"
 
 phpstan:
 	docker exec finance-php-dev vendor/bin/phpstan analyse --memory-limit 1G

@@ -20,7 +20,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: app
+        working-directory: backend
 
     services:
       postgres:
@@ -66,7 +66,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: composer-${{ hashFiles('app/composer.lock') }}
+          key: composer-${{ hashFiles('backend/composer.lock') }}
           restore-keys: composer-
 
       - name: Install PHP dependencies
@@ -78,8 +78,8 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: |
-            app/package-lock.json
-            front/package-lock.json
+            backend/package-lock.json
+            frontend/package-lock.json
 
       # The Twig layout needs public/build/entrypoints.json, which is not committed.
       - name: Build the front-end assets
@@ -115,19 +115,19 @@ jobs:
         run: vendor/bin/php-cs-fixer fix --dry-run --diff
 
       - name: Install React dependencies
-        working-directory: front
+        working-directory: frontend
         run: npm ci --no-audit --no-fund
 
       - name: React ESLint
-        working-directory: front
+        working-directory: frontend
         run: npm run lint
 
       - name: React Vitest (with coverage)
-        working-directory: front
+        working-directory: frontend
         run: npm run coverage
 
       - name: React TypeScript and production build
-        working-directory: front
+        working-directory: frontend
         run: npm run build
 
       # Known vulnerabilities, checked last so that the tests above always run. Any advisory fails the job, also one
@@ -140,5 +140,5 @@ jobs:
         run: npm audit --omit=dev
 
       - name: Audit React dependencies
-        working-directory: front
+        working-directory: frontend
         run: npm audit --omit=dev

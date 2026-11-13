@@ -39,7 +39,7 @@ services:
       PHP_IDE_CONFIG: "serverName=finance-dev"
       TZ: Europe/Warsaw
     volumes:
-      - ./app:/var/www/html
+      - ./backend:/var/www/html
       - ./docker/php/xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
       - ./docker/php/timezone.ini:/usr/local/etc/php/conf.d/timezone.ini
       - ./docker/php/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini
@@ -57,7 +57,7 @@ services:
     ports:
       - "8081:80"
     volumes:
-      - ./app:/var/www/html:ro
+      - ./backend:/var/www/html:ro
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - php
@@ -69,7 +69,7 @@ services:
     container_name: finance-node-dev
     working_dir: /var/www/html
     volumes:
-      - ./app:/var/www/html
+      - ./backend:/var/www/html
       - node_modules_dev:/var/www/html/node_modules
     # npm install only when package-lock.json differs from the one installed last (a copy kept in node_modules): on
     # every start it asks the npm registry and takes a minute or more.
@@ -80,14 +80,14 @@ services:
     networks:
       - finance-dev
 
-  # The React front (front/): the Vite dev server on http://localhost:5173, passing /api on to nginx.
+  # The React front (frontend/): the Vite dev server on http://localhost:5173, passing /api on to nginx.
   front:
     image: node:24-bookworm
     container_name: finance-front-dev
     working_dir: /app
     user: "1000:1000"
     volumes:
-      - ./front:/app
+      - ./frontend:/app
     # npm install only when package-lock.json changed, as in the node service.
     command: >-
       sh -c "cmp -s package-lock.json node_modules/.installed-package-lock.json
