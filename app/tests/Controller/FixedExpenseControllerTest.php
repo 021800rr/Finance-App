@@ -591,6 +591,27 @@ final class FixedExpenseControllerTest extends WebTestCase
         self::assertSame($operationsBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
+    /**
+     * There is no history of a main account to go to then: the list stays, with the message.
+     */
+    public function testPlanWithoutAMainAccountShowsAFlashMessageOnTheList(): void
+    {
+        $this->createFixedExpense(amount: -5000);
+        foreach ($this->em()->getRepository(Account::class)->findBy(['isMain' => true]) as $account) {
+            $account->setMain(false);
+        }
+        $this->em()->flush();
+
+        $crawler = $this->client->request('GET', '/fixed-expense');
+        $csrfToken = $crawler->filter('form[action*="/fixed-expense/plan"] input[name="_token"]')->attr('value');
+
+        $this->client->request('POST', '/fixed-expense/plan', ['_token' => $csrfToken]);
+
+        self::assertResponseRedirects('/fixed-expense');
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('body', 'No account is marked as the main account.');
+    }
+
     private function assertDescriptionTooLongError(): void
     {
         self::assertResponseIsSuccessful();
