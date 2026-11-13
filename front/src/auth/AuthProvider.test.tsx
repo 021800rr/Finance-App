@@ -79,6 +79,16 @@ describe('logging in and out', () => {
     expect(await loginForm()).toBeInTheDocument()
   })
 
+  // Not stuck on "checking the login": logging in will say what is wrong.
+  it('asks for a login when the server fails to say who is logged in', async () => {
+    fakeApi({}, (method, path) => method === 'GET' && path === '/api/me'
+      ? Response.json({}, { status: 500 })
+      : undefined)
+    showApp()
+
+    expect(await loginForm()).toBeInTheDocument()
+  })
+
   it('logs in and then opens the address the link pointed to', async () => {
     const session: Session = { email: null }
     const fetch = serve(session, (method, path) => {
