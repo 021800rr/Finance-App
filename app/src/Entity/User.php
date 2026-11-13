@@ -68,11 +68,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return mb_strtolower(trim($email));
     }
 
-    public function getId(): int
-    {
-        return $this->id;
-    }
-
     public function getEmail(): string
     {
         return $this->email;
@@ -104,12 +99,5 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getPassword(): string
     {
         return $this->password;
-    }
-
-    /**
-     * No plaintext credentials are ever held on this entity outside the hash, so there is nothing to erase.
-     */
-    public function eraseCredentials(): void
-    {
     }
 }
