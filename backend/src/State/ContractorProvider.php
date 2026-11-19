@@ -40,18 +40,14 @@ final readonly class ContractorProvider implements ProviderInterface
             return ContractorResource::fromEntity($contractor);
         }
 
+        // A search only: ContractorResource requires the "name" parameter, so a request without it or with a blank one
+        // is refused (422) before this runs.
         $filters = $context['filters'] ?? [];
-        $name = is_array($filters) && is_string($filters['name'] ?? null) ? $filters['name'] : null;
+        $name = is_array($filters) && is_string($filters['name'] ?? null) ? $filters['name'] : '';
 
-        if (null !== $name) {
-            return array_values(array_map(
-                static fn (array $row): ContractorResource => ContractorResource::fromArray($row),
-                $this->contractorRepository->searchByName($name, limit: null),
-            ));
-        }
-
-        $contractors = $this->contractorRepository->findBy([], ['name' => 'ASC']);
-
-        return array_map(ContractorResource::fromEntity(...), $contractors);
+        return array_values(array_map(
+            static fn (array $row): ContractorResource => ContractorResource::fromArray($row),
+            $this->contractorRepository->searchByName($name, limit: null),
+        ));
     }
 }

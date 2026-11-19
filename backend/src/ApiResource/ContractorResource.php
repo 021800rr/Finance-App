@@ -28,13 +28,21 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Lists contractors, optionally filtered by a partial name match.',
+            description: 'Searches contractors by a part of the name, as the contractor field of the forms does. '
+            .'The search text name is required: there is no list of all contractors.',
             provider: ContractorProvider::class,
             parameters: [
                 'name' => new QueryParameter(
                     description: 'Partial, case-insensitive name match (e.g. "Éc" matches "Écolier"). '
                     .'1-255 characters after trimming. Exact matches come first, then names starting with the text.',
-                    constraints: [new Assert\Length(min: 1, max: 255, normalizer: 'trim'), new NoNullCharacter()],
+                    required: true,
+                    // As "q" of AccountOperationResource: "required" alone only documents the parameter, NotBlank
+                    // refuses it missing; Sequentially reports one violation, not one per constraint.
+                    constraints: [new Assert\Sequentially([
+                        new Assert\NotBlank(normalizer: 'trim'),
+                        new Assert\Length(min: 1, max: 255, normalizer: 'trim'),
+                        new NoNullCharacter(),
+                    ])],
                 ),
             ],
         ),

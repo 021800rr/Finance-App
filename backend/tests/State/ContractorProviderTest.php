@@ -55,21 +55,17 @@ final class ContractorProviderTest extends KernelTestCase
         $this->provider->provide(new Get(), ['id' => 999999999]);
     }
 
-    public function testProvideCollectionOrdersByNameAscending(): void
+    public function testProvideOrdersEquallyGoodMatchesByName(): void
     {
-        $zebra = $this->createContractor('Zebra '.uniqid());
-        $alpha = $this->createContractor('Alpha '.uniqid());
+        $marker = uniqid();
+        $zebra = $this->createContractor("Zebra {$marker}");
+        $alpha = $this->createContractor("Alpha {$marker}");
 
         /** @var list<ContractorResource> $result */
-        $result = $this->provider->provide(new GetCollection());
+        $result = $this->provider->provide(new GetCollection(), [], ['filters' => ['name' => $marker]]);
 
         $names = array_map(static fn (ContractorResource $r): string => $r->name, $result);
-        $positionOfAlpha = array_search($alpha->getName(), $names, true);
-        $positionOfZebra = array_search($zebra->getName(), $names, true);
-
-        self::assertIsInt($positionOfAlpha);
-        self::assertIsInt($positionOfZebra);
-        self::assertLessThan($positionOfZebra, $positionOfAlpha);
+        self::assertSame([$alpha->getName(), $zebra->getName()], $names);
     }
 
     public function testProvideFiltersByPartialNameWhenNameFilterGiven(): void
@@ -83,13 +79,14 @@ final class ContractorProviderTest extends KernelTestCase
         self::assertStringStartsWith('Écolier', $result[0]->name);
     }
 
-    public function testProvideReturnsAllContractorsWhenNoNameFilterGiven(): void
+    /**
+     * There is no list of all contractors: the API refuses a request without the filter before the provider runs,
+     * and the provider itself, called without one, finds nothing.
+     */
+    public function testProvideFindsNothingWithoutANameFilter(): void
     {
         $this->createContractor('Alpha '.uniqid());
 
-        /** @var list<ContractorResource> $result */
-        $result = $this->provider->provide(new GetCollection(), [], []);
-
-        self::assertNotEmpty($result);
+        self::assertSame([], $this->provider->provide(new GetCollection(), [], []));
     }
 }

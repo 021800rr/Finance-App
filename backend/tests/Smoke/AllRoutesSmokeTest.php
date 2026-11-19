@@ -32,7 +32,10 @@ final class AllRoutesSmokeTest extends WebTestCase
     /**
      * Query parameters a route needs before its provider runs at all.
      */
-    private const array QUERIES = ['/api/account_operations.{_format}' => ['q' => 'Smoke']];
+    private const array QUERIES = [
+        '/api/account_operations.{_format}' => ['q' => 'Smoke'],
+        '/api/contractors.{_format}' => ['name' => 'Smoke'],
+    ];
 
     private KernelBrowser $client;
 

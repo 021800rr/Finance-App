@@ -229,7 +229,7 @@ export interface paths {
         };
         /**
          * Retrieves the collection of Contractor resources.
-         * @description Lists contractors, optionally filtered by a partial name match.
+         * @description Searches contractors by a part of the name, as the contractor field of the forms does. The search text name is required: there is no list of all contractors.
          */
         get: operations["api_contractors_get_collection"];
         put?: never;
@@ -1312,7 +1312,7 @@ export interface components {
                 [key: string]: string;
             };
         };
-        /** @description Lists contractors, optionally filtered by a partial name match. */
+        /** @description Searches contractors by a part of the name, as the contractor field of the forms does. The search text name is required: there is no list of all contractors. */
         Contractor: {
             /**
              * @description Contractor id.
@@ -1333,7 +1333,7 @@ export interface components {
              */
             name: string | null;
         };
-        /** @description Lists contractors, optionally filtered by a partial name match. */
+        /** @description Searches contractors by a part of the name, as the contractor field of the forms does. The search text name is required: there is no list of all contractors. */
         "Contractor.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
              * @description Contractor id.
@@ -4575,11 +4575,11 @@ export interface operations {
     };
     api_contractors_get_collection: {
         parameters: {
-            query?: {
+            query: {
                 /** @description The collection page number */
                 page?: number;
                 /** @description Partial, case-insensitive name match (e.g. "Éc" matches "Écolier"). 1-255 characters after trimming. Exact matches come first, then names starting with the text. */
-                name?: string;
+                name: string;
             };
             header?: never;
             path?: never;

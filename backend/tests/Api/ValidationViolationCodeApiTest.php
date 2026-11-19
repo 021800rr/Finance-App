@@ -816,20 +816,34 @@ final class ValidationViolationCodeApiTest extends WebTestCase
         self::assertSame(['q' => ['code' => 'validation.is_blank', 'params' => []]], $this->codesAndParams());
 
         $this->client->request('GET', '/api/contractors?name=%20%20', server: $headers);
-        self::assertSame(
-            ['name' => ['code' => 'validation.too_short', 'params' => ['max' => '255', 'limit' => '1', 'min' => '1']]],
-            $this->codesAndParams(),
-        );
+        self::assertSame(['name' => ['code' => 'validation.is_blank', 'params' => []]], $this->codesAndParams());
     }
 
-    public function testContractorListStillWorksWithoutTheOptionalFilter(): void
+    /**
+     * The contractor list is a search only, as the contractor field of the forms: there is no list of all
+     * contractors, so a missing or empty search text is refused. A blank one: testBlankSearchFiltersGetOneViolation.
+     * NotBlank has no own message here, so the code is the Symfony error name (see ViolationCodes).
+     *
+     * @param array{code: string, params: array<string, string>} $expected
+     */
+    #[DataProvider('missingOrEmptyContractorSearchTexts')]
+    public function testContractorSearchWithoutTextIsAViolation(string $uri, array $expected): void
     {
-        $this->client->request('GET', '/api/contractors', server: [
+        $this->client->request('GET', $uri, server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'HTTP_ACCEPT' => 'application/ld+json',
         ]);
 
-        self::assertResponseIsSuccessful();
+        self::assertSame(['name' => $expected], $this->codesAndParams());
+    }
+
+    /**
+     * @return iterable<string, array{string, array{code: string, params: array<string, string>}}>
+     */
+    public static function missingOrEmptyContractorSearchTexts(): iterable
+    {
+        yield 'missing' => ['/api/contractors', ['code' => 'validation.is_blank', 'params' => []]];
+        yield 'empty' => ['/api/contractors?name=', ['code' => 'validation.is_blank', 'params' => []]];
     }
 
     /**
@@ -1000,28 +1014,6 @@ final class ValidationViolationCodeApiTest extends WebTestCase
         self::assertSame(
             ['code' => 'validation.invalid_type', 'params' => ['type' => 'string']],
             $this->codesAndParams()['amountTo'] ?? null,
-        );
-    }
-
-    public function testConstraintWithoutOwnMessageGetsTheSymfonyErrorName(): void
-    {
-        $this->client->request('GET', '/api/contractors?name=', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'HTTP_ACCEPT' => 'application/ld+json',
-        ]);
-
-        self::assertSame(
-            [
-                'name' => [
-                    'code' => 'validation.too_short',
-                    'params' => [
-                        'max' => '255',
-                        'limit' => '1',
-                        'min' => '1',
-                    ],
-                ],
-            ],
-            $this->codesAndParams(),
         );
     }
 
