@@ -77,6 +77,53 @@ final class LoginRateLimiterTest extends WebTestCase
         );
     }
 
+    /**
+     * Only failed attempts count: more successful logins than the per-IP limit (25 in 15 minutes) still log in.
+     */
+    public function testSuccessfulLoginsDoNotCountTowardsTheLock(): void
+    {
+        for ($login = 1; $login <= 30; ++$login) {
+            $this->logInThroughTheApi(AppFixtures::TEST_USER_PASSWORD);
+
+            self::assertResponseStatusCodeSame(200, "Login {$login}");
+        }
+        self::assertStringContainsString('"token"', (string) $this->client->getResponse()->getContent());
+    }
+
+    /**
+     * A successful login clears the failed attempts at the account: four, a login, four more still log in.
+     */
+    public function testASuccessfulLoginClearsTheFailedAttemptsAtTheAccount(): void
+    {
+        for ($round = 1; $round <= 2; ++$round) {
+            for ($attempt = 1; $attempt <= 4; ++$attempt) {
+                $this->logInThroughTheApi("wrong-password-{$round}-{$attempt}");
+            }
+
+            $this->logInThroughTheApi(AppFixtures::TEST_USER_PASSWORD);
+
+            self::assertResponseStatusCodeSame(200, "Round {$round}");
+        }
+    }
+
+    public function testFailedAttemptsStillLockAfterSuccessfulLogins(): void
+    {
+        for ($login = 1; $login <= 10; ++$login) {
+            $this->logInThroughTheApi(AppFixtures::TEST_USER_PASSWORD);
+        }
+        for ($attempt = 1; $attempt <= 5; ++$attempt) {
+            $this->logInThroughTheApi('wrong-password-'.$attempt);
+        }
+
+        $this->logInThroughTheApi(AppFixtures::TEST_USER_PASSWORD);
+
+        self::assertResponseStatusCodeSame(401);
+        self::assertStringContainsString(
+            'auth.too_many_login_attempts',
+            (string) $this->client->getResponse()->getContent(),
+        );
+    }
+
     private function logInThroughTheWebForm(string $password): void
     {
         $form = $this->client->request('GET', '/login')->filter('form')->form();

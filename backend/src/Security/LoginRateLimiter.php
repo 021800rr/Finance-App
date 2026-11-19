@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Security;
 
 use App\Entity\User;
-use Symfony\Component\HttpFoundation\RateLimiter\RequestRateLimiterInterface;
+use Symfony\Component\HttpFoundation\RateLimiter\PeekableRequestRateLimiterInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\RateLimiter\RateLimit;
 use Symfony\Component\Security\Http\SecurityRequestAttributes;
@@ -22,16 +22,25 @@ use Symfony\Component\Security\Http\SecurityRequestAttributes;
  * end, in any number, gave five more attempts, also during the lock.
  *
  * The counting itself is Symfony's DefaultLoginRateLimiter (services.yaml), with the limiters of rate_limiter.yaml.
+ *
+ * Peekable like the limiter it wraps: Symfony's LoginThrottlingListener then only checks the counters before a login
+ * and counts the failed ones. Without peek() it counted every login, a successful one too, and the per-IP counter,
+ * which a successful login does not reset, locked out after 25 logins in 15 minutes even when none had failed.
  */
-final readonly class LoginRateLimiter implements RequestRateLimiterInterface
+final readonly class LoginRateLimiter implements PeekableRequestRateLimiterInterface
 {
-    public function __construct(private RequestRateLimiterInterface $inner)
+    public function __construct(private PeekableRequestRateLimiterInterface $inner)
     {
     }
 
     public function consume(Request $request): RateLimit
     {
         return $this->inner->consume($this->normalized($request));
+    }
+
+    public function peek(Request $request): RateLimit
+    {
+        return $this->inner->peek($this->normalized($request));
     }
 
     public function reset(Request $request): void
