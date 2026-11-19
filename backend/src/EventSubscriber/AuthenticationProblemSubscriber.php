@@ -50,17 +50,19 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
 
     public function onTokenInvalid(JWTInvalidEvent $event): void
     {
-        $event->setResponse($this->problem($event->getResponse(), 'auth.token_invalid', 'Invalid JWT Token.'));
+        $event->setResponse($this->rejectedToken(
+            $this->problem($event->getResponse(), 'auth.token_invalid', 'Invalid JWT Token.'),
+        ));
     }
 
     public function onTokenExpired(JWTExpiredEvent $event): void
     {
-        $event->setResponse($this->problem(
+        $event->setResponse($this->rejectedToken($this->problem(
             $event->getResponse(),
             'auth.token_expired',
             'Expired JWT Token. Get a new one from POST /api/token/refresh, '
             .'or log in again with POST /api/login_check.',
-        ));
+        )));
     }
 
     public function onLoginFailure(AuthenticationFailureEvent $event): void
@@ -114,6 +116,17 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
             'auth.refresh_token_missing',
             'Refresh token not found. Send it in the refresh_token cookie or as {"refresh_token": "<token>"}.',
         );
+    }
+
+    /**
+     * A token was sent but refused: RFC 6750 (section 3) asks for the "invalid_token" error in the challenge, while a
+     * request without any token gets the bare "Bearer" challenge. The bundle sends the bare one in both cases.
+     */
+    private function rejectedToken(Response $problem): Response
+    {
+        $problem->headers->set('WWW-Authenticate', 'Bearer error="invalid_token"');
+
+        return $problem;
     }
 
     /**

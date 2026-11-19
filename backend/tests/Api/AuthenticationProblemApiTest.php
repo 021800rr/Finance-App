@@ -8,6 +8,7 @@ use App\DataFixtures\AppFixtures;
 use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\BrowserKit\Cookie;
 
 /**
  * Authentication failures are answered by the JWT bundle, outside API Platform; they still use the API's
@@ -15,6 +16,9 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 final class AuthenticationProblemApiTest extends WebTestCase
 {
+    /** RFC 6750, section 3: a token was sent but refused. Without any token the challenge is the bare "Bearer". */
+    private const string REJECTED_TOKEN_CHALLENGE = 'Bearer error="invalid_token"';
+
     private KernelBrowser $client;
 
     protected function setUp(): void
@@ -33,7 +37,15 @@ final class AuthenticationProblemApiTest extends WebTestCase
     {
         $this->client->request('GET', '/api/accounts', server: ['HTTP_AUTHORIZATION' => 'Bearer abc.def.ghi']);
 
-        $this->assertAuthenticationProblem('auth.token_invalid');
+        $this->assertAuthenticationProblem('auth.token_invalid', challenge: self::REJECTED_TOKEN_CHALLENGE);
+    }
+
+    public function testInvalidTokenFromTheCookieGetsTheSameChallenge(): void
+    {
+        $this->client->getCookieJar()->set(new Cookie('BEARER', 'abc.def.ghi'));
+        $this->client->request('GET', '/api/accounts');
+
+        $this->assertAuthenticationProblem('auth.token_invalid', challenge: self::REJECTED_TOKEN_CHALLENGE);
     }
 
     public function testExpiredToken(): void
@@ -48,7 +60,7 @@ final class AuthenticationProblemApiTest extends WebTestCase
 
         $this->client->request('GET', '/api/accounts', server: ['HTTP_AUTHORIZATION' => 'Bearer '.$token]);
 
-        $this->assertAuthenticationProblem('auth.token_expired');
+        $this->assertAuthenticationProblem('auth.token_expired', challenge: self::REJECTED_TOKEN_CHALLENGE);
     }
 
     public function testWrongPassword(): void
@@ -85,10 +97,13 @@ final class AuthenticationProblemApiTest extends WebTestCase
      *
      * @return array<mixed>
      */
-    private function assertAuthenticationProblem(string $errorCode, array $params = []): array
-    {
+    private function assertAuthenticationProblem(
+        string $errorCode,
+        array $params = [],
+        string $challenge = 'Bearer',
+    ): array {
         self::assertResponseStatusCodeSame(401);
-        self::assertResponseHeaderSame('WWW-Authenticate', 'Bearer');
+        self::assertResponseHeaderSame('WWW-Authenticate', $challenge);
         self::assertResponseHeaderSame('Content-Type', 'application/problem+json');
         $content = (string) $this->client->getResponse()->getContent();
         $problem = json_decode($content, true, flags: JSON_THROW_ON_ERROR);

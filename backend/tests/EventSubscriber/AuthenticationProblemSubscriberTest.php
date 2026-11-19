@@ -6,7 +6,11 @@ namespace App\Tests\EventSubscriber;
 
 use App\EventSubscriber\AuthenticationProblemSubscriber;
 use Gesdinet\JWTRefreshTokenBundle\Event\RefreshTokenNotFoundEvent;
+use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTExpiredEvent;
+use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTInvalidEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTNotFoundEvent;
+use Lexik\Bundle\JWTAuthenticationBundle\Exception\ExpiredTokenException;
+use Lexik\Bundle\JWTAuthenticationBundle\Exception\InvalidTokenException;
 use Lexik\Bundle\JWTAuthenticationBundle\Exception\MissingTokenException;
 use Lexik\Bundle\JWTAuthenticationBundle\Response\JWTAuthenticationFailureResponse;
 use PHPUnit\Framework\TestCase;
@@ -60,5 +64,30 @@ final class AuthenticationProblemSubscriberTest extends TestCase
             $response->headers->getCookies(),
         );
         self::assertSame(['BEARER'], $cookies);
+    }
+
+    public function testARefusedTokenGetsTheInvalidTokenChallengeAndKeepsTheOtherHeaders(): void
+    {
+        $subscriber = new AuthenticationProblemSubscriber();
+        $invalid = new JWTInvalidEvent(new InvalidTokenException(), $this->bundleResponse(), new Request());
+        $expired = new JWTExpiredEvent(new ExpiredTokenException(), $this->bundleResponse(), new Request());
+
+        $subscriber->onTokenInvalid($invalid);
+        $subscriber->onTokenExpired($expired);
+
+        foreach ([$invalid->getResponse(), $expired->getResponse()] as $response) {
+            self::assertNotNull($response);
+            self::assertSame(401, $response->getStatusCode());
+            self::assertSame(['Bearer error="invalid_token"'], $response->headers->all('WWW-Authenticate'));
+            self::assertSame('yes', $response->headers->get('X-Added-By-Another-Listener'));
+        }
+    }
+
+    private function bundleResponse(): JWTAuthenticationFailureResponse
+    {
+        $response = new JWTAuthenticationFailureResponse('Invalid JWT Token');
+        $response->headers->set('X-Added-By-Another-Listener', 'yes');
+
+        return $response;
     }
 }
