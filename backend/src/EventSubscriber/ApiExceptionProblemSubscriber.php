@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\EventSubscriber;
 
+use App\Http\AcceptPatch;
 use App\Http\ApiPath;
 use App\Http\ProblemResponse;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -19,6 +20,8 @@ use Symfony\Component\HttpKernel\KernelEvents;
  * Errors under /api that API Platform does not handle (POST /api/login_check, unknown /api paths) would get
  * Symfony's generic error page. This answers them in the API's Problem Details shape instead.
  * Requests of API Platform operations are left to API Platform (see ProblemNormalizer).
+ *
+ * The router has no OPTIONS routes, so an OPTIONS request also ends here, as a 405; it gets its answer instead.
  */
 final readonly class ApiExceptionProblemSubscriber implements EventSubscriberInterface
 {
@@ -27,8 +30,10 @@ final readonly class ApiExceptionProblemSubscriber implements EventSubscriberInt
         'GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH',
     ];
 
-    public function __construct(#[Autowire('%kernel.debug%')] private bool $debug)
-    {
+    public function __construct(
+        #[Autowire('%kernel.debug%')] private bool $debug,
+        private AcceptPatch $acceptPatch,
+    ) {
     }
 
     public static function getSubscribedEvents(): array
@@ -65,9 +70,15 @@ final readonly class ApiExceptionProblemSubscriber implements EventSubscriberInt
             ? $exception->getStatusCode()
             : Response::HTTP_INTERNAL_SERVER_ERROR;
         $headers = $exception instanceof HttpExceptionInterface ? $this->headers($exception->getHeaders()) : [];
-        $allowed = is_string($headers['Allow'] ?? null) ? $this->withHead($headers['Allow']) : null;
+        $allowed = is_string($headers['Allow'] ?? null) ? $this->supported($headers['Allow']) : null;
         if (null !== $allowed) {
             $headers['Allow'] = $allowed;
+            if ('OPTIONS' === $method) {
+                $event->allowCustomResponseCode();
+                $event->setResponse($this->options($allowed));
+
+                return;
+            }
         }
 
         $event->setResponse(ProblemResponse::create(
@@ -79,18 +90,36 @@ final readonly class ApiExceptionProblemSubscriber implements EventSubscriberInt
     }
 
     /**
-     * The router accepts HEAD wherever it accepts GET, but leaves it out of the Allow header of its 405, which must
-     * list every method the resource supports (RFC 9110, section 15.5.6).
+     * The router's list of methods misses HEAD, which it accepts wherever it accepts GET, and OPTIONS, answered here.
+     * The Allow header of a 405 must list every method the resource supports (RFC 9110, section 15.5.6).
      */
-    private function withHead(string $allowed): string
+    private function supported(string $allowed): string
     {
         $methods = array_map(trim(...), explode(',', $allowed));
         $get = array_search('GET', $methods, true);
         if (is_int($get) && !in_array('HEAD', $methods, true)) {
             array_splice($methods, $get + 1, 0, 'HEAD');
         }
+        if (!in_array('OPTIONS', $methods, true)) {
+            $methods[] = 'OPTIONS';
+        }
 
         return implode(', ', $methods);
+    }
+
+    /**
+     * RFC 9110, section 9.3.7: the answer names the options of the resource in its header fields, Allow and, where
+     * PATCH is allowed, Accept-Patch (RFC 5789, section 3.1). A CORS preflight never gets here: NelmioCorsBundle
+     * answers it before the routing.
+     */
+    private function options(string $allowed): Response
+    {
+        $headers = ['Allow' => $allowed];
+        if (in_array('PATCH', explode(', ', $allowed), true)) {
+            $headers['Accept-Patch'] = $this->acceptPatch->value;
+        }
+
+        return new Response(null, Response::HTTP_NO_CONTENT, $headers);
     }
 
     /**

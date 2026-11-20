@@ -180,7 +180,7 @@ final class TokenApiTest extends WebTestCase
         $this->client->request('GET', $path);
 
         $this->assertProblem(405, 'http.method_not_allowed');
-        self::assertResponseHeaderSame('Allow', 'POST');
+        self::assertResponseHeaderSame('Allow', 'POST, OPTIONS');
     }
 
     /**

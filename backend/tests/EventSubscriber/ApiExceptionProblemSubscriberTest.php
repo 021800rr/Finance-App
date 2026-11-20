@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\EventSubscriber;
 
 use App\EventSubscriber\ApiExceptionProblemSubscriber;
+use App\Http\AcceptPatch;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -63,7 +64,7 @@ final class ApiExceptionProblemSubscriberTest extends KernelTestCase
         $links = ['</api/docs>; rel="help"', '</api/login_check>; rel="login"'];
         $event = $this->exceptionEvent('/api/login_check', new HttpException(503, headers: ['Link' => $links]));
 
-        (new ApiExceptionProblemSubscriber(false))->onException($event);
+        self::subscriber(false)->onException($event);
 
         self::assertSame($links, $event->getResponse()?->headers->all('link'));
     }
@@ -72,7 +73,7 @@ final class ApiExceptionProblemSubscriberTest extends KernelTestCase
     {
         $event = $this->exceptionEvent('/api/login_check', new TooManyRequestsHttpException(60));
 
-        (new ApiExceptionProblemSubscriber(false))->onException($event);
+        self::subscriber(false)->onException($event);
 
         self::assertSame(429, $event->getResponse()?->getStatusCode());
         self::assertSame('60', $event->getResponse()->headers->get('Retry-After'));
@@ -83,7 +84,7 @@ final class ApiExceptionProblemSubscriberTest extends KernelTestCase
     {
         $event = $this->exceptionEvent($path, new \RuntimeException('Something broke'));
 
-        (new ApiExceptionProblemSubscriber(false))->onException($event);
+        self::subscriber(false)->onException($event);
 
         self::assertSame($answered, null !== $event->getResponse());
     }
@@ -104,7 +105,7 @@ final class ApiExceptionProblemSubscriberTest extends KernelTestCase
     {
         $event = $this->exceptionEvent('/api/login_check', new \RuntimeException('SQLSTATE[08006] connection failed'));
 
-        (new ApiExceptionProblemSubscriber(false))->onException($event);
+        self::subscriber(false)->onException($event);
 
         $content = (string) $event->getResponse()?->getContent();
         self::assertStringContainsString('"errorCode":"http.internal_server_error"', $content);
@@ -115,7 +116,7 @@ final class ApiExceptionProblemSubscriberTest extends KernelTestCase
     {
         $event = $this->exceptionEvent('/api/login_check', new BadRequestHttpException());
 
-        (new ApiExceptionProblemSubscriber(false))->onException($event);
+        self::subscriber(false)->onException($event);
 
         self::assertStringContainsString('"detail":"Bad Request."', (string) $event->getResponse()?->getContent());
     }
@@ -125,7 +126,7 @@ final class ApiExceptionProblemSubscriberTest extends KernelTestCase
         $exception = new \RuntimeException('Something broke');
         $event = $this->exceptionEvent('/api/login_check', $exception);
 
-        (new ApiExceptionProblemSubscriber(true))->onException($event);
+        self::subscriber(true)->onException($event);
 
         $problem = json_decode((string) $event->getResponse()?->getContent(), true, flags: JSON_THROW_ON_ERROR);
         self::assertIsArray($problem);
@@ -143,5 +144,10 @@ final class ApiExceptionProblemSubscriberTest extends KernelTestCase
             HttpKernelInterface::MAIN_REQUEST,
             $exception,
         );
+    }
+
+    private static function subscriber(bool $debug): ApiExceptionProblemSubscriber
+    {
+        return new ApiExceptionProblemSubscriber($debug, new AcceptPatch(['json' => ['application/merge-patch+json']]));
     }
 }

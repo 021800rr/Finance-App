@@ -57,22 +57,52 @@ final class NonResourceRouteProblemApiTest extends WebTestCase
     {
         $this->client->request('GET', '/api/login_check');
 
-        $this->assertProblem(405, 'http.method_not_allowed', 'Method Not Allowed. Allowed: POST.');
-        self::assertResponseHeaderSame('Allow', 'POST');
+        $this->assertProblem(405, 'http.method_not_allowed', 'Method Not Allowed. Allowed: POST, OPTIONS.');
+        self::assertResponseHeaderSame('Allow', 'POST, OPTIONS');
     }
 
     /**
-     * The router serves HEAD wherever it serves GET, so the Allow header of a 405 names it (RFC 9110, section 15.5.6).
+     * The Allow header of a 405 names every supported method (RFC 9110, section 15.5.6): HEAD, which the router serves
+     * wherever it serves GET, and OPTIONS.
      */
-    public function testAllowOfA405NamesHeadNextToGet(): void
+    public function testAllowOfA405NamesHeadNextToGetAndOptions(): void
     {
         $this->client->request('DELETE', '/api/contractors/1');
-        $this->assertProblem(405, 'http.method_not_allowed', 'Method Not Allowed. Allowed: GET, HEAD.');
-        self::assertResponseHeaderSame('Allow', 'GET, HEAD');
+        $this->assertProblem(405, 'http.method_not_allowed', 'Method Not Allowed. Allowed: GET, HEAD, OPTIONS.');
+        self::assertResponseHeaderSame('Allow', 'GET, HEAD, OPTIONS');
 
         $this->client->request('PUT', '/api/accounts/1');
-        $this->assertProblem(405, 'http.method_not_allowed', 'Method Not Allowed. Allowed: GET, HEAD, PATCH.');
-        self::assertResponseHeaderSame('Allow', 'GET, HEAD, PATCH');
+        $this->assertProblem(
+            405,
+            'http.method_not_allowed',
+            'Method Not Allowed. Allowed: GET, HEAD, PATCH, OPTIONS.',
+        );
+        self::assertResponseHeaderSame('Allow', 'GET, HEAD, PATCH, OPTIONS');
+    }
+
+    /**
+     * OPTIONS names the options of the resource (RFC 9110, section 9.3.7): Allow, and Accept-Patch where PATCH is
+     * allowed (RFC 5789, section 3.1).
+     */
+    public function testOptionsNamesTheMethodsAndThePatchFormats(): void
+    {
+        $this->client->request('OPTIONS', '/api/accounts/1');
+        self::assertResponseStatusCodeSame(204);
+        self::assertSame('', $this->client->getResponse()->getContent());
+        self::assertResponseHeaderSame('Allow', 'GET, HEAD, PATCH, OPTIONS');
+        self::assertResponseHeaderSame('Accept-Patch', 'application/merge-patch+json');
+
+        $this->client->request('OPTIONS', '/api/login_check');
+        self::assertResponseStatusCodeSame(204);
+        self::assertResponseHeaderSame('Allow', 'POST, OPTIONS');
+        self::assertResponseNotHasHeader('Accept-Patch');
+    }
+
+    public function testOptionsOfAnUnknownPathIsNotFound(): void
+    {
+        $this->client->request('OPTIONS', '/api/no-such-thing');
+
+        $this->assertProblem(404, 'http.not_found', 'Not Found.');
     }
 
     /**

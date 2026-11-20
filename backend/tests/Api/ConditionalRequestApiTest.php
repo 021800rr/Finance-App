@@ -73,19 +73,18 @@ final class ConditionalRequestApiTest extends WebTestCase
     }
 
     /**
-     * RFC 9110, section 9.3.2: HEAD sends the header fields of GET, the ETag and Vary among them.
+     * RFC 9110, section 9.3.2: HEAD sends the header fields of GET, the ETag and Vary among them, and nothing more.
      */
-    public function testHeadHasTheEntityTagAndVaryOfGet(): void
+    public function testHeadHasTheHeaderFieldsOfGet(): void
     {
         $this->client->request('GET', $this->accountPath(), server: $this->authHeaders() + self::JSON);
-        $get = $this->client->getResponse()->headers;
+        $get = $this->headerFields();
 
         $this->client->request('HEAD', $this->accountPath(), server: $this->authHeaders() + self::JSON);
 
         self::assertResponseStatusCodeSame(200);
-        self::assertNotNull($get->get('ETag'));
-        self::assertResponseHeaderSame('ETag', (string) $get->get('ETag'));
-        self::assertSame($get->all('Vary'), $this->client->getResponse()->headers->all('Vary'));
+        self::assertArrayHasKey('etag', $get);
+        self::assertSame($get, $this->headerFields());
     }
 
     /**
@@ -169,6 +168,20 @@ final class ConditionalRequestApiTest extends WebTestCase
         );
 
         self::assertResponseStatusCodeSame(415);
+    }
+
+    /**
+     * The response's header fields but those that differ between any two responses.
+     *
+     * @return array<string, list<string|null>>
+     */
+    private function headerFields(): array
+    {
+        $headers = $this->client->getResponse()->headers->all();
+        unset($headers['date'], $headers['x-debug-token'], $headers['x-debug-token-link']);
+        ksort($headers);
+
+        return $headers;
     }
 
     private function accountPath(): string
