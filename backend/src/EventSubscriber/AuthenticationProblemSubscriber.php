@@ -22,7 +22,8 @@ use Symfony\Component\Security\Core\Exception\TooManyLoginAttemptsAuthentication
 /**
  * The JWT and refresh token bundles answer authentication failures before API Platform sees the request, in their
  * own format ({"code": 401, "message": "..."}). This gives them the same Problem Details shape as every other API
- * error: "errorCode", "params" and an English "detail". Status, headers (WWW-Authenticate etc.) and cookies are kept.
+ * error: "errorCode", "params" and an English "detail". Status, headers (WWW-Authenticate etc.) and cookies are kept,
+ * except for a locked login: 429 without the challenge (onLoginFailure).
  */
 final readonly class AuthenticationProblemSubscriber implements EventSubscriberInterface
 {
@@ -75,8 +76,17 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
         if ($exception instanceof TooManyLoginAttemptsAuthenticationException) {
             $minutes = $exception->getMessageData()['%minutes%'] ?? null;
             $params = is_numeric($minutes) ? ['minutes' => (string) $minutes] : [];
-            $problem = $this->problem($response, 'auth.too_many_login_attempts', $detail, $params);
-            // The status stays 401 (as the bundle sends it); Retry-After lets generic clients back off.
+            // 429, not the bundle's 401 (RFC 6585, section 4: too many requests in a given amount of time). A 401 asks
+            // for credentials with its WWW-Authenticate challenge, but here any password is refused until the lock ends,
+            // so the challenge goes; Retry-After lets generic clients back off.
+            $problem = $this->problem(
+                $response,
+                'auth.too_many_login_attempts',
+                $detail,
+                $params,
+                Response::HTTP_TOO_MANY_REQUESTS,
+            );
+            $problem->headers->remove('WWW-Authenticate');
             if (is_numeric($minutes)) {
                 $problem->headers->set('Retry-After', (string) ((int) ceil((float) $minutes * 60)));
             }
@@ -131,9 +141,15 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
 
     /**
      * @param array<string, string> $params
+     * @param int|null              $status the bundle's status when null
      */
-    private function problem(?Response $original, string $errorCode, string $detail, array $params = []): Response
-    {
+    private function problem(
+        ?Response $original,
+        string $errorCode,
+        string $detail,
+        array $params = [],
+        ?int $status = null,
+    ): Response {
         // Every header and cookie of the bundle's response (WWW-Authenticate and anything added by other
         // listeners) is kept; ProblemResponse sets its own Content-Type.
         $headers = [];
@@ -142,7 +158,7 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
         }
 
         $problem = ProblemResponse::create(
-            $original?->getStatusCode() ?? Response::HTTP_UNAUTHORIZED,
+            $status ?? $original?->getStatusCode() ?? Response::HTTP_UNAUTHORIZED,
             $errorCode,
             $detail,
             $params,

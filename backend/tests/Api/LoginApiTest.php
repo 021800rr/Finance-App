@@ -50,7 +50,7 @@ final class LoginApiTest extends WebTestCase
 
         $this->requestLogin(AppFixtures::TEST_USER_EMAIL, AppFixtures::TEST_USER_PASSWORD);
 
-        self::assertResponseStatusCodeSame(401);
+        self::assertResponseStatusCodeSame(429);
         self::assertStringNotContainsString('"token"', (string) $this->client->getResponse()->getContent());
     }
 
@@ -66,7 +66,7 @@ final class LoginApiTest extends WebTestCase
         foreach ([' '.AppFixtures::TEST_USER_EMAIL, AppFixtures::TEST_USER_EMAIL.'  ', 'TEST@Example.COM'] as $email) {
             $this->requestLogin($email, AppFixtures::TEST_USER_PASSWORD);
 
-            self::assertResponseStatusCodeSame(401, $email);
+            self::assertResponseStatusCodeSame(429, $email);
             self::assertStringNotContainsString('"token"', (string) $this->client->getResponse()->getContent());
         }
     }

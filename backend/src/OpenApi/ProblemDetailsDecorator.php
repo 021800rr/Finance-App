@@ -40,8 +40,10 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     private const string AUTH_ERROR_DESCRIPTION = 'The JWT token is missing, invalid or expired '
         .'(errorCode auth.token_missing, auth.token_invalid or auth.token_expired).';
 
-    private const string LOGIN_ERROR_DESCRIPTION = 'Wrong email or password, or the login is locked after too many '
-        .'failed attempts (errorCode auth.invalid_credentials or auth.too_many_login_attempts).';
+    private const string LOGIN_ERROR_DESCRIPTION = 'Wrong email or password (errorCode auth.invalid_credentials).';
+
+    private const string LOGIN_LOCK_DESCRIPTION = 'The login is locked after too many failed attempts '
+        .'(errorCode auth.too_many_login_attempts, params.minutes): every password is refused until the lock ends.';
 
     private const string REFRESH_ERROR_DESCRIPTION = 'The refresh token is missing, or invalid, expired or already '
         .'used (errorCode auth.refresh_token_missing or auth.refresh_token_invalid). Log in again.';
@@ -149,6 +151,12 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         }
         if ('POST /api/login_check' === $route) {
             $responses['401'] = $this->errorResponse(self::LOGIN_ERROR_DESCRIPTION);
+            $responses['429'] = $this->errorResponse(self::LOGIN_LOCK_DESCRIPTION, [
+                'Retry-After' => [
+                    'description' => 'Seconds until the lock ends.',
+                    'schema' => ['type' => 'integer'],
+                ],
+            ]);
         }
         if ('POST /api/token/refresh' === $route) {
             $responses['401'] = $this->errorResponse(self::REFRESH_ERROR_DESCRIPTION);
@@ -176,13 +184,16 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         ]));
     }
 
-    private function errorResponse(string $description): Response
+    /**
+     * @param array<string, mixed> $headers response headers by name, as OpenAPI Header Objects
+     */
+    private function errorResponse(string $description, array $headers = []): Response
     {
         return new Response($description, new \ArrayObject([
             'application/ld+json' => ['schema' => ['$ref' => '#/components/schemas/Error.jsonld']],
             'application/problem+json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
             'application/json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
-        ]));
+        ]), [] === $headers ? null : new \ArrayObject($headers));
     }
 
     /**
@@ -276,6 +287,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     {
         return match (true) {
             401 === $status && 'POST /api/login_check' === $route => 'auth.invalid_credentials',
+            429 === $status && 'POST /api/login_check' === $route => 'auth.too_many_login_attempts',
             401 === $status && 'POST /api/token/refresh' === $route => 'auth.refresh_token_invalid',
             400 === $status && 'POST /api/token/invalidate' === $route => 'auth.refresh_token_missing',
             401 === $status => 'auth.token_missing',

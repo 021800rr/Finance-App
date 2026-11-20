@@ -9,6 +9,7 @@ use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\BrowserKit\Cookie;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Authentication failures are answered by the JWT bundle, outside API Platform; they still use the API's
@@ -71,7 +72,11 @@ final class AuthenticationProblemApiTest extends WebTestCase
         self::assertSame('Invalid credentials.', $problem['detail'] ?? null);
     }
 
-    public function testTooManyFailedLoginsNameTheLockTime(): void
+    /**
+     * A lock is rate limiting, not missing credentials: 429 (RFC 6585, section 4), with Retry-After and without the
+     * WWW-Authenticate challenge of a 401, since no password is accepted until the lock ends.
+     */
+    public function testTooManyFailedLoginsLockWith429AndNameTheLockTime(): void
     {
         // The limiter lives in the kernel's memory in tests (config/packages/test/cache.yaml).
         $this->client->disableReboot();
@@ -84,7 +89,12 @@ final class AuthenticationProblemApiTest extends WebTestCase
         // from the start of the current second, so a lock set a fraction of a second ago reads 901 s = 16 min.
         $minutes = $this->lockMinutes();
         self::assertContains($minutes, ['15', '16']);
-        $problem = $this->assertAuthenticationProblem('auth.too_many_login_attempts', ['minutes' => $minutes]);
+        $problem = $this->assertAuthenticationProblem(
+            'auth.too_many_login_attempts',
+            ['minutes' => $minutes],
+            challenge: null,
+            status: 429,
+        );
         self::assertResponseHeaderSame('Retry-After', (string) ((int) $minutes * 60));
         self::assertSame(
             sprintf('Too many failed login attempts, please try again in %s minutes.', $minutes),
@@ -94,22 +104,28 @@ final class AuthenticationProblemApiTest extends WebTestCase
 
     /**
      * @param array<string, string> $params
+     * @param string|null           $challenge the WWW-Authenticate header, null when there must be none
      *
      * @return array<mixed>
      */
     private function assertAuthenticationProblem(
         string $errorCode,
         array $params = [],
-        string $challenge = 'Bearer',
+        ?string $challenge = 'Bearer',
+        int $status = 401,
     ): array {
-        self::assertResponseStatusCodeSame(401);
-        self::assertResponseHeaderSame('WWW-Authenticate', $challenge);
+        self::assertResponseStatusCodeSame($status);
+        if (null === $challenge) {
+            self::assertResponseNotHasHeader('WWW-Authenticate');
+        } else {
+            self::assertResponseHeaderSame('WWW-Authenticate', $challenge);
+        }
         self::assertResponseHeaderSame('Content-Type', 'application/problem+json');
         $content = (string) $this->client->getResponse()->getContent();
         $problem = json_decode($content, true, flags: JSON_THROW_ON_ERROR);
         self::assertIsArray($problem);
-        self::assertSame(401, $problem['status'] ?? null);
-        self::assertSame('Unauthorized', $problem['title'] ?? null);
+        self::assertSame($status, $problem['status'] ?? null);
+        self::assertSame(Response::$statusTexts[$status], $problem['title'] ?? null);
         self::assertSame($errorCode, $problem['errorCode'] ?? null);
         self::assertSame('urn:finance-app:problem:'.$errorCode, $problem['type'] ?? null);
         self::assertSame($params, $problem['params'] ?? null);

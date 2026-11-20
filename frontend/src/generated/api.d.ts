@@ -8600,7 +8600,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Wrong email or password, or the login is locked after too many failed attempts (errorCode auth.invalid_credentials or auth.too_many_login_attempts). */
+            /** @description Wrong email or password (errorCode auth.invalid_credentials). */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -8631,6 +8631,43 @@ export interface operations {
                          */
                         status?: 401;
                         /** @example auth.invalid_credentials */
+                        errorCode?: string;
+                    };
+                };
+            };
+            /** @description The login is locked after too many failed attempts (errorCode auth.too_many_login_attempts, params.minutes): every password is refused until the lock ends. */
+            429: {
+                headers: {
+                    /** @description Seconds until the lock ends. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
+                        /**
+                         * @example 429
+                         * @constant
+                         */
+                        status?: 429;
+                        /** @example auth.too_many_login_attempts */
+                        errorCode?: string;
+                    };
+                    "application/problem+json": components["schemas"]["Error"] & {
+                        /**
+                         * @example 429
+                         * @constant
+                         */
+                        status?: 429;
+                        /** @example auth.too_many_login_attempts */
+                        errorCode?: string;
+                    };
+                    "application/json": components["schemas"]["Error"] & {
+                        /**
+                         * @example 429
+                         * @constant
+                         */
+                        status?: 429;
+                        /** @example auth.too_many_login_attempts */
                         errorCode?: string;
                     };
                 };

@@ -41,7 +41,7 @@ final class LoginRateLimiterTest extends WebTestCase
 
         $this->logInThroughTheApi(AppFixtures::TEST_USER_PASSWORD);
 
-        self::assertResponseStatusCodeSame(401);
+        self::assertResponseStatusCodeSame(429);
         $content = (string) $this->client->getResponse()->getContent();
         self::assertStringContainsString('auth.too_many_login_attempts', $content);
         self::assertStringNotContainsString('"token"', $content);
@@ -70,7 +70,7 @@ final class LoginRateLimiterTest extends WebTestCase
 
         $this->logInThroughTheApi(AppFixtures::TEST_USER_PASSWORD);
 
-        self::assertResponseStatusCodeSame(401);
+        self::assertResponseStatusCodeSame(429);
         self::assertStringContainsString(
             'auth.too_many_login_attempts',
             (string) $this->client->getResponse()->getContent(),
@@ -117,7 +117,7 @@ final class LoginRateLimiterTest extends WebTestCase
 
         $this->logInThroughTheApi(AppFixtures::TEST_USER_PASSWORD);
 
-        self::assertResponseStatusCodeSame(401);
+        self::assertResponseStatusCodeSame(429);
         self::assertStringContainsString(
             'auth.too_many_login_attempts',
             (string) $this->client->getResponse()->getContent(),

@@ -302,6 +302,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     public static function authenticationExamples(): iterable
     {
         yield 'login' => ['/api/login_check', 'post', '401', 'auth.invalid_credentials'];
+        yield 'locked login' => ['/api/login_check', 'post', '429', 'auth.too_many_login_attempts'];
         yield 'protected address' => ['/api/accounts', 'get', '401', 'auth.token_missing'];
         yield 'refresh' => ['/api/token/refresh', 'post', '401', 'auth.refresh_token_invalid'];
         yield 'logout' => ['/api/token/invalidate', 'post', '400', 'auth.refresh_token_missing'];
@@ -321,6 +322,16 @@ final class ProblemDetailsApiTest extends WebTestCase
 
         $example = self::objectAt($schema, 'allOf', '1', 'properties', 'errorCode');
         self::assertSame([$errorCode], $example['examples'] ?? null);
+    }
+
+    public function testOpenApiDocumentsTheRetryAfterOfALockedLogin(): void
+    {
+        $header = self::objectAt(
+            $this->openApiDocs(),
+            'paths', '/api/login_check', 'post', 'responses', '429', 'headers', 'Retry-After',
+        );
+
+        self::assertSame(['type' => 'integer'], $header['schema'] ?? null);
     }
 
     public function testErrorAddressExampleDoesNotDependOnOneServer(): void
