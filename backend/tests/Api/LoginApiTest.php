@@ -29,7 +29,7 @@ final class LoginApiTest extends WebTestCase
     {
         $this->requestLogin(AppFixtures::TEST_USER_EMAIL, 'wrongpassword');
 
-        self::assertResponseStatusCodeSame(401);
+        self::assertResponseStatusCodeSame(400);
     }
 
     public function testLoginCheckAcceptsTheEmailInAnyCaseWithSurroundingSpaces(): void

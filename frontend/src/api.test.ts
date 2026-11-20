@@ -42,7 +42,9 @@ describe('apiFetch', () => {
   it('ends the session after a refused refresh, without retrying the request', async () => {
     const ended = vi.fn()
     setSessionEndHandler(ended)
-    const fetch = vi.fn().mockResolvedValue(new Response(null, { status: 401 }))
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 401 }))
+      .mockResolvedValueOnce(new Response(null, { status: 400 }))
     vi.stubGlobal('fetch', fetch)
 
     expect((await apiFetch('/api/one')).status).toBe(401)

@@ -94,11 +94,11 @@ final class TokenApiTest extends WebTestCase
         $second = $this->tokensFromBody();
 
         $this->refreshByBody($first['refresh_token']);
-        $this->assertProblem(401, 'auth.refresh_token_invalid');
+        $this->assertRefreshRefused('auth.refresh_token_invalid');
 
         // Someone else may have used it first, so the token that replaced it stops working, too.
         $this->refreshByBody($second['refresh_token']);
-        $this->assertProblem(401, 'auth.refresh_token_invalid');
+        $this->assertRefreshRefused('auth.refresh_token_invalid');
     }
 
     public function testStoredRefreshTokenIsAHashNotTheToken(): void
@@ -115,14 +115,14 @@ final class TokenApiTest extends WebTestCase
     {
         $this->client->jsonRequest('POST', '/api/token/refresh', []);
 
-        $this->assertProblem(401, 'auth.refresh_token_missing');
+        $this->assertRefreshRefused('auth.refresh_token_missing');
     }
 
     public function testUnknownRefreshTokenIsRefused(): void
     {
         $this->refreshByBody('no-such-token');
 
-        $this->assertProblem(401, 'auth.refresh_token_invalid');
+        $this->assertRefreshRefused('auth.refresh_token_invalid');
     }
 
     public function testLogoutByCookiesEndsTheLoginAndClearsBothCookies(): void
@@ -258,7 +258,7 @@ final class TokenApiTest extends WebTestCase
         $this->getAccounts($tokens['token']);
         $this->assertProblem(401, 'auth.token_invalid');
         $this->refreshByBody($tokens['refresh_token']);
-        $this->assertProblem(401, 'auth.refresh_token_invalid');
+        $this->assertRefreshRefused('auth.refresh_token_invalid');
     }
 
     private function responseCookie(string $name): Cookie
@@ -277,6 +277,16 @@ final class TokenApiTest extends WebTestCase
         self::assertTrue($cookie->isHttpOnly(), $cookie->getName());
         self::assertTrue($cookie->isSecure(), $cookie->getName());
         self::assertSame(Cookie::SAMESITE_STRICT, $cookie->getSameSite(), $cookie->getName());
+    }
+
+    /**
+     * The refresh token comes in the body or a cookie, so no WWW-Authenticate challenge applies, and a 401 must carry
+     * one (RFC 9110, section 15.5.2): 400, as an OAuth 2.0 token endpoint answers (RFC 6749, section 5.2).
+     */
+    private function assertRefreshRefused(string $errorCode): void
+    {
+        $this->assertProblem(400, $errorCode);
+        self::assertResponseNotHasHeader('WWW-Authenticate');
     }
 
     private function assertProblem(int $status, string $errorCode): void

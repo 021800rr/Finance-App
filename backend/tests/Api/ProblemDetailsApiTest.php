@@ -259,7 +259,20 @@ final class ProblemDetailsApiTest extends WebTestCase
         }
 
         self::assertGreaterThan(30, $checked);
-        self::assertArrayHasKey('401', self::objectAt($docs, 'paths', '/api/login_check', 'post', 'responses'));
+    }
+
+    /**
+     * The login and the refresh refuse their credentials with 400, without the challenge a 401 needs.
+     */
+    public function testOpenApiDocumentsRefusedCredentialsAsABadRequest(): void
+    {
+        $docs = $this->openApiDocs();
+
+        foreach (['/api/login_check', '/api/token/refresh'] as $path) {
+            $responses = self::objectAt($docs, 'paths', $path, 'post', 'responses');
+            self::assertArrayHasKey('400', $responses, $path);
+            self::assertArrayNotHasKey('401', $responses, $path);
+        }
     }
 
     /**
@@ -301,10 +314,10 @@ final class ProblemDetailsApiTest extends WebTestCase
      */
     public static function authenticationExamples(): iterable
     {
-        yield 'login' => ['/api/login_check', 'post', '401', 'auth.invalid_credentials'];
+        yield 'login' => ['/api/login_check', 'post', '400', 'auth.invalid_credentials'];
         yield 'locked login' => ['/api/login_check', 'post', '429', 'auth.too_many_login_attempts'];
         yield 'protected address' => ['/api/accounts', 'get', '401', 'auth.token_missing'];
-        yield 'refresh' => ['/api/token/refresh', 'post', '401', 'auth.refresh_token_invalid'];
+        yield 'refresh' => ['/api/token/refresh', 'post', '400', 'auth.refresh_token_invalid'];
         yield 'logout' => ['/api/token/invalidate', 'post', '400', 'auth.refresh_token_missing'];
     }
 

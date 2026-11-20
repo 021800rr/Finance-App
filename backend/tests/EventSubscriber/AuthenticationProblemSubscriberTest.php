@@ -40,7 +40,7 @@ final class AuthenticationProblemSubscriberTest extends TestCase
 
         $response = $event->getResponse();
         self::assertNotNull($response);
-        self::assertSame(401, $response->getStatusCode());
+        self::assertSame(400, $response->getStatusCode());
         self::assertStringContainsString('"errorCode":"auth.refresh_token_missing"', (string) $response->getContent());
     }
 

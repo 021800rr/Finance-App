@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Authentication failures are answered by the JWT bundle, outside API Platform; they still use the API's
- * Problem Details shape with a stable "errorCode", keeping status 401 and the WWW-Authenticate header.
+ * Problem Details shape with a stable "errorCode". A refused JWT keeps status 401 and the WWW-Authenticate header.
  */
 final class AuthenticationProblemApiTest extends WebTestCase
 {
@@ -64,11 +64,15 @@ final class AuthenticationProblemApiTest extends WebTestCase
         $this->assertAuthenticationProblem('auth.token_expired', challenge: self::REJECTED_TOKEN_CHALLENGE);
     }
 
-    public function testWrongPassword(): void
+    /**
+     * The login takes the password in the body, so no WWW-Authenticate challenge applies to it, and a 401 must carry
+     * one (RFC 9110, section 15.5.2): 400, as an OAuth 2.0 token endpoint answers (RFC 6749, section 5.2).
+     */
+    public function testWrongPasswordIsABadRequestWithoutAChallenge(): void
     {
         $this->login('wrong-password');
 
-        $problem = $this->assertAuthenticationProblem('auth.invalid_credentials');
+        $problem = $this->assertAuthenticationProblem('auth.invalid_credentials', challenge: null, status: 400);
         self::assertSame('Invalid credentials.', $problem['detail'] ?? null);
     }
 

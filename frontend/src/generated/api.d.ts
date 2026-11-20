@@ -8600,36 +8600,36 @@ export interface operations {
                     };
                 };
             };
-            /** @description Wrong email or password (errorCode auth.invalid_credentials). */
-            401: {
+            /** @description Wrong email or password (errorCode auth.invalid_credentials), or the request carries no email or password (errorCode http.bad_request). */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/ld+json": components["schemas"]["Error.jsonld"] & {
                         /**
-                         * @example 401
+                         * @example 400
                          * @constant
                          */
-                        status?: 401;
+                        status?: 400;
                         /** @example auth.invalid_credentials */
                         errorCode?: string;
                     };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 401
+                         * @example 400
                          * @constant
                          */
-                        status?: 401;
+                        status?: 400;
                         /** @example auth.invalid_credentials */
                         errorCode?: string;
                     };
                     "application/json": components["schemas"]["Error"] & {
                         /**
-                         * @example 401
+                         * @example 400
                          * @constant
                          */
-                        status?: 401;
+                        status?: 400;
                         /** @example auth.invalid_credentials */
                         errorCode?: string;
                     };
@@ -8889,35 +8889,35 @@ export interface operations {
                 };
             };
             /** @description The refresh token is missing, or invalid, expired or already used (errorCode auth.refresh_token_missing or auth.refresh_token_invalid). Log in again. */
-            401: {
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/ld+json": components["schemas"]["Error.jsonld"] & {
                         /**
-                         * @example 401
+                         * @example 400
                          * @constant
                          */
-                        status?: 401;
+                        status?: 400;
                         /** @example auth.refresh_token_invalid */
                         errorCode?: string;
                     };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 401
+                         * @example 400
                          * @constant
                          */
-                        status?: 401;
+                        status?: 400;
                         /** @example auth.refresh_token_invalid */
                         errorCode?: string;
                     };
                     "application/json": components["schemas"]["Error"] & {
                         /**
-                         * @example 401
+                         * @example 400
                          * @constant
                          */
-                        status?: 401;
+                        status?: 400;
                         /** @example auth.refresh_token_invalid */
                         errorCode?: string;
                     };

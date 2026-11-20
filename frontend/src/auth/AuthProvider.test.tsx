@@ -25,7 +25,7 @@ function serve(session: Session, answer: Answer = () => undefined) {
         : Response.json({ email: session.email })
     }
     if (method === 'POST' && path === '/api/token/refresh') {
-      return Response.json({ errorCode: 'auth.refresh_token_missing' }, { status: 401 })
+      return Response.json({ errorCode: 'auth.refresh_token_missing' }, { status: 400 })
     }
 
     return answer(method, path)
@@ -110,7 +110,7 @@ describe('logging in and out', () => {
 
   it('says why the login was refused', async () => {
     serve({ email: null }, (method, path) => method === 'POST' && path === '/api/login_check'
-      ? Response.json({ errorCode: 'auth.invalid_credentials' }, { status: 401 })
+      ? Response.json({ errorCode: 'auth.invalid_credentials' }, { status: 400 })
       : undefined)
     showApp()
 

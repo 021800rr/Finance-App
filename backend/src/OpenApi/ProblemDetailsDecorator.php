@@ -40,7 +40,8 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     private const string AUTH_ERROR_DESCRIPTION = 'The JWT token is missing, invalid or expired '
         .'(errorCode auth.token_missing, auth.token_invalid or auth.token_expired).';
 
-    private const string LOGIN_ERROR_DESCRIPTION = 'Wrong email or password (errorCode auth.invalid_credentials).';
+    private const string LOGIN_ERROR_DESCRIPTION = 'Wrong email or password (errorCode auth.invalid_credentials), '
+        .'or the request carries no email or password (errorCode http.bad_request).';
 
     private const string LOGIN_LOCK_DESCRIPTION = 'The login is locked after too many failed attempts '
         .'(errorCode auth.too_many_login_attempts, params.minutes): every password is refused until the lock ends.';
@@ -127,8 +128,9 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     }
 
     /**
-     * Errors that API Platform cannot know about: 401 comes from the firewall, 409 from the processors, and 422 of
-     * a GET from the query parameters, which API Platform validates without documenting it.
+     * Errors that API Platform cannot know about: 401 and the refused login or refresh (400) come from the firewall,
+     * 409 from the processors, and 422 of a GET from the query parameters, which API Platform validates without
+     * documenting it.
      */
     private function withErrors(PathItem $pathItem, string $path): PathItem
     {
@@ -150,7 +152,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
             $responses['401'] = $this->errorResponse(self::AUTH_ERROR_DESCRIPTION);
         }
         if ('POST /api/login_check' === $route) {
-            $responses['401'] = $this->errorResponse(self::LOGIN_ERROR_DESCRIPTION);
+            $responses['400'] = $this->errorResponse(self::LOGIN_ERROR_DESCRIPTION);
             $responses['429'] = $this->errorResponse(self::LOGIN_LOCK_DESCRIPTION, [
                 'Retry-After' => [
                     'description' => 'Seconds until the lock ends.',
@@ -159,7 +161,9 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
             ]);
         }
         if ('POST /api/token/refresh' === $route) {
-            $responses['401'] = $this->errorResponse(self::REFRESH_ERROR_DESCRIPTION);
+            // The refresh bundle documents its own 401, which AuthenticationProblemSubscriber turns into this 400.
+            unset($responses['401']);
+            $responses['400'] = $this->errorResponse(self::REFRESH_ERROR_DESCRIPTION);
         }
         if ('POST /api/token/invalidate' === $route) {
             $responses['400'] = $this->errorResponse(self::LOGOUT_ERROR_DESCRIPTION);
@@ -286,9 +290,9 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     private function exampleErrorCode(int $status, string $route): string
     {
         return match (true) {
-            401 === $status && 'POST /api/login_check' === $route => 'auth.invalid_credentials',
+            400 === $status && 'POST /api/login_check' === $route => 'auth.invalid_credentials',
             429 === $status && 'POST /api/login_check' === $route => 'auth.too_many_login_attempts',
-            401 === $status && 'POST /api/token/refresh' === $route => 'auth.refresh_token_invalid',
+            400 === $status && 'POST /api/token/refresh' === $route => 'auth.refresh_token_invalid',
             400 === $status && 'POST /api/token/invalidate' === $route => 'auth.refresh_token_missing',
             401 === $status => 'auth.token_missing',
             422 === $status => 'validation.failed',

@@ -22,8 +22,14 @@ use Symfony\Component\Security\Core\Exception\TooManyLoginAttemptsAuthentication
 /**
  * The JWT and refresh token bundles answer authentication failures before API Platform sees the request, in their
  * own format ({"code": 401, "message": "..."}). This gives them the same Problem Details shape as every other API
- * error: "errorCode", "params" and an English "detail". Status, headers (WWW-Authenticate etc.) and cookies are kept,
- * except for a locked login: 429 without the challenge (onLoginFailure).
+ * error: "errorCode", "params" and an English "detail". Headers and cookies are kept, the WWW-Authenticate challenge
+ * only with a 401.
+ *
+ * The status is kept for a refused JWT (401). The login (/api/login_check) and the refresh (/api/token/refresh)
+ * take their credentials in the body or the refresh_token cookie, not in the Authorization header, so no HTTP
+ * authentication challenge applies to them, and a 401 must carry one (RFC 9110, section 15.5.2). Refused
+ * credentials there get 400 instead, as an OAuth 2.0 token endpoint answers them (RFC 6749, section 5.2:
+ * "invalid_grant"), and a locked login 429.
  */
 final readonly class AuthenticationProblemSubscriber implements EventSubscriberInterface
 {
@@ -76,9 +82,8 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
         if ($exception instanceof TooManyLoginAttemptsAuthenticationException) {
             $minutes = $exception->getMessageData()['%minutes%'] ?? null;
             $params = is_numeric($minutes) ? ['minutes' => (string) $minutes] : [];
-            // 429, not the bundle's 401 (RFC 6585, section 4: too many requests in a given amount of time). A 401 asks
-            // for credentials with its WWW-Authenticate challenge, but here any password is refused until the lock ends,
-            // so the challenge goes; Retry-After lets generic clients back off.
+            // RFC 6585, section 4: too many requests in a given amount of time. Any password is refused until the lock
+            // ends; Retry-After lets generic clients back off.
             $problem = $this->problem(
                 $response,
                 'auth.too_many_login_attempts',
@@ -86,7 +91,6 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
                 $params,
                 Response::HTTP_TOO_MANY_REQUESTS,
             );
-            $problem->headers->remove('WWW-Authenticate');
             if (is_numeric($minutes)) {
                 $problem->headers->set('Retry-After', (string) ((int) ceil((float) $minutes * 60)));
             }
@@ -96,7 +100,7 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
         }
 
         $errorCode = $exception instanceof BadCredentialsException ? 'auth.invalid_credentials' : 'auth.login_failed';
-        $event->setResponse($this->problem($response, $errorCode, $detail));
+        $event->setResponse($this->problem($response, $errorCode, $detail, status: Response::HTTP_BAD_REQUEST));
     }
 
     public function onRefreshTokenNotFound(RefreshTokenNotFoundEvent $event): void
@@ -116,6 +120,7 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
                 $event->getResponse(),
                 'auth.refresh_token_invalid',
                 'Invalid, expired or already used refresh token. Log in again with POST /api/login_check.',
+                status: Response::HTTP_BAD_REQUEST,
             ));
     }
 
@@ -125,6 +130,7 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
             $original,
             'auth.refresh_token_missing',
             'Refresh token not found. Send it in the refresh_token cookie or as {"refresh_token": "<token>"}.',
+            status: Response::HTTP_BAD_REQUEST,
         );
     }
 
@@ -166,6 +172,10 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
         );
         foreach ($original?->headers->getCookies() ?? [] as $cookie) {
             $problem->headers->setCookie($cookie);
+        }
+        // The challenge belongs to a 401 (RFC 9110, section 15.5.2); with any other status the bundle's goes.
+        if (Response::HTTP_UNAUTHORIZED !== $problem->getStatusCode()) {
+            $problem->headers->remove('WWW-Authenticate');
         }
 
         return $problem;
