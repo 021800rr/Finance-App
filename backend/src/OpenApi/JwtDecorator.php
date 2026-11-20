@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\OpenApi;
 
 use ApiPlatform\OpenApi\Factory\OpenApiFactoryInterface;
+use ApiPlatform\OpenApi\Model\MediaType;
 use ApiPlatform\OpenApi\Model\Operation;
 use ApiPlatform\OpenApi\Model\PathItem;
 use ApiPlatform\OpenApi\Model\Paths;
@@ -76,9 +77,99 @@ final readonly class JwtDecorator implements OpenApiFactoryInterface
 
         $openApi = $openApi
             ->withComponents($components->withSecuritySchemes($securitySchemes))
-            ->withPaths($this->withCookieAlternative($this->withTokenPaths($openApi->getPaths())));
+            ->withPaths($this->withCookieAlternative(
+                $this->withoutNullable($this->withTokenPaths($openApi->getPaths())),
+            ));
 
         return $openApi->withTags($this->reorderTags($openApi->getTags()));
+    }
+
+    /**
+     * OpenAPI 3.1 dropped "nullable" of 3.0 for the type "null", and the document is 3.2; the token bundles still write
+     * "nullable": false into their schemas, which a validator refuses. false says no more than the type itself, so it
+     * goes; true becomes the type "null".
+     */
+    private function withoutNullable(Paths $paths): Paths
+    {
+        $documented = new Paths();
+        /** @var array<string, PathItem> $pathItems */
+        $pathItems = $paths->getPaths();
+        foreach ($pathItems as $path => $pathItem) {
+            $documented->addPath($path, $pathItem
+                ->withGet($this->operationWithoutNullable($pathItem->getGet()))
+                ->withPost($this->operationWithoutNullable($pathItem->getPost()))
+                ->withPut($this->operationWithoutNullable($pathItem->getPut()))
+                ->withPatch($this->operationWithoutNullable($pathItem->getPatch()))
+                ->withDelete($this->operationWithoutNullable($pathItem->getDelete())));
+        }
+
+        return $documented;
+    }
+
+    private function operationWithoutNullable(?Operation $operation): ?Operation
+    {
+        if (null === $operation) {
+            return null;
+        }
+
+        $body = $operation->getRequestBody();
+        $bodyContent = $body?->getContent();
+        if (null !== $body && null !== $bodyContent) {
+            $operation = $operation->withRequestBody($body->withContent(self::contentWithoutNullable($bodyContent)));
+        }
+        $responses = $operation->getResponses();
+        if (null === $responses) {
+            return $operation;
+        }
+
+        $documented = [];
+        foreach ($responses as $status => $response) {
+            $content = $response instanceof Response ? $response->getContent() : null;
+            $documented[$status] = match (true) {
+                $response instanceof Response && null !== $content => $response->withContent(
+                    self::contentWithoutNullable($content),
+                ),
+                $response instanceof Response => $response,
+                // The bundles give their responses as plain arrays.
+                default => self::schemaWithoutNullable($response),
+            };
+        }
+
+        return $operation->withResponses($documented);
+    }
+
+    /**
+     * @param \ArrayObject<string, mixed> $content
+     *
+     * @return \ArrayObject<string, mixed>
+     */
+    private static function contentWithoutNullable(\ArrayObject $content): \ArrayObject
+    {
+        /** @var \ArrayObject<string, mixed> $documented */
+        $documented = new \ArrayObject();
+        foreach ($content as $mediaType => $media) {
+            $schema = $media instanceof MediaType ? $media->getSchema() : null;
+            $documented[$mediaType] = $media instanceof MediaType && null !== $schema
+                ? $media->withSchema(new \ArrayObject((array) self::schemaWithoutNullable($schema->getArrayCopy())))
+                : self::schemaWithoutNullable($media);
+        }
+
+        return $documented;
+    }
+
+    private static function schemaWithoutNullable(mixed $schema): mixed
+    {
+        if (!is_array($schema)) {
+            return $schema;
+        }
+        if (array_key_exists('nullable', $schema)) {
+            if (true === $schema['nullable'] && is_string($schema['type'] ?? null)) {
+                $schema['type'] = [$schema['type'], 'null'];
+            }
+            unset($schema['nullable']);
+        }
+
+        return array_map(self::schemaWithoutNullable(...), $schema);
     }
 
     /**

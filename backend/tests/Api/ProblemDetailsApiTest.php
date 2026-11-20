@@ -430,6 +430,24 @@ final class ProblemDetailsApiTest extends WebTestCase
         }
     }
 
+    /**
+     * OpenAPI 3.1 dropped "nullable" for the type "null"; the token bundles write it, and a validator of the 3.2
+     * document refuses it (Redocly CLI lint, 2026-11-20).
+     */
+    public function testOpenApiHasNoNullableOfOpenApi30(): void
+    {
+        self::assertSame('3.2.0', self::stringAt($this->openApiDocs(), 'openapi'));
+        self::assertStringNotContainsString('"nullable"', (string) $this->client->getResponse()->getContent());
+        self::assertSame(
+            ['type' => 'string'],
+            self::objectAt(
+                $this->openApiDocs(),
+                'paths', '/api/login_check', 'post', 'requestBody', 'content', 'application/json', 'schema',
+                'properties', 'email',
+            ),
+        );
+    }
+
     public function testOpenApiDescribesOnlyFieldsTheErrorsHave(): void
     {
         $docs = $this->openApiDocs();
