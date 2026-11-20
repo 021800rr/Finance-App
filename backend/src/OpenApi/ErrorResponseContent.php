@@ -18,10 +18,6 @@ final class ErrorResponseContent
             ['$ref' => '#/components/schemas/ConstraintViolation'],
             ['$ref' => '#/components/schemas/Error'],
         ]]],
-        'application/json' => ['schema' => ['anyOf' => [
-            ['$ref' => '#/components/schemas/ConstraintViolation'],
-            ['$ref' => '#/components/schemas/Error'],
-        ]]],
     ];
 
     /**

@@ -18,7 +18,9 @@ use App\State\FixedExpensePlanProcessor;
     operations: [
         new Post(
             uriTemplate: '/fixed_expenses/plan{._format}',
-            status: 201,
+            // 200 with the result, not 201: it creates several operations, no one resource a Location could name
+            // (RFC 9110, sections 9.3.3 and 15.3.2).
+            status: 200,
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
             description: 'Creates one operation on the main account for every fixed expense, dated in the next '
             .'calendar month. Takes no request body. Responds with 409 when no account is marked as main, when '

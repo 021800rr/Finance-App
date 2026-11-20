@@ -56,7 +56,9 @@ final class AccountApiTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
         self::assertIsArray($data);
-        self::assertSame($this->em()->getRepository(Account::class)->count([]), $data['totalItems']);
+        // A whole list: a JSON array, without the numbers of a page.
+        self::assertSame($this->em()->getRepository(Account::class)->count([]), count($data));
+        self::assertTrue(array_is_list($data));
         self::assertStringContainsString(
             $this->firstAccount()->getAccountNumber(),
             (string) $this->client->getResponse()->getContent(),

@@ -83,7 +83,7 @@ final class AccountViewApiTest extends WebTestCase
             $webRows = $this->webRows($this->webPage($account, $page));
             $apiRows = self::rowsAt(
                 $this->getJson('/api/accounts/'.$account->getId().'/operations?page='.$page),
-                'member',
+                'content',
             );
 
             self::assertNotEmpty($webRows);
@@ -114,18 +114,20 @@ final class AccountViewApiTest extends WebTestCase
         $account = $this->createAccountWithHistory();
 
         $api = $this->getJson('/api/accounts/'.$account->getId().'/operations');
+        $links = (string) $this->client->getResponse()->headers->get('Link');
         $webPage = $this->webPage($account, 1);
 
-        $totalItems = self::intAt($api, 'totalItems');
-        $totalPages = (int) ceil($totalItems / Paginator::DEFAULT_PER_PAGE);
+        $totalItems = self::intAt($api, 'page', 'totalElements');
+        $totalPages = self::intAt($api, 'page', 'totalPages');
 
         self::assertSame(self::OPERATIONS, $totalItems);
+        self::assertSame((int) ceil($totalItems / Paginator::DEFAULT_PER_PAGE), $totalPages);
         self::assertSame(2, $totalPages);
         self::assertStringContainsString(
             '1 / '.$totalPages,
             $this->normalizedWithSpaces($webPage->filter('.pagination')->text()),
         );
-        self::assertStringEndsWith('page='.$totalPages, self::stringAt($api, 'view', 'last'));
+        self::assertStringContainsString('operations?page='.$totalPages.'>; rel="last"', $links);
     }
 
     /**
@@ -136,7 +138,7 @@ final class AccountViewApiTest extends WebTestCase
         $this->client->request(
             'GET',
             $uri,
-            server: ['HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(), 'HTTP_ACCEPT' => 'application/ld+json'],
+            server: ['HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(), 'HTTP_ACCEPT' => 'application/json'],
         );
         self::assertResponseIsSuccessful();
 

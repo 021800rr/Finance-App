@@ -97,19 +97,17 @@ final class SummaryApiTest extends WebTestCase
         self::assertContains($account->getBankName().' '.$account->getAccountNumber(), $missingRate);
     }
 
-    public function testInJsonLdTheRowsAndTotalsAreTypedButGetNoGeneratedId(): void
+    /**
+     * Plain JSON only: JSON-LD (a W3C Community Group draft) is not offered.
+     */
+    public function testJsonLdIsNotOffered(): void
     {
-        $account = $this->createAccount();
+        $this->client->request('GET', '/api/summary', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
+            'HTTP_ACCEPT' => 'application/ld+json',
+        ]);
 
-        $summary = $this->getSummary('application/ld+json');
-
-        // A generated @id (/.well-known/genid/...) would differ in every answer while naming nothing.
-        $row = $this->accountRow($summary, $account->getAccountNumber());
-        self::assertSame('SummaryAccount', $row['@type'] ?? null);
-        self::assertArrayNotHasKey('@id', $row);
-        $total = self::objectAt($summary, 'byType', $account->getTypeName());
-        self::assertSame('SummaryTypeTotal', $total['@type'] ?? null);
-        self::assertArrayNotHasKey('@id', $total);
+        self::assertResponseStatusCodeSame(406);
     }
 
     public function testOpenApiDescribesTheRowsTheTotalsAndTheAccountsMissingARate(): void

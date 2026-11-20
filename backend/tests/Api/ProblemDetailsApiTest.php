@@ -51,8 +51,9 @@ final class ProblemDetailsApiTest extends WebTestCase
         $this->postTransfer('{"amountFrom":"0"}');
 
         $problem = $this->assertProblem(422, 'validation.failed', []);
-        self::assertSame('Unprocessable Content', $problem['title'] ?? null);
-        self::assertNotSame([], self::rowsAt($problem, 'violations'));
+        // RFC 9457, section 3.1.3: a summary of the problem type, not the name of the status.
+        self::assertSame('Validation failed', $problem['title'] ?? null);
+        self::assertNotSame([], self::fieldErrors($problem));
     }
 
     /**
@@ -62,7 +63,6 @@ final class ProblemDetailsApiTest extends WebTestCase
     {
         yield 'none' => [null];
         yield 'any' => ['*/*'];
-        yield 'JSON-LD' => ['application/ld+json'];
         yield 'JSON' => ['application/json'];
     }
 
@@ -76,7 +76,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     {
         $this->client->request('POST', '/api/transfers', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ] + (null === $accept ? [] : ['HTTP_ACCEPT' => $accept]), content: '{"amountFrom":"0"}');
 
         $problem = $this->assertProblem(422, 'validation.failed', []);
@@ -94,6 +94,7 @@ final class ProblemDetailsApiTest extends WebTestCase
 
         $problem = $this->assertProblem(422, 'transfer.accounts_must_differ', []);
         self::assertSame('Cannot transfer between the same account.', $problem['detail'] ?? null);
+        self::assertSame('Same account on both sides', $problem['title'] ?? null);
     }
 
     public function testCurrencyExchangeWithoutAmountToNamesBothCurrencies(): void
@@ -119,9 +120,11 @@ final class ProblemDetailsApiTest extends WebTestCase
         $this->postTransfer($json);
 
         $problem = $this->assertProblem(422, 'validation.failed', []);
-        $violation = self::rowsAt($problem, 'violations')[0] ?? null;
+        $violation = self::fieldErrors($problem)[0] ?? null;
         self::assertIsArray($violation);
-        self::assertSame('operationDate', $violation['propertyPath'] ?? null);
+        // RFC 9457's example: a JSON Pointer (RFC 6901) to the refused value, in its URI fragment form.
+        self::assertSame('#/operationDate', $violation['pointer'] ?? null);
+        self::assertArrayNotHasKey('parameter', $violation);
         self::assertSame('common.date_out_of_range', $violation['code'] ?? null);
         self::assertSame(['min' => '2025-01-01', 'max' => '2070-12-31'], $violation['params'] ?? null);
     }
@@ -238,7 +241,7 @@ final class ProblemDetailsApiTest extends WebTestCase
 
         $this->client->request('POST', '/api/fixed_expenses', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$token,
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode(
             ['contractorId' => $contractor->getId(), 'day' => 5, 'amount' => '-1.00'],
             JSON_THROW_ON_ERROR,
@@ -311,7 +314,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     #[DataProvider('listsWithValidatedFilters')]
     public function testOpenApiDocumentsThatAListRefusesAnInvalidFilter(string $path): void
     {
-        $invalid = self::objectAt($this->openApiDocs(), 'paths', $path, 'get', 'responses', '422');
+        $invalid = self::objectAt($this->openApiDocs(), 'paths', $path, 'get', 'responses', '400');
         $schema = self::objectAt($invalid, 'content', 'application/problem+json', 'schema', 'allOf', '0');
 
         self::assertStringContainsString('validation.failed', self::stringAt($invalid, 'description'));
@@ -339,11 +342,11 @@ final class ProblemDetailsApiTest extends WebTestCase
     ): void {
         $schema = self::objectAt(
             $this->openApiDocs(),
-            'paths', $path, $method, 'responses', $status, 'content', 'application/json', 'schema',
+            'paths', $path, $method, 'responses', $status, 'content', 'application/problem+json', 'schema',
         );
 
-        $example = self::objectAt($schema, 'allOf', '1', 'properties', 'errorCode');
-        self::assertSame([$errorCode], $example['examples'] ?? null);
+        $example = self::objectAt($schema, 'allOf', '1', 'properties', 'type');
+        self::assertSame(['urn:finance-app:problem:'.$errorCode], $example['examples'] ?? null);
     }
 
     public function testOpenApiDocumentsTheRetryAfterOfALockedLogin(): void
@@ -354,13 +357,6 @@ final class ProblemDetailsApiTest extends WebTestCase
         );
 
         self::assertSame(['type' => 'integer'], $header['schema'] ?? null);
-    }
-
-    public function testErrorAddressExampleDoesNotDependOnOneServer(): void
-    {
-        $description = self::stringAt($this->openApiDocs(), 'paths', '/api/errors/{status}', 'get', 'description');
-
-        self::assertStringContainsString('curl "$BASE_URL/api/errors/409"', $description);
     }
 
     /**
@@ -391,6 +387,49 @@ final class ProblemDetailsApiTest extends WebTestCase
         self::assertStringContainsString($code, $conflict['description']);
     }
 
+    /**
+     * RFC 9110: every GET answers 304 to a matching If-None-Match, every method 412 to a failing precondition; a 401
+     * names its challenge. The JWT comes in the Authorization header or in the BEARER cookie.
+     */
+    public function testOpenApiDocumentsConditionalRequestsTheChallengeAndTheCookie(): void
+    {
+        $docs = $this->openApiDocs();
+        $get = self::objectAt($docs, 'paths', '/api/accounts/{id}', 'get');
+        $patch = self::objectAt($docs, 'paths', '/api/accounts/{id}', 'patch');
+
+        self::assertArrayHasKey('304', self::objectAt($get, 'responses'));
+        self::assertArrayHasKey('412', self::objectAt($get, 'responses'));
+        self::assertArrayNotHasKey('304', self::objectAt($patch, 'responses'));
+        self::assertArrayHasKey('412', self::objectAt($patch, 'responses'));
+        self::assertArrayHasKey('WWW-Authenticate', self::objectAt($get, 'responses', '401', 'headers'));
+        self::assertSame([['JWT' => []], ['BearerCookie' => []]], $get['security'] ?? null);
+        $cookie = self::objectAt($docs, 'components', 'securitySchemes', 'BearerCookie');
+        self::assertSame(
+            ['apiKey', 'BEARER', 'cookie'],
+            [$cookie['type'] ?? null, $cookie['name'] ?? null, $cookie['in'] ?? null],
+        );
+    }
+
+    /**
+     * Every error is application/problem+json, whatever the client accepts: no other media type is documented.
+     */
+    public function testOpenApiDocumentsErrorsOnlyAsProblemJson(): void
+    {
+        foreach (self::objectAt($this->openApiDocs(), 'paths') as $path => $pathItem) {
+            self::assertIsArray($pathItem);
+            foreach ($pathItem as $method => $operation) {
+                $responses = is_array($operation) ? ($operation['responses'] ?? null) : null;
+                foreach (is_array($responses) ? $responses : [] as $status => $response) {
+                    $content = is_array($response) ? ($response['content'] ?? null) : null;
+                    if ((int) $status >= 400 && is_array($content)) {
+                        $where = sprintf('%s %s %s', $method, $path, $status);
+                        self::assertSame(['application/problem+json'], array_keys($content), $where);
+                    }
+                }
+            }
+        }
+    }
+
     public function testOpenApiDescribesOnlyFieldsTheErrorsHave(): void
     {
         $docs = $this->openApiDocs();
@@ -403,60 +442,64 @@ final class ProblemDetailsApiTest extends WebTestCase
         }
     }
 
-    public function testOpenApiDocumentsHowToCallTheErrorAddressAndItWorks(): void
+    /**
+     * Since errors are no JSON-LD, nothing leads to API Platform's description of an HTTP status any more.
+     */
+    public function testOpenApiDoesNotListTheErrorAddress(): void
     {
-        $operation = self::objectAt($this->openApiDocs(), 'paths', '/api/errors/{status}', 'get');
-
-        self::assertSame(['status'], array_column(self::rowsAt($operation, 'parameters'), 'name'));
-        self::assertStringContainsString('curl', self::stringAt($operation, 'description'));
-        self::assertArrayHasKey('401', self::objectAt($operation, 'responses'));
-
-        $this->client->request('GET', '/api/errors/409', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'HTTP_ACCEPT' => 'application/ld+json',
-        ]);
-
-        self::assertResponseStatusCodeSame(200);
-        $error = self::decodeObject((string) $this->client->getResponse()->getContent());
-        self::assertSame('http.conflict', self::stringAt($error, 'errorCode'));
+        self::assertArrayNotHasKey('/api/errors/{status}', self::objectAt($this->openApiDocs(), 'paths'));
     }
 
     #[DataProvider('badBodies')]
-    public function testBodyThatIsNotAJsonObjectIsABadRequest(string $body, string $detail): void
+    public function testBodyThatIsNotAJsonObjectIsRefused(string $body, int $status, string $detail): void
     {
         $this->postTransfer($body);
 
-        $problem = $this->assertProblem(400, 'http.bad_request', []);
+        $code = 400 === $status ? 'http.bad_request' : 'http.unprocessable_content';
+        $problem = $this->assertProblem($status, $code, []);
         self::assertSame($detail, $problem['detail'] ?? null);
     }
 
     /**
-     * @return iterable<string, array{string, string}>
+     * @return iterable<string, array{string, int, string}>
      */
     public static function badBodies(): iterable
     {
         $notJson = 'The request body is not valid JSON.';
         $notObject = 'The request body must be a JSON object.';
 
-        yield 'malformed' => ['{bad', $notJson];
-        yield 'empty' => ['', $notJson];
-        yield 'number' => ['5', $notObject];
-        yield 'null' => ['null', $notObject];
-        yield 'boolean' => ['true', $notObject];
-        yield 'text' => ['"abc"', $notObject];
-        yield 'list' => ['[1,2]', $notObject];
-        yield 'empty list' => ['[]', $notObject];
+        yield 'malformed' => ['{bad', 400, $notJson];
+        yield 'empty' => ['', 400, $notJson];
+        yield 'number' => ['5', 422, $notObject];
+        yield 'null' => ['null', 422, $notObject];
+        yield 'boolean' => ['true', 422, $notObject];
+        yield 'text' => ['"abc"', 422, $notObject];
+        yield 'list' => ['[1,2]', 422, $notObject];
+        yield 'empty list' => ['[]', 422, $notObject];
     }
 
-    public function testBadBodyOnUpdateIsABadRequest(): void
+    /**
+     * RFC 7396, section 2: a merge patch that is not an object replaces the whole resource, which cannot be a list.
+     */
+    #[DataProvider('mergePatchesThatAreNotObjects')]
+    public function testMergePatchThatIsNotAnObjectCannotBeApplied(string $body): void
     {
         $this->client->request('PATCH', '/api/accounts/'.$this->account('Bank1-ROR-PLN')->getId(), server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/merge-patch+json',
-        ], content: '5');
+        ], content: $body);
 
-        $problem = $this->assertProblem(400, 'http.bad_request', []);
+        $problem = $this->assertProblem(422, 'http.unprocessable_content', []);
         self::assertSame('The request body must be a JSON object.', $problem['detail'] ?? null);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function mergePatchesThatAreNotObjects(): iterable
+    {
+        yield 'empty list' => ['[]'];
+        yield 'number' => ['5'];
     }
 
     public function testEmptyObjectReachesTheFieldValidation(): void
@@ -490,10 +533,10 @@ final class ProblemDetailsApiTest extends WebTestCase
     {
         $this->client->request('POST', '/api/fixed_expenses/plan', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ]);
 
-        self::assertResponseStatusCodeSame(201);
+        self::assertResponseStatusCodeSame(200);
     }
 
     #[DataProvider('unsupportedAcceptHeaders')]
@@ -569,7 +612,7 @@ final class ProblemDetailsApiTest extends WebTestCase
         ], content: '{}');
 
         $problem = $this->assertProblem(422, 'validation.failed', []);
-        $violation = self::rowsAt($problem, 'violations')[0] ?? null;
+        $violation = self::fieldErrors($problem)[0] ?? null;
         self::assertIsArray($violation);
         self::assertSame('name', $violation['propertyPath'] ?? null);
         self::assertSame('contractor.name_not_blank', $violation['code'] ?? null);
@@ -593,36 +636,39 @@ final class ProblemDetailsApiTest extends WebTestCase
         );
     }
 
-    public function testEmptyParamsAreAnObjectNotAList(): void
+    public function testEmptyParamsOfAnErrorAreAnObjectNotAList(): void
     {
-        $this->postTransfer('{bad');
+        $this->postTransfer('{}');
 
         self::assertStringContainsString('"params":{}', (string) $this->client->getResponse()->getContent());
     }
 
-    public function testOpenApiDocumentsErrorCodeAndParamsInEveryErrorSchema(): void
+    /**
+     * RFC 9457: the standard members, and extension members of the problem type (strings); a validation problem also
+     * has "errors". No "errorCode" or "params": the type is the identifier (section 3.1.1).
+     */
+    public function testOpenApiDocumentsTheProblemMembersInEveryErrorSchema(): void
     {
-        $docs = $this->openApiDocs();
+        $schemas = self::objectAt($this->openApiDocs(), 'components', 'schemas');
 
-        self::assertArrayNotHasKey('Error.jsonld', self::objectAt($docs, 'components', 'schemas'));
-        self::assertArrayNotHasKey('ConstraintViolation.jsonld', self::objectAt($docs, 'components', 'schemas'));
+        self::assertArrayNotHasKey('Error.jsonld', $schemas);
+        self::assertArrayNotHasKey('ConstraintViolation.jsonld', $schemas);
         foreach (['Error', 'ConstraintViolation'] as $name) {
-            $schema = self::objectAt($docs, 'components', 'schemas', $name);
+            $schema = self::objectAt($schemas, $name);
             $properties = self::objectAt($schema, 'properties');
-            self::assertArrayHasKey('errorCode', $properties, $name);
-            self::assertArrayHasKey('params', $properties, $name);
+            self::assertArrayNotHasKey('errorCode', $properties, $name);
+            self::assertArrayNotHasKey('params', $properties, $name);
+            self::assertSame(['type' => 'string'], $schema['additionalProperties'] ?? null, $name);
             $required = $schema['required'] ?? null;
             self::assertIsArray($required, $name);
-            self::assertContains('errorCode', $required, $name);
-            self::assertContains('params', $required, $name);
-            if ('ConstraintViolation' === $name) {
-                self::assertSame(
-                    ['propertyPath', 'message', 'code', 'params'],
-                    self::objectAt($properties, 'violations', 'items')['required'] ?? null,
-                    $name,
-                );
+            foreach (['type', 'title', 'status', 'detail'] as $member) {
+                self::assertContains($member, $required, $name);
             }
         }
+        self::assertSame(
+            ['detail', 'code', 'params'],
+            self::objectAt($schemas, 'ConstraintViolation', 'properties', 'errors', 'items')['required'] ?? null,
+        );
     }
 
     /**
@@ -633,8 +679,8 @@ final class ProblemDetailsApiTest extends WebTestCase
         $docs = $this->openApiDocs();
         $sharedStatus = self::objectAt($docs, 'components', 'schemas', 'Error', 'properties', 'status');
         self::assertArrayNotHasKey('examples', $sharedStatus);
-        $sharedErrorCode = self::objectAt($docs, 'components', 'schemas', 'Error', 'properties', 'errorCode');
-        self::assertArrayNotHasKey('examples', $sharedErrorCode);
+        $sharedType = self::objectAt($docs, 'components', 'schemas', 'Error', 'properties', 'type');
+        self::assertArrayNotHasKey('examples', $sharedType);
 
         $checked = [];
         foreach (self::objectAt($docs, 'paths') as $path => $pathItem) {
@@ -655,10 +701,10 @@ final class ProblemDetailsApiTest extends WebTestCase
                         $statusExample = self::objectAt($example, 'status');
                         self::assertSame([(int) $status], $statusExample['examples'] ?? null, $where);
                         self::assertSame((int) $status, $statusExample['const'] ?? null, $where);
-                        $errorCodes = self::objectAt($example, 'errorCode')['examples'] ?? null;
-                        self::assertIsArray($errorCodes, $where);
-                        self::assertIsString($errorCodes[0] ?? null, $where);
-                        $checked[$status] = $errorCodes[0];
+                        $types = self::objectAt($example, 'type')['examples'] ?? null;
+                        self::assertIsArray($types, $where);
+                        self::assertIsString($types[0] ?? null, $where);
+                        $checked[$status] = self::problemCode(['type' => $types[0]]);
                     }
                 }
             }
@@ -706,10 +752,13 @@ final class ProblemDetailsApiTest extends WebTestCase
         );
         $problem = self::decodeObject((string) $this->client->getResponse()->getContent());
         self::assertSame($status, $problem['status'] ?? null);
-        self::assertSame($errorCode, $problem['errorCode'] ?? null);
+        self::assertSame($errorCode, self::problemCode($problem));
         self::assertSame('urn:finance-app:problem:'.$errorCode, $problem['type'] ?? null);
-        self::assertSame($params, self::objectAt($problem, 'params'));
+        self::assertSame($params, self::problemMembers($problem));
         self::assertNotSame('', self::stringAt($problem, 'detail'));
+        self::assertNotSame('', self::stringAt($problem, 'title'));
+        // RFC 9457, section 3.1.4: help the client, no debugging information.
+        self::assertArrayNotHasKey('trace', $problem);
 
         return $problem;
     }
@@ -728,7 +777,7 @@ final class ProblemDetailsApiTest extends WebTestCase
     {
         $this->client->request('POST', '/api/transfers', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: $json);
     }
 }

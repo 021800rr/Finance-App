@@ -22,8 +22,8 @@ use Symfony\Component\Security\Core\Exception\TooManyLoginAttemptsAuthentication
 /**
  * The JWT and refresh token bundles answer authentication failures before API Platform sees the request, in their
  * own format ({"code": 401, "message": "..."}). This gives them the same Problem Details shape as every other API
- * error: "errorCode", "params" and an English "detail". Headers and cookies are kept, the WWW-Authenticate challenge
- * only with a 401.
+ * error: a problem type of its own, its title and members, and an English "detail". Headers and cookies are kept,
+ * the WWW-Authenticate challenge only with a 401.
  *
  * The status is kept for a refused JWT (401). The login (/api/login_check) and the refresh (/api/token/refresh)
  * take their credentials in the body or the refresh_token cookie, not in the Authorization header, so no HTTP
@@ -33,6 +33,18 @@ use Symfony\Component\Security\Core\Exception\TooManyLoginAttemptsAuthentication
  */
 final readonly class AuthenticationProblemSubscriber implements EventSubscriberInterface
 {
+    /** The title of each problem type (RFC 9457, section 3.1.3), by its code. */
+    public const array TITLES = [
+        'auth.token_missing' => 'Missing token',
+        'auth.token_invalid' => 'Invalid token',
+        'auth.token_expired' => 'Expired token',
+        'auth.invalid_credentials' => 'Invalid credentials',
+        'auth.login_failed' => 'Login failed',
+        'auth.too_many_login_attempts' => 'Too many login attempts',
+        'auth.refresh_token_missing' => 'Missing refresh token',
+        'auth.refresh_token_invalid' => 'Invalid refresh token',
+    ];
+
     public static function getSubscribedEvents(): array
     {
         return [
@@ -99,8 +111,8 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
             return;
         }
 
-        $errorCode = $exception instanceof BadCredentialsException ? 'auth.invalid_credentials' : 'auth.login_failed';
-        $event->setResponse($this->problem($response, $errorCode, $detail, status: Response::HTTP_BAD_REQUEST));
+        $code = $exception instanceof BadCredentialsException ? 'auth.invalid_credentials' : 'auth.login_failed';
+        $event->setResponse($this->problem($response, $code, $detail, status: Response::HTTP_BAD_REQUEST));
     }
 
     public function onRefreshTokenNotFound(RefreshTokenNotFoundEvent $event): void
@@ -146,12 +158,13 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
     }
 
     /**
-     * @param array<string, string> $params
+     * @param string                $code   a key of TITLES
+     * @param array<string, string> $params the extension members of the problem type
      * @param int|null              $status the bundle's status when null
      */
     private function problem(
         ?Response $original,
-        string $errorCode,
+        string $code,
         string $detail,
         array $params = [],
         ?int $status = null,
@@ -165,10 +178,11 @@ final readonly class AuthenticationProblemSubscriber implements EventSubscriberI
 
         $problem = ProblemResponse::create(
             $status ?? $original?->getStatusCode() ?? Response::HTTP_UNAUTHORIZED,
-            $errorCode,
+            $code,
             $detail,
             $params,
             $headers,
+            self::TITLES[$code] ?? throw new \LogicException(sprintf('No title for the problem "%s".', $code)),
         );
         foreach ($original?->headers->getCookies() ?? [] as $cookie) {
             $problem->headers->setCookie($cookie);

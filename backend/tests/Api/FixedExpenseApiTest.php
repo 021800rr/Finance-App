@@ -87,7 +87,7 @@ final class FixedExpenseApiTest extends WebTestCase
 
         $this->client->request('POST', '/api/fixed_expenses', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode([
             'contractorId' => $contractor->getId(),
             'day' => 29,
@@ -137,7 +137,7 @@ final class FixedExpenseApiTest extends WebTestCase
         } else {
             $this->client->request('POST', '/api/fixed_expenses', server: [
                 'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-                'CONTENT_TYPE' => 'application/ld+json',
+                'CONTENT_TYPE' => 'application/json',
             ], content: json_encode($body, JSON_THROW_ON_ERROR));
         }
 
@@ -164,10 +164,7 @@ final class FixedExpenseApiTest extends WebTestCase
         $this->writeExpense($fixedExpense, ['description' => str_repeat('a', 256)]);
 
         self::assertResponseStatusCodeSame(422);
-        $violations = self::rowsAt(
-            self::decodeObject((string) $this->client->getResponse()->getContent()),
-            'violations',
-        );
+        $violations = self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent()));
         $messages = array_column($violations, 'message', 'propertyPath');
         self::assertSame('The description cannot be longer than 255 characters.', $messages['description'] ?? null);
         self::assertSame(
@@ -216,7 +213,7 @@ final class FixedExpenseApiTest extends WebTestCase
         $contractor = $this->createContractor('Description API test '.uniqid());
         $this->client->request('POST', '/api/fixed_expenses', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode($body + [
             'contractorId' => $contractor->getId(),
             'day' => 10,
@@ -297,7 +294,7 @@ final class FixedExpenseApiTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         $error = self::decodeObject((string) $this->client->getResponse()->getContent());
-        $violations = self::rowsAt($error, 'violations');
+        $violations = self::fieldErrors($error);
         self::assertCount(1, $violations);
         self::assertSame('amount', self::stringAt($violations[0], 'propertyPath'));
         $this->em()->clear();

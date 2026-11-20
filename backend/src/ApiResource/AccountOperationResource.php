@@ -41,6 +41,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             description: 'Searches the operations of all accounts, newest first, '.Paginator::DEFAULT_PER_PAGE
             .' per page. The search text q is required; page must be a positive whole number. '
             .'To list the operations of one account use /accounts/{accountId}/operations.',
+            paginationEnabled: true,
             provider: AccountOperationProvider::class,
             parameters: ['q' => new QueryParameter(
                 property: 'description',
@@ -62,8 +63,9 @@ use Symfony\Component\Validator\Constraints as Assert;
                 security: [['JWT' => []]],
             ),
             description: 'Lists the operations of one account, newest first, '.Paginator::DEFAULT_PER_PAGE.' per page. '
-            .'Responds with 404 when the account does not exist, and with 422 when page is not a positive '
+            .'Responds with 404 when the account does not exist, and with 400 when page is not a positive '
             .'whole number.',
+            paginationEnabled: true,
             provider: AccountOperationProvider::class,
         ),
         new Get(
@@ -76,9 +78,9 @@ use Symfony\Component\Validator\Constraints as Assert;
             openapi: new OpenApiOperation(
                 summary: 'Retrieves the other operation of a transfer.',
                 responses: ['404' => new OpenApiResponse(
-                    description: 'The operation does not exist (errorCode account_operation.not_found), or it has '
+                    description: 'The operation does not exist (type account_operation.not_found), or it has '
                     .'no other side: it is not part of a transfer, or the other operation was deleted '
-                    .'(errorCode account_operation.other_side_not_found).',
+                    .'(type account_operation.other_side_not_found).',
                 )],
                 security: [['JWT' => []]],
             ),

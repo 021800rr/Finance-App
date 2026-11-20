@@ -52,7 +52,7 @@ final class DecimalInputValidationApiTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         $error = self::decodeObject((string) $this->client->getResponse()->getContent());
-        $violations = self::rowsAt($error, 'violations');
+        $violations = self::fieldErrors($error);
         self::assertCount(1, $violations);
         self::assertSame($field, self::stringAt($violations[0], 'propertyPath'));
         self::assertSame($countsBefore, $this->recordCounts());
@@ -76,10 +76,10 @@ final class DecimalInputValidationApiTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         $error = self::decodeObject((string) $this->client->getResponse()->getContent());
-        self::assertSame('validation.failed', self::stringAt($error, 'errorCode'));
+        self::assertSame('validation.failed', self::problemCode($error));
         self::assertSame(
             [$field => 'common.numeric_invalid'],
-            array_column(self::rowsAt($error, 'violations'), 'code', 'propertyPath'),
+            array_column(self::fieldErrors($error), 'code', 'propertyPath'),
         );
         self::assertSame($countsBefore, $this->recordCounts());
     }
@@ -239,8 +239,8 @@ final class DecimalInputValidationApiTest extends WebTestCase
     {
         $this->client->request('POST', $uri, server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
-            'HTTP_ACCEPT' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_ACCEPT' => 'application/json',
         ], content: json_encode($payload, JSON_THROW_ON_ERROR));
     }
 }

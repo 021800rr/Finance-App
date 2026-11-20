@@ -10,10 +10,22 @@ api_platform:
     # with a letter (RFC 9457, section 4). The JSON-LD error also repeated "detail" as "description".
     error_formats:
         jsonproblem: ['application/problem+json']
+    # Plain JSON only, as a Spring Boot backend gives it. JSON-LD/Hydra is a W3C Community Group draft, and its
+    # collections did not even expand to the Hydra vocabulary; a page of a list is "content" + "page" with the other
+    # pages in the Link header (PageNormalizer, PageLinkProcessor).
     formats:
-        jsonld: ['application/ld+json']
         json: ['application/json']
+    # The documentation as OpenAPI and its Swagger UI page; Hydra's (JSON-LD) and the JSON-LD entrypoint at /api went
+    # with the format.
+    docs_formats:
+        jsonopenapi: ['application/vnd.openapi+json']
+        yamlopenapi: ['application/vnd.openapi+yaml']
+        html: ['text/html']
+    enable_entrypoint: false
     defaults:
+        # Only the lists that page (the operations of an account, the search) say so; the rest are whole lists, and
+        # a "page" parameter that changes nothing would only mislead.
+        pagination_enabled: false
         stateless: false
         # A wrong type gets a violation on its field (422) on every property, all of them at once.
         collect_denormalization_errors: true

@@ -15,6 +15,8 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 final class NonResourceRouteProblemApiTest extends WebTestCase
 {
+    use ReadsJsonTrait;
+
     private KernelBrowser $client;
 
     protected function setUp(): void
@@ -147,18 +149,17 @@ final class NonResourceRouteProblemApiTest extends WebTestCase
     }
 
     /**
-     * @return array<mixed>
+     * @return array<string, mixed>
      */
     private function assertProblem(int $status, string $errorCode, ?string $detail = null): array
     {
         self::assertResponseStatusCodeSame($status);
         self::assertResponseHeaderSame('Content-Type', 'application/problem+json');
-        $problem = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-        self::assertIsArray($problem);
+        $problem = self::decodeObject((string) $this->client->getResponse()->getContent());
         self::assertSame($status, $problem['status'] ?? null);
-        self::assertSame($errorCode, $problem['errorCode'] ?? null);
+        self::assertSame($errorCode, self::problemCode($problem));
         self::assertSame('urn:finance-app:problem:'.$errorCode, $problem['type'] ?? null);
-        self::assertSame([], $problem['params'] ?? null);
+        self::assertSame([], self::problemMembers($problem));
         self::assertArrayNotHasKey('trace', $problem);
         self::assertArrayNotHasKey('class', $problem);
         if (null !== $detail) {

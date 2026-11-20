@@ -32,7 +32,7 @@ final class AuthenticationProblemSubscriberTest extends TestCase
         }
     }
 
-    public function testAMissingRefreshTokenGetsItsOwnErrorCode(): void
+    public function testAMissingRefreshTokenGetsItsOwnType(): void
     {
         $event = new RefreshTokenNotFoundEvent(new AuthenticationException());
 
@@ -41,7 +41,10 @@ final class AuthenticationProblemSubscriberTest extends TestCase
         $response = $event->getResponse();
         self::assertNotNull($response);
         self::assertSame(400, $response->getStatusCode());
-        self::assertStringContainsString('"errorCode":"auth.refresh_token_missing"', (string) $response->getContent());
+        self::assertStringContainsString(
+            '"type":"urn:finance-app:problem:auth.refresh_token_missing","title":"Missing refresh token"',
+            (string) $response->getContent(),
+        );
     }
 
     public function testKeepsEveryHeaderOfTheBundlesResponse(): void

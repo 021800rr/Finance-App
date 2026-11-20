@@ -80,7 +80,8 @@ describe('EditOperationPage', () => {
     const user = userEvent.setup()
     serve((method) => method === 'PATCH'
       ? Response.json({
-        errorCode: 'validation.failed', violations: [{ propertyPath, message: 'Refused.', code, params: {} }],
+        type: 'urn:finance-app:problem:validation.failed',
+        errors: [{ pointer: `#/${propertyPath}`, detail: 'Refused.', code, params: {} }],
       }, { status: 422 })
       : undefined)
     showPage()

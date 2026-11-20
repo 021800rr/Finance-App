@@ -9,10 +9,15 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
  * Refuses a request body that is not a JSON object, right before API Platform reads it. On its own it would answer
  * "Syntax error", name a PHP class (body: 5), or treat a list as an object with no fields.
+ *
+ * Body that is not JSON: 400, malformed syntax (RFC 9110, section 15.5.1). Valid JSON that is not an object, e.g. a
+ * list: 422, well-formed content that cannot be processed (section 15.5.21). For a merge patch a list is even a valid
+ * patch, one that would replace the whole resource with it (RFC 7396, section 2), which no resource here can be.
  *
  * @implements ProviderInterface<object>
  */
@@ -59,7 +64,7 @@ final readonly class RequestBodyCheckProvider implements ProviderInterface
         }
 
         if (!$body instanceof \stdClass) {
-            throw new BadRequestHttpException('The request body must be a JSON object.');
+            throw new UnprocessableEntityHttpException('The request body must be a JSON object.');
         }
     }
 }

@@ -53,7 +53,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Post(
             openapi: new OpenApiOperation(security: [['JWT' => []]]),
-            description: 'Creates a new contractor. Fails with 409 and errorCode "contractor.name_not_unique" if a '
+            description: 'Creates a new contractor. Fails with 409 and type "contractor.name_not_unique" if a '
             .'contractor with this name already exists.',
             input: ContractorInput::class,
             processor: ContractorProcessor::class,

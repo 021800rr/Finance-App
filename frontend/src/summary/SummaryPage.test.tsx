@@ -189,7 +189,7 @@ describe('SummaryPage', () => {
       changes += 1
 
       return changes === 1
-        ? Response.json({ errorCode: 'account.main_changed_concurrently' }, { status: 409 })
+        ? Response.json({ type: 'urn:finance-app:problem:account.main_changed_concurrently' }, { status: 409 })
         : Response.json({}, { status: 500 })
     })
     showPage()

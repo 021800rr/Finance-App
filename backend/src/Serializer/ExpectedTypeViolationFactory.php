@@ -14,8 +14,11 @@ use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 
 /**
- * Keeps the expected PHP type of a wrong-type violation as a parameter, so ViolationCodes can expose it in "params".
+ * Keeps the expected type of a wrong-type violation as a parameter, so ViolationCodes can expose it in "params".
  * API Platform only writes the type into the message text, where a client would have to parse it.
+ *
+ * The types are JSON's (RFC 8259: string, number, boolean, object, array, null), not PHP's ("int|null"): they
+ * describe the request content, and a backend in another language names them the same way.
  */
 final readonly class ExpectedTypeViolationFactory implements DenormalizationViolationFactoryInterface
 {
@@ -36,12 +39,15 @@ final readonly class ExpectedTypeViolationFactory implements DenormalizationViol
             foreach ($validationException->getConstraintViolationList() as $violation) {
                 $parameters = $violation->getParameters();
                 $type = $types[$violation->getPropertyPath()] ?? null;
+                $message = $violation->getMessage();
                 if (null !== $type && Type::INVALID_TYPE_ERROR === $violation->getCode()) {
                     $parameters['{{ type }}'] = $type;
+                    $template = $violation->getMessageTemplate();
+                    $message = '' !== $template ? strtr($template, $parameters) : $message;
                 }
 
                 $violations->add(new ConstraintViolation(
-                    $violation->getMessage(),
+                    $message,
                     $violation->getMessageTemplate(),
                     $parameters,
                     $violation->getRoot(),
@@ -59,7 +65,7 @@ final readonly class ExpectedTypeViolationFactory implements DenormalizationViol
     }
 
     /**
-     * @return array<string, string> property path => expected types, as in the message ("int|null")
+     * @return array<string, string> property path => expected JSON types ("number|null")
      */
     private function expectedTypesByPath(
         NotNormalizableValueException|PartialDenormalizationException $exception,
@@ -70,9 +76,26 @@ final readonly class ExpectedTypeViolationFactory implements DenormalizationViol
 
         $types = [];
         foreach ($errors as $error) {
-            $types[(string) $error->getPath()] = implode('|', $error->getExpectedTypes() ?? []);
+            $types[(string) $error->getPath()] = self::jsonTypes(array_values($error->getExpectedTypes() ?? []));
         }
 
         return $types;
+    }
+
+    /**
+     * @param list<string> $phpTypes as the serializer names them: "int", "string", "null", a class name…
+     */
+    private static function jsonTypes(array $phpTypes): string
+    {
+        $json = array_map(static fn (string $type): string => match ($type) {
+            'int', 'float' => 'number',
+            'string' => 'string',
+            'bool' => 'boolean',
+            'array' => 'array',
+            'null' => 'null',
+            default => 'object',
+        }, $phpTypes);
+
+        return implode('|', array_intersect(['string', 'number', 'boolean', 'object', 'array', 'null'], $json));
     }
 }

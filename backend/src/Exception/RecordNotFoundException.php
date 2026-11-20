@@ -12,9 +12,15 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 final class RecordNotFoundException extends \RuntimeException implements BusinessError
 {
-    private function __construct(string $message, private readonly string $errorCode)
+    private readonly string $errorTitle;
+
+    /**
+     * @param string|null $errorTitle the message without its full stop if null, e.g. "Account not found"
+     */
+    private function __construct(string $message, private readonly string $errorCode, ?string $errorTitle = null)
     {
         parent::__construct($message);
+        $this->errorTitle = $errorTitle ?? rtrim($message, '.');
     }
 
     public static function account(): self
@@ -33,6 +39,7 @@ final class RecordNotFoundException extends \RuntimeException implements Busines
             'The other side of this transfer was not found: the operation is not part of a transfer, '
             .'or the other operation was deleted.',
             'account_operation.other_side_not_found',
+            'Other side of the transfer not found',
         );
     }
 
@@ -81,9 +88,18 @@ final class RecordNotFoundException extends \RuntimeException implements Busines
         return new self('Household not found.', 'household.not_found');
     }
 
+    public static function transfer(): self
+    {
+        return new self(
+            'Transfer not found: no transfer has this transaction UUID, or one of its operations was deleted.',
+            'transfer.not_found',
+            'Transfer not found',
+        );
+    }
+
     /**
      * What a provider throws: API Platform answers it with 404, and ProblemNormalizer finds this exception in its
-     * previous chain, so the response still carries the record's errorCode.
+     * previous chain, so the response still carries the record's own problem type.
      */
     public function asHttp(): NotFoundHttpException
     {
@@ -93,6 +109,11 @@ final class RecordNotFoundException extends \RuntimeException implements Busines
     public function getErrorCode(): string
     {
         return $this->errorCode;
+    }
+
+    public function getErrorTitle(): string
+    {
+        return $this->errorTitle;
     }
 
     public function getErrorParams(): array

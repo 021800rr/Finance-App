@@ -7,76 +7,76 @@ namespace App\OpenApi;
 use ApiPlatform\OpenApi\Factory\OpenApiFactoryInterface;
 use ApiPlatform\OpenApi\Model\MediaType;
 use ApiPlatform\OpenApi\Model\Operation;
-use ApiPlatform\OpenApi\Model\Parameter;
 use ApiPlatform\OpenApi\Model\PathItem;
 use ApiPlatform\OpenApi\Model\Response;
 use ApiPlatform\OpenApi\OpenApi;
 use App\Http\ProblemResponse;
 
 /**
- * Documents the error contract added by ProblemNormalizer and ViolationCodes: "errorCode" and "params"
- * on every error, a stable "code" and "params" on every violation, and the list of business error codes.
+ * Documents the error contract of ProblemNormalizer, ProblemResponse and ViolationCodes (RFC 9457 Problem Details):
+ * the problem type and its title, the extension members of the type, and "errors" of a validation problem with a
+ * stable "code" and "params" per item.
  */
 final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
 {
     /** Errors are plain Problem Details whatever the Accept header (error_formats), so no JSON-LD schemas. */
     private const array ERROR_SCHEMAS = ['Error', 'ConstraintViolation'];
 
-    private const string ERROR_ADDRESS_RESPONSE = 'The general description of this HTTP status. The response has '
-        .'status 200: this address describes an error, it does not report one.';
+    private const string TYPE_DESCRIPTION = 'The problem type: "'.ProblemResponse::TYPE_PREFIX.'" and its code, e.g. '
+        .'"transfer.accounts_must_differ", "validation.failed" or "http.not_found". A client tells the problems '
+        .'apart by it (RFC 9457, section 3.1.1).';
 
-    private const string ERROR_ADDRESS_DESCRIPTION = <<<'MD'
-        Send your JWT token, as for every other address:
+    private const string NOT_MODIFIED_DESCRIPTION = 'Not modified: If-None-Match names the entity tag (ETag) of the '
+        .'current representation, so the client\'s copy is still current. No content (RFC 9110, section 13.1.2).';
 
-        ```bash
-        BASE_URL=http://localhost:8081 # the address of your instance
-        curl "$BASE_URL/api/errors/409" \
-          -H "Authorization: Bearer $TOKEN" \
-          -H 'Accept: application/ld+json'
-        ```
+    private const string PRECONDITION_DESCRIPTION = 'Precondition failed, nothing was done: If-Match does not name the '
+        .'entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) '
+        .'(type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2).';
 
-        It describes only the HTTP status (`errorCode` `http.conflict` for 409), not the specific problem.
-        MD;
+    private const array CHALLENGE = ['WWW-Authenticate' => [
+        'description' => '"Bearer" without a token, \'Bearer error="invalid_token"\' with a refused one (RFC 6750).',
+        'schema' => ['type' => 'string'],
+    ]];
 
     private const string AUTH_ERROR_DESCRIPTION = 'The JWT token is missing, invalid or expired '
-        .'(errorCode auth.token_missing, auth.token_invalid or auth.token_expired).';
+        .'(type auth.token_missing, auth.token_invalid or auth.token_expired).';
 
-    private const string LOGIN_ERROR_DESCRIPTION = 'Wrong email or password (errorCode auth.invalid_credentials), '
-        .'or the request carries no email or password (errorCode http.bad_request).';
+    private const string LOGIN_ERROR_DESCRIPTION = 'Wrong email or password (type auth.invalid_credentials), '
+        .'or the request carries no email or password (type http.bad_request).';
 
     private const string LOGIN_LOCK_DESCRIPTION = 'The login is locked after too many failed attempts '
-        .'(errorCode auth.too_many_login_attempts, params.minutes): every password is refused until the lock ends.';
+        .'(type auth.too_many_login_attempts, member minutes): every password is refused until the lock ends.';
 
     private const string REFRESH_ERROR_DESCRIPTION = 'The refresh token is missing, or invalid, expired or already '
-        .'used (errorCode auth.refresh_token_missing or auth.refresh_token_invalid). Log in again.';
+        .'used (type auth.refresh_token_missing or auth.refresh_token_invalid). Log in again.';
 
     private const string LOGOUT_ERROR_DESCRIPTION = 'The request carries no refresh token '
-        .'(errorCode auth.refresh_token_missing).';
+        .'(type auth.refresh_token_missing).';
 
     private const string CONTRACTOR_RACE_DESCRIPTION = 'Another request stored the same new contractorName at the '
-        .'same moment (errorCode contractor.name_not_unique). Nothing was stored; send the request again.';
+        .'same moment (type contractor.name_not_unique). Nothing was stored; send the request again.';
 
     /** "METHOD path" => what the conflict means */
     private const array CONFLICTS = [
-        'POST /api/contractors' => 'A contractor with this name already exists (errorCode contractor.name_not_unique).',
+        'POST /api/contractors' => 'A contractor with this name already exists (type contractor.name_not_unique).',
         'POST /api/account_operations' => self::CONTRACTOR_RACE_DESCRIPTION,
         'PATCH /api/account_operations/{id}' => self::CONTRACTOR_RACE_DESCRIPTION,
         'POST /api/fixed_expenses' => self::CONTRACTOR_RACE_DESCRIPTION,
         'PATCH /api/fixed_expenses/{id}' => self::CONTRACTOR_RACE_DESCRIPTION,
         'PATCH /api/accounts/{id}' => 'Another request changed the main account at the same moment '
-            .'(errorCode account.main_changed_concurrently).',
-        'POST /api/fixed_expenses/plan' => 'The expenses cannot be planned (errorCode fixed_expense.plan_*). '
+            .'(type account.main_changed_concurrently).',
+        'POST /api/fixed_expenses/plan' => 'The expenses cannot be planned (type fixed_expense.plan_*). '
             .'Nothing was created.',
     ];
 
-    /** "METHOD path" => which query parameters it refuses with 422 */
+    /** "METHOD path" => which query parameters it refuses with 400 */
     private const array INVALID_QUERIES = [
         'GET /api/account_operations' => 'Validation failed: q is missing, blank, too long or contains a NUL '
-            .'character, or page is not a positive whole number (errorCode validation.failed).',
+            .'character, or page is not a positive whole number (type validation.failed).',
         'GET /api/accounts/{accountId}/operations' => 'Validation failed: page is not a positive whole number '
-            .'(errorCode validation.failed).',
+            .'(type validation.failed).',
         'GET /api/contractors' => 'Validation failed: name is blank, too long or contains a NUL character '
-            .'(errorCode validation.failed).',
+            .'(type validation.failed).',
     ];
 
     public function __construct(private OpenApiFactoryInterface $decorated)
@@ -87,36 +87,12 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     {
         $openApi = ($this->decorated)($context);
 
+        // API Platform's schemas describe its own error shape; ours replace them.
         $schemas = $openApi->getComponents()->getSchemas();
         if (null !== $schemas) {
-            foreach (self::ERROR_SCHEMAS as $name) {
-                if (isset($schemas[$name]) && $schemas[$name] instanceof \ArrayObject) {
-                    $schemas[$name]->exchangeArray($this->withErrorCode($schemas[$name]->getArrayCopy()));
-                }
-            }
+            $schemas['Error'] = new \ArrayObject(self::errorSchema());
+            $schemas['ConstraintViolation'] = new \ArrayObject(self::violationSchema());
         }
-
-        // API Platform provides this address, but leaves it out of the documentation.
-        $openApi->getPaths()->addPath('/api/errors/{status}', new PathItem(get: new Operation(
-            operationId: 'api_errors_get',
-            tags: ['Error'],
-            // As JSON-LD the description also has "@context", "@id" and "@type".
-            responses: ['200' => new Response(self::ERROR_ADDRESS_RESPONSE, new \ArrayObject([
-                'application/ld+json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
-                'application/json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
-            ]))],
-            summary: 'Describes an HTTP error status.',
-            description: self::ERROR_ADDRESS_DESCRIPTION,
-            parameters: [new Parameter(
-                name: 'status',
-                in: 'path',
-                description: 'HTTP status of the error, e.g. 409.',
-                required: true,
-                schema: ['type' => 'integer'],
-                example: 409,
-            )],
-            security: [['JWT' => []]],
-        )));
 
         // Paths::addPath() takes nothing but a PathItem; getPaths() just does not say so in its type.
         /** @var array<string, PathItem> $pathItems */
@@ -131,7 +107,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
 
     /**
      * Errors that API Platform cannot know about: 401 and the refused login or refresh (400) come from the firewall,
-     * 409 from the processors, and 422 of a GET from the query parameters, which API Platform validates without
+     * 409 from the processors, and 400 of a GET from the query parameters, which API Platform validates without
      * documenting it.
      */
     private function withErrors(PathItem $pathItem, string $path): PathItem
@@ -151,8 +127,13 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
 
         $responses = $operation->getResponses() ?? [];
         if ([] !== ($operation->getSecurity() ?? [])) {
-            $responses['401'] = $this->errorResponse(self::AUTH_ERROR_DESCRIPTION);
+            $responses['401'] = $this->errorResponse(self::AUTH_ERROR_DESCRIPTION, self::CHALLENGE);
         }
+        // Conditional requests (Preconditions): every GET answers with an ETag.
+        if (str_starts_with($route, 'GET ')) {
+            $responses['304'] = new Response(self::NOT_MODIFIED_DESCRIPTION);
+        }
+        $responses['412'] = $this->errorResponse(self::PRECONDITION_DESCRIPTION);
         if ('POST /api/login_check' === $route) {
             $responses['400'] = $this->errorResponse(self::LOGIN_ERROR_DESCRIPTION);
             $responses['429'] = $this->errorResponse(self::LOGIN_LOCK_DESCRIPTION, [
@@ -174,7 +155,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
             $responses['409'] = $this->errorResponse(self::CONFLICTS[$route]);
         }
         if (isset(self::INVALID_QUERIES[$route])) {
-            $responses['422'] = $this->violationResponse(self::INVALID_QUERIES[$route]);
+            $responses['400'] = $this->violationResponse(self::INVALID_QUERIES[$route]);
         }
         ksort($responses);
 
@@ -185,7 +166,6 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     {
         return new Response($description, new \ArrayObject([
             'application/problem+json' => ['schema' => ['$ref' => '#/components/schemas/ConstraintViolation']],
-            'application/json' => ['schema' => ['$ref' => '#/components/schemas/ConstraintViolation']],
         ]));
     }
 
@@ -196,13 +176,12 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     {
         return new Response($description, new \ArrayObject([
             'application/problem+json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
-            'application/json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
         ]), [] === $headers ? null : new \ArrayObject($headers));
     }
 
     /**
      * All error responses share one schema, so Swagger UI would show the same example ("status": 404) for every
-     * one of them. Each error response gets its own status and a matching example errorCode instead.
+     * one of them. Each error response gets its own status and a matching example type instead.
      */
     private function withStatusExamples(PathItem $pathItem, string $path): PathItem
     {
@@ -240,6 +219,10 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         /** @var \ArrayObject<string, mixed> $documented */
         $documented = new \ArrayObject();
         foreach ($content as $mediaType => $media) {
+            // Every error is application/problem+json, whatever the client accepts (error_formats).
+            if ('application/problem+json' !== $mediaType && isset($content['application/problem+json'])) {
+                continue;
+            }
             // Responses set in resource attributes (e.g. ErrorResponseContent) are plain arrays, not MediaType.
             $schema = $this->toArray(match (true) {
                 $media instanceof MediaType => $media->getSchema(),
@@ -254,7 +237,10 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
                 $schema,
                 ['type' => 'object', 'properties' => [
                     'status' => ['type' => 'integer', 'const' => $status, 'examples' => [$status]],
-                    'errorCode' => ['type' => 'string', 'examples' => [$this->exampleErrorCode($status, $route)]],
+                    'type' => [
+                        'type' => 'string',
+                        'examples' => [ProblemResponse::TYPE_PREFIX.$this->exampleCode($status, $route)],
+                    ],
                 ]],
             ]];
             $documented[(string) $mediaType] = $media instanceof MediaType
@@ -287,7 +273,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         return true;
     }
 
-    private function exampleErrorCode(int $status, string $route): string
+    private function exampleCode(int $status, string $route): string
     {
         return match (true) {
             400 === $status && 'POST /api/login_check' === $route => 'auth.invalid_credentials',
@@ -295,97 +281,89 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
             400 === $status && 'POST /api/token/refresh' === $route => 'auth.refresh_token_invalid',
             400 === $status && 'POST /api/token/invalidate' === $route => 'auth.refresh_token_missing',
             401 === $status => 'auth.token_missing',
-            422 === $status => 'validation.failed',
+            422 === $status, 400 === $status && isset(self::INVALID_QUERIES[$route]) => 'validation.failed',
             default => ProblemResponse::httpErrorCode($status),
         };
     }
 
     /**
-     * Adds the properties to an object schema; one without properties is left as it is.
+     * Every error (ProblemResponse, ProblemNormalizer): the members of RFC 9457 and the extension members of the
+     * problem type, all strings, e.g. "minutes" of a locked login or "fromCurrency" and "toCurrency" of a transfer.
      *
-     * @param array<mixed> $schema
+     * @param array<string, mixed> $moreProperties
      *
-     * @return array<mixed>
+     * @return array<string, mixed>
      */
-    private function withErrorCode(array $schema): array
-    {
-        if (!is_array($schema['properties'] ?? null)) {
-            return $schema;
-        }
-        $schema['properties'] = $this->properties($schema['properties']);
-
-        return $this->withRequiredErrorCode($schema);
+    private static function errorSchema(
+        string $description = 'A problem (RFC 9457). Other members than these belong to the problem type and are '
+            .'strings, e.g. "minutes" of auth.too_many_login_attempts.',
+        array $moreProperties = [],
+    ): array {
+        return [
+            'type' => 'object',
+            'description' => $description,
+            'properties' => [
+                'type' => ['type' => 'string', 'readOnly' => true, 'description' => self::TYPE_DESCRIPTION],
+                'title' => [
+                    'type' => 'string',
+                    'readOnly' => true,
+                    'description' => 'A short summary of the problem type, e.g. "Validation failed"; the name of the '
+                        .'HTTP status for the "http." types.',
+                ],
+                // API Platform's own example (404) would show up on every error response.
+                'status' => ['type' => 'integer', 'readOnly' => true, 'description' => 'The HTTP status code.'],
+                'detail' => [
+                    'type' => 'string',
+                    'readOnly' => true,
+                    'description' => 'This occurrence in English, for people (curl, Postman).',
+                ],
+            ] + $moreProperties,
+            'additionalProperties' => ['type' => 'string'],
+            'required' => ['type', 'title', 'status', 'detail', ...array_keys($moreProperties)],
+        ];
     }
 
     /**
-     * "errorCode" and "params" are on every error, so generated clients must not treat them as optional.
+     * A validation problem ("validation.failed"): the error members and "errors", one item per refused value.
      *
-     * @param array<mixed> $schema
-     *
-     * @return array<mixed>
+     * @return array<string, mixed>
      */
-    private function withRequiredErrorCode(array $schema): array
+    private static function violationSchema(): array
     {
-        $required = is_array($schema['required'] ?? null) ? array_filter($schema['required'], 'is_string') : [];
-        $schema['required'] = array_values(array_unique([...$required, 'errorCode', 'params']));
-
-        return $schema;
-    }
-
-    /**
-     * @param array<mixed> $properties
-     *
-     * @return array<mixed>
-     */
-    private function properties(array $properties): array
-    {
-        // API Platform documents it, but the responses never contain it.
-        unset($properties['instance']);
-
-        $properties['type'] = [
-            'type' => 'string',
-            'readOnly' => true,
-            'description' => 'Problem type: "'.ProblemResponse::TYPE_PREFIX.'" followed by errorCode.',
-        ];
-        $properties['title'] = [
-            'type' => 'string',
-            'readOnly' => true,
-            'description' => 'Name of the HTTP status, e.g. "Unprocessable Content".',
-        ];
-        // API Platform's own example (404) would show up on every error response.
-        $properties['status'] = [
-            'type' => 'integer',
-            'readOnly' => true,
-            'description' => 'HTTP status code of the response.',
-        ];
-        $properties['errorCode'] = [
-            'type' => 'string',
-            'readOnly' => true,
-            // No examples here: Swagger UI would show them on every response instead of each response's own one.
-            'description' => 'Stable code of the problem, e.g. "transfer.accounts_must_differ", "validation.failed" '
-                .'or "http.not_found".',
-        ];
-        $properties['params'] = $this->paramsSchema('Values for the message, e.g. {"fromCurrency": "PLN"}.');
-
-        $violations = $this->toArray($properties['violations'] ?? null);
-        $items = $this->toArray(is_array($violations) ? ($violations['items'] ?? null) : null);
-        if (is_array($violations) && is_array($items) && is_array($items['properties'] ?? null)) {
-            $items['properties']['code'] = [
-                'type' => 'string',
-                'description' => 'Stable code of the violation, e.g. "transfer.to_account_required" or '
-                    .'"validation.invalid_type".',
-            ];
-            $items['properties']['params'] = $this->paramsSchema(
-                'Values for the message: only "limit", "min", "max", "type"; never the submitted value.',
-            );
-            // API Platform documents them, but the responses never contain them.
-            unset($items['properties']['hint'], $items['properties']['payload']);
-            $items['required'] = ['propertyPath', 'message', 'code', 'params'];
-            $violations['items'] = $items;
-            $properties['violations'] = $violations;
-        }
-
-        return $properties;
+        return self::errorSchema(
+            'A validation problem (type "'.ProblemResponse::TYPE_PREFIX.'validation.failed").',
+            ['errors' => [
+                'type' => 'array',
+                'readOnly' => true,
+                'items' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'detail' => ['type' => 'string', 'description' => 'The refusal in English.'],
+                        'pointer' => [
+                            'type' => 'string',
+                            'description' => 'The refused value in the content, as a JSON Pointer (RFC 6901) in its '
+                                .'URI fragment form, e.g. "#/amountFrom". Not with "parameter".',
+                        ],
+                        'parameter' => [
+                            'type' => 'string',
+                            'description' => 'The refused query parameter, e.g. "page". Not with "pointer".',
+                        ],
+                        'code' => [
+                            'type' => 'string',
+                            'description' => 'Stable code of the refusal, e.g. "transfer.to_account_required" or '
+                                .'"validation.invalid_type".',
+                        ],
+                        'params' => [
+                            'type' => 'object',
+                            'additionalProperties' => ['type' => 'string'],
+                            'description' => 'Values for the message: only "limit", "min", "max", "type" (a JSON type, '
+                                .'e.g. "number|null"); never the submitted value.',
+                        ],
+                    ],
+                    'required' => ['detail', 'code', 'params'],
+                ],
+            ]],
+        );
     }
 
     /**
@@ -394,18 +372,5 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     private function toArray(mixed $value): mixed
     {
         return $value instanceof \ArrayObject ? $value->getArrayCopy() : $value;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function paramsSchema(string $description): array
-    {
-        return [
-            'type' => 'object',
-            'readOnly' => true,
-            'additionalProperties' => ['type' => 'string'],
-            'description' => $description,
-        ];
     }
 }

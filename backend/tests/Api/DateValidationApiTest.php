@@ -247,7 +247,7 @@ final class DateValidationApiTest extends WebTestCase
     {
         self::assertResponseStatusCodeSame(422);
         $problem = self::decodeObject((string) $this->client->getResponse()->getContent());
-        self::assertSame('validation.failed', $problem['errorCode'] ?? null);
+        self::assertSame('validation.failed', self::problemCode($problem));
         $expected = 'common.date_out_of_range' === $code ? ['min' => '2025-01-01', 'max' => '2070-12-31'] : [];
         self::assertSame(
             [['propertyPath' => $field, 'code' => $code, 'params' => $expected]],
@@ -257,7 +257,7 @@ final class DateValidationApiTest extends WebTestCase
                     'code' => $violation['code'] ?? null,
                     'params' => $violation['params'] ?? null,
                 ],
-                self::rowsAt($problem, 'violations'),
+                self::fieldErrors($problem),
             ),
         );
     }
@@ -283,8 +283,8 @@ final class DateValidationApiTest extends WebTestCase
             $uri,
             server: [
                 'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-                'CONTENT_TYPE' => 'PATCH' === $method ? 'application/merge-patch+json' : 'application/ld+json',
-                'HTTP_ACCEPT' => 'application/ld+json',
+                'CONTENT_TYPE' => 'PATCH' === $method ? 'application/merge-patch+json' : 'application/json',
+                'HTTP_ACCEPT' => 'application/json',
             ],
             content: json_encode($payload, JSON_THROW_ON_ERROR),
         );

@@ -58,11 +58,27 @@ services:
         decoration_priority: 0
         arguments: [ '@.inner' ]
 
-    # Stable "errorCode" and "params" (plus "type" derived from the code) on every API error response.
+    # The problem type, its title and members on every API error response.
     # A regular normalizer, ahead of API Platform's error normalizers (priority -800/-880) in every format.
     App\Serializer\ProblemNormalizer:
         autoconfigure: false
         tags: [ { name: 'serializer.normalizer', priority: 10 } ]
+
+    # A page of a list as plain JSON (content + page), ahead of the serializer's own handling of a Traversable.
+    App\Serializer\PageNormalizer:
+        autoconfigure: false
+        tags: [ { name: 'serializer.normalizer', priority: 10 } ]
+
+    # The Link header of a page of a list, around everything that builds the response.
+    App\State\PageLinkProcessor:
+        decorates: 'api_platform.state_processor.respond'
+        decoration_priority: -10
+        arguments: [ '@.inner' ]
+
+    App\OpenApi\PagedListDecorator:
+        decorates: 'api_platform.openapi.factory'
+        decoration_priority: -60
+        arguments: [ '@.inner' ]
 
     App\OpenApi\ProblemDetailsDecorator:
         decorates: 'api_platform.openapi.factory'

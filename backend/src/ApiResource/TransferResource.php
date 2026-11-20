@@ -6,6 +6,7 @@ namespace App\ApiResource;
 
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Response as OpenApiResponse;
@@ -13,6 +14,7 @@ use App\ApiResource\Input\TransferInput;
 use App\Entity\AccountOperation;
 use App\OpenApi\ErrorResponseContent;
 use App\State\TransferProcessor;
+use App\State\TransferProvider;
 
 /**
  * A transfer as the API answers it: the two operations it created, debit and credit, linked by one transaction UUID.
@@ -25,20 +27,34 @@ use App\State\TransferProcessor;
     .'AccountOperation records (debit + credit) sharing the same transactionUuid, exactly like '
     .'the "Transfer / Exchange" form. The contractor is always the fixed "Przelew własny" contractor.',
     operations: [
+        new Get(
+            uriTemplate: '/transfers/{transactionUuid}{._format}',
+            openapi: new OpenApiOperation(
+                responses: ['404' => new OpenApiResponse(
+                    description: 'No transfer has this transaction UUID, or one of its operations was deleted '
+                    .'(type transfer.not_found).',
+                )],
+                security: [['JWT' => []]],
+            ),
+            description: 'A transfer: its two operations, debit and credit. The address POST /api/transfers names '
+            .'in Location.',
+            provider: TransferProvider::class,
+        ),
         new Post(
             openapi: new OpenApiOperation(
                 responses: ['422' => new OpenApiResponse(
-                    description: 'Either validation failed (errorCode "validation.failed", with a "violations" list), '
-                    .'e.g. fromAccountId or toAccountId points to a hidden account; or the transfer was refused '
-                    .'(no "violations"): errorCode "transfer.accounts_must_differ" or '
-                    .'"transfer.amount_to_required_for_currency_exchange" (params fromCurrency, toCurrency). '
-                    .'Other refused input checked only on saving, e.g. an amount written as "1e2", has errorCode '
+                    description: 'Either validation failed (type "validation.failed", with an "errors" list), e.g. '
+                    .'fromAccountId or toAccountId points to a hidden account; or the transfer was refused (no '
+                    .'"errors"): type "transfer.accounts_must_differ" or '
+                    .'"transfer.amount_to_required_for_currency_exchange" (members fromCurrency, toCurrency). '
+                    .'Other refused input checked only on saving, e.g. an amount written as "1e2", has type '
                     .'"http.unprocessable_content".',
                     content: new \ArrayObject(ErrorResponseContent::VALIDATION_OR_BUSINESS_ERROR),
                 )],
                 security: [['JWT' => []]],
             ),
-            description: 'Creates a transfer. If fromAccount and toAccount have the same currency, '
+            description: 'Creates a transfer; Location names it (GET /api/transfers/{transactionUuid}). If '
+            .'fromAccount and toAccount have the same currency, '
             .'amountTo is generated automatically and must not be sent. If currencies differ, '
             .'amountTo is required. A hidden account cannot be chosen on either side: such a request is '
             .'rejected with 422 on fromAccountId or toAccountId.',
@@ -67,8 +83,9 @@ final readonly class TransferResource
         )]
         public ?string $description,
         #[ApiProperty(
-            description: 'Shared id linking the debit and credit operations.',
+            description: 'Shared id linking the debit and credit operations; identifies the transfer.',
             required: true,
+            identifier: true,
             example: '01a1c8b2-262e-72a9-9ac6-1652e5dffefe',
         )]
         public string $transactionUuid,

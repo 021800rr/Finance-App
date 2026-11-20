@@ -295,7 +295,7 @@ final class TokenApiTest extends WebTestCase
         self::assertResponseHeaderSame('Content-Type', 'application/problem+json');
         $problem = self::decodeObject((string) $this->client->getResponse()->getContent());
         self::assertSame($status, $problem['status'] ?? null);
-        self::assertSame($errorCode, $problem['errorCode'] ?? null);
+        self::assertSame($errorCode, self::problemCode($problem));
         self::assertNotSame('', self::stringAt($problem, 'detail'));
     }
 }

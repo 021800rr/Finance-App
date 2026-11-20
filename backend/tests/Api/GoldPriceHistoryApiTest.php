@@ -118,8 +118,8 @@ final class GoldPriceHistoryApiTest extends WebTestCase
 
         self::assertSame(['GoldPrice'], $list['tags']);
         self::assertSame(['GoldPrice'], $history['tags']);
-        self::assertSame([['JWT' => []]], $list['security']);
-        self::assertSame([['JWT' => []]], $history['security']);
+        self::assertSame([['JWT' => []], ['BearerCookie' => []]], $list['security']);
+        self::assertSame([['JWT' => []], ['BearerCookie' => []]], $history['security']);
         self::assertStringContainsString('most recent entries', self::stringAt($list, 'description'));
         self::assertStringContainsString('highest id per asset and date', self::stringAt($history, 'description'));
 
@@ -155,12 +155,10 @@ final class GoldPriceHistoryApiTest extends WebTestCase
     {
         $this->client->request('GET', $uri, server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'HTTP_ACCEPT' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/json',
         ]);
         self::assertResponseIsSuccessful();
 
-        $data = self::decodeObject((string) $this->client->getResponse()->getContent());
-
-        return self::rowsAt($data, 'member');
+        return self::decodeList((string) $this->client->getResponse()->getContent());
     }
 }

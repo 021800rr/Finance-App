@@ -41,7 +41,7 @@ final readonly class ContractorProvider implements ProviderInterface
         }
 
         // A search only: ContractorResource requires the "name" parameter, so a request without it or with a blank one
-        // is refused (422) before this runs.
+        // is refused (400) before this runs.
         $filters = $context['filters'] ?? [];
         $name = is_array($filters) && is_string($filters['name'] ?? null) ? $filters['name'] : '';
 

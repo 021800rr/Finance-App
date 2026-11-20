@@ -53,7 +53,7 @@ final class MeApiTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(401);
         $problem = self::decodeObject((string) $this->client->getResponse()->getContent());
-        self::assertSame('auth.token_missing', $problem['errorCode'] ?? null);
+        self::assertSame('auth.token_missing', self::problemCode($problem));
     }
 
     public function testOpenApiListsItWithTheLogin(): void

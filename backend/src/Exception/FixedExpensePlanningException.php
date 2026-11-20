@@ -7,7 +7,7 @@ namespace App\Exception;
 /**
  * Planning of the fixed expenses was refused. The exception message is the English text used by the API;
  * the translation key and parameters let the web UI show the same reason in the user's language.
- * The API also returns the key as "errorCode" and its own "params", listed explicitly per refusal so that
+ * The API also returns the key as the problem type and its own parameters, listed explicitly per refusal so that
  * rewording a translation can never change the API contract.
  */
 final class FixedExpensePlanningException extends \RuntimeException implements BusinessError
@@ -19,6 +19,7 @@ final class FixedExpensePlanningException extends \RuntimeException implements B
     private function __construct(
         string $message,
         public readonly string $translationKey,
+        private readonly string $errorTitle,
         public readonly array $translationParameters = [],
         private readonly array $errorParams = [],
     ) {
@@ -28,6 +29,11 @@ final class FixedExpensePlanningException extends \RuntimeException implements B
     public function getErrorCode(): string
     {
         return $this->translationKey;
+    }
+
+    public function getErrorTitle(): string
+    {
+        return $this->errorTitle;
     }
 
     public function getErrorParams(): array
@@ -40,6 +46,7 @@ final class FixedExpensePlanningException extends \RuntimeException implements B
         return new self(
             'No account is marked as the main account. Mark one account as main first.',
             'fixed_expense.plan_no_main_account',
+            'No main account',
         );
     }
 
@@ -53,6 +60,7 @@ final class FixedExpensePlanningException extends \RuntimeException implements B
                 $householdName
             ),
             'fixed_expense.plan_main_not_own',
+            'Main account not ours',
             [
                 '%account%' => $accountNumber,
                 '%household%' => $householdName,
@@ -70,6 +78,7 @@ final class FixedExpensePlanningException extends \RuntimeException implements B
                 $accountNumber
             ),
             'fixed_expense.plan_main_hidden',
+            'Main account hidden',
             ['%account%' => $accountNumber],
             ['account' => $accountNumber],
         );
@@ -89,6 +98,7 @@ final class FixedExpensePlanningException extends \RuntimeException implements B
                 $expenseCurrency
             ),
             'fixed_expense.plan_currency_mismatch',
+            'Currency of the main account differs',
             [
                 '%expense_currency%' => $expenseCurrency,
                 '%account%' => $accountNumber,
@@ -113,6 +123,7 @@ final class FixedExpensePlanningException extends \RuntimeException implements B
                 $date
             ),
             'fixed_expense.plan_duplicate',
+            'Suspected duplicate',
             [
                 '%contractor%' => $contractorName,
                 '%amount%' => $amount,

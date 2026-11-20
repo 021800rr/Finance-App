@@ -2,13 +2,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
+import { pagedList } from '../test/pagedList'
 import { useOperationSearch } from './searchApi'
 
 afterEach(() => { vi.unstubAllGlobals() })
 
 it('keeps results between pages of one phrase, but hides them when the phrase changes', async () => {
   const fetch = vi.fn()
-    .mockResolvedValueOnce(Response.json({ member: [], totalItems: 42, view: { last: '?page=3' } }))
+    .mockResolvedValueOnce(Response.json(pagedList([], 42, 3)))
     .mockImplementation(() => new Promise(() => {}))
   vi.stubGlobal('fetch', fetch)
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })

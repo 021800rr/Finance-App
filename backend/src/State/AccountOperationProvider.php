@@ -138,7 +138,7 @@ final readonly class AccountOperationProvider implements ProviderInterface
     }
 
     /**
-     * The page number from ?page=, at most MAX_PAGE. Anything but a positive whole number is refused (422).
+     * The page number from ?page=, at most MAX_PAGE. Anything but a positive whole number is refused (400).
      */
     private function requestedPage(?Request $request): int
     {

@@ -63,16 +63,50 @@ final readonly class JwtDecorator implements OpenApiFactoryInterface
         $securitySchemes['JWT'] = new SecurityScheme(
             type: 'http',
             description: 'Token obtained from POST /api/login_check or POST /api/token/refresh. A browser sends it '
-                .'in the HttpOnly BEARER cookie instead.',
+                .'in the HttpOnly BEARER cookie instead (BearerCookie).',
             scheme: 'bearer',
             bearerFormat: 'JWT',
+        );
+        $securitySchemes['BearerCookie'] = new SecurityScheme(
+            type: 'apiKey',
+            description: 'The same JWT in the HttpOnly BEARER cookie the login and the refresh set (Path=/api).',
+            name: 'BEARER',
+            in: 'cookie',
         );
 
         $openApi = $openApi
             ->withComponents($components->withSecuritySchemes($securitySchemes))
-            ->withPaths($this->withTokenPaths($openApi->getPaths()));
+            ->withPaths($this->withCookieAlternative($this->withTokenPaths($openApi->getPaths())));
 
         return $openApi->withTags($this->reorderTags($openApi->getTags()));
+    }
+
+    /**
+     * An address that takes the JWT takes it either way: in the Authorization header or in the BEARER cookie.
+     */
+    private function withCookieAlternative(Paths $paths): Paths
+    {
+        $documented = new Paths();
+        // Paths::addPath() takes nothing but a PathItem; getPaths() just does not say so in its type.
+        /** @var array<string, PathItem> $pathItems */
+        $pathItems = $paths->getPaths();
+        foreach ($pathItems as $path => $pathItem) {
+            $documented->addPath($path, $pathItem
+                ->withGet($this->withCookie($pathItem->getGet()))
+                ->withPost($this->withCookie($pathItem->getPost()))
+                ->withPut($this->withCookie($pathItem->getPut()))
+                ->withPatch($this->withCookie($pathItem->getPatch()))
+                ->withDelete($this->withCookie($pathItem->getDelete())));
+        }
+
+        return $documented;
+    }
+
+    private function withCookie(?Operation $operation): ?Operation
+    {
+        return null !== $operation && [['JWT' => []]] === $operation->getSecurity()
+            ? $operation->withSecurity([['JWT' => []], ['BearerCookie' => []]])
+            : $operation;
     }
 
     private function withTokenPaths(Paths $paths): Paths

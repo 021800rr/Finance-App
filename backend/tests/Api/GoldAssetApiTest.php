@@ -48,7 +48,7 @@ final class GoldAssetApiTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         $error = self::decodeObject((string) $this->client->getResponse()->getContent());
-        $violations = self::rowsAt($error, 'violations');
+        $violations = self::fieldErrors($error);
         self::assertCount(1, $violations);
         self::assertSame('description', self::stringAt($violations[0], 'propertyPath'));
         self::assertSame('Please enter a description.', self::stringAt($violations[0], 'message'));
@@ -215,7 +215,7 @@ final class GoldAssetApiTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         $error = self::decodeObject((string) $this->client->getResponse()->getContent());
-        $violations = self::rowsAt($error, 'violations');
+        $violations = self::fieldErrors($error);
         self::assertCount(1, $violations);
         self::assertSame($field, self::stringAt($violations[0], 'propertyPath'));
         self::assertSame(
@@ -293,7 +293,7 @@ final class GoldAssetApiTest extends WebTestCase
         self::assertSame(
             ['formId' => 'gold_form.not_found'],
             array_column(
-                self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'violations'),
+                self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent())),
                 'code',
                 'propertyPath',
             ),
@@ -339,7 +339,7 @@ final class GoldAssetApiTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $document = self::decodeObject((string) $this->client->getResponse()->getContent());
         $patch = self::objectAt($document, 'paths', '/api/gold_assets/{id}', 'patch');
-        self::assertSame([['JWT' => []]], $patch['security']);
+        self::assertSame([['JWT' => []], ['BearerCookie' => []]], $patch['security']);
         self::assertArrayHasKey('application/merge-patch+json', self::objectAt($patch, 'requestBody', 'content'));
         self::assertStringContainsString(
             'Omitted fields keep their current values.',
@@ -379,8 +379,8 @@ final class GoldAssetApiTest extends WebTestCase
     {
         $this->client->request('POST', '/api/gold_assets', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
-            'HTTP_ACCEPT' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_ACCEPT' => 'application/json',
         ], content: json_encode($body, JSON_THROW_ON_ERROR));
     }
 
@@ -392,7 +392,7 @@ final class GoldAssetApiTest extends WebTestCase
         $this->client->request('PATCH', '/api/gold_assets/'.$id, server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
             'CONTENT_TYPE' => 'application/merge-patch+json',
-            'HTTP_ACCEPT' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/json',
         ], content: json_encode((object) $body, JSON_THROW_ON_ERROR));
     }
 }

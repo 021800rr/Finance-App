@@ -12,8 +12,9 @@ use Symfony\Component\Validator\ConstraintViolationListInterface;
 use Symfony\Component\Validator\Exception\InvalidArgumentException;
 
 /**
- * Gives every API validation violation a stable "code" and its "params", so a client can show its own message
- * without parsing the English "message".
+ * Turns API Platform's violation rows into the items of "errors" (the shape of RFC 9457's example): "detail", where
+ * the violation is ("pointer" into the content as a JSON Pointer, RFC 6901, or "parameter" of the query), a stable
+ * "code" and its "params", so a client can show its own message without parsing the English "detail".
  *
  * API Platform puts Symfony's error UUID into "code" (e.g. the same one for every NotNull), which does not tell
  * the fields apart. The code is our translation key when the constraint uses one
@@ -43,27 +44,47 @@ final class ViolationCodes
     }
 
     /**
-     * Rewrites "code" and adds "params" in the normalized violation rows, which API Platform emits one per
-     * violation, in list order.
+     * The items of "errors", from the normalized violation rows, which API Platform emits one per violation, in list
+     * order.
      *
      * @param array<mixed> $rows
+     * @param bool         $inQuery the violations are of query parameters, not of the content
      *
-     * @return array<mixed>
+     * @return list<array<string, mixed>>
      */
-    public static function apply(array $rows, ConstraintViolationListInterface $violations): array
+    public static function errors(array $rows, ConstraintViolationListInterface $violations, bool $inQuery): array
     {
+        $errors = [];
         foreach ($rows as $index => $row) {
             if (!is_array($row) || !is_int($index) || !$violations->has($index)) {
                 continue;
             }
 
             $violation = $violations->get($index);
-            $row['code'] = self::codeFor($violation);
-            $row['params'] = ProblemResponse::jsonParams(self::paramsFor($violation));
-            $rows[$index] = $row;
+            $path = $violation->getPropertyPath();
+            $errors[] = [
+                'detail' => (string) $violation->getMessage(),
+                ...($inQuery ? ['parameter' => $path] : ['pointer' => self::pointer($path)]),
+                'code' => self::codeFor($violation),
+                'params' => ProblemResponse::jsonParams(self::paramsFor($violation)),
+            ];
         }
 
-        return $rows;
+        return $errors;
+    }
+
+    /**
+     * A property path of the validator ("lines[0].amount") as a JSON Pointer in its URI fragment form, as in RFC
+     * 9457's example ("#/lines/0/amount"); "#" is the whole content (RFC 6901, sections 4 to 6).
+     */
+    public static function pointer(string $propertyPath): string
+    {
+        $tokens = preg_split('/\.|\[|\]/', $propertyPath, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return '#'.implode('', array_map(
+            static fn (string $token): string => '/'.rawurlencode(strtr($token, ['~' => '~0', '/' => '~1'])),
+            $tokens,
+        ));
     }
 
     private static function codeFor(ConstraintViolationInterface $violation): string

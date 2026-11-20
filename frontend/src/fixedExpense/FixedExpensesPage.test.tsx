@@ -135,7 +135,7 @@ describe('FixedExpensesPage', () => {
 
   it('plans the next month once confirmed, and opens the history of the main account', async () => {
     serve([NETFLIX], (method, path) => method === 'POST' && path === '/api/fixed_expenses/plan'
-      ? Response.json({ accountId: 1, month: '2026-12', createdCount: 1 }, { status: 201 })
+      ? Response.json({ accountId: 1, month: '2026-12', createdCount: 1 }, { status: 200 })
       : undefined)
     showPage()
 
@@ -157,7 +157,7 @@ describe('FixedExpensesPage', () => {
   it('says why the API refused to plan', async () => {
     const params = { contractor: 'Netflix', amount: '-49,99', date: '2026-12-15' }
     serve([NETFLIX], (method, path) => method === 'POST' && path === '/api/fixed_expenses/plan'
-      ? Response.json({ errorCode: 'fixed_expense.plan_duplicate', params }, { status: 409 })
+      ? Response.json({ type: 'urn:finance-app:problem:fixed_expense.plan_duplicate', ...params }, { status: 409 })
       : undefined)
     showPage()
 

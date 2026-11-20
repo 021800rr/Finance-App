@@ -3,9 +3,18 @@ import type { components } from './generated/api'
 // The backend keeps both tokens in HttpOnly cookies (BEARER and refresh_token). The browser stores them and sends
 // them with every request to /api by itself; this code never sees them.
 
-// Error types come from OpenAPI; untrusted responses are normalized separately below.
-type Problem = Partial<components['schemas']['ConstraintViolation'] & components['schemas']['Error']>
-export type Violation = NonNullable<Problem['violations']>[number]
+// A refused value of the API, as the forms use it: the field (a property, "lines[0].amount", or a query parameter),
+// the English text, a stable code and the values for the message.
+export type Violation = { propertyPath: string; message: string; code: string; params: Record<string, string> }
+
+// What the app reads from an error of the API (RFC 9457 Problem Details): the code at the end of its "type", the
+// members of that type as the values of the message, and the refused values of a validation problem.
+type Problem = { errorCode?: string; detail?: string; params: Record<string, string>; violations: Violation[] }
+
+const TYPE_PREFIX = 'urn:finance-app:problem:'
+
+// The members every problem has, and "errors" of a validation problem; any other member belongs to the type.
+const STANDARD_MEMBERS = new Set(['type', 'title', 'status', 'detail', 'instance', 'errors'])
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -19,31 +28,45 @@ function stringParams(value: unknown): Record<string, string> {
     : {}
 }
 
-// A proxy may send HTML, null or JSON unrelated to our API. Keep usable details without trusting that shape.
-function readProblem(value: unknown): Problem {
-  if (!isRecord(value)) {
-    return {}
+// A JSON Pointer of the API in its URI fragment form (RFC 6901) as the property it names: '#/lines/0/amount' →
+// 'lines[0].amount'.
+function propertyOf(pointer: string): string {
+  return pointer.split('/').slice(1)
+    .map((token) => decodeURIComponent(token).replace(/~1/g, '/').replace(/~0/g, '~'))
+    .map((token, index) => (/^\d+$/.test(token) ? `[${token}]` : `${index === 0 ? '' : '.'}${token}`))
+    .join('')
+}
+
+function readViolation(item: unknown): Violation | undefined {
+  if (!isRecord(item) || typeof item.detail !== 'string') {
+    return undefined
   }
-  const violations: Violation[] = []
-  if (Array.isArray(value.violations)) {
-    const items: unknown[] = value.violations
-    for (const item of items) {
-      if (isRecord(item) && typeof item.propertyPath === 'string' && typeof item.message === 'string') {
-        violations.push({
-          propertyPath: item.propertyPath,
-          message: item.message,
-          code: typeof item.code === 'string' ? item.code : '',
-          params: stringParams(item.params),
-        })
-      }
-    }
+  const where = typeof item.pointer === 'string' ? propertyOf(item.pointer) : item.parameter
+  if (typeof where !== 'string') {
+    return undefined
   }
 
   return {
-    ...(typeof value.errorCode === 'string' && { errorCode: value.errorCode }),
+    propertyPath: where,
+    message: item.detail,
+    code: typeof item.code === 'string' ? item.code : '',
+    params: stringParams(item.params),
+  }
+}
+
+// A proxy may send HTML, null or JSON unrelated to our API. Keep usable details without trusting that shape.
+function readProblem(value: unknown): Problem {
+  if (!isRecord(value)) {
+    return { params: {}, violations: [] }
+  }
+  const items: unknown[] = Array.isArray(value.errors) ? value.errors : []
+
+  return {
+    ...(typeof value.type === 'string' && value.type.startsWith(TYPE_PREFIX)
+      && { errorCode: value.type.slice(TYPE_PREFIX.length) }),
     ...(typeof value.detail === 'string' && { detail: value.detail }),
-    params: stringParams(value.params),
-    violations,
+    params: stringParams(Object.fromEntries(Object.entries(value).filter(([name]) => !STANDARD_MEMBERS.has(name)))),
+    violations: items.map(readViolation).filter((violation) => violation !== undefined),
   }
 }
 
@@ -52,8 +75,8 @@ function readJson<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>
 }
 
-// An answer of the API other than 2xx: the errorCode of its body with the values of its message, and for 422 the
-// field errors.
+// An answer of the API other than 2xx: the code of its problem type with the values of its message, and for a
+// validation problem the field errors.
 export class ApiError extends Error {
   readonly status: number
   readonly errorCode: string | undefined
@@ -84,8 +107,8 @@ async function apiError(method: string, path: string, response: Response): Promi
     response.status,
     problem.errorCode,
     problem.detail ?? `${method} ${path}: ${response.status}`,
-    problem.params ?? {},
-    problem.violations ?? [],
+    problem.params,
+    problem.violations,
   )
 }
 
@@ -138,23 +161,19 @@ export async function getJson<T>(path: string): Promise<T> {
 // One page of a list of the API.
 export type Page<T> = { items: T[]; totalItems: number; lastPage: number }
 
-type JsonLdCollection<T> = { member: T[]; totalItems: number; view?: { last?: string } }
+// A page of a list as the API gives it: the rows in "content", the numbers of the page in "page" (the other pages
+// are also in the Link header).
+type PagedList<T> = { content: T[]; page: { size: number; number: number; totalElements: number; totalPages: number } }
 
-// Reads one page of a list. Plain JSON gives the rows only; JSON-LD also says how many rows there are and links the
-// last page ("view.last", absent when there is just one page).
+// Reads one page of a list: its rows, how many rows there are in all, and the number of the last page.
 export async function getPage<T>(path: string): Promise<Page<T>> {
-  const response = await apiFetch(path, { headers: { Accept: 'application/ld+json' } })
+  const response = await apiFetch(path, { headers: { Accept: 'application/json' } })
   if (!response.ok) {
     throw await apiError('GET', path, response)
   }
-  const collection = await readJson<JsonLdCollection<T>>(response)
-  const last = collection.view?.last
+  const list = await readJson<PagedList<T>>(response)
 
-  return {
-    items: collection.member,
-    totalItems: collection.totalItems,
-    lastPage: last === undefined ? 1 : Number(new URL(last, window.location.origin).searchParams.get('page') ?? 1),
-  }
+  return { items: list.content, totalItems: list.page.totalElements, lastPage: Math.max(1, list.page.totalPages) }
 }
 
 // Creates a resource and returns it as the API stored it (with its id).

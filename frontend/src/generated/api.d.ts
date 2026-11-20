@@ -129,7 +129,7 @@ export interface paths {
         };
         /**
          * Retrieves the collection of AccountOperation resources.
-         * @description Lists the operations of one account, newest first, 20 per page. Responds with 404 when the account does not exist, and with 422 when page is not a positive whole number.
+         * @description Lists the operations of one account, newest first, 20 per page. Responds with 404 when the account does not exist, and with 400 when page is not a positive whole number.
          */
         get: operations["api_accounts_accountIdoperations_get_collection"];
         put?: never;
@@ -235,7 +235,7 @@ export interface paths {
         put?: never;
         /**
          * Creates a Contractor resource.
-         * @description Creates a new contractor. Fails with 409 and errorCode "contractor.name_not_unique" if a contractor with this name already exists.
+         * @description Creates a new contractor. Fails with 409 and type "contractor.name_not_unique" if a contractor with this name already exists.
          */
         post: operations["api_contractors_post"];
         delete?: never;
@@ -363,35 +363,6 @@ export interface paths {
          * @description Deletes an exchange rate entry.
          */
         delete: operations["api_currency_exchange_rates_id_delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/errors/{status}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Describes an HTTP error status.
-         * @description Send your JWT token, as for every other address:
-         *
-         *     ```bash
-         *     BASE_URL=http://localhost:8081 # the address of your instance
-         *     curl "$BASE_URL/api/errors/409" \
-         *       -H "Authorization: Bearer $TOKEN" \
-         *       -H 'Accept: application/ld+json'
-         *     ```
-         *
-         *     It describes only the HTTP status (`errorCode` `http.conflict` for 409), not the specific problem.
-         */
-        get: operations["api_errors_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -796,9 +767,29 @@ export interface paths {
         put?: never;
         /**
          * Creates a Transfer resource.
-         * @description Creates a transfer. If fromAccount and toAccount have the same currency, amountTo is generated automatically and must not be sent. If currencies differ, amountTo is required. A hidden account cannot be chosen on either side: such a request is rejected with 422 on fromAccountId or toAccountId.
+         * @description Creates a transfer; Location names it (GET /api/transfers/{transactionUuid}). If fromAccount and toAccount have the same currency, amountTo is generated automatically and must not be sent. If currencies differ, amountTo is required. A hidden account cannot be chosen on either side: such a request is rejected with 422 on fromAccountId or toAccountId.
          */
         post: operations["api_transfers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transfers/{transactionUuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Retrieves a Transfer resource.
+         * @description A transfer: its two operations, debit and credit. The address POST /api/transfers names in Location.
+         */
+        get: operations["api_transfers_transactionUuid_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -912,97 +903,6 @@ export interface components {
              * @example true
              */
             isMain?: boolean;
-        };
-        /** @description Lists all accounts, ordered by bank, type, currency and account number. */
-        "Account.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /**
-             * @description Account id.
-             * @example 1
-             */
-            id: number;
-            /**
-             * @description Account number.
-             * @example 12 3456 7890 1234 5678 9012 3456
-             */
-            accountNumber: string;
-            /**
-             * @description Whether the account is hidden from the summary/list views. A hidden account cannot be chosen for a new operation or transfer.
-             * @example false
-             */
-            hidden: boolean;
-            /**
-             * @description Whether this is the main account.
-             * @example true
-             */
-            isMain: boolean;
-            /**
-             * @description Bank name.
-             * @example mBank
-             */
-            bankName: string;
-            /**
-             * @description Currency code.
-             * @example PLN
-             */
-            currencyCode: string;
-            /**
-             * @description Account type name.
-             * @example Konto osobiste
-             */
-            typeName: string;
-            /**
-             * @description Household name.
-             * @example Dom
-             */
-            householdName: string;
-            /**
-             * @description Human-readable label combining bank, type, currency and account number.
-             * @example mBank / Konto osobiste / PLN / 12 3456 7890 1234 5678 9012 3456
-             */
-            displayLabel: string;
-            /**
-             * @description Balance including operations dated in the future. Only in GET /api/accounts/{id}.
-             * @example {
-             *       "amount": "4935.00",
-             *       "currency": "PLN"
-             *     }
-             */
-            saldo?: {
-                /**
-                 * @description A decimal string.
-                 * @example 4935.00
-                 */
-                amount: string;
-                /**
-                 * @description Currency code.
-                 * @example PLN
-                 */
-                currency: string;
-            };
-            /**
-             * @description Balance counting only operations dated today or earlier. Only in GET /api/accounts/{id}.
-             * @example {
-             *       "amount": "4965.00",
-             *       "currency": "PLN"
-             *     }
-             */
-            saldoToday?: {
-                /**
-                 * @description A decimal string.
-                 * @example 4935.00
-                 */
-                amount: string;
-                /**
-                 * @description Currency code.
-                 * @example PLN
-                 */
-                currency: string;
-            };
-            /**
-             * @description True when saldo and saldoToday differ, i.e. future-dated operations exist. Only in GET /api/accounts/{id}.
-             * @example true
-             */
-            hasFutureOperations?: boolean;
         };
         /** @description Searches the operations of all accounts, newest first, 20 per page. The search text q is required; page must be a positive whole number. To list the operations of one account use /accounts/{accountId}/operations. */
         AccountOperation: {
@@ -1145,79 +1045,7 @@ export interface components {
              */
             confirmed?: boolean;
         };
-        /** @description Searches the operations of all accounts, newest first, 20 per page. The search text q is required; page must be a positive whole number. To list the operations of one account use /accounts/{accountId}/operations. */
-        "AccountOperation.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /**
-             * @description Operation id.
-             * @example 1
-             */
-            id: number;
-            /**
-             * @description Id of the account this operation belongs to.
-             * @example 1
-             */
-            accountId: number;
-            /**
-             * @description Id of the contractor.
-             * @example 10
-             */
-            contractorId: number;
-            /**
-             * @description Name of the contractor.
-             * @example Example contractor
-             */
-            contractorName: string;
-            /**
-             * @description Operation date, format YYYY-MM-DD.
-             * @example 2026-09-29
-             */
-            operationDate: string;
-            /**
-             * @description Amount as a decimal string: positive for income, negative for an expense.
-             * @example -50.00
-             */
-            amount: string;
-            /**
-             * @description Currency code, the one of the account.
-             * @example PLN
-             */
-            currencyCode: string;
-            /**
-             * @description Free-text note; left out when there is none.
-             * @example Rent for September
-             */
-            description?: string;
-            /**
-             * @description Whether the operation is confirmed.
-             * @example false
-             */
-            confirmed: boolean;
-            /**
-             * @description Id shared with the other operation of a transfer; left out for an operation that is not part of one.
-             * @example 01a17299-9aed-7df8-ba39-d49647205525
-             */
-            transactionUuid?: string;
-            /**
-             * @description Page in account history (newest date/id first). Only in GET other-side.
-             * @example 2
-             */
-            accountHistoryPage?: number;
-        };
         AccountType: {
-            /**
-             * @description Account type id.
-             * @example 1
-             */
-            id: number;
-            /**
-             * @description Name of the type.
-             * @example ROR
-             */
-            name: string;
-            /** @description Whether the accounts of this type count as retirement savings. */
-            isRetirement: boolean;
-        };
-        "AccountType.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
              * @description Account type id.
              * @example 1
@@ -1243,45 +1071,32 @@ export interface components {
              */
             name: string;
         };
-        "Bank.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /**
-             * @description Bank id.
-             * @example 1
-             */
-            id: number;
-            /**
-             * @description Bank name.
-             * @example Example bank
-             */
-            name: string;
-        };
-        /** @description Unprocessable entity */
+        /** @description A validation problem (type "urn:finance-app:problem:validation.failed"). */
         ConstraintViolation: {
-            /** @description HTTP status code of the response. */
-            readonly status?: number;
-            violations?: {
-                /** @description The property path of the violation */
-                propertyPath: string;
-                /** @description The message associated with the violation */
-                message: string;
-                /** @description Stable code of the violation, e.g. "transfer.to_account_required" or "validation.invalid_type". */
+            /** @description The problem type: "urn:finance-app:problem:" and its code, e.g. "transfer.accounts_must_differ", "validation.failed" or "http.not_found". A client tells the problems apart by it (RFC 9457, section 3.1.1). */
+            readonly type: string;
+            /** @description A short summary of the problem type, e.g. "Validation failed"; the name of the HTTP status for the "http." types. */
+            readonly title: string;
+            /** @description The HTTP status code. */
+            readonly status: number;
+            /** @description This occurrence in English, for people (curl, Postman). */
+            readonly detail: string;
+            readonly errors: {
+                /** @description The refusal in English. */
+                detail: string;
+                /** @description The refused value in the content, as a JSON Pointer (RFC 6901) in its URI fragment form, e.g. "#/amountFrom". Not with "parameter". */
+                pointer?: string;
+                /** @description The refused query parameter, e.g. "page". Not with "pointer". */
+                parameter?: string;
+                /** @description Stable code of the refusal, e.g. "transfer.to_account_required" or "validation.invalid_type". */
                 code: string;
-                /** @description Values for the message: only "limit", "min", "max", "type"; never the submitted value. */
-                readonly params: {
+                /** @description Values for the message: only "limit", "min", "max", "type" (a JSON type, e.g. "number|null"); never the submitted value. */
+                params: {
                     [key: string]: string;
                 };
             }[];
-            readonly detail?: string;
-            /** @description Problem type: "urn:finance-app:problem:" followed by errorCode. */
-            readonly type?: string;
-            /** @description Name of the HTTP status, e.g. "Unprocessable Content". */
-            readonly title?: string;
-            /** @description Stable code of the problem, e.g. "transfer.accounts_must_differ", "validation.failed" or "http.not_found". */
-            readonly errorCode: string;
-            /** @description Values for the message, e.g. {"fromCurrency": "PLN"}. */
-            readonly params: {
-                [key: string]: string;
-            };
+        } & {
+            [key: string]: string;
         };
         /** @description Searches contractors by a part of the name, as the contractor field of the forms does. The search text name is required: there is no list of all contractors. */
         Contractor: {
@@ -1296,7 +1111,7 @@ export interface components {
              */
             name: string;
         };
-        /** @description Creates a new contractor. Fails with 409 and errorCode "contractor.name_not_unique" if a contractor with this name already exists. */
+        /** @description Creates a new contractor. Fails with 409 and type "contractor.name_not_unique" if a contractor with this name already exists. */
         "Contractor.ContractorInput": {
             /**
              * @description Contractor name. Must be unique. Required, 1-255 characters.
@@ -1304,29 +1119,8 @@ export interface components {
              */
             name: string | null;
         };
-        /** @description Searches contractors by a part of the name, as the contractor field of the forms does. The search text name is required: there is no list of all contractors. */
-        "Contractor.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /**
-             * @description Contractor id.
-             * @example 1
-             */
-            id: number;
-            /**
-             * @description Contractor name, unique.
-             * @example ACME Sp. z o.o.
-             */
-            name: string;
-        };
         /** @description Lists all currencies, ordered by code. */
         Currency: {
-            /**
-             * @description ISO 4217 currency code.
-             * @example PLN
-             */
-            code: string;
-        };
-        /** @description Lists all currencies, ordered by code. */
-        "Currency.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
              * @description ISO 4217 currency code.
              * @example PLN
@@ -1384,50 +1178,18 @@ export interface components {
              */
             rateToPln: string | null;
         };
-        /** @description Exchange rate of a currency to PLN for a given bank and date. */
-        "CurrencyExchangeRate.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /**
-             * @description Rate id.
-             * @example 1
-             */
-            id: number;
-            /**
-             * @description Id of the bank this rate applies to.
-             * @example 1
-             */
-            bankId: number;
-            /**
-             * @description Currency code, e.g. "CHF".
-             * @example CHF
-             */
-            currencyCode: string;
-            /**
-             * @description Rate date, format YYYY-MM-DD.
-             * @example 2026-09-29
-             */
-            rateDate: string;
-            /**
-             * @description Exchange rate to PLN as a decimal string with 4 decimal places, e.g. "4.3210".
-             * @example 4.3210
-             */
-            rateToPln: string;
-        };
-        /** @description A representation of common errors. */
+        /** @description A problem (RFC 9457). Other members than these belong to the problem type and are strings, e.g. "minutes" of auth.too_many_login_attempts. */
         Error: {
-            /** @description Name of the HTTP status, e.g. "Unprocessable Content". */
-            readonly title?: string;
-            /** @description A human-readable explanation specific to this occurrence of the problem. */
-            readonly detail?: string | null;
-            /** @description HTTP status code of the response. */
-            readonly status?: number;
-            /** @description Problem type: "urn:finance-app:problem:" followed by errorCode. */
-            readonly type?: string;
-            /** @description Stable code of the problem, e.g. "transfer.accounts_must_differ", "validation.failed" or "http.not_found". */
-            readonly errorCode: string;
-            /** @description Values for the message, e.g. {"fromCurrency": "PLN"}. */
-            readonly params: {
-                [key: string]: string;
-            };
+            /** @description The problem type: "urn:finance-app:problem:" and its code, e.g. "transfer.accounts_must_differ", "validation.failed" or "http.not_found". A client tells the problems apart by it (RFC 9457, section 3.1.1). */
+            readonly type: string;
+            /** @description A short summary of the problem type, e.g. "Validation failed"; the name of the HTTP status for the "http." types. */
+            readonly title: string;
+            /** @description The HTTP status code. */
+            readonly status: number;
+            /** @description This occurrence in English, for people (curl, Postman). */
+            readonly detail: string;
+        } & {
+            [key: string]: string;
         };
         /** @description Lists all fixed expenses, ordered by day then by id descending (same order as the web list). */
         FixedExpense: {
@@ -1533,64 +1295,8 @@ export interface components {
              */
             description?: string | null;
         };
-        /** @description Lists all fixed expenses, ordered by day then by id descending (same order as the web list). */
-        "FixedExpense.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /**
-             * @description Fixed expense id.
-             * @example 1
-             */
-            id: number;
-            /**
-             * @description Id of the contractor.
-             * @example 10
-             */
-            contractorId: number;
-            /**
-             * @description Name of the contractor.
-             * @example Example contractor
-             */
-            contractorName: string;
-            /**
-             * @description Day of the month the expense is due, 1-28.
-             * @example 10
-             */
-            day: number;
-            /**
-             * @description Amount as a decimal string, always negative, in PLN.
-             * @example -200.00
-             */
-            amount: string;
-            /**
-             * @description Currency code, always "PLN".
-             * @example PLN
-             */
-            currencyCode: string;
-            /**
-             * @description Free-text note; left out when there is none.
-             * @example Rent
-             */
-            description?: string;
-        };
         /** @description Creates one operation on the main account for every fixed expense, dated in the next calendar month. Takes no request body. Responds with 409 when no account is marked as main, when the main account is hidden, or when a matching operation already exists (nothing is created then). */
         FixedExpensePlan: {
-            /**
-             * @description Id of the main account the operations were created on.
-             * @example 1
-             */
-            accountId: number;
-            /**
-             * @description Planned month, format YYYY-MM.
-             * @example 2026-11
-             */
-            month: string;
-            /**
-             * @description Number of operations created.
-             * @example 5
-             */
-            createdCount: number;
-        };
-        /** @description Creates one operation on the main account for every fixed expense, dated in the next calendar month. Takes no request body. Responds with 409 when no account is marked as main, when the main account is hidden, or when a matching operation already exists (nothing is created then). */
-        "FixedExpensePlan.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
              * @description Id of the main account the operations were created on.
              * @example 1
@@ -1671,47 +1377,7 @@ export interface components {
              */
             ounces?: string | null;
         };
-        /** @description Lists all gold assets, ordered by id. */
-        "GoldAsset.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /**
-             * @description Gold asset id.
-             * @example 1
-             */
-            id: number;
-            /**
-             * @description Id of the gold form.
-             * @example 1
-             */
-            formId: number;
-            /**
-             * @description Name of the gold form.
-             * @example Sztabka
-             */
-            formName: string;
-            /**
-             * @description Free-text description.
-             * @example Sztabka 1oz
-             */
-            description: string;
-            /**
-             * @description Weight in ounces as a decimal string with 4 decimal places, e.g. "1.5000".
-             * @example 1.0000
-             */
-            ounces: string;
-        };
         GoldForm: {
-            /**
-             * @description Gold form id.
-             * @example 1
-             */
-            id: number;
-            /**
-             * @description Name of the form: a bar, a coin…
-             * @example sztabka
-             */
-            name: string;
-        };
-        "GoldForm.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
              * @description Gold form id.
              * @example 1
@@ -1769,34 +1435,6 @@ export interface components {
              */
             pricePln: string | null;
         };
-        /** @description A historical price point (in PLN) for a gold asset on a given date. */
-        "GoldPrice.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /**
-             * @description Gold price entry id.
-             * @example 1
-             */
-            id: number;
-            /**
-             * @description Id of the gold asset this price applies to.
-             * @example 1
-             */
-            goldAssetId: number;
-            /**
-             * @description Price date, format YYYY-MM-DD.
-             * @example 2026-09-29
-             */
-            priceDate: string;
-            /**
-             * @description Price in PLN as a decimal string, e.g. "250000.00".
-             * @example 250000.00
-             */
-            pricePln: string;
-            /**
-             * @description Currency code, always "PLN".
-             * @example PLN
-             */
-            currencyCode: string;
-        };
         Household: {
             /**
              * @description Household id.
@@ -1811,80 +1449,8 @@ export interface components {
             /** @description Whether its accounts count as own funds in the summary. */
             isOwnFunds: boolean;
         };
-        "Household.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /**
-             * @description Household id.
-             * @example 1
-             */
-            id: number;
-            /**
-             * @description Name of the household.
-             * @example Nasze
-             */
-            name: string;
-            /** @description Whether its accounts count as own funds in the summary. */
-            isOwnFunds: boolean;
-        };
-        HydraCollectionBaseSchema: components["schemas"]["HydraCollectionBaseSchemaNoPagination"] & {
-            /**
-             * @example {
-             *       "@id": "string",
-             *       "@type": "string",
-             *       "first": "string",
-             *       "last": "string",
-             *       "previous": "string",
-             *       "next": "string"
-             *     }
-             */
-            view?: {
-                /** Format: iri-reference */
-                "@id"?: string;
-                "@type"?: string;
-                /** Format: iri-reference */
-                first?: string | null;
-                /** Format: iri-reference */
-                last?: string | null;
-                /** Format: iri-reference */
-                previous?: string | null;
-                /** Format: iri-reference */
-                next?: string | null;
-            };
-        };
-        HydraCollectionBaseSchemaNoPagination: {
-            totalItems?: number;
-            search?: {
-                "@type"?: string;
-                template?: string;
-                variableRepresentation?: string;
-                mapping?: {
-                    "@type"?: string;
-                    variable?: string;
-                    property?: string | null;
-                    required?: boolean;
-                }[];
-            };
-        };
-        HydraItemBaseSchema: {
-            "@context"?: string | ({
-                "@vocab": string;
-                /** @enum {string} */
-                hydra: "http://www.w3.org/ns/hydra/core#";
-            } & {
-                [key: string]: unknown;
-            });
-            "@id": string;
-            "@type": string;
-        };
         /** @description The user the JWT (the "Authorization: Bearer" header or the BEARER cookie) belongs to. A browser cannot read its HttpOnly cookies, so it asks here whether it is logged in: 200 when it is, 401 when it is not. */
         Me: {
-            /**
-             * @description Email of the logged-in user.
-             * @example user@example.com
-             */
-            email: string;
-        };
-        /** @description The user the JWT (the "Authorization: Bearer" header or the BEARER cookie) belongs to. A browser cannot read its HttpOnly cookies, so it asks here whether it is logged in: 200 when it is, 401 when it is not. */
-        "Me.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
             /**
              * @description Email of the logged-in user.
              * @example user@example.com
@@ -1996,206 +1562,6 @@ export interface components {
              */
             accountsMissingRate: string[];
         };
-        /** @description Financial summary across all accounts. By default hidden accounts are excluded from both the accounts list and all totals, mirroring the web app's "Show hidden" toggle. Pass ?showHidden=true to include them. An account row in another currency carries "rate": the bank's latest stored rate to PLN; a PLN account and one whose bank has no rate stored (see "missingRate") have none. "isMain" marks the main account (the ★ in the web app); at most one account has it. "byType", "retirementBalance" and "retirementBalanceWithGold" cover only own-funds accounts; "byHousehold" splits the totals of all accounts (and our gold) by household. */
-        "Summary.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /** @description The accounts, in the order of the web app: their sort order, then account number. */
-            accounts: components["schemas"]["SummaryAccount.jsonld_noid"][];
-            /** @description The totals of the own-funds accounts, by account type name. */
-            byType: {
-                [key: string]: components["schemas"]["SummaryTypeTotal.jsonld_noid"];
-            };
-            /**
-             * @description The total in PLN of each household, by household name; our gold counts in the own-funds one.
-             * @example {
-             *       "Dom": {
-             *         "amount": "15224.09",
-             *         "currency": "PLN"
-             *       },
-             *       "Matka": {
-             *         "amount": "4690.00",
-             *         "currency": "PLN"
-             *       }
-             *     }
-             */
-            byHousehold: {
-                [key: string]: {
-                    /**
-                     * @description A decimal string.
-                     * @example 4935.00
-                     */
-                    amount: string;
-                    /**
-                     * @description Currency code.
-                     * @example PLN
-                     */
-                    currency: string;
-                };
-            };
-            /**
-             * @description Name of the household of our own funds.
-             * @example Dom
-             */
-            ownFundsHouseholdName: string;
-            /**
-             * @description The value in PLN of our gold, by its latest stored prices.
-             * @example {
-             *       "amount": "8650.00",
-             *       "currency": "PLN"
-             *     }
-             */
-            gold: {
-                /**
-                 * @description A decimal string.
-                 * @example 4935.00
-                 */
-                amount: string;
-                /**
-                 * @description Currency code.
-                 * @example PLN
-                 */
-                currency: string;
-            };
-            /**
-             * @description The total in PLN of the own-funds retirement accounts.
-             * @example {
-             *       "amount": "1365.00",
-             *       "currency": "PLN"
-             *     }
-             */
-            retirementBalance: {
-                /**
-                 * @description A decimal string.
-                 * @example 4935.00
-                 */
-                amount: string;
-                /**
-                 * @description Currency code.
-                 * @example PLN
-                 */
-                currency: string;
-            };
-            /**
-             * @description retirementBalance plus gold.
-             * @example {
-             *       "amount": "10015.00",
-             *       "currency": "PLN"
-             *     }
-             */
-            retirementBalanceWithGold: {
-                /**
-                 * @description A decimal string.
-                 * @example 4935.00
-                 */
-                amount: string;
-                /**
-                 * @description Currency code.
-                 * @example PLN
-                 */
-                currency: string;
-            };
-            /**
-             * @description The bank and number of each account in another currency whose bank has no rate to PLN stored, as "<bank> <account number>".
-             * @example [
-             *       "mBank 12 3456 7890 1234 5678 9012 3456"
-             *     ]
-             */
-            accountsMissingRate: string[];
-        };
-        "SummaryAccount.jsonld_noid": {
-            /**
-             * @description Account id.
-             * @example 3
-             */
-            id: number;
-            /**
-             * @description Bank name.
-             * @example mBank
-             */
-            bankName: string;
-            /**
-             * @description Account type name.
-             * @example Wakacje
-             */
-            typeName: string;
-            /**
-             * @description Currency code.
-             * @example CHF
-             */
-            currencyCode: string;
-            /**
-             * @description Account number.
-             * @example 12 3456 7890 1234 5678 9012 3456
-             */
-            accountNumber: string;
-            /**
-             * @description Whether the account is hidden; a hidden one is listed only with ?showHidden=true.
-             * @example false
-             */
-            hidden: boolean;
-            /**
-             * @description Household name.
-             * @example Dom
-             */
-            householdName: string;
-            /**
-             * @description Whether the account holds our own funds: only these count in byType and the retirement balances.
-             * @example true
-             */
-            isOwnFunds: boolean;
-            /**
-             * @description Whether the account type is a retirement one.
-             * @example false
-             */
-            isRetirement: boolean;
-            /**
-             * @description Balance, in the currency of the account.
-             * @example {
-             *       "amount": "1629.00",
-             *       "currency": "CHF"
-             *     }
-             */
-            saldo: {
-                /**
-                 * @description A decimal string.
-                 * @example 4935.00
-                 */
-                amount: string;
-                /**
-                 * @description Currency code.
-                 * @example PLN
-                 */
-                currency: string;
-            };
-            /**
-             * @description True for an account in another currency whose bank has no rate to PLN stored: its balance is left out of the totals in PLN.
-             * @example false
-             */
-            missingRate: boolean;
-            /**
-             * @description Whether this is the main account (the ★ in the web app); at most one account is.
-             * @example false
-             */
-            isMain: boolean;
-            /**
-             * @description The bank's latest stored rate to PLN, for an account in another currency; left out for a PLN account and when the bank has no rate stored (see missingRate).
-             * @example {
-             *       "amount": "4.5590",
-             *       "currency": "PLN"
-             *     }
-             */
-            rate?: {
-                /**
-                 * @description A decimal string.
-                 * @example 4935.00
-                 */
-                amount: string;
-                /**
-                 * @description Currency code.
-                 * @example PLN
-                 */
-                currency: string;
-            };
-        };
         SummaryAccount_noid: {
             /**
              * @description Account id.
@@ -2291,54 +1657,6 @@ export interface components {
                 currency: string;
             };
         };
-        "SummaryTypeTotal.jsonld_noid": {
-            /**
-             * @description The balance in each currency, by currency code.
-             * @example {
-             *       "CHF": {
-             *         "amount": "1629.00",
-             *         "currency": "CHF"
-             *       },
-             *       "PLN": {
-             *         "amount": "1625.04",
-             *         "currency": "PLN"
-             *       }
-             *     }
-             */
-            raw: {
-                [key: string]: {
-                    /**
-                     * @description A decimal string.
-                     * @example 4935.00
-                     */
-                    amount: string;
-                    /**
-                     * @description Currency code.
-                     * @example PLN
-                     */
-                    currency: string;
-                };
-            };
-            /**
-             * @description The sum in PLN; an account whose bank has no rate to PLN is left out.
-             * @example {
-             *       "amount": "9051.65",
-             *       "currency": "PLN"
-             *     }
-             */
-            pln: {
-                /**
-                 * @description A decimal string.
-                 * @example 4935.00
-                 */
-                amount: string;
-                /**
-                 * @description Currency code.
-                 * @example PLN
-                 */
-                currency: string;
-            };
-        };
         SummaryTypeTotal_noid: {
             /**
              * @description The balance in each currency, by currency code.
@@ -2387,7 +1705,7 @@ export interface components {
                 currency: string;
             };
         };
-        /** @description Creates a transfer. If fromAccount and toAccount have the same currency, amountTo is generated automatically and must not be sent. If currencies differ, amountTo is required. A hidden account cannot be chosen on either side: such a request is rejected with 422 on fromAccountId or toAccountId. */
+        /** @description A transfer: its two operations, debit and credit. The address POST /api/transfers names in Location. */
         Transfer: {
             /**
              * @description Id of the account debited.
@@ -2410,7 +1728,7 @@ export interface components {
              */
             description?: string;
             /**
-             * @description Shared id linking the debit and credit operations.
+             * @description Shared id linking the debit and credit operations; identifies the transfer.
              * @example 01a1c8b2-262e-72a9-9ac6-1652e5dffefe
              */
             transactionUuid: string;
@@ -2445,7 +1763,7 @@ export interface components {
              */
             inCurrencyCode: string;
         };
-        /** @description Creates a transfer. If fromAccount and toAccount have the same currency, amountTo is generated automatically and must not be sent. If currencies differ, amountTo is required. A hidden account cannot be chosen on either side: such a request is rejected with 422 on fromAccountId or toAccountId. */
+        /** @description Creates a transfer; Location names it (GET /api/transfers/{transactionUuid}). If fromAccount and toAccount have the same currency, amountTo is generated automatically and must not be sent. If currencies differ, amountTo is required. A hidden account cannot be chosen on either side: such a request is rejected with 422 on fromAccountId or toAccountId. */
         "Transfer.TransferInput": {
             /**
              * @description Id of the account being debited. Required; a hidden account is rejected.
@@ -2474,64 +1792,6 @@ export interface components {
              */
             description?: string | null;
         };
-        /** @description Creates a transfer. If fromAccount and toAccount have the same currency, amountTo is generated automatically and must not be sent. If currencies differ, amountTo is required. A hidden account cannot be chosen on either side: such a request is rejected with 422 on fromAccountId or toAccountId. */
-        "Transfer.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /**
-             * @description Id of the account debited.
-             * @example 1
-             */
-            fromAccountId: number;
-            /**
-             * @description Id of the account credited.
-             * @example 2
-             */
-            toAccountId: number;
-            /**
-             * @description Transfer date, format YYYY-MM-DD.
-             * @example 2026-09-29
-             */
-            operationDate: string;
-            /**
-             * @description Free-text note; left out when there is none.
-             * @example Monthly savings transfer
-             */
-            description?: string;
-            /**
-             * @description Shared id linking the debit and credit operations.
-             * @example 01a1c8b2-262e-72a9-9ac6-1652e5dffefe
-             */
-            transactionUuid: string;
-            /**
-             * @description Id of the created debit (out) operation.
-             * @example 101
-             */
-            outOperationId: number;
-            /**
-             * @description Debited amount as recorded, negative decimal string.
-             * @example -100.00
-             */
-            outAmount: string;
-            /**
-             * @description Currency of the debit operation.
-             * @example PLN
-             */
-            outCurrencyCode: string;
-            /**
-             * @description Id of the created credit (in) operation.
-             * @example 102
-             */
-            inOperationId: number;
-            /**
-             * @description Credited amount as recorded, positive decimal string.
-             * @example 23.00
-             */
-            inAmount: string;
-            /**
-             * @description Currency of the credit operation.
-             * @example CHF
-             */
-            inCurrencyCode: string;
-        };
     };
     responses: never;
     parameters: never;
@@ -2543,10 +1803,7 @@ export type $defs = Record<string, never>;
 export interface operations {
     api_accounts_get_collection: {
         parameters: {
-            query?: {
-                /** @description The collection page number */
-                page?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -2559,15 +1816,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchema"] & {
-                        member: components["schemas"]["Account.jsonld"][];
-                    };
                     "application/json": components["schemas"]["Account"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2577,17 +1840,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -2603,17 +1857,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -2637,13 +1899,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Account.jsonld"];
                     "application/json": components["schemas"]["Account"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2653,17 +1923,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -2679,17 +1940,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -2705,17 +1957,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -2744,7 +2004,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Account.jsonld"];
                     "application/json": components["schemas"]["Account"];
                 };
             };
@@ -2760,23 +2019,16 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.bad_request */
+                        type?: string;
                     };
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2786,17 +2038,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -2812,17 +2055,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -2838,21 +2072,12 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
                 };
             };
-            /** @description Another request changed the main account at the same moment (errorCode account.main_changed_concurrently). */
+            /** @description Another request changed the main account at the same moment (type account.main_changed_concurrently). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2864,17 +2089,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.conflict */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 409
+                         * @example 412
                          * @constant
                          */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -2890,17 +2123,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
                 };
             };
@@ -2920,21 +2144,70 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description AccountOperation collection */
+            /** @description One page of the list. */
             200: {
+                headers: {
+                    /** @description The first, previous, next and last page (RFC 8288), e.g. </api/accounts/1/operations?page=2>; rel="next". "prev" only after the first page, "next" only before the last one. */
+                    Link?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        content: components["schemas"]["AccountOperation"][];
+                        page: {
+                            /**
+                             * @description Rows per page.
+                             * @example 25
+                             */
+                            size: number;
+                            /**
+                             * @description This page, as ?page= names it: 1 is the first.
+                             * @example 1
+                             */
+                            number: number;
+                            /**
+                             * @description Rows on all pages.
+                             * @example 30
+                             */
+                            totalElements: number;
+                            /**
+                             * @description Number of pages.
+                             * @example 2
+                             */
+                            totalPages: number;
+                        };
+                    };
+                };
+            };
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation failed: q is missing, blank, too long or contains a NUL character, or page is not a positive whole number (type validation.failed). */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchema"] & {
-                        member: components["schemas"]["AccountOperation.jsonld"][];
+                    "application/problem+json": components["schemas"]["ConstraintViolation"] & {
+                        /**
+                         * @example 400
+                         * @constant
+                         */
+                        status?: 400;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["AccountOperation"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -2944,17 +2217,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -2970,43 +2234,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
-            /** @description Validation failed: q is missing, blank, too long or contains a NUL character, or page is not a positive whole number (errorCode validation.failed). */
-            422: {
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ConstraintViolation"] & {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 422
+                         * @example 412
                          * @constant
                          */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -3022,7 +2268,6 @@ export interface operations {
         /** @description The new AccountOperation resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["AccountOperation.NewAccountOperationInput"];
                 "application/json": components["schemas"]["AccountOperation.NewAccountOperationInput"];
             };
         };
@@ -3033,7 +2278,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["AccountOperation.jsonld"];
                     "application/json": components["schemas"]["AccountOperation"];
                 };
             };
@@ -3049,23 +2293,16 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.bad_request */
+                        type?: string;
                     };
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3075,17 +2312,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -3101,21 +2329,12 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
-            /** @description Another request stored the same new contractorName at the same moment (errorCode contractor.name_not_unique). Nothing was stored; send the request again. */
+            /** @description Another request stored the same new contractorName at the same moment (type contractor.name_not_unique). Nothing was stored; send the request again. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3127,17 +2346,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.conflict */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 409
+                         * @example 412
                          * @constant
                          */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -3153,17 +2380,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
                 };
             };
@@ -3187,13 +2405,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["AccountOperation.jsonld"];
                     "application/json": components["schemas"]["AccountOperation"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3203,17 +2429,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -3229,17 +2446,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -3255,17 +2463,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -3290,9 +2506,11 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3302,17 +2520,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -3328,17 +2537,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -3354,17 +2554,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -3393,7 +2601,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["AccountOperation.jsonld"];
                     "application/json": components["schemas"]["AccountOperation"];
                 };
             };
@@ -3409,23 +2616,16 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.bad_request */
+                        type?: string;
                     };
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3435,17 +2635,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -3461,17 +2652,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -3487,21 +2669,12 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
                 };
             };
-            /** @description Another request stored the same new contractorName at the same moment (errorCode contractor.name_not_unique). Nothing was stored; send the request again. */
+            /** @description Another request stored the same new contractorName at the same moment (type contractor.name_not_unique). Nothing was stored; send the request again. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3513,17 +2686,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.conflict */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 409
+                         * @example 412
                          * @constant
                          */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -3539,17 +2720,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
                 };
             };
@@ -3573,13 +2745,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["AccountOperation.jsonld"];
                     "application/json": components["schemas"]["AccountOperation"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3589,17 +2769,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -3615,26 +2786,34 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
-            /** @description The operation does not exist (errorCode account_operation.not_found), or it has no other side: it is not part of a transfer, or the other operation was deleted (errorCode account_operation.other_side_not_found). */
+            /** @description The operation does not exist (type account_operation.not_found), or it has no other side: it is not part of a transfer, or the other operation was deleted (type account_operation.other_side_not_found). */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
+                        /**
+                         * @example 412
+                         * @constant
+                         */
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
+                    };
+                };
             };
         };
     };
@@ -3653,21 +2832,70 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description AccountOperation collection */
+            /** @description One page of the list. */
             200: {
+                headers: {
+                    /** @description The first, previous, next and last page (RFC 8288), e.g. </api/accounts/1/operations?page=2>; rel="next". "prev" only after the first page, "next" only before the last one. */
+                    Link?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        content: components["schemas"]["AccountOperation"][];
+                        page: {
+                            /**
+                             * @description Rows per page.
+                             * @example 25
+                             */
+                            size: number;
+                            /**
+                             * @description This page, as ?page= names it: 1 is the first.
+                             * @example 1
+                             */
+                            number: number;
+                            /**
+                             * @description Rows on all pages.
+                             * @example 30
+                             */
+                            totalElements: number;
+                            /**
+                             * @description Number of pages.
+                             * @example 2
+                             */
+                            totalPages: number;
+                        };
+                    };
+                };
+            };
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation failed: page is not a positive whole number (type validation.failed). */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchema"] & {
-                        member: components["schemas"]["AccountOperation.jsonld"][];
+                    "application/problem+json": components["schemas"]["ConstraintViolation"] & {
+                        /**
+                         * @example 400
+                         * @constant
+                         */
+                        status?: 400;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["AccountOperation"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3677,17 +2905,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -3703,17 +2922,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -3724,29 +2934,20 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Validation failed: page is not a positive whole number (errorCode validation.failed). */
-            422: {
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ConstraintViolation"] & {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 422
+                         * @example 412
                          * @constant
                          */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -3754,10 +2955,7 @@ export interface operations {
     };
     api_account_types_get_collection: {
         parameters: {
-            query?: {
-                /** @description The collection page number */
-                page?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -3770,15 +2968,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchema"] & {
-                        member: components["schemas"]["AccountType.jsonld"][];
-                    };
                     "application/json": components["schemas"]["AccountType"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3788,17 +2992,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -3814,17 +3009,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -3848,13 +3051,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["AccountType.jsonld"];
                     "application/json": components["schemas"]["AccountType"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3864,17 +3075,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -3890,17 +3092,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -3916,17 +3109,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -3934,10 +3135,7 @@ export interface operations {
     };
     api_banks_get_collection: {
         parameters: {
-            query?: {
-                /** @description The collection page number */
-                page?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -3950,15 +3148,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchema"] & {
-                        member: components["schemas"]["Bank.jsonld"][];
-                    };
                     "application/json": components["schemas"]["Bank"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -3968,17 +3172,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -3994,17 +3189,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -4028,13 +3231,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Bank.jsonld"];
                     "application/json": components["schemas"]["Bank"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4044,17 +3255,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -4070,17 +3272,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -4096,17 +3289,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -4115,8 +3316,6 @@ export interface operations {
     api_contractors_get_collection: {
         parameters: {
             query: {
-                /** @description The collection page number */
-                page?: number;
                 /** @description Partial, case-insensitive name match (e.g. "Éc" matches "Écolier"). 1-255 characters after trimming. Exact matches come first, then names starting with the text. */
                 name: string;
             };
@@ -4132,15 +3331,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchema"] & {
-                        member: components["schemas"]["Contractor.jsonld"][];
-                    };
                     "application/json": components["schemas"]["Contractor"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation failed: name is blank, too long or contains a NUL character (type validation.failed). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ConstraintViolation"] & {
+                        /**
+                         * @example 400
+                         * @constant
+                         */
+                        status?: 400;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
+                    };
+                };
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4150,17 +3372,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -4176,43 +3389,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
-            /** @description Validation failed: name is blank, too long or contains a NUL character (errorCode validation.failed). */
-            422: {
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ConstraintViolation"] & {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 422
+                         * @example 412
                          * @constant
                          */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -4228,7 +3423,6 @@ export interface operations {
         /** @description The new Contractor resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["Contractor.ContractorInput"];
                 "application/json": components["schemas"]["Contractor.ContractorInput"];
             };
         };
@@ -4239,7 +3433,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Contractor.jsonld"];
                     "application/json": components["schemas"]["Contractor"];
                 };
             };
@@ -4255,23 +3448,16 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.bad_request */
+                        type?: string;
                     };
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4281,17 +3467,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -4307,21 +3484,12 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
-            /** @description A contractor with this name already exists (errorCode contractor.name_not_unique). */
+            /** @description A contractor with this name already exists (type contractor.name_not_unique). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -4333,17 +3501,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.conflict */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 409
+                         * @example 412
                          * @constant
                          */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -4359,17 +3535,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
                 };
             };
@@ -4393,13 +3560,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Contractor.jsonld"];
                     "application/json": components["schemas"]["Contractor"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4409,17 +3584,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -4435,17 +3601,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -4461,17 +3618,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -4479,10 +3644,7 @@ export interface operations {
     };
     api_currencies_get_collection: {
         parameters: {
-            query?: {
-                /** @description The collection page number */
-                page?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -4495,15 +3657,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchema"] & {
-                        member: components["schemas"]["Currency.jsonld"][];
-                    };
                     "application/json": components["schemas"]["Currency"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4513,17 +3681,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -4539,17 +3698,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -4565,7 +3732,6 @@ export interface operations {
         /** @description The new CurrencyExchangeRate resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["CurrencyExchangeRate.CurrencyExchangeRateInput"];
                 "application/json": components["schemas"]["CurrencyExchangeRate.CurrencyExchangeRateInput"];
             };
         };
@@ -4576,7 +3742,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["CurrencyExchangeRate.jsonld"];
                     "application/json": components["schemas"]["CurrencyExchangeRate"];
                 };
             };
@@ -4592,23 +3757,16 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.bad_request */
+                        type?: string;
                     };
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4618,17 +3776,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -4644,17 +3793,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -4670,17 +3827,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
                 };
             };
@@ -4701,15 +3849,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchemaNoPagination"] & {
-                        member: components["schemas"]["CurrencyExchangeRate.jsonld"][];
-                    };
                     "application/json": components["schemas"]["CurrencyExchangeRate"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4719,17 +3873,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -4745,17 +3890,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -4776,15 +3929,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchemaNoPagination"] & {
-                        member: components["schemas"]["CurrencyExchangeRate.jsonld"][];
-                    };
                     "application/json": components["schemas"]["CurrencyExchangeRate"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4794,17 +3953,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -4820,17 +3970,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -4854,13 +4012,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["CurrencyExchangeRate.jsonld"];
                     "application/json": components["schemas"]["CurrencyExchangeRate"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4870,17 +4036,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -4896,17 +4053,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -4922,17 +4070,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -4957,9 +4113,11 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -4969,17 +4127,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -4995,17 +4144,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -5021,70 +4161,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
                 };
             };
-        };
-    };
-    api_errors_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /**
-                 * @description HTTP status of the error, e.g. 409.
-                 * @example 409
-                 */
-                status: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The general description of this HTTP status. The response has status 200: this address describes an error, it does not report one. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/ld+json": components["schemas"]["Error"];
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
-            401: {
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 401
+                         * @example 412
                          * @constant
                          */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -5092,10 +4187,7 @@ export interface operations {
     };
     api_fixed_expenses_get_collection: {
         parameters: {
-            query?: {
-                /** @description The collection page number */
-                page?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -5108,15 +4200,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchema"] & {
-                        member: components["schemas"]["FixedExpense.jsonld"][];
-                    };
                     "application/json": components["schemas"]["FixedExpense"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -5126,17 +4224,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -5152,17 +4241,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -5178,7 +4275,6 @@ export interface operations {
         /** @description The new FixedExpense resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["FixedExpense.FixedExpenseInput"];
                 "application/json": components["schemas"]["FixedExpense.FixedExpenseInput"];
             };
         };
@@ -5189,7 +4285,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["FixedExpense.jsonld"];
                     "application/json": components["schemas"]["FixedExpense"];
                 };
             };
@@ -5205,23 +4300,16 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.bad_request */
+                        type?: string;
                     };
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -5231,17 +4319,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -5257,21 +4336,12 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
-            /** @description Another request stored the same new contractorName at the same moment (errorCode contractor.name_not_unique). Nothing was stored; send the request again. */
+            /** @description Another request stored the same new contractorName at the same moment (type contractor.name_not_unique). Nothing was stored; send the request again. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5283,17 +4353,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.conflict */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 409
+                         * @example 412
                          * @constant
                          */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -5309,17 +4387,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
                 };
             };
@@ -5343,13 +4412,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["FixedExpense.jsonld"];
                     "application/json": components["schemas"]["FixedExpense"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -5359,17 +4436,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -5385,17 +4453,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -5411,17 +4470,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -5446,9 +4513,11 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -5458,17 +4527,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -5484,17 +4544,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -5510,17 +4561,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -5549,7 +4608,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["FixedExpense.jsonld"];
                     "application/json": components["schemas"]["FixedExpense"];
                 };
             };
@@ -5565,23 +4623,16 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.bad_request */
+                        type?: string;
                     };
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -5591,17 +4642,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -5617,17 +4659,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -5643,21 +4676,12 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
                 };
             };
-            /** @description Another request stored the same new contractorName at the same moment (errorCode contractor.name_not_unique). Nothing was stored; send the request again. */
+            /** @description Another request stored the same new contractorName at the same moment (type contractor.name_not_unique). Nothing was stored; send the request again. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5669,17 +4693,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.conflict */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 409
+                         * @example 412
                          * @constant
                          */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -5695,17 +4727,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
                 };
             };
@@ -5721,12 +4744,11 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description FixedExpensePlan resource created */
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["FixedExpensePlan.jsonld"];
                     "application/json": components["schemas"]["FixedExpensePlan"];
                 };
             };
@@ -5742,23 +4764,16 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.bad_request */
+                        type?: string;
                     };
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -5768,17 +4783,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -5794,21 +4800,12 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
-            /** @description The expenses cannot be planned (errorCode fixed_expense.plan_*). Nothing was created. */
+            /** @description The expenses cannot be planned (type fixed_expense.plan_*). Nothing was created. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -5820,17 +4817,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.conflict */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 409
+                         * @example 412
                          * @constant
                          */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -5846,17 +4851,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
                 };
             };
@@ -5864,10 +4860,7 @@ export interface operations {
     };
     api_gold_assets_get_collection: {
         parameters: {
-            query?: {
-                /** @description The collection page number */
-                page?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -5880,15 +4873,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchema"] & {
-                        member: components["schemas"]["GoldAsset.jsonld"][];
-                    };
                     "application/json": components["schemas"]["GoldAsset"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -5898,17 +4897,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -5924,17 +4914,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -5950,7 +4948,6 @@ export interface operations {
         /** @description The new GoldAsset resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["GoldAsset.GoldAssetInput"];
                 "application/json": components["schemas"]["GoldAsset.GoldAssetInput"];
             };
         };
@@ -5961,7 +4958,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["GoldAsset.jsonld"];
                     "application/json": components["schemas"]["GoldAsset"];
                 };
             };
@@ -5977,23 +4973,16 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.bad_request */
+                        type?: string;
                     };
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6003,17 +4992,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -6029,17 +5009,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -6055,17 +5043,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
                 };
             };
@@ -6089,13 +5068,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["GoldAsset.jsonld"];
                     "application/json": components["schemas"]["GoldAsset"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6105,17 +5092,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -6131,17 +5109,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -6157,17 +5126,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -6192,9 +5169,11 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6204,17 +5183,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -6230,17 +5200,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -6256,17 +5217,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -6295,7 +5264,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["GoldAsset.jsonld"];
                     "application/json": components["schemas"]["GoldAsset"];
                 };
             };
@@ -6311,23 +5279,16 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.bad_request */
+                        type?: string;
                     };
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6337,17 +5298,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -6363,17 +5315,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -6389,17 +5332,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -6415,17 +5366,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
                 };
             };
@@ -6433,10 +5375,7 @@ export interface operations {
     };
     api_gold_forms_get_collection: {
         parameters: {
-            query?: {
-                /** @description The collection page number */
-                page?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -6449,15 +5388,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchema"] & {
-                        member: components["schemas"]["GoldForm.jsonld"][];
-                    };
                     "application/json": components["schemas"]["GoldForm"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6467,17 +5412,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -6493,17 +5429,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -6527,13 +5471,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["GoldForm.jsonld"];
                     "application/json": components["schemas"]["GoldForm"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6543,17 +5495,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -6569,17 +5512,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -6595,17 +5529,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -6621,7 +5563,6 @@ export interface operations {
         /** @description The new GoldPrice resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["GoldPrice.GoldPriceInput"];
                 "application/json": components["schemas"]["GoldPrice.GoldPriceInput"];
             };
         };
@@ -6632,7 +5573,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["GoldPrice.jsonld"];
                     "application/json": components["schemas"]["GoldPrice"];
                 };
             };
@@ -6648,23 +5588,16 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.bad_request */
+                        type?: string;
                     };
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6674,17 +5607,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -6700,17 +5624,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -6726,17 +5658,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["ConstraintViolation"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
                 };
             };
@@ -6757,15 +5680,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchemaNoPagination"] & {
-                        member: components["schemas"]["GoldPrice.jsonld"][];
-                    };
                     "application/json": components["schemas"]["GoldPrice"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6775,17 +5704,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -6801,17 +5721,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -6832,15 +5760,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchemaNoPagination"] & {
-                        member: components["schemas"]["GoldPrice.jsonld"][];
-                    };
                     "application/json": components["schemas"]["GoldPrice"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6850,17 +5784,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -6876,17 +5801,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -6910,13 +5843,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["GoldPrice.jsonld"];
                     "application/json": components["schemas"]["GoldPrice"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6926,17 +5867,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -6952,17 +5884,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -6978,17 +5901,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -7013,9 +5944,11 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -7025,17 +5958,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -7051,17 +5975,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -7077,17 +5992,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -7095,10 +6018,7 @@ export interface operations {
     };
     api_households_get_collection: {
         parameters: {
-            query?: {
-                /** @description The collection page number */
-                page?: number;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -7111,15 +6031,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["HydraCollectionBaseSchema"] & {
-                        member: components["schemas"]["Household.jsonld"][];
-                    };
                     "application/json": components["schemas"]["Household"][];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -7129,17 +6055,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -7155,17 +6072,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 403
+                         * @example 412
                          * @constant
                          */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -7189,13 +6114,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Household.jsonld"];
                     "application/json": components["schemas"]["Household"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -7205,17 +6138,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -7231,17 +6155,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -7257,17 +6172,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -7302,7 +6225,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description Wrong email or password (errorCode auth.invalid_credentials), or the request carries no email or password (errorCode http.bad_request). */
+            /** @description Wrong email or password (type auth.invalid_credentials), or the request carries no email or password (type http.bad_request). */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7314,21 +6237,29 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example auth.invalid_credentials */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example auth.invalid_credentials */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.invalid_credentials */
+                        type?: string;
                     };
                 };
             };
-            /** @description The login is locked after too many failed attempts (errorCode auth.too_many_login_attempts, params.minutes): every password is refused until the lock ends. */
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
+                        /**
+                         * @example 412
+                         * @constant
+                         */
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
+                    };
+                };
+            };
+            /** @description The login is locked after too many failed attempts (type auth.too_many_login_attempts, member minutes): every password is refused until the lock ends. */
             429: {
                 headers: {
                     /** @description Seconds until the lock ends. */
@@ -7342,17 +6273,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 429;
-                        /** @example auth.too_many_login_attempts */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 429
-                         * @constant
-                         */
-                        status?: 429;
-                        /** @example auth.too_many_login_attempts */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.too_many_login_attempts */
+                        type?: string;
                     };
                 };
             };
@@ -7373,13 +6295,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Me.jsonld"];
                     "application/json": components["schemas"]["Me"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -7389,17 +6319,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -7415,17 +6336,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -7441,17 +6353,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -7480,7 +6400,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The request carries no refresh token (errorCode auth.refresh_token_missing). */
+            /** @description The request carries no refresh token (type auth.refresh_token_missing). */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7492,17 +6412,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example auth.refresh_token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.refresh_token_missing */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 400
+                         * @example 412
                          * @constant
                          */
-                        status?: 400;
-                        /** @example auth.refresh_token_missing */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -7536,7 +6464,7 @@ export interface operations {
                     };
                 };
             };
-            /** @description The refresh token is missing, or invalid, expired or already used (errorCode auth.refresh_token_missing or auth.refresh_token_invalid). Log in again. */
+            /** @description The refresh token is missing, or invalid, expired or already used (type auth.refresh_token_missing or auth.refresh_token_invalid). Log in again. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7548,17 +6476,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example auth.refresh_token_invalid */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.refresh_token_invalid */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 400
+                         * @example 412
                          * @constant
                          */
-                        status?: 400;
-                        /** @example auth.refresh_token_invalid */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -7582,13 +6518,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Summary.jsonld"];
                     "application/json": components["schemas"]["Summary"];
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -7598,17 +6542,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -7624,17 +6559,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
@@ -7650,17 +6576,25 @@ export interface operations {
                          * @constant
                          */
                         status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.not_found */
+                        type?: string;
                     };
-                    "application/json": components["schemas"]["Error"] & {
+                };
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 404
+                         * @example 412
                          * @constant
                          */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };
@@ -7676,7 +6610,6 @@ export interface operations {
         /** @description The new Transfer resource */
         requestBody: {
             content: {
-                "application/ld+json": components["schemas"]["Transfer.TransferInput"];
                 "application/json": components["schemas"]["Transfer.TransferInput"];
             };
         };
@@ -7687,7 +6620,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Transfer.jsonld"];
                     "application/json": components["schemas"]["Transfer"];
                 };
             };
@@ -7703,23 +6635,16 @@ export interface operations {
                          * @constant
                          */
                         status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.bad_request */
+                        type?: string;
                     };
                 };
             };
-            /** @description The JWT token is missing, invalid or expired (errorCode auth.token_missing, auth.token_invalid or auth.token_expired). */
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
             401: {
                 headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -7729,17 +6654,8 @@ export interface operations {
                          * @constant
                          */
                         status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
                     };
                 };
             };
@@ -7755,21 +6671,29 @@ export interface operations {
                          * @constant
                          */
                         status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
-                    "application/json": components["schemas"]["Error"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
                     };
                 };
             };
-            /** @description Either validation failed (errorCode "validation.failed", with a "violations" list), e.g. fromAccountId or toAccountId points to a hidden account; or the transfer was refused (no "violations"): errorCode "transfer.accounts_must_differ" or "transfer.amount_to_required_for_currency_exchange" (params fromCurrency, toCurrency). Other refused input checked only on saving, e.g. an amount written as "1e2", has errorCode "http.unprocessable_content". */
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
+                        /**
+                         * @example 412
+                         * @constant
+                         */
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
+                    };
+                };
+            };
+            /** @description Either validation failed (type "validation.failed", with an "errors" list), e.g. fromAccountId or toAccountId points to a hidden account; or the transfer was refused (no "errors"): type "transfer.accounts_must_differ" or "transfer.amount_to_required_for_currency_exchange" (members fromCurrency, toCurrency). Other refused input checked only on saving, e.g. an amount written as "1e2", has type "http.unprocessable_content". */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -7781,17 +6705,98 @@ export interface operations {
                          * @constant
                          */
                         status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        /** @example urn:finance-app:problem:validation.failed */
+                        type?: string;
                     };
-                    "application/json": (components["schemas"]["ConstraintViolation"] | components["schemas"]["Error"]) & {
+                };
+            };
+        };
+    };
+    api_transfers_transactionUuid_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Transfer identifier */
+                transactionUuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Transfer resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transfer"];
+                };
+            };
+            /** @description Not modified: If-None-Match names the entity tag (ETag) of the current representation, so the client's copy is still current. No content (RFC 9110, section 13.1.2). */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The JWT token is missing, invalid or expired (type auth.token_missing, auth.token_invalid or auth.token_expired). */
+            401: {
+                headers: {
+                    /** @description "Bearer" without a token, 'Bearer error="invalid_token"' with a refused one (RFC 6750). */
+                    "WWW-Authenticate"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
                         /**
-                         * @example 422
+                         * @example 401
                          * @constant
                          */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
+                        status?: 401;
+                        /** @example urn:finance-app:problem:auth.token_missing */
+                        type?: string;
+                    };
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
+                        /**
+                         * @example 403
+                         * @constant
+                         */
+                        status?: 403;
+                        /** @example urn:finance-app:problem:http.forbidden */
+                        type?: string;
+                    };
+                };
+            };
+            /** @description No transfer has this transaction UUID, or one of its operations was deleted (type transfer.not_found). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Precondition failed, nothing was done: If-Match does not name the entity tag (ETag) of the current representation, or If-None-Match does (any method but GET and HEAD) (type http.precondition_failed; RFC 9110, sections 13.1.1 and 13.1.2). */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Error"] & {
+                        /**
+                         * @example 412
+                         * @constant
+                         */
+                        status?: 412;
+                        /** @example urn:finance-app:problem:http.precondition_failed */
+                        type?: string;
                     };
                 };
             };

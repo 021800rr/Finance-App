@@ -80,11 +80,11 @@ final class AccountOperationOtherSideApiTest extends WebTestCase
 
         $this->client->request('GET', '/api/accounts/'.$account->getId().'/operations?page='.$expectedPage, server: [
             ...$this->authHeaders(),
-            'HTTP_ACCEPT' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/json',
         ]);
         self::assertResponseIsSuccessful();
         $history = self::decodeObject((string) $this->client->getResponse()->getContent());
-        self::assertContains($to->getId(), array_column(self::rowsAt($history, 'member'), 'id'));
+        self::assertContains($to->getId(), array_column(self::rowsAt($history, 'content'), 'id'));
     }
 
     /**
@@ -162,6 +162,6 @@ final class AccountOperationOtherSideApiTest extends WebTestCase
     {
         self::assertResponseStatusCodeSame(404);
         $problem = self::decodeObject((string) $this->client->getResponse()->getContent());
-        self::assertSame($errorCode, $problem['errorCode'] ?? null);
+        self::assertSame($errorCode, self::problemCode($problem));
     }
 }

@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import { fakeApi } from '../test/fakeApi'
+import { pagedList } from '../test/pagedList'
 import { SearchPage } from './SearchPage'
 
 const account = (id: number) => ({
@@ -49,9 +50,8 @@ describe('SearchPage', () => {
   // As in the web app: every result names its account, and there is no 🔗 to the other side of a transfer.
   it('lists the operations found in all accounts, each with its account, and how many there are', async () => {
     serve({
-      '/api/account_operations?q=rent&page=1': {
-        member: [operation(7, 1), operation(8, 2, { transactionUuid: 'transfer' })], totalItems: 2,
-      },
+      '/api/account_operations?q=rent&page=1':
+        pagedList([operation(7, 1), operation(8, 2, { transactionUuid: 'transfer' })], 2),
     })
     showPage('/search?q=%20rent%20')
 
@@ -63,7 +63,7 @@ describe('SearchPage', () => {
   })
 
   it('says when nothing was found for the phrase', async () => {
-    serve({ '/api/account_operations?q=rent&page=1': { member: [], totalItems: 0 } })
+    serve({ '/api/account_operations?q=rent&page=1': pagedList([], 0) })
     showPage('/search?q=rent')
 
     expect(await screen.findByText(i18n.t('search.none_found_for', { query: 'rent' }))).toBeInTheDocument()
@@ -71,9 +71,7 @@ describe('SearchPage', () => {
 
   it('opens the page of the results the address asks for', async () => {
     serve({
-      '/api/account_operations?q=rent&page=2': {
-        member: [operation(7, 1)], totalItems: 61, view: { last: '/api/account_operations?q=rent&page=3' },
-      },
+      '/api/account_operations?q=rent&page=2': pagedList([operation(7, 1)], 61, 3, 2),
     })
     showPage('/search?q=rent&page=2')
 

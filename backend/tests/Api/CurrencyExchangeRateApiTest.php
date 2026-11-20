@@ -120,10 +120,7 @@ final class CurrencyExchangeRateApiTest extends WebTestCase
     private function violationMessages(): array
     {
         self::assertResponseStatusCodeSame(422);
-        $violations = self::rowsAt(
-            self::decodeObject((string) $this->client->getResponse()->getContent()),
-            'violations',
-        );
+        $violations = self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent()));
 
         return array_column($violations, 'message', 'propertyPath');
     }
@@ -132,7 +129,7 @@ final class CurrencyExchangeRateApiTest extends WebTestCase
     {
         $this->client->request('POST', '/api/currency_exchange_rates', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode([
             'bankId' => $bank->getId(),
             'currencyCode' => $currencyCode,

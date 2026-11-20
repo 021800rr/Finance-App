@@ -65,7 +65,8 @@ describe('EditFixedExpensePage', () => {
     const user = userEvent.setup()
     serve((method) => method === 'PATCH'
       ? Response.json({
-        errorCode: 'validation.failed', violations: [{ propertyPath, message: 'Refused.', code, params: {} }],
+        type: 'urn:finance-app:problem:validation.failed',
+        errors: [{ pointer: `#/${propertyPath}`, detail: 'Refused.', code, params: {} }],
       }, { status: 422 })
       : undefined)
     showPage()
@@ -90,7 +91,7 @@ describe('EditFixedExpensePage', () => {
 
   it('shows the page of a missing address for a fixed expense that does not exist', async () => {
     serve((method, path) => method === 'GET' && path === '/api/fixed_expenses/7'
-      ? Response.json({ errorCode: 'fixed_expense.not_found' }, { status: 404 })
+      ? Response.json({ type: 'urn:finance-app:problem:fixed_expense.not_found' }, { status: 404 })
       : undefined)
     showPage()
 

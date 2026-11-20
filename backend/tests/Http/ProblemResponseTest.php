@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Http;
 
 use App\Http\ProblemResponse;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class ProblemResponseTest extends TestCase
@@ -45,10 +46,50 @@ final class ProblemResponseTest extends TestCase
         self::assertSame('http.599', ProblemResponse::httpErrorCode(599));
     }
 
-    public function testEmptyParamsAreAnObject(): void
+    public function testAProblemHasTheMembersOfItsTypeAfterTheStandardOnes(): void
     {
-        $response = ProblemResponse::create(404, 'http.not_found', 'Not Found.');
+        $response = ProblemResponse::create(
+            429,
+            'auth.too_many_login_attempts',
+            'Locked.',
+            ['minutes' => '15'],
+            title: 'Locked',
+        );
 
-        self::assertStringContainsString('"params":{}', (string) $response->getContent());
+        self::assertSame(
+            '{"type":"urn:finance-app:problem:auth.too_many_login_attempts","title":"Locked","status":429,'
+            .'"detail":"Locked.","minutes":"15"}',
+            $response->getContent(),
+        );
+    }
+
+    /**
+     * RFC 9457, section 4: an extension member starts with a letter, has three characters or more, and cannot take
+     * the place of a standard member.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function namesThatCannotBeMembers(): iterable
+    {
+        yield 'standard member' => ['detail'];
+        yield 'list of a validation problem' => ['errors'];
+        yield 'too short' => ['id'];
+        yield 'not a letter first' => ['@id'];
+    }
+
+    #[DataProvider('namesThatCannotBeMembers')]
+    public function testANameThatCannotBeAnExtensionMemberIsRefused(string $name): void
+    {
+        $this->expectException(\LogicException::class);
+
+        ProblemResponse::fields(422, 'some.problem', [$name => 'x']);
+    }
+
+    public function testAnHttpTypeIsTitledWithTheNameOfTheStatus(): void
+    {
+        self::assertSame(
+            ['type' => 'urn:finance-app:problem:http.not_found', 'title' => 'Not Found'],
+            ProblemResponse::fields(404, 'http.not_found', []),
+        );
     }
 }

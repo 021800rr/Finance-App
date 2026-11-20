@@ -12,19 +12,31 @@ final class ContractorException extends \RuntimeException implements BusinessErr
 {
     public const string NAME_NOT_UNIQUE = 'contractor.name_not_unique';
 
-    private function __construct(string $message, private readonly string $errorCode)
-    {
+    private function __construct(
+        string $message,
+        private readonly string $errorCode,
+        private readonly string $errorTitle,
+    ) {
         parent::__construct($message);
     }
 
     public static function nameNotUnique(): self
     {
-        return new self('A contractor with this name already exists.', self::NAME_NOT_UNIQUE);
+        return new self(
+            'A contractor with this name already exists.',
+            self::NAME_NOT_UNIQUE,
+            'Contractor name already exists',
+        );
     }
 
     public function getErrorCode(): string
     {
         return $this->errorCode;
+    }
+
+    public function getErrorTitle(): string
+    {
+        return $this->errorTitle;
     }
 
     public function getErrorParams(): array

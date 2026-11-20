@@ -69,11 +69,9 @@ final class CurrencyExchangeRateHistoryApiTest extends WebTestCase
 
         $data = json_decode((string) $this->client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR);
         self::assertIsArray($data);
-        self::assertArrayHasKey('member', $data);
-        self::assertIsArray($data['member']);
 
         $byId = [];
-        foreach ($data['member'] as $item) {
+        foreach ($data as $item) {
             self::assertIsArray($item);
             self::assertIsInt($item['id']);
             self::assertIsInt($item['bankId']);

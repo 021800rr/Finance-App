@@ -42,7 +42,7 @@ function showPage() {
   )
 }
 
-// What the API answers when it refuses: field errors, or for some refusals an errorCode alone.
+// What the API answers when it refuses: field errors, or for some refusals a problem type of their own alone.
 type Refusal = { violations?: { propertyPath: string; code: string }[]; errorCode?: string }
 
 const field = (label: string) => screen.getByLabelText(i18n.t(label))
@@ -103,7 +103,7 @@ describe('TransferPage', () => {
     expect(field('transfer.credit')).toHaveValue('4,50')
   })
 
-  // The last two come as an errorCode alone, without a field error.
+  // The last two come as a problem type of their own, without a field error.
   it.each<[string, Refusal]>([
     ['transfer.from_account', { violations: [{ propertyPath: 'fromAccountId', code: 'account.not_found' }] }],
     ['transfer.to_account', { violations: [{ propertyPath: 'toAccountId', code: 'account.not_found' }] }],
@@ -115,12 +115,12 @@ describe('TransferPage', () => {
     ['transfer.credit', { errorCode: 'transfer.amount_to_required_for_currency_exchange' }],
   ])('shows a refusal under %s', async (label, refusal) => {
     const user = userEvent.setup()
-    const violations = (refusal.violations ?? [])
-      .map((violation) => ({ ...violation, message: 'Refused.', params: {} }))
+    const errors = (refusal.violations ?? []).map((violation) => (
+      { pointer: `#/${violation.propertyPath}`, detail: 'Refused.', code: violation.code, params: {} }
+    ))
     const code = refusal.errorCode ?? refusal.violations?.[0]?.code ?? ''
-    serve(ACCOUNTS, (method) => method === 'POST'
-      ? Response.json({ errorCode: refusal.errorCode ?? 'validation.failed', violations }, { status: 422 })
-      : undefined)
+    const type = `urn:finance-app:problem:${refusal.errorCode ?? 'validation.failed'}`
+    serve(ACCOUNTS, (method) => method === 'POST' ? Response.json({ type, errors }, { status: 422 }) : undefined)
     showPage()
     // two currencies, so the second amount is there to refuse
     await user.selectOptions(await screen.findByLabelText(i18n.t('transfer.to_account')), 'Account 3 EUR')

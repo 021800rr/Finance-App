@@ -19,13 +19,16 @@ use PHPUnit\Framework\TestCase;
 
 final class ProblemDetailsDecoratorTest extends TestCase
 {
-    public function testSchemaWithoutPropertiesOrAllOfIsLeftAsItIs(): void
+    /**
+     * API Platform describes its own error shape; ours replaces it.
+     */
+    public function testTheErrorSchemasAreReplacedByTheProblemMembers(): void
     {
         // API Platform passes plain ArrayObject-based schemas (JsonSchema\Schema) at runtime, too.
         /** @var \ArrayObject<string, Schema> $schemas */
         $schemas = new \ArrayObject([
             'Error' => new \ArrayObject(['$ref' => '#/components/schemas/Other']),
-            'ConstraintViolation' => new \ArrayObject(['type' => 'object', 'properties' => ['status' => []]]),
+            'ConstraintViolation' => new \ArrayObject(['type' => 'object', 'properties' => ['violations' => []]]),
         ]);
         $openApi = new OpenApi(new Info('Test', '1.0'), [], new Paths(), new Components($schemas));
         $factory = $this->createStub(OpenApiFactoryInterface::class);
@@ -36,11 +39,11 @@ final class ProblemDetailsDecoratorTest extends TestCase
         $documented = $result->getComponents()->getSchemas();
         self::assertNotNull($documented);
         self::assertInstanceOf(\ArrayObject::class, $documented['Error']);
-        self::assertSame(['$ref' => '#/components/schemas/Other'], $documented['Error']->getArrayCopy());
+        self::assertSame(['type', 'title', 'status', 'detail'], $documented['Error']['required'] ?? null);
         self::assertInstanceOf(\ArrayObject::class, $documented['ConstraintViolation']);
         $properties = $documented['ConstraintViolation']['properties'];
         self::assertIsArray($properties);
-        self::assertArrayHasKey('errorCode', $properties);
+        self::assertSame(['type', 'title', 'status', 'detail', 'errors'], array_keys($properties));
     }
 
     public function testAnErrorResponseGetsAnExampleOfItsStatus(): void
@@ -53,7 +56,10 @@ final class ProblemDetailsDecoratorTest extends TestCase
         self::assertSame(
             ['type' => 'object', 'properties' => [
                 'status' => ['type' => 'integer', 'const' => 404, 'examples' => [404]],
-                'errorCode' => ['type' => 'string', 'examples' => [ProblemResponse::httpErrorCode(404)]],
+                'type' => [
+                    'type' => 'string',
+                    'examples' => [ProblemResponse::TYPE_PREFIX.ProblemResponse::httpErrorCode(404)],
+                ],
             ]],
             $allOf[1] ?? null,
         );

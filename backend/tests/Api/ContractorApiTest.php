@@ -101,7 +101,7 @@ final class ContractorApiTest extends WebTestCase
 
         $this->client->request('POST', $uri, server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$token,
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode(['contractorName' => $name] + $record, JSON_THROW_ON_ERROR));
 
         $this->assertDuplicateResponse();
@@ -120,7 +120,7 @@ final class ContractorApiTest extends WebTestCase
     {
         $this->client->request('POST', '/api/contractors', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$token,
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode(['name' => $name], JSON_THROW_ON_ERROR));
     }
 
@@ -128,9 +128,9 @@ final class ContractorApiTest extends WebTestCase
     {
         self::assertResponseStatusCodeSame(409);
         $error = self::decodeObject((string) $this->client->getResponse()->getContent());
-        self::assertSame('contractor.name_not_unique', self::stringAt($error, 'errorCode'));
+        self::assertSame('contractor.name_not_unique', self::problemCode($error));
         self::assertSame('urn:finance-app:problem:contractor.name_not_unique', self::stringAt($error, 'type'));
-        self::assertSame([], $error['params'] ?? null);
+        self::assertSame([], self::problemMembers($error));
         self::assertSame('A contractor with this name already exists.', self::stringAt($error, 'detail'));
         self::assertStringNotContainsString('SQLSTATE', self::stringAt($error, 'detail'));
     }

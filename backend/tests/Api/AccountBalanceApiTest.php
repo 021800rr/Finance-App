@@ -76,7 +76,7 @@ final class AccountBalanceApiTest extends WebTestCase
             '/api/accounts/'.$account->getId(),
             server: $this->authHeaders() + [
                 'CONTENT_TYPE' => 'application/merge-patch+json',
-                'HTTP_ACCEPT' => 'application/ld+json',
+                'HTTP_ACCEPT' => 'application/json',
             ],
             content: json_encode(['hidden' => true], JSON_THROW_ON_ERROR),
         );
@@ -98,7 +98,7 @@ final class AccountBalanceApiTest extends WebTestCase
             '/api/accounts/'.$account->getId(),
             server: $this->authHeaders() + [
                 'CONTENT_TYPE' => 'application/merge-patch+json',
-                'HTTP_ACCEPT' => 'application/ld+json',
+                'HTTP_ACCEPT' => 'application/json',
             ],
             content: json_encode(
                 ['hidden' => false, 'saldo' => ['amount' => '999999.00', 'currency' => 'PLN']],
@@ -131,7 +131,7 @@ final class AccountBalanceApiTest extends WebTestCase
         $this->client->request(
             'GET',
             '/api/accounts/2147483647',
-            server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json'],
+            server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/json'],
         );
 
         self::assertResponseStatusCodeSame(404);
@@ -142,7 +142,7 @@ final class AccountBalanceApiTest extends WebTestCase
         $this->client->request(
             'GET',
             '/api/accounts/'.PHP_INT_MAX,
-            server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json'],
+            server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/json'],
         );
 
         self::assertResponseStatusCodeSame(404);
@@ -155,7 +155,7 @@ final class AccountBalanceApiTest extends WebTestCase
         $this->client->request(
             'GET',
             '/api/accounts/'.$account->getId(),
-            server: ['HTTP_ACCEPT' => 'application/ld+json'],
+            server: ['HTTP_ACCEPT' => 'application/json'],
         );
 
         self::assertResponseStatusCodeSame(401);
@@ -169,7 +169,7 @@ final class AccountBalanceApiTest extends WebTestCase
         $this->client->request(
             'GET',
             '/api/accounts/'.$accountId,
-            server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json'],
+            server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/json'],
         );
         self::assertResponseIsSuccessful();
 

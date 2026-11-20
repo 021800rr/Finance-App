@@ -5,18 +5,21 @@ declare(strict_types=1);
 namespace App\Tests\Api;
 
 use App\DataFixtures\AppFixtures;
+use App\EventSubscriber\AuthenticationProblemSubscriber;
 use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\BrowserKit\Cookie;
-use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Authentication failures are answered by the JWT bundle, outside API Platform; they still use the API's
- * Problem Details shape with a stable "errorCode". A refused JWT keeps status 401 and the WWW-Authenticate header.
+ * Problem Details shape with a problem type of their own. A refused JWT keeps status 401 and the WWW-Authenticate
+ * header.
  */
 final class AuthenticationProblemApiTest extends WebTestCase
 {
+    use ReadsJsonTrait;
+
     /** RFC 6750, section 3: a token was sent but refused. Without any token the challenge is the bare "Bearer". */
     private const string REJECTED_TOKEN_CHALLENGE = 'Bearer error="invalid_token"';
 
@@ -110,7 +113,7 @@ final class AuthenticationProblemApiTest extends WebTestCase
      * @param array<string, string> $params
      * @param string|null           $challenge the WWW-Authenticate header, null when there must be none
      *
-     * @return array<mixed>
+     * @return array<string, mixed>
      */
     private function assertAuthenticationProblem(
         string $errorCode,
@@ -125,30 +128,23 @@ final class AuthenticationProblemApiTest extends WebTestCase
             self::assertResponseHeaderSame('WWW-Authenticate', $challenge);
         }
         self::assertResponseHeaderSame('Content-Type', 'application/problem+json');
-        $content = (string) $this->client->getResponse()->getContent();
-        $problem = json_decode($content, true, flags: JSON_THROW_ON_ERROR);
-        self::assertIsArray($problem);
+        $problem = self::decodeObject((string) $this->client->getResponse()->getContent());
         self::assertSame($status, $problem['status'] ?? null);
-        self::assertSame(Response::$statusTexts[$status], $problem['title'] ?? null);
-        self::assertSame($errorCode, $problem['errorCode'] ?? null);
+        self::assertSame(AuthenticationProblemSubscriber::TITLES[$errorCode], $problem['title'] ?? null);
+        self::assertSame($errorCode, self::problemCode($problem));
         self::assertSame('urn:finance-app:problem:'.$errorCode, $problem['type'] ?? null);
-        self::assertSame($params, $problem['params'] ?? null);
+        self::assertSame($params, self::problemMembers($problem));
         self::assertIsString($problem['detail'] ?? null);
-        if ([] === $params) {
-            self::assertStringContainsString('"params":{}', $content);
-        }
 
         return $problem;
     }
 
     private function lockMinutes(): string
     {
-        $problem = json_decode((string) $this->client->getResponse()->getContent(), true, flags: JSON_THROW_ON_ERROR);
-        self::assertIsArray($problem);
-        self::assertIsArray($problem['params'] ?? null);
-        self::assertIsString($problem['params']['minutes'] ?? null);
+        $problem = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertIsString($problem['minutes'] ?? null);
 
-        return $problem['params']['minutes'];
+        return $problem['minutes'];
     }
 
     private function login(string $password): void

@@ -20,6 +20,7 @@ final class TransferException extends \InvalidArgumentException implements Busin
     private function __construct(
         string $message,
         private readonly string $errorCode,
+        private readonly string $errorTitle,
         private readonly array $errorParams,
     ) {
         parent::__construct($message);
@@ -27,7 +28,12 @@ final class TransferException extends \InvalidArgumentException implements Busin
 
     public static function accountsMustDiffer(): self
     {
-        return new self('Cannot transfer between the same account.', self::ACCOUNTS_MUST_DIFFER, []);
+        return new self(
+            'Cannot transfer between the same account.',
+            self::ACCOUNTS_MUST_DIFFER,
+            'Same account on both sides',
+            [],
+        );
     }
 
     public static function amountToRequired(string $fromCurrency, string $toCurrency): self
@@ -35,6 +41,7 @@ final class TransferException extends \InvalidArgumentException implements Busin
         return new self(
             'For different currencies amountTo is required.',
             self::AMOUNT_TO_REQUIRED,
+            'Amount to required for a currency exchange',
             ['fromCurrency' => $fromCurrency, 'toCurrency' => $toCurrency],
         );
     }
@@ -42,6 +49,11 @@ final class TransferException extends \InvalidArgumentException implements Busin
     public function getErrorCode(): string
     {
         return $this->errorCode;
+    }
+
+    public function getErrorTitle(): string
+    {
+        return $this->errorTitle;
     }
 
     public function getErrorParams(): array

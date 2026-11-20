@@ -352,7 +352,11 @@ final class ConditionalRequestApiTest extends WebTestCase
     {
         self::assertResponseStatusCodeSame(412, $condition);
         self::assertResponseHeaderSame('Content-Type', 'application/problem+json');
-        self::assertSame('http.precondition_failed', $this->decodedResponse()['errorCode'] ?? null, $condition);
+        self::assertSame(
+            'urn:finance-app:problem:http.precondition_failed',
+            $this->decodedResponse()['type'] ?? null,
+            $condition,
+        );
     }
 
     private function detail(): string

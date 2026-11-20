@@ -77,7 +77,7 @@ describe('OperationsTable', () => {
 
       return changes === 1
         ? Response.json({}, { status: 500 })
-        : Response.json({ errorCode: 'account_operation.not_found' }, { status: 404 })
+        : Response.json({ type: 'urn:finance-app:problem:account_operation.not_found' }, { status: 404 })
     })
     show([operation(7)])
 

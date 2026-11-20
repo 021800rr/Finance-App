@@ -84,7 +84,7 @@ describe('apiFetch', () => {
 })
 
 describe('API error boundary', () => {
-  it.each(['<html>proxy error</html>', 'null', '[]', '{"violations":[null,12]}'])(
+  it.each(['<html>proxy error</html>', 'null', '[]', '{"errors":[null,12]}'])(
     'turns an unexpected error body into ApiError: %s', async (body) => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body, { status: 502 })))
 
@@ -97,13 +97,59 @@ describe('API error boundary', () => {
 
   it('preserves valid field errors and drops malformed entries and parameters', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({
-      errorCode: 'validation.failed',
-      violations: [null, { propertyPath: 'amount', message: 'Too big', code: 'limit', params: { max: '10', bad: 3 } }],
+      type: 'urn:finance-app:problem:validation.failed',
+      errors: [null, { pointer: '#/amount', detail: 'Too big', code: 'limit', params: { max: '10', bad: 3 } }],
     }, { status: 422 })))
 
     await expect(getJson('/api/one')).rejects.toMatchObject({
       errorCode: 'validation.failed',
       violations: [{ propertyPath: 'amount', message: 'Too big', code: 'limit', params: { max: '10' } }],
+    })
+  })
+
+  // RFC 9457: the code is the end of the problem type, and the members of that type are the values of its message.
+  it('reads the code from the type and the values from the members of the type', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({
+      type: 'urn:finance-app:problem:transfer.amount_to_required_for_currency_exchange',
+      title: 'Amount to required for a currency exchange',
+      status: 422,
+      detail: 'For different currencies amountTo is required.',
+      fromCurrency: 'PLN',
+      toCurrency: 'EUR',
+      amount: 5,
+    }, { status: 422 })))
+
+    await expect(getJson('/api/one')).rejects.toMatchObject({
+      errorCode: 'transfer.amount_to_required_for_currency_exchange',
+      params: { fromCurrency: 'PLN', toCurrency: 'EUR' },
+      violations: [],
+    })
+  })
+
+  it('takes no code from a type of another API', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ type: 'about:blank' }, { status: 404 })))
+
+    await expect(getJson('/api/one')).rejects.toMatchObject({ errorCode: undefined, params: {} })
+  })
+
+  // A JSON Pointer (RFC 6901) names the property; a query parameter is named as it is.
+  it('reads where each refused value is', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({
+      type: 'urn:finance-app:problem:validation.failed',
+      errors: [
+        { pointer: '#/lines/0/amount', detail: 'Too big', code: 'limit', params: {} },
+        { pointer: '#/a~1b~0c%20d', detail: 'Odd', code: 'odd', params: {} },
+        { parameter: 'page', detail: 'Not a page', code: 'common.page_invalid', params: {} },
+        { detail: 'Nowhere', code: 'lost', params: {} },
+      ],
+    }, { status: 400 })))
+
+    await expect(getJson('/api/one')).rejects.toMatchObject({
+      violations: [
+        { propertyPath: 'lines[0].amount', message: 'Too big', code: 'limit', params: {} },
+        { propertyPath: 'a/b~c d', message: 'Odd', code: 'odd', params: {} },
+        { propertyPath: 'page', message: 'Not a page', code: 'common.page_invalid', params: {} },
+      ],
     })
   })
 })

@@ -93,9 +93,9 @@ final class ReferenceListApiTest extends WebTestCase
      */
     private function listed(string $uri, string ...$fields): array
     {
-        $this->client->request('GET', $uri, server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json']);
+        $this->client->request('GET', $uri, server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/json']);
         self::assertResponseIsSuccessful();
-        $rows = self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'member');
+        $rows = self::decodeList((string) $this->client->getResponse()->getContent());
 
         return array_map(static function (array $row) use ($fields): array {
             self::assertIsInt($row['id'] ?? null);

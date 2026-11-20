@@ -72,6 +72,62 @@ final class TransferApiTest extends WebTestCase
         self::assertSame($countBefore + 2, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
+    /**
+     * RFC 9110, section 15.3.2: the Location of a 201 names the created resource, and it can be read there.
+     */
+    public function testTheCreatedTransferIsWhereLocationSays(): void
+    {
+        $this->transfer($this->account('Bank1-ROR-PLN'), $this->account('Bank1-WAK-PLN'));
+        $created = self::decodeObject((string) $this->client->getResponse()->getContent());
+        $location = (string) $this->client->getResponse()->headers->get('Location');
+
+        self::assertSame('/api/transfers/'.self::stringAt($created, 'transactionUuid'), $location);
+        $this->client->request('GET', $location, server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/json']);
+        self::assertResponseIsSuccessful();
+        $read = self::decodeObject((string) $this->client->getResponse()->getContent());
+        self::assertSame(self::intAt($created, 'outOperationId'), self::intAt($read, 'outOperationId'));
+        self::assertSame(self::intAt($created, 'inOperationId'), self::intAt($read, 'inOperationId'));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function addressesOfNoTransfer(): iterable
+    {
+        yield 'not a UUID' => ['nope'];
+        yield 'an unknown UUID' => ['01a1c8b2-262e-72a9-9ac6-1652e5dffefe'];
+    }
+
+    #[DataProvider('addressesOfNoTransfer')]
+    public function testNoTransferIsNotFound(string $transactionUuid): void
+    {
+        $this->client->request('GET', '/api/transfers/'.$transactionUuid, server: $this->authHeaders());
+
+        self::assertResponseStatusCodeSame(404);
+        self::assertSame(
+            'transfer.not_found',
+            self::problemCode(self::decodeObject((string) $this->client->getResponse()->getContent())),
+        );
+    }
+
+    public function testATransferMissingOneSideIsNotFound(): void
+    {
+        $this->transfer($this->account('Bank1-ROR-PLN'), $this->account('Bank1-WAK-PLN'));
+        $created = self::decodeObject((string) $this->client->getResponse()->getContent());
+        $in = $this->em()->find(AccountOperation::class, self::intAt($created, 'inOperationId'));
+        self::assertNotNull($in);
+        $this->em()->remove($in);
+        $this->em()->flush();
+
+        $this->client->request(
+            'GET',
+            '/api/transfers/'.self::stringAt($created, 'transactionUuid'),
+            server: $this->authHeaders(),
+        );
+
+        self::assertResponseStatusCodeSame(404);
+    }
+
     public function testDescriptionLongerThan255CharactersIsRejectedWithoutCreatingOperations(): void
     {
         $countBefore = $this->em()->getRepository(AccountOperation::class)->count([]);
@@ -79,10 +135,7 @@ final class TransferApiTest extends WebTestCase
         $this->transfer($this->account('Bank1-ROR-PLN'), $this->account('Bank1-WAK-PLN'), str_repeat('a', 256));
 
         self::assertResponseStatusCodeSame(422);
-        $violations = self::rowsAt(
-            self::decodeObject((string) $this->client->getResponse()->getContent()),
-            'violations',
-        );
+        $violations = self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent()));
         $messages = array_column($violations, 'message', 'propertyPath');
         self::assertSame('The description cannot be longer than 255 characters.', $messages['description'] ?? null);
         self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
@@ -95,7 +148,7 @@ final class TransferApiTest extends WebTestCase
 
         $this->client->request('POST', '/api/transfers', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode([
             'fromAccountId' => $this->account('Bank1-ROR-PLN')->getId(),
             'toAccountId' => $this->account('Bank1-WAK-PLN')->getId(),
@@ -105,10 +158,7 @@ final class TransferApiTest extends WebTestCase
         ], JSON_THROW_ON_ERROR));
 
         self::assertResponseStatusCodeSame(422);
-        $violations = self::rowsAt(
-            self::decodeObject((string) $this->client->getResponse()->getContent()),
-            'violations',
-        );
+        $violations = self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent()));
         self::assertSame(
             ['amountTo' => 'transfer.amount_to_not_allowed_for_same_currency'],
             array_column($violations, 'code', 'propertyPath'),
@@ -149,7 +199,7 @@ final class TransferApiTest extends WebTestCase
 
         $this->client->request('POST', '/api/transfers', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode([
             'fromAccountId' => $this->account('Bank1-ROR-PLN')->getId(),
             'toAccountId' => $this->account('Bank1-WAK-CHF')->getId(),
@@ -159,8 +209,8 @@ final class TransferApiTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         $error = self::decodeObject((string) $this->client->getResponse()->getContent());
-        self::assertSame('transfer.amount_to_required_for_currency_exchange', self::stringAt($error, 'errorCode'));
-        self::assertSame(['fromCurrency' => 'PLN', 'toCurrency' => 'CHF'], $error['params'] ?? null);
+        self::assertSame('transfer.amount_to_required_for_currency_exchange', self::problemCode($error));
+        self::assertSame(['fromCurrency' => 'PLN', 'toCurrency' => 'CHF'], self::problemMembers($error));
         self::assertSame($countBefore, $this->em()->getRepository(AccountOperation::class)->count([]));
     }
 
@@ -183,7 +233,7 @@ final class TransferApiTest extends WebTestCase
     {
         $this->client->request('POST', '/api/transfers', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode([
             'fromAccountId' => $this->account('Bank1-ROR-PLN')->getId(),
             'toAccountId' => $this->account('Bank1-WAK-CHF')->getId(),
@@ -193,10 +243,7 @@ final class TransferApiTest extends WebTestCase
         ], JSON_THROW_ON_ERROR));
 
         self::assertResponseStatusCodeSame(422);
-        $violations = self::rowsAt(
-            self::decodeObject((string) $this->client->getResponse()->getContent()),
-            'violations',
-        );
+        $violations = self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent()));
         self::assertSame($expected, array_column($violations, 'code', 'propertyPath'));
     }
 
@@ -226,10 +273,7 @@ final class TransferApiTest extends WebTestCase
         $this->transfer($accounts['fromAccountId'], $accounts['toAccountId']);
 
         self::assertResponseStatusCodeSame(422);
-        $violations = self::rowsAt(
-            self::decodeObject((string) $this->client->getResponse()->getContent()),
-            'violations',
-        );
+        $violations = self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent()));
         self::assertSame(
             [$field => 'This account is hidden. Please select an account that is not hidden.'],
             array_column($violations, 'message', 'propertyPath'),
@@ -253,7 +297,7 @@ final class TransferApiTest extends WebTestCase
         self::assertSame(
             [$field => 'account.not_found'],
             array_column(
-                self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'violations'),
+                self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent())),
                 'code',
                 'propertyPath',
             ),
@@ -336,7 +380,7 @@ final class TransferApiTest extends WebTestCase
     {
         $this->client->request('POST', '/api/transfers', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode([
             'fromAccountId' => $fromId,
             'toAccountId' => $toId,

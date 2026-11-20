@@ -38,7 +38,7 @@ final class GoldPriceApiTest extends WebTestCase
 
         $this->client->request('POST', '/api/gold_prices', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode([
             'goldAssetId' => $goldAssetId,
             'priceDate' => '2026-01-15',
@@ -49,7 +49,7 @@ final class GoldPriceApiTest extends WebTestCase
         self::assertSame(
             ['goldAssetId' => 'gold_asset.not_found'],
             array_column(
-                self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'violations'),
+                self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent())),
                 'code',
                 'propertyPath',
             ),

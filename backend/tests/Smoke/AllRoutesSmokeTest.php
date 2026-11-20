@@ -107,10 +107,12 @@ final class AllRoutesSmokeTest extends WebTestCase
                 'id' => $ids[strstr($path, '/{id}', true)]
                     ?? self::fail(sprintf('No record id for "%s": add one to createOneRecordOfEachKind().', $path)),
                 'accountId' => $ids['/account'],
+                // A transfer nobody made: its address must answer 404, not fail.
+                'transactionUuid' => '01a1c8b2-262e-72a9-9ac6-1652e5dffefe',
                 'status' => 404,
                 'shortName' => 'Account',
                 'index' => 'index',
-                '_format' => 'jsonld',
+                '_format' => 'json',
                 default => self::fail(sprintf('No value for "{%s}" in "%s".', $variable, $path)),
             };
         }

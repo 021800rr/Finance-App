@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Serializer;
 
 use App\Serializer\ViolationCodes;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\GreaterThan;
@@ -15,7 +16,8 @@ use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 
 /**
- * The stable "code" and the "params" a client gets for every field error, whatever constraint raised it.
+ * The items of "errors" a client gets for every refused value, whatever constraint raised it: "detail", where the
+ * value is ("pointer" or "parameter"), a stable "code" and the "params".
  */
 final class ViolationCodesTest extends TestCase
 {
@@ -95,18 +97,47 @@ final class ViolationCodesTest extends TestCase
     }
 
     /**
-     * API Platform emits one row per violation, in list order; anything else in the list is not ours to change.
+     * API Platform emits one row per violation, in list order; anything else in the list is left out.
      */
-    public function testLeavesRowsWithoutAMatchingViolationAsTheyAre(): void
+    public function testLeavesOutRowsWithoutAMatchingViolation(): void
     {
-        $rows = [
-            0 => 'not a violation row',
-            1 => ['propertyPath' => 'amount', 'code' => 'kept'],
-            'extra' => ['propertyPath' => 'day', 'code' => 'kept'],
-        ];
+        $rows = [0 => 'not a violation row', 1 => ['propertyPath' => 'amount'], 'extra' => ['propertyPath' => 'day']];
         $violation = $this->violation('This value should not be blank.', NotBlank::IS_BLANK_ERROR, new NotBlank());
 
-        self::assertSame($rows, ViolationCodes::apply($rows, new ConstraintViolationList([$violation])));
+        self::assertSame([], ViolationCodes::errors($rows, new ConstraintViolationList([$violation]), inQuery: false));
+    }
+
+    public function testAnErrorOfTheContentPointsToItsValueAndOneOfTheQueryNamesItsParameter(): void
+    {
+        $violation = $this->violation('This value should not be blank.', NotBlank::IS_BLANK_ERROR, new NotBlank());
+        $list = new ConstraintViolationList([$violation]);
+
+        self::assertSame(
+            ['detail' => 'Message for curl.', 'pointer' => '#/field'],
+            array_slice(ViolationCodes::errors([[]], $list, inQuery: false)[0] ?? [], 0, 2),
+        );
+        self::assertSame(
+            ['detail' => 'Message for curl.', 'parameter' => 'field'],
+            array_slice(ViolationCodes::errors([[]], $list, inQuery: true)[0] ?? [], 0, 2),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function propertyPaths(): iterable
+    {
+        yield 'a field' => ['amountFrom', '#/amountFrom'];
+        yield 'nested and listed' => ['lines[0].amount', '#/lines/0/amount'];
+        yield 'the whole content' => ['', '#'];
+        // RFC 6901, sections 3 and 6: "~" and "/" escaped, then percent-encoded for the URI fragment.
+        yield 'characters to escape' => ['a/b~c d', '#/a~1b~0c%20d'];
+    }
+
+    #[DataProvider('propertyPaths')]
+    public function testAPropertyPathBecomesAJsonPointer(string $propertyPath, string $pointer): void
+    {
+        self::assertSame($pointer, ViolationCodes::pointer($propertyPath));
     }
 
     /**
@@ -132,15 +163,19 @@ final class ViolationCodesTest extends TestCase
     }
 
     /**
-     * The row API Platform emits for the violation, as ViolationCodes leaves it.
+     * The item of "errors" for the violation.
      *
-     * @return array<mixed>
+     * @return array<string, mixed>
      */
     private function row(ConstraintViolation $violation): array
     {
-        $rows = ViolationCodes::apply([['propertyPath' => 'field']], new ConstraintViolationList([$violation]));
-        self::assertIsArray($rows[0] ?? null);
+        $errors = ViolationCodes::errors(
+            [['propertyPath' => 'field']],
+            new ConstraintViolationList([$violation]),
+            inQuery: false,
+        );
+        self::assertIsArray($errors[0] ?? null);
 
-        return $rows[0];
+        return $errors[0];
     }
 }

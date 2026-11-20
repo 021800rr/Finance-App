@@ -7,7 +7,6 @@ namespace App\EventSubscriber;
 use App\Http\AcceptPatch;
 use App\Http\ApiPath;
 use App\Http\ProblemResponse;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
@@ -30,10 +29,8 @@ final readonly class ApiExceptionProblemSubscriber implements EventSubscriberInt
         'GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH',
     ];
 
-    public function __construct(
-        #[Autowire('%kernel.debug%')] private bool $debug,
-        private AcceptPatch $acceptPatch,
-    ) {
+    public function __construct(private AcceptPatch $acceptPatch)
+    {
     }
 
     public static function getSubscribedEvents(): array
@@ -148,19 +145,10 @@ final readonly class ApiExceptionProblemSubscriber implements EventSubscriberInt
 
     private function detail(\Throwable $exception, int $status, ?string $allowed): string
     {
+        // Never the cause of a server error, not even in debug mode: "detail" helps the client, not the debugging
+        // (RFC 9457, section 3.1.4); the log and the profiler have the exception.
         if ($status >= 500) {
-            // Never reveal the cause of a server error outside debug mode; in debug mode say where it happened.
-            if (!$this->debug) {
-                return ProblemResponse::title($status);
-            }
-
-            return sprintf(
-                '%s: %s (%s:%d)',
-                $exception::class,
-                $exception->getMessage(),
-                $exception->getFile(),
-                $exception->getLine(),
-            );
+            return ProblemResponse::title($status);
         }
 
         // The router's messages describe the routing internals; the status says enough.

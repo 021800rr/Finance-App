@@ -21,11 +21,11 @@ function serve(session: Session, answer: Answer = () => undefined) {
   return fakeApi({}, (method, path) => {
     if (method === 'GET' && path === '/api/me') {
       return session.email === null
-        ? Response.json({ errorCode: 'auth.token_missing' }, { status: 401 })
+        ? Response.json({ type: 'urn:finance-app:problem:auth.token_missing' }, { status: 401 })
         : Response.json({ email: session.email })
     }
     if (method === 'POST' && path === '/api/token/refresh') {
-      return Response.json({ errorCode: 'auth.refresh_token_missing' }, { status: 400 })
+      return Response.json({ type: 'urn:finance-app:problem:auth.refresh_token_missing' }, { status: 400 })
     }
 
     return answer(method, path)
@@ -110,7 +110,7 @@ describe('logging in and out', () => {
 
   it('says why the login was refused', async () => {
     serve({ email: null }, (method, path) => method === 'POST' && path === '/api/login_check'
-      ? Response.json({ errorCode: 'auth.invalid_credentials' }, { status: 400 })
+      ? Response.json({ type: 'urn:finance-app:problem:auth.invalid_credentials' }, { status: 400 })
       : undefined)
     showApp()
 
@@ -177,7 +177,7 @@ describe('logging in and out', () => {
   // Logged out in another tab, or the refresh token expired: the next request is refused, and so is the refresh.
   it('asks for a login again when the login has ended elsewhere, and forgets what was read', async () => {
     serve({ email: EMAIL }, (method, path) => method === 'GET' && path === '/api/accounts'
-      ? Response.json({ errorCode: 'auth.token_expired' }, { status: 401 })
+      ? Response.json({ type: 'urn:finance-app:problem:auth.token_expired' }, { status: 401 })
       : undefined)
     const client = showApp()
     await logoutButton()

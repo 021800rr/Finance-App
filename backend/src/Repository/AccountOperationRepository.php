@@ -12,6 +12,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @extends ServiceEntityRepository<AccountOperation>
@@ -108,6 +109,24 @@ final class AccountOperationRepository extends ServiceEntityRepository
             ->select('COUNT(o.id)')
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    /**
+     * The operations of one transaction: both sides of a transfer, or fewer when one was deleted.
+     *
+     * @return list<AccountOperation>
+     */
+    public function findByTransactionUuid(Uuid $transactionUuid): array
+    {
+        /** @var list<AccountOperation> $operations */
+        $operations = $this->createQueryBuilder('o')
+            ->where('o.transactionUuid = :uuid')
+            ->setParameter('uuid', $transactionUuid, 'uuid')
+            ->orderBy('o.id')
+            ->getQuery()
+            ->getResult();
+
+        return $operations;
     }
 
     public function findOtherSide(AccountOperation $operation): ?AccountOperation

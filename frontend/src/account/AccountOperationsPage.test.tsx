@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router'
 import userEvent from '@testing-library/user-event'
 import { afterEach, expect, it, vi } from 'vitest'
 import { queryKeys } from '../queryKeys'
+import { pagedList } from '../test/pagedList'
 import { AccountOperationsPage } from './AccountOperationsPage'
 
 const account = {
@@ -42,7 +43,7 @@ it('waits for the new history and balance after saving instead of highlighting a
   expect(screen.queryByText('100,00')).not.toBeInTheDocument()
   await act(async () => {
     resolveAccount(Response.json({ ...account, saldo: { amount: '90.00', currency: 'PLN' } }))
-    resolveOperations(Response.json({ member: [{ ...operation, description: 'New description' }], totalItems: 1 }))
+    resolveOperations(Response.json(pagedList([{ ...operation, description: 'New description' }], 1)))
     await Promise.all([accountResponse, operationsResponse])
   })
 
@@ -59,12 +60,10 @@ it.each([1, 20])('opens the other side on page %s and highlights it', async (pag
       return Promise.resolve(Response.json({ ...target, accountHistoryPage: page }))
     }
     if (path === '/api/accounts/2/operations?page=1') {
-      return Promise.resolve(Response.json({ member: [source], totalItems: 1 }))
+      return Promise.resolve(Response.json(pagedList([source], 1)))
     }
     if (path === `/api/accounts/1/operations?page=${page}`) {
-      return Promise.resolve(Response.json({
-        member: [target], totalItems: 400, view: { last: '/api/accounts/1/operations?page=20' },
-      }))
+      return Promise.resolve(Response.json(pagedList([target], 400, 20)))
     }
     if (path === '/api/accounts/2' || path === '/api/accounts/1') {
       return Promise.resolve(Response.json({ ...account, id: path.endsWith('/2') ? 2 : 1 }))
@@ -109,12 +108,11 @@ it('keeps the source page and reports a genuinely missing other side', async () 
   const source = { ...operation, id: 52, accountId: 2, transactionUuid: 'transfer-uuid', description: 'Source' }
   vi.stubGlobal('fetch', vi.fn((path: string) => {
     if (path === '/api/account_operations/52/other-side') {
-      return Promise.resolve(Response.json({ errorCode: 'account_operation.other_side_not_found' }, { status: 404 }))
+      const type = 'urn:finance-app:problem:account_operation.other_side_not_found'
+      return Promise.resolve(Response.json({ type }, { status: 404 }))
     }
     if (path.endsWith('/operations?page=3')) {
-      return Promise.resolve(Response.json({
-        member: [source], totalItems: 60, view: { last: '/api/accounts/2/operations?page=3' },
-      }))
+      return Promise.resolve(Response.json(pagedList([source], 60, 3)))
     }
     return Promise.resolve(Response.json({ ...account, id: 2 }))
   }))

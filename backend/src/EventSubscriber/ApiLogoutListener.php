@@ -31,6 +31,7 @@ final readonly class ApiLogoutListener
                 Response::HTTP_BAD_REQUEST,
                 'auth.refresh_token_missing',
                 'Refresh token not found. Send it in the refresh_token cookie or as {"refresh_token": "<token>"}.',
+                title: AuthenticationProblemSubscriber::TITLES['auth.refresh_token_missing'],
             )
             : new Response(null, Response::HTTP_NO_CONTENT);
 

@@ -44,6 +44,7 @@ services:
       - ./docker/php/timezone.ini:/usr/local/etc/php/conf.d/timezone.ini
       - ./docker/php/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini
       - ./docker/php/memory_limit.ini:/usr/local/etc/php/conf.d/memory_limit.ini
+      - ./docker/php/expose_php.ini:/usr/local/etc/php/conf.d/expose_php.ini
     depends_on:
       postgres:
         condition: service_healthy

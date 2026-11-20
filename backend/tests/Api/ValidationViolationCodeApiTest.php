@@ -64,11 +64,11 @@ final class ValidationViolationCodeApiTest extends WebTestCase
 
     /**
      * The error format is negotiated separately from the resource format: a client preferring Problem JSON for
-     * errors gets the same violation codes as a JSON-LD client.
+     * errors gets the same violation codes as a plain JSON client.
      */
     public function testViolationCodesAreTheSameInEveryErrorFormat(): void
     {
-        $this->postTransfer([], 'application/ld+json;q=0.5, application/problem+json');
+        $this->postTransfer([], 'application/json;q=0.5, application/problem+json');
 
         self::assertStringStartsWith(
             'application/problem+json',
@@ -122,7 +122,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
         $expected = ['code' => 'contractor.name_max_length', 'params' => ['limit' => '255', 'max' => '255']];
         $headers = [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'HTTP_ACCEPT' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/json',
         ];
         /** @param array<string, mixed> $payload */
         $send = function (string $method, string $target, string $type, array $payload) use ($headers): void {
@@ -134,10 +134,10 @@ final class ValidationViolationCodeApiTest extends WebTestCase
             );
         };
 
-        $send('POST', $uri, 'application/ld+json', ['contractorName' => $tooLong] + $valid);
+        $send('POST', $uri, 'application/json', ['contractorName' => $tooLong] + $valid);
         self::assertSame($expected, $this->codesAndParams()['contractorName'] ?? null);
 
-        $send('POST', $uri, 'application/ld+json', ['contractorName' => 'Length test'] + $valid);
+        $send('POST', $uri, 'application/json', ['contractorName' => 'Length test'] + $valid);
         self::assertResponseStatusCodeSame(201);
         $id = self::intAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'id');
 
@@ -700,8 +700,8 @@ final class ValidationViolationCodeApiTest extends WebTestCase
 
         $this->client->request('POST', $uri, server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'HTTP_ACCEPT' => 'application/ld+json',
-            'CONTENT_TYPE' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode($payload, JSON_THROW_ON_ERROR));
 
         self::assertSame(
@@ -734,7 +734,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     {
         $headers = [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'HTTP_ACCEPT' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/json',
         ];
 
         foreach (['/api/contractors?name=' => 'name', '/api/account_operations?q=' => 'q'] as $uri => $parameter) {
@@ -756,7 +756,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     {
         $headers = [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'HTTP_ACCEPT' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/json',
         ];
         $tooLong = str_repeat('a', 256);
 
@@ -777,17 +777,17 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     {
         $headers = [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'HTTP_ACCEPT' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/json',
         ];
 
         $this->client->request('POST', '/api/contractors', server: $headers + [
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode(['name' => 'X'], JSON_THROW_ON_ERROR));
         self::assertResponseStatusCodeSame(201);
 
         $this->client->request('GET', '/api/contractors?name=%20x%20', server: $headers);
         self::assertResponseIsSuccessful();
-        $members = self::rowsAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'member');
+        $members = self::decodeList((string) $this->client->getResponse()->getContent());
         self::assertSame('X', $members[0]['name'] ?? null);
     }
 
@@ -795,8 +795,8 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     {
         $this->client->request('POST', '/api/contractors', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'HTTP_ACCEPT' => 'application/ld+json',
-            'CONTENT_TYPE' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode(['name' => ' '], JSON_THROW_ON_ERROR));
 
         self::assertSame(
@@ -809,7 +809,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     {
         $headers = [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'HTTP_ACCEPT' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/json',
         ];
 
         $this->client->request('GET', '/api/account_operations?q=%20%20', server: $headers);
@@ -817,6 +817,21 @@ final class ValidationViolationCodeApiTest extends WebTestCase
 
         $this->client->request('GET', '/api/contractors?name=%20%20', server: $headers);
         self::assertSame(['name' => ['code' => 'validation.is_blank', 'params' => []]], $this->codesAndParams());
+    }
+
+    /**
+     * A query parameter of the wrong type is a violation like a field of the wrong type, with the JSON type.
+     */
+    public function testShowHiddenThatIsNotABooleanIsAWrongTypeViolation(): void
+    {
+        $this->client->request('GET', '/api/summary?showHidden=maybe', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
+        ]);
+
+        self::assertSame(
+            ['showHidden' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'boolean']]],
+            $this->codesAndParams(),
+        );
     }
 
     /**
@@ -831,7 +846,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     {
         $this->client->request('GET', $uri, server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'HTTP_ACCEPT' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/json',
         ]);
 
         self::assertSame(['name' => $expected], $this->codesAndParams());
@@ -931,11 +946,11 @@ final class ValidationViolationCodeApiTest extends WebTestCase
         $this->postTransfer(['fromAccountId' => 'abc']);
 
         self::assertSame(
-            ['fromAccountId' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'int|null']]],
+            ['fromAccountId' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'number|null']]],
             $this->codesAndParams(),
         );
         self::assertSame(
-            'fromAccountId: This value should be of type int|null.',
+            'fromAccountId: This value should be of type number|null.',
             self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'detail'),
         );
     }
@@ -944,8 +959,12 @@ final class ValidationViolationCodeApiTest extends WebTestCase
      * @param array<string, mixed> $payload
      */
     #[DataProvider('wrongTypes')]
-    public function testWrongTypeNamesTheExpectedPhpType(string $uri, array $payload, string $field, string $type): void
-    {
+    public function testWrongTypeNamesTheExpectedJsonType(
+        string $uri,
+        array $payload,
+        string $field,
+        string $type,
+    ): void {
         $this->send('POST', $uri, $payload);
 
         self::assertSame(
@@ -959,9 +978,9 @@ final class ValidationViolationCodeApiTest extends WebTestCase
      */
     public static function wrongTypes(): iterable
     {
-        yield 'day' => ['/api/fixed_expenses', ['day' => 'x'], 'day', 'int|null'];
-        yield 'text field' => ['/api/contractors', ['name' => 5], 'name', 'null|string'];
-        yield 'amount' => ['/api/fixed_expenses', ['amount' => 5], 'amount', 'null|string'];
+        yield 'day' => ['/api/fixed_expenses', ['day' => 'x'], 'day', 'number|null'];
+        yield 'text field' => ['/api/contractors', ['name' => 5], 'name', 'string|null'];
+        yield 'amount' => ['/api/fixed_expenses', ['amount' => 5], 'amount', 'string|null'];
     }
 
     #[DataProvider('wrongConfirmedValues')]
@@ -973,7 +992,7 @@ final class ValidationViolationCodeApiTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(422);
         self::assertSame(
-            ['confirmed' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'bool']]],
+            ['confirmed' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'boolean']]],
             $this->codesAndParams(),
         );
         self::assertSame($countBefore, $this->rowCounts());
@@ -995,9 +1014,9 @@ final class ValidationViolationCodeApiTest extends WebTestCase
 
         self::assertSame(
             [
-                'day' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'int|null']],
-                'amount' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'null|string']],
-                'description' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'null|string']],
+                'day' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'number|null']],
+                'amount' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'string|null']],
+                'description' => ['code' => 'validation.invalid_type', 'params' => ['type' => 'string|null']],
             ],
             $this->codesAndParams(),
         );
@@ -1040,11 +1059,9 @@ final class ValidationViolationCodeApiTest extends WebTestCase
      */
     private function codesAndParams(): array
     {
-        self::assertResponseStatusCodeSame(422);
-        $violations = self::rowsAt(
-            self::decodeObject((string) $this->client->getResponse()->getContent()),
-            'violations',
-        );
+        // A GET has no content: its query parameters are refused with 400, content with 422 (RFC 9110).
+        self::assertResponseStatusCodeSame('GET' === $this->client->getRequest()->getMethod() ? 400 : 422);
+        $violations = self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent()));
 
         $result = [];
         foreach ($violations as $violation) {
@@ -1061,11 +1078,11 @@ final class ValidationViolationCodeApiTest extends WebTestCase
     /**
      * @param array<string, mixed> $payload
      */
-    private function postTransfer(array $payload, string $accept = 'application/ld+json'): void
+    private function postTransfer(array $payload, string $accept = 'application/json'): void
     {
         $this->client->request('POST', '/api/transfers', server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
             'HTTP_ACCEPT' => $accept,
         ], content: json_encode((object) $payload, JSON_THROW_ON_ERROR));
     }
@@ -1075,10 +1092,10 @@ final class ValidationViolationCodeApiTest extends WebTestCase
      */
     private function send(string $method, string $uri, array $payload): void
     {
-        $type = 'PATCH' === $method ? 'application/merge-patch+json' : 'application/ld+json';
+        $type = 'PATCH' === $method ? 'application/merge-patch+json' : 'application/json';
         $this->client->request($method, $uri, server: [
             'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-            'HTTP_ACCEPT' => 'application/ld+json',
+            'HTTP_ACCEPT' => 'application/json',
             'CONTENT_TYPE' => $type,
         ], content: json_encode((object) $payload, JSON_THROW_ON_ERROR));
     }

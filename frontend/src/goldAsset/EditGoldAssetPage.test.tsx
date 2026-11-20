@@ -63,8 +63,9 @@ describe('EditGoldAssetPage', () => {
     const user = userEvent.setup()
     serve((method) => method === 'PATCH'
       ? Response.json({
-        errorCode: 'validation.failed', violations: [
-          { propertyPath: 'description', message: 'Refused.', code: 'gold_asset.description_not_blank', params: {} },
+        type: 'urn:finance-app:problem:validation.failed',
+        errors: [
+          { pointer: '#/description', detail: 'Refused.', code: 'gold_asset.description_not_blank', params: {} },
         ],
       }, { status: 422 })
       : undefined)
@@ -93,7 +94,7 @@ describe('EditGoldAssetPage', () => {
 
   it('shows the page of a missing address for an asset that does not exist', async () => {
     serve((method, path) => method === 'GET' && path === '/api/gold_assets/3'
-      ? Response.json({ errorCode: 'gold_asset.not_found' }, { status: 404 })
+      ? Response.json({ type: 'urn:finance-app:problem:gold_asset.not_found' }, { status: 404 })
       : undefined)
     showPage()
 

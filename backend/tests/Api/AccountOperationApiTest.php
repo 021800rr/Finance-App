@@ -96,16 +96,28 @@ final class AccountOperationApiTest extends WebTestCase
 
         $data = $this->collection('/api/accounts/'.$account->getId().'/operations?page=2');
 
-        self::assertSame(Paginator::DEFAULT_PER_PAGE + 2, $data['totalItems']);
-        self::assertCount(2, self::rowsAt($data, 'member'));
-        self::assertStringEndsWith('/operations?page=1', self::stringAt($data, 'view', 'previous'));
+        self::assertSame(Paginator::DEFAULT_PER_PAGE + 2, self::intAt($data, 'page', 'totalElements'));
+        self::assertSame(2, self::intAt($data, 'page', 'number'));
+        self::assertSame(2, self::intAt($data, 'page', 'totalPages'));
+        self::assertSame(Paginator::DEFAULT_PER_PAGE, self::intAt($data, 'page', 'size'));
+        self::assertCount(2, self::rowsAt($data, 'content'));
+        $path = '/api/accounts/'.$account->getId().'/operations';
+        // RFC 8288: the other pages in the Link header; no "next" on the last page.
+        self::assertResponseHeaderSame(
+            'Link',
+            "<{$path}?page=1>; rel=\"first\", <{$path}?page=1>; rel=\"prev\", <{$path}?page=2>; rel=\"last\"",
+        );
     }
 
-    public function testSearchCollectionDescribesTheQueryParameterInTheHydraSearchTemplate(): void
+    public function testTheLinksOfASearchKeepTheSearchText(): void
     {
-        $data = $this->collection('/api/account_operations?q=anything');
+        $this->collection('/api/account_operations?q=a%20b');
 
-        self::assertStringEndsWith('{?q}', self::stringAt($data, 'search', 'template'));
+        self::assertResponseHeaderSame(
+            'Link',
+            '</api/account_operations?q=a%20b&page=1>; rel="first", '
+            .'</api/account_operations?q=a%20b&page=1>; rel="last"',
+        );
     }
 
     public function testAccountOperationsRouteOfUnknownAccountReturns404(): void
@@ -142,14 +154,14 @@ final class AccountOperationApiTest extends WebTestCase
     {
         $this->client->request('GET', '/api/account_operations', server: $this->authHeaders());
 
-        self::assertResponseStatusCodeSame(422);
+        self::assertResponseStatusCodeSame(400);
     }
 
     public function testSearchWithBlankQueryParameterIsRejected(): void
     {
         $this->client->request('GET', '/api/account_operations?q=%20%20%20', server: $this->authHeaders());
 
-        self::assertResponseStatusCodeSame(422);
+        self::assertResponseStatusCodeSame(400);
     }
 
     public function testSearchSpansAllAccounts(): void
@@ -211,12 +223,12 @@ final class AccountOperationApiTest extends WebTestCase
         foreach ($lists as $uri) {
             $this->client->request('GET', $uri.$page, server: $this->authHeaders());
 
-            self::assertResponseStatusCodeSame(422);
+            self::assertResponseStatusCodeSame(400);
             $error = self::decodeObject((string) $this->client->getResponse()->getContent());
-            self::assertSame('validation.failed', self::stringAt($error, 'errorCode'));
+            self::assertSame('validation.failed', self::problemCode($error));
             self::assertSame(
                 ['page' => 'common.page_invalid'],
-                array_column(self::rowsAt($error, 'violations'), 'code', 'propertyPath'),
+                array_column(self::fieldErrors($error), 'code', 'propertyPath'),
             );
             self::assertSame(
                 'page: The page number must be a positive whole number.',
@@ -232,7 +244,7 @@ final class AccountOperationApiTest extends WebTestCase
         self::assertResponseStatusCodeSame(404);
         self::assertSame(
             'account.not_found',
-            self::stringAt(self::decodeObject((string) $this->client->getResponse()->getContent()), 'errorCode'),
+            self::problemCode(self::decodeObject((string) $this->client->getResponse()->getContent())),
         );
     }
 
@@ -253,7 +265,7 @@ final class AccountOperationApiTest extends WebTestCase
 
         $data = $this->collection('/api/accounts/'.$account->getId().'/operations?page='.$page);
 
-        self::assertSame([], self::rowsAt($data, 'member'));
+        self::assertSame([], self::rowsAt($data, 'content'));
     }
 
     public function testOpenApiDocumentsTheAccountOperationsRoute(): void
@@ -394,15 +406,12 @@ final class AccountOperationApiTest extends WebTestCase
         $this->client->request(
             'POST',
             '/api/account_operations',
-            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/ld+json'],
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/json'],
             content: json_encode(['accountId' => $account->getId(), 'contractorName' => 'Anyone'], JSON_THROW_ON_ERROR),
         );
 
         self::assertResponseStatusCodeSame(422);
-        $violations = self::rowsAt(
-            self::decodeObject((string) $this->client->getResponse()->getContent()),
-            'violations',
-        );
+        $violations = self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent()));
         $messages = array_column($violations, 'message', 'propertyPath');
         self::assertSame('Please enter a date.', $messages['operationDate'] ?? null);
         self::assertSame('Please enter an amount.', $messages['amount'] ?? null);
@@ -418,7 +427,7 @@ final class AccountOperationApiTest extends WebTestCase
         $this->client->request(
             'POST',
             '/api/account_operations',
-            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/ld+json'],
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/json'],
             content: json_encode([
                 'accountId' => $account->getId(),
                 'contractorName' => 'Anyone',
@@ -428,10 +437,7 @@ final class AccountOperationApiTest extends WebTestCase
         );
 
         self::assertResponseStatusCodeSame(422);
-        $violations = self::rowsAt(
-            self::decodeObject((string) $this->client->getResponse()->getContent()),
-            'violations',
-        );
+        $violations = self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent()));
         $messages = array_column($violations, 'message', 'propertyPath');
         self::assertSame(
             'This account is hidden. Please select an account that is not hidden.',
@@ -469,10 +475,7 @@ final class AccountOperationApiTest extends WebTestCase
         $this->writeOperation($account, $operation, ['description' => str_repeat('a', 256)]);
 
         self::assertResponseStatusCodeSame(422);
-        $violations = self::rowsAt(
-            self::decodeObject((string) $this->client->getResponse()->getContent()),
-            'violations',
-        );
+        $violations = self::fieldErrors(self::decodeObject((string) $this->client->getResponse()->getContent()));
         $messages = array_column($violations, 'message', 'propertyPath');
         self::assertSame('The description cannot be longer than 255 characters.', $messages['description'] ?? null);
         self::assertSame(
@@ -536,7 +539,7 @@ final class AccountOperationApiTest extends WebTestCase
         $this->client->request(
             'POST',
             '/api/account_operations',
-            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/ld+json'],
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/json'],
             content: json_encode($body + [
                 'accountId' => $account->getId(),
                 'contractorName' => 'Anyone',
@@ -590,7 +593,7 @@ final class AccountOperationApiTest extends WebTestCase
         $contractorsBefore = $this->em()->getRepository(Contractor::class)->count([]);
 
         $this->client->request('POST', '/api/account_operations', server: $this->authHeaders() + [
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode([
             'accountId' => $account->getId(),
             'contractorName' => 'Rejected contractor '.uniqid(),
@@ -640,7 +643,7 @@ final class AccountOperationApiTest extends WebTestCase
     {
         $account = $this->createAccount();
         $this->client->request('POST', '/api/account_operations', server: $this->authHeaders() + [
-            'CONTENT_TYPE' => 'application/ld+json',
+            'CONTENT_TYPE' => 'application/json',
         ], content: json_encode([
             'accountId' => $account->getId(),
             'contractorName' => 'Valid amount contractor '.uniqid(),
@@ -688,7 +691,7 @@ final class AccountOperationApiTest extends WebTestCase
     {
         self::assertResponseStatusCodeSame(422);
         $error = self::decodeObject((string) $this->client->getResponse()->getContent());
-        $violations = self::rowsAt($error, 'violations');
+        $violations = self::fieldErrors($error);
         self::assertCount(1, $violations);
         self::assertSame('amount', self::stringAt($violations[0], 'propertyPath'));
         self::assertSame('Please enter an amount.', self::stringAt($violations[0], 'message'));
@@ -716,7 +719,7 @@ final class AccountOperationApiTest extends WebTestCase
         $this->client->request(
             'POST',
             '/api/account_operations',
-            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/ld+json'],
+            server: $this->authHeaders() + ['CONTENT_TYPE' => 'application/json'],
             content: json_encode([
                 'accountId' => $account->getId(),
                 'contractorName' => 'Some Contractor',
@@ -767,7 +770,7 @@ final class AccountOperationApiTest extends WebTestCase
      */
     private function collection(string $uri): array
     {
-        $this->client->request('GET', $uri, server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/ld+json']);
+        $this->client->request('GET', $uri, server: $this->authHeaders() + ['HTTP_ACCEPT' => 'application/json']);
         self::assertResponseIsSuccessful();
 
         return self::decodeObject((string) $this->client->getResponse()->getContent());
@@ -779,7 +782,7 @@ final class AccountOperationApiTest extends WebTestCase
     private function collectionDescriptions(string $uri): array
     {
         $descriptions = [];
-        foreach (self::rowsAt($this->collection($uri), 'member') as $row) {
+        foreach (self::rowsAt($this->collection($uri), 'content') as $row) {
             if (is_string($row['description'] ?? null)) {
                 $descriptions[] = $row['description'];
             }

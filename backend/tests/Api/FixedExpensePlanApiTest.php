@@ -50,7 +50,10 @@ final class FixedExpensePlanApiTest extends WebTestCase
 
         $this->client->request('POST', '/api/fixed_expenses/plan', server: $this->authHeaders());
 
-        self::assertResponseStatusCodeSame(201);
+        // 200 with the result: several operations were created, no one resource a Location could name.
+        self::assertResponseStatusCodeSame(200);
+        self::assertResponseNotHasHeader('Location');
+        self::assertResponseNotHasHeader('Content-Location');
         $data = self::decodeObject((string) $this->client->getResponse()->getContent());
         self::assertSame($main->getId(), self::intAt($data, 'accountId'));
         self::assertSame(
@@ -83,7 +86,7 @@ final class FixedExpensePlanApiTest extends WebTestCase
         $this->createFixedExpense(day: 12, amount: -15000);
 
         $this->client->request('POST', '/api/fixed_expenses/plan', server: $this->authHeaders());
-        self::assertResponseStatusCodeSame(201);
+        self::assertResponseStatusCodeSame(200);
         $operationsAfterFirstCall = $this->em()->getRepository(AccountOperation::class)->count([]);
 
         $this->client->request('POST', '/api/fixed_expenses/plan', server: $this->authHeaders());
@@ -159,10 +162,10 @@ final class FixedExpensePlanApiTest extends WebTestCase
     {
         self::assertResponseStatusCodeSame(409);
         $problem = self::decodeObject((string) $this->client->getResponse()->getContent());
-        self::assertSame($errorCode, $problem['errorCode'] ?? null);
+        self::assertSame($errorCode, self::problemCode($problem));
         self::assertSame('urn:finance-app:problem:'.$errorCode, $problem['type'] ?? null);
         self::assertNotSame('', self::stringAt($problem, 'detail'));
-        $params = self::objectAt($problem, 'params');
+        $params = self::problemMembers($problem);
         self::assertSame($paramNames, array_keys($params));
 
         return $params;
