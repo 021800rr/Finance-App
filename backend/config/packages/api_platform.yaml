@@ -1,6 +1,10 @@
 api_platform:
     title: Finance App API
     version: 1.0.0
+    # HEAD answers with the same headers as GET (RFC 9110, section 9.3.2), its ETag among them, so it can be made
+    # conditional (NotModifiedSubscriber). By default API Platform builds no body for HEAD, and with no body it adds
+    # neither the ETag nor Vary.
+    enable_head_request_optimization: false
     formats:
         jsonld: ['application/ld+json']
         json: ['application/json']

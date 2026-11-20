@@ -23,6 +23,12 @@ services:
         decoration_priority: 301
         arguments: [ '@.inner' ]
 
+    # Between loading the record and checking the body: a missing record stays 404, a wrong Content-Type stays 415.
+    App\State\IfNoneMatchProvider:
+        decorates: 'api_platform.state_provider.main'
+        decoration_priority: 302
+        arguments: [ '@.inner', '@http_kernel' ]
+
     # The login throttling of both login firewalls (security.yaml): Symfony's own limiter, built once from the
     # limiters of config/packages/rate_limiter.yaml, so the web form and the API count the attempts together.
     app.login_rate_limiter.symfony:

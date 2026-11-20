@@ -25,6 +25,7 @@ final class ProblemResponse
         406 => 'not_acceptable',
         409 => 'conflict',
         410 => 'gone',
+        412 => 'precondition_failed',
         413 => 'content_too_large',
         415 => 'unsupported_media_type',
         422 => 'unprocessable_content',
