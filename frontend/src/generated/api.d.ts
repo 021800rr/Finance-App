@@ -376,7 +376,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Describes an HTTP error status. This is the address in the "@id" of an error.
+         * Describes an HTTP error status.
          * @description Send your JWT token, as for every other address:
          *
          *     ```bash
@@ -1283,35 +1283,6 @@ export interface components {
                 [key: string]: string;
             };
         };
-        /** @description Unprocessable entity */
-        "ConstraintViolation.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /** @description HTTP status code of the response. */
-            readonly status?: number;
-            violations?: {
-                /** @description The property path of the violation */
-                propertyPath: string;
-                /** @description The message associated with the violation */
-                message: string;
-                /** @description Stable code of the violation, e.g. "transfer.to_account_required" or "validation.invalid_type". */
-                code: string;
-                /** @description Values for the message: only "limit", "min", "max", "type"; never the submitted value. */
-                readonly params: {
-                    [key: string]: string;
-                };
-            }[];
-            readonly detail?: string;
-            readonly description?: string;
-            /** @description Problem type: "urn:finance-app:problem:" followed by errorCode. */
-            readonly type?: string;
-            /** @description Name of the HTTP status, e.g. "Unprocessable Content". */
-            readonly title?: string;
-            /** @description Stable code of the problem, e.g. "transfer.accounts_must_differ", "validation.failed" or "http.not_found". */
-            readonly errorCode: string;
-            /** @description Values for the message, e.g. {"fromCurrency": "PLN"}. */
-            readonly params: {
-                [key: string]: string;
-            };
-        };
         /** @description Searches contractors by a part of the name, as the contractor field of the forms does. The search text name is required: there is no list of all contractors. */
         Contractor: {
             /**
@@ -1451,24 +1422,6 @@ export interface components {
             readonly status?: number;
             /** @description Problem type: "urn:finance-app:problem:" followed by errorCode. */
             readonly type?: string;
-            /** @description Stable code of the problem, e.g. "transfer.accounts_must_differ", "validation.failed" or "http.not_found". */
-            readonly errorCode: string;
-            /** @description Values for the message, e.g. {"fromCurrency": "PLN"}. */
-            readonly params: {
-                [key: string]: string;
-            };
-        };
-        /** @description A representation of common errors. */
-        "Error.jsonld": components["schemas"]["HydraItemBaseSchema"] & {
-            /** @description Name of the HTTP status, e.g. "Unprocessable Content". */
-            readonly title?: string;
-            /** @description A human-readable explanation specific to this occurrence of the problem. */
-            readonly detail?: string | null;
-            /** @description HTTP status code of the response. */
-            readonly status?: number;
-            /** @description Problem type: "urn:finance-app:problem:" followed by errorCode. */
-            readonly type?: string;
-            readonly description?: string | null;
             /** @description Stable code of the problem, e.g. "transfer.accounts_must_differ", "validation.failed" or "http.not_found". */
             readonly errorCode: string;
             /** @description Values for the message, e.g. {"fromCurrency": "PLN"}. */
@@ -2618,15 +2571,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -2653,15 +2597,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -2712,15 +2647,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -2747,15 +2673,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -2782,15 +2699,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -2846,15 +2754,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -2881,15 +2780,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -2916,15 +2806,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -2951,15 +2832,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -2986,15 +2858,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 409
-                         * @constant
-                         */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 409
@@ -3021,15 +2884,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -3084,15 +2938,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -3119,15 +2964,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -3154,15 +2990,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -3216,15 +3043,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -3251,15 +3069,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -3286,15 +3095,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -3321,15 +3121,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 409
-                         * @constant
-                         */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 409
@@ -3356,15 +3147,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -3415,15 +3197,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -3450,15 +3223,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -3485,15 +3249,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -3541,15 +3296,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -3576,15 +3322,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -3611,15 +3348,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -3675,15 +3403,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -3710,15 +3429,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -3745,15 +3455,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -3780,15 +3481,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -3815,15 +3507,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 409
-                         * @constant
-                         */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 409
@@ -3850,15 +3533,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -3909,15 +3583,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -3944,15 +3609,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -4015,15 +3671,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -4050,15 +3697,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -4092,15 +3730,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -4153,15 +3782,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -4188,15 +3808,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -4247,15 +3858,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -4282,15 +3884,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -4317,15 +3910,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -4378,15 +3962,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -4413,15 +3988,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -4472,15 +4038,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -4507,15 +4064,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -4542,15 +4090,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -4605,15 +4144,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -4640,15 +4170,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -4675,15 +4196,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -4737,15 +4249,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -4772,15 +4275,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -4807,15 +4301,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -4842,15 +4327,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 409
-                         * @constant
-                         */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 409
@@ -4877,15 +4353,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -4936,15 +4403,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -4971,15 +4429,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -5006,15 +4455,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -5067,15 +4507,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -5102,15 +4533,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -5164,15 +4586,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -5199,15 +4612,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -5234,15 +4638,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -5269,15 +4664,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -5327,15 +4713,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -5362,15 +4739,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -5420,15 +4788,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -5455,15 +4814,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -5514,15 +4864,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -5549,15 +4890,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -5584,15 +4916,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -5640,15 +4963,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -5675,15 +4989,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -5710,15 +5015,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -5762,7 +5058,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"];
+                    "application/ld+json": components["schemas"]["Error"];
                     "application/json": components["schemas"]["Error"];
                 };
             };
@@ -5772,15 +5068,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -5833,15 +5120,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -5868,15 +5146,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -5930,15 +5199,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -5965,15 +5225,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -6000,15 +5251,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -6035,15 +5277,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 409
-                         * @constant
-                         */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 409
@@ -6070,15 +5303,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -6129,15 +5353,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -6164,15 +5379,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -6199,15 +5405,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -6255,15 +5452,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -6290,15 +5478,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -6325,15 +5504,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -6389,15 +5559,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -6424,15 +5585,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -6459,15 +5611,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -6494,15 +5637,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -6529,15 +5663,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 409
-                         * @constant
-                         */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 409
@@ -6564,15 +5689,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -6620,15 +5736,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -6655,15 +5762,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -6690,15 +5788,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -6725,15 +5814,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 409
-                         * @constant
-                         */
-                        status?: 409;
-                        /** @example http.conflict */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 409
@@ -6760,15 +5840,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -6821,15 +5892,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -6856,15 +5918,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -6918,15 +5971,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -6953,15 +5997,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -6988,15 +6023,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -7023,15 +6049,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -7082,15 +6099,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -7117,15 +6125,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -7152,15 +6151,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -7208,15 +6198,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -7243,15 +6224,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -7278,15 +6250,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -7342,15 +6305,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -7377,15 +6331,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -7412,15 +6357,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -7447,15 +6383,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -7482,15 +6409,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -7543,15 +6461,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -7578,15 +6487,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -7637,15 +6537,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -7672,15 +6563,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -7707,15 +6589,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -7769,15 +6642,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -7804,15 +6668,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -7839,15 +6694,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -7874,15 +6720,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["ConstraintViolation.jsonld"] & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["ConstraintViolation"] & {
                         /**
                          * @example 422
@@ -7932,15 +6769,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -7967,15 +6795,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -8025,15 +6844,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -8060,15 +6870,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -8119,15 +6920,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -8154,15 +6946,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -8189,15 +6972,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -8245,15 +7019,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -8280,15 +7045,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -8315,15 +7071,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -8376,15 +7123,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -8411,15 +7149,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -8470,15 +7199,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -8505,15 +7225,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -8540,15 +7251,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -8606,15 +7308,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example auth.invalid_credentials */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -8643,15 +7336,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 429
-                         * @constant
-                         */
-                        status?: 429;
-                        /** @example auth.too_many_login_attempts */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 429
@@ -8699,15 +7383,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -8734,15 +7409,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -8769,15 +7435,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -8829,15 +7486,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example auth.refresh_token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -8894,15 +7542,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example auth.refresh_token_invalid */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -8953,15 +7592,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -8988,15 +7618,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -9023,15 +7644,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 404
-                         * @constant
-                         */
-                        status?: 404;
-                        /** @example http.not_found */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 404
@@ -9085,15 +7697,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 400
-                         * @constant
-                         */
-                        status?: 400;
-                        /** @example http.bad_request */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 400
@@ -9120,15 +7723,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 401
-                         * @constant
-                         */
-                        status?: 401;
-                        /** @example auth.token_missing */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 401
@@ -9155,15 +7749,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": components["schemas"]["Error.jsonld"] & {
-                        /**
-                         * @example 403
-                         * @constant
-                         */
-                        status?: 403;
-                        /** @example http.forbidden */
-                        errorCode?: string;
-                    };
                     "application/problem+json": components["schemas"]["Error"] & {
                         /**
                          * @example 403
@@ -9190,15 +7775,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/ld+json": (components["schemas"]["ConstraintViolation.jsonld"] | components["schemas"]["Error.jsonld"]) & {
-                        /**
-                         * @example 422
-                         * @constant
-                         */
-                        status?: 422;
-                        /** @example validation.failed */
-                        errorCode?: string;
-                    };
                     "application/problem+json": (components["schemas"]["ConstraintViolation"] | components["schemas"]["Error"]) & {
                         /**
                          * @example 422

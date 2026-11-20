@@ -291,11 +291,12 @@ final class TransferApiTest extends WebTestCase
         self::assertStringContainsString('http.unprocessable_content', $unprocessable['description']);
         self::assertSame(
             [
-                ['$ref' => '#/components/schemas/ConstraintViolation.jsonld'],
-                ['$ref' => '#/components/schemas/Error.jsonld'],
+                ['$ref' => '#/components/schemas/ConstraintViolation'],
+                ['$ref' => '#/components/schemas/Error'],
             ],
             // ProblemDetailsDecorator wraps it in "allOf" to add the example status and errorCode.
-            self::objectAt($unprocessable, 'content', 'application/ld+json', 'schema', 'allOf', '0')['anyOf'] ?? null,
+            self::objectAt($unprocessable, 'content', 'application/problem+json', 'schema', 'allOf', '0')['anyOf']
+                ?? null,
         );
     }
 

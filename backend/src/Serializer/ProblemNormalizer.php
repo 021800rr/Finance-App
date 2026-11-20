@@ -50,14 +50,9 @@ final class ProblemNormalizer implements NormalizerInterface, NormalizerAwareInt
 
         $status = $normalized['status'];
         [$errorCode, $params] = $this->codeAndParams($data, $status);
-        // Existing keys (type, title) keep their place, new ones go last: @context stays first in JSON-LD.
+        // Existing keys (type, title) keep their place, new ones go last.
         foreach (ProblemResponse::fields($status, $errorCode, $params) as $key => $value) {
             $normalized[$key] = $value;
-        }
-
-        // API Platform's own "@id" is an id of the violation list that leads nowhere.
-        if ($data instanceof ValidationException && isset($normalized['@id'])) {
-            $normalized['@id'] = '/api/errors/'.$status;
         }
 
         if ($data instanceof ValidationException && is_array($normalized['violations'] ?? null)) {

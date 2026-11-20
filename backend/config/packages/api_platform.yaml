@@ -5,6 +5,11 @@ api_platform:
     # conditional (NotModifiedSubscriber). By default API Platform builds no body for HEAD, and with no body it adds
     # neither the ETag nor Vary.
     enable_head_request_optimization: false
+    # Every error is plain Problem Details (RFC 9457), whatever the Accept header: as JSON-LD it got "@context",
+    # "@id", "@type" and "description", and in application/problem+json the names of extension members SHOULD start
+    # with a letter (RFC 9457, section 4). The JSON-LD error also repeated "detail" as "description".
+    error_formats:
+        jsonproblem: ['application/problem+json']
     formats:
         jsonld: ['application/ld+json']
         json: ['application/json']

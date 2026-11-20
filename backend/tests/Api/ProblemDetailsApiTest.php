@@ -55,13 +55,35 @@ final class ProblemDetailsApiTest extends WebTestCase
         self::assertNotSame([], self::rowsAt($problem, 'violations'));
     }
 
-    public function testJsonLdErrorKeepsContextFirstAndAddsOurFieldsAfterwards(): void
+    /**
+     * @return iterable<string, array{string|null}>
+     */
+    public static function acceptHeaders(): iterable
     {
-        $this->postTransfer('{"amountFrom":"0"}');
+        yield 'none' => [null];
+        yield 'any' => ['*/*'];
+        yield 'JSON-LD' => ['application/ld+json'];
+        yield 'JSON' => ['application/json'];
+    }
 
-        $keys = array_keys(self::decodeObject((string) $this->client->getResponse()->getContent()));
-        self::assertSame('@context', $keys[0] ?? null);
-        self::assertSame(['errorCode', 'params'], array_slice($keys, -2));
+    /**
+     * RFC 9457, section 4: in application/problem+json the names of extension members SHOULD start with a letter, so
+     * an error has no JSON-LD members ("@context", "@id", "@type") whatever the client accepts, nor Hydra's
+     * "description", which repeated "detail".
+     */
+    #[DataProvider('acceptHeaders')]
+    public function testErrorIsPlainProblemDetailsWhateverTheAccept(?string $accept): void
+    {
+        $this->client->request('POST', '/api/transfers', server: [
+            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
+            'CONTENT_TYPE' => 'application/ld+json',
+        ] + (null === $accept ? [] : ['HTTP_ACCEPT' => $accept]), content: '{"amountFrom":"0"}');
+
+        $problem = $this->assertProblem(422, 'validation.failed', []);
+        foreach (array_keys($problem) as $name) {
+            self::assertMatchesRegularExpression('/^[A-Za-z][A-Za-z0-9_]{2,}$/', (string) $name);
+        }
+        self::assertArrayNotHasKey('description', $problem);
     }
 
     public function testTransferToTheSameAccountHasTheFormsCode(): void
@@ -226,19 +248,6 @@ final class ProblemDetailsApiTest extends WebTestCase
         self::assertSame('This record already exists.', $problem['detail'] ?? null);
     }
 
-    public function testValidationErrorIdIsAnAddressThatExists(): void
-    {
-        $this->postTransfer('{}');
-
-        $problem = $this->assertProblem(422, 'validation.failed', []);
-        self::assertSame('/api/errors/422', $problem['@id'] ?? null);
-
-        $this->client->request('GET', '/api/errors/422', server: [
-            'HTTP_AUTHORIZATION' => 'Bearer '.$this->jwt(),
-        ]);
-        self::assertResponseIsSuccessful();
-    }
-
     public function testOpenApiDocumentsAuthenticationErrorsOnEveryProtectedOperation(): void
     {
         $docs = $this->openApiDocs();
@@ -303,10 +312,10 @@ final class ProblemDetailsApiTest extends WebTestCase
     public function testOpenApiDocumentsThatAListRefusesAnInvalidFilter(string $path): void
     {
         $invalid = self::objectAt($this->openApiDocs(), 'paths', $path, 'get', 'responses', '422');
-        $schema = self::objectAt($invalid, 'content', 'application/ld+json', 'schema', 'allOf', '0');
+        $schema = self::objectAt($invalid, 'content', 'application/problem+json', 'schema', 'allOf', '0');
 
         self::assertStringContainsString('validation.failed', self::stringAt($invalid, 'description'));
-        self::assertSame('#/components/schemas/ConstraintViolation.jsonld', $schema['$ref'] ?? null);
+        self::assertSame('#/components/schemas/ConstraintViolation', $schema['$ref'] ?? null);
     }
 
     /**
@@ -595,19 +604,18 @@ final class ProblemDetailsApiTest extends WebTestCase
     {
         $docs = $this->openApiDocs();
 
-        foreach (['Error', 'Error.jsonld', 'ConstraintViolation', 'ConstraintViolation.jsonld'] as $name) {
+        self::assertArrayNotHasKey('Error.jsonld', self::objectAt($docs, 'components', 'schemas'));
+        self::assertArrayNotHasKey('ConstraintViolation.jsonld', self::objectAt($docs, 'components', 'schemas'));
+        foreach (['Error', 'ConstraintViolation'] as $name) {
             $schema = self::objectAt($docs, 'components', 'schemas', $name);
-            $properties = isset($schema['allOf'])
-                ? self::objectAt($schema, 'allOf', '1', 'properties')
-                : self::objectAt($schema, 'properties');
+            $properties = self::objectAt($schema, 'properties');
             self::assertArrayHasKey('errorCode', $properties, $name);
             self::assertArrayHasKey('params', $properties, $name);
-            $objectSchema = isset($schema['allOf']) ? self::objectAt($schema, 'allOf', '1') : $schema;
-            $required = $objectSchema['required'] ?? null;
+            $required = $schema['required'] ?? null;
             self::assertIsArray($required, $name);
             self::assertContains('errorCode', $required, $name);
             self::assertContains('params', $required, $name);
-            if (str_starts_with($name, 'ConstraintViolation')) {
+            if ('ConstraintViolation' === $name) {
                 self::assertSame(
                     ['propertyPath', 'message', 'code', 'params'],
                     self::objectAt($properties, 'violations', 'items')['required'] ?? null,

@@ -19,7 +19,8 @@ use App\Http\ProblemResponse;
  */
 final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
 {
-    private const array ERROR_SCHEMAS = ['Error', 'Error.jsonld', 'ConstraintViolation', 'ConstraintViolation.jsonld'];
+    /** Errors are plain Problem Details whatever the Accept header (error_formats), so no JSON-LD schemas. */
+    private const array ERROR_SCHEMAS = ['Error', 'ConstraintViolation'];
 
     private const string ERROR_ADDRESS_RESPONSE = 'The general description of this HTTP status. The response has '
         .'status 200: this address describes an error, it does not report one.';
@@ -99,11 +100,12 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
         $openApi->getPaths()->addPath('/api/errors/{status}', new PathItem(get: new Operation(
             operationId: 'api_errors_get',
             tags: ['Error'],
+            // As JSON-LD the description also has "@context", "@id" and "@type".
             responses: ['200' => new Response(self::ERROR_ADDRESS_RESPONSE, new \ArrayObject([
-                'application/ld+json' => ['schema' => ['$ref' => '#/components/schemas/Error.jsonld']],
+                'application/ld+json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
                 'application/json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
             ]))],
-            summary: 'Describes an HTTP error status. This is the address in the "@id" of an error.',
+            summary: 'Describes an HTTP error status.',
             description: self::ERROR_ADDRESS_DESCRIPTION,
             parameters: [new Parameter(
                 name: 'status',
@@ -182,7 +184,6 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     private function violationResponse(string $description): Response
     {
         return new Response($description, new \ArrayObject([
-            'application/ld+json' => ['schema' => ['$ref' => '#/components/schemas/ConstraintViolation.jsonld']],
             'application/problem+json' => ['schema' => ['$ref' => '#/components/schemas/ConstraintViolation']],
             'application/json' => ['schema' => ['$ref' => '#/components/schemas/ConstraintViolation']],
         ]));
@@ -194,7 +195,6 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     private function errorResponse(string $description, array $headers = []): Response
     {
         return new Response($description, new \ArrayObject([
-            'application/ld+json' => ['schema' => ['$ref' => '#/components/schemas/Error.jsonld']],
             'application/problem+json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
             'application/json' => ['schema' => ['$ref' => '#/components/schemas/Error']],
         ]), [] === $headers ? null : new \ArrayObject($headers));
@@ -301,7 +301,7 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
     }
 
     /**
-     * Adds the properties to a plain object schema, or to the object part of a JSON-LD "allOf" schema.
+     * Adds the properties to an object schema; one without properties is left as it is.
      *
      * @param array<mixed> $schema
      *
@@ -309,28 +309,12 @@ final readonly class ProblemDetailsDecorator implements OpenApiFactoryInterface
      */
     private function withErrorCode(array $schema): array
     {
-        if (is_array($schema['properties'] ?? null)) {
-            $schema['properties'] = $this->properties($schema['properties']);
-
-            return $this->withRequiredErrorCode($schema);
-        }
-
-        // A schema with neither properties nor allOf is left as it is (an empty allOf is not valid OpenAPI).
-        if (!is_array($schema['allOf'] ?? null)) {
+        if (!is_array($schema['properties'] ?? null)) {
             return $schema;
         }
+        $schema['properties'] = $this->properties($schema['properties']);
 
-        $parts = $schema['allOf'];
-        foreach ($parts as $index => $part) {
-            $part = $this->toArray($part);
-            if (is_array($part) && is_array($part['properties'] ?? null)) {
-                $part['properties'] = $this->properties($part['properties']);
-                $parts[$index] = $this->withRequiredErrorCode($part);
-            }
-        }
-        $schema['allOf'] = $parts;
-
-        return $schema;
+        return $this->withRequiredErrorCode($schema);
     }
 
     /**
