@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\EventSubscriber;
 
-use App\EventSubscriber\NotModifiedSubscriber;
+use App\EventSubscriber\ConditionalGetSubscriber;
 use Nelmio\CorsBundle\EventListener\CacheableResponseVaryListener;
 use Nelmio\CorsBundle\EventListener\CorsListener;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -12,7 +12,7 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpKernel\EventListener\SessionListener;
 use Symfony\Component\HttpKernel\KernelEvents;
 
-final class NotModifiedSubscriberTest extends KernelTestCase
+final class ConditionalGetSubscriberTest extends KernelTestCase
 {
     /**
      * A 304 carries the headers the 200 would have had (RFC 9110, section 15.4.5): Vary, Cache-Control and the CORS
@@ -32,9 +32,9 @@ final class NotModifiedSubscriberTest extends KernelTestCase
 
         self::assertSame(
             ['onResponse', -1024],
-            NotModifiedSubscriber::getSubscribedEvents()[KernelEvents::RESPONSE] ?? null,
+            ConditionalGetSubscriber::getSubscribedEvents()[KernelEvents::RESPONSE] ?? null,
         );
-        $notModified = array_search(NotModifiedSubscriber::class.'::onResponse', $order, true);
+        $notModified = array_search(ConditionalGetSubscriber::class.'::onResponse', $order, true);
         self::assertIsInt($notModified);
         foreach ([
             CorsListener::class.'::onKernelResponse',
