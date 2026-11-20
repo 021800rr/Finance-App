@@ -22,6 +22,11 @@ use Symfony\Component\HttpKernel\KernelEvents;
  */
 final readonly class ApiExceptionProblemSubscriber implements EventSubscriberInterface
 {
+    /** The methods of RFC 9110 (section 9.3) and PATCH (RFC 5789); the router refuses any other with a 405. */
+    private const array KNOWN_METHODS = [
+        'GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH',
+    ];
+
     public function __construct(#[Autowire('%kernel.debug%')] private bool $debug)
     {
     }
@@ -42,18 +47,50 @@ final readonly class ApiExceptionProblemSubscriber implements EventSubscriberInt
             return;
         }
 
+        // RFC 9110, section 9.1: a method the server does not recognize gets 501, whatever the path. Every /api route
+        // names its methods, so such a request always ends here, as a 404 or 405 of the router.
+        $method = $request->getMethod();
+        if (!in_array($method, self::KNOWN_METHODS, true)) {
+            $event->setResponse(ProblemResponse::create(
+                Response::HTTP_NOT_IMPLEMENTED,
+                ProblemResponse::httpErrorCode(Response::HTTP_NOT_IMPLEMENTED),
+                sprintf('%s. The API does not know the method %s.', ProblemResponse::title(501), $method),
+            ));
+
+            return;
+        }
+
         $exception = $event->getThrowable();
         $status = $exception instanceof HttpExceptionInterface
             ? $exception->getStatusCode()
             : Response::HTTP_INTERNAL_SERVER_ERROR;
         $headers = $exception instanceof HttpExceptionInterface ? $this->headers($exception->getHeaders()) : [];
+        $allowed = is_string($headers['Allow'] ?? null) ? $this->withHead($headers['Allow']) : null;
+        if (null !== $allowed) {
+            $headers['Allow'] = $allowed;
+        }
 
         $event->setResponse(ProblemResponse::create(
             $status,
             ProblemResponse::httpErrorCode($status),
-            $this->detail($exception, $status),
+            $this->detail($exception, $status, $allowed),
             headers: $headers,
         ));
+    }
+
+    /**
+     * The router accepts HEAD wherever it accepts GET, but leaves it out of the Allow header of its 405, which must
+     * list every method the resource supports (RFC 9110, section 15.5.6).
+     */
+    private function withHead(string $allowed): string
+    {
+        $methods = array_map(trim(...), explode(',', $allowed));
+        $get = array_search('GET', $methods, true);
+        if (is_int($get) && !in_array('HEAD', $methods, true)) {
+            array_splice($methods, $get + 1, 0, 'HEAD');
+        }
+
+        return implode(', ', $methods);
     }
 
     /**
@@ -80,7 +117,7 @@ final readonly class ApiExceptionProblemSubscriber implements EventSubscriberInt
         return $result;
     }
 
-    private function detail(\Throwable $exception, int $status): string
+    private function detail(\Throwable $exception, int $status, ?string $allowed): string
     {
         if ($status >= 500) {
             // Never reveal the cause of a server error outside debug mode; in debug mode say where it happened.
@@ -99,8 +136,6 @@ final readonly class ApiExceptionProblemSubscriber implements EventSubscriberInt
 
         // The router's messages describe the routing internals; the status says enough.
         if ($exception instanceof NotFoundHttpException || $exception instanceof MethodNotAllowedHttpException) {
-            $allowed = $exception->getHeaders()['Allow'] ?? null;
-
             return ProblemResponse::title($status).(is_string($allowed) ? '. Allowed: '.$allowed.'.' : '.');
         }
 

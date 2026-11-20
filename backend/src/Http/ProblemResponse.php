@@ -30,6 +30,7 @@ final class ProblemResponse
         422 => 'unprocessable_content',
         429 => 'too_many_requests',
         500 => 'internal_server_error',
+        501 => 'not_implemented',
         502 => 'bad_gateway',
         503 => 'service_unavailable',
         504 => 'gateway_timeout',

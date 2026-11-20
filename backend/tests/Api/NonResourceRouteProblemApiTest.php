@@ -61,6 +61,43 @@ final class NonResourceRouteProblemApiTest extends WebTestCase
         self::assertResponseHeaderSame('Allow', 'POST');
     }
 
+    /**
+     * The router serves HEAD wherever it serves GET, so the Allow header of a 405 names it (RFC 9110, section 15.5.6).
+     */
+    public function testAllowOfA405NamesHeadNextToGet(): void
+    {
+        $this->client->request('DELETE', '/api/contractors/1');
+        $this->assertProblem(405, 'http.method_not_allowed', 'Method Not Allowed. Allowed: GET, HEAD.');
+        self::assertResponseHeaderSame('Allow', 'GET, HEAD');
+
+        $this->client->request('PUT', '/api/accounts/1');
+        $this->assertProblem(405, 'http.method_not_allowed', 'Method Not Allowed. Allowed: GET, HEAD, PATCH.');
+        self::assertResponseHeaderSame('Allow', 'GET, HEAD, PATCH');
+    }
+
+    /**
+     * A method the API does not know gets 501 (RFC 9110, section 9.1), whether or not the path exists; a known method
+     * the resource does not support stays a 405 (above).
+     */
+    #[DataProvider('pathsForAnUnknownMethod')]
+    public function testUnknownMethodIsNotImplemented(string $path): void
+    {
+        $this->client->request('FOO', $path);
+
+        $this->assertProblem(501, 'http.not_implemented', 'Not Implemented. The API does not know the method FOO.');
+        self::assertResponseNotHasHeader('Allow');
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function pathsForAnUnknownMethod(): iterable
+    {
+        yield 'resource' => ['/api/accounts/1'];
+        yield 'login' => ['/api/login_check'];
+        yield 'unknown path' => ['/api/no-such-thing'];
+    }
+
     public function testUnknownApiPathIsNotFound(): void
     {
         $this->client->request('GET', '/api/no-such-thing');
