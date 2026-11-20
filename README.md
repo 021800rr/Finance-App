@@ -16,14 +16,7 @@ Osobisty tracker finansowy do kontroli domowych kont.
 ```bash
 git clone https://github.com/021800rr/Finance-App.git
 cd Finance-App
-
-make build       # zbuduj i uruchom kontenery
-make install     # composer install
-make migrate     # migracja
-make fixtures    # dane demo
-make test        # phpunit + phpstan + cs-fixer etc...
-make user        # załóż konto demo
-make token       # pobierz token konta demo
+make symfony
 ```
 
 ## Logowanie

@@ -114,6 +114,7 @@ token:
 	curl -X POST http://$(APP_HOST):$(APP_PORT)/api/login_check \
     -H "Content-Type: application/json" \
     -d '{"email": "$(APP_USER_EMAIL)", "password": "$(APP_USER_PASSWORD)"}'
+	@echo
 
 ## ========================
 ## 💾 Database backup
@@ -166,3 +167,13 @@ phpstan:
 
 php-cs-fixer:
 	docker exec finance-php-dev vendor/bin/php-cs-fixer fix
+
+.PHONY: symfony
+symfony:
+	$(MAKE) build      # zbuduj i uruchom kontenery
+	$(MAKE) install    # composer install + klucze JWT
+	$(MAKE) migrate    # migracje bazy
+	$(MAKE) fixtures   # dane demo
+	$(MAKE) test       # phpunit + phpstan + cs-fixer + front
+	$(MAKE) user       # załóż konto demo
+	$(MAKE) token      # pokaż token JWT
