@@ -15,13 +15,15 @@ services:
     volumes:
       - ./docker/postgres/data:/var/lib/postgresql/data
     command: ["postgres", "-c", "timezone=Europe/Warsaw", "-c", "log_timezone=Europe/Warsaw"]
-    # php waits until this check passes, and the first one runs one interval after the start: every second, the stack
-    # goes on as soon as the database is up (about a second), not after 5 s. A failure within start_period does not
-    # count, so a slow start (a long recovery) is not taken for a broken database. pg_isready only asks whether the
-    # server accepts connections. (On Docker 25+, start_interval could keep the 1 s to the start alone.)
+    # php waits until this check passes. Until then it runs every second (start_interval), so the stack goes on as soon
+    # as the database is up (about a second). Once it has passed, nothing waits for it, so it runs every 30 s (interval)
+    # instead of costing CPU every second all day. A failure within start_period does not count, so a slow start (a long
+    # recovery) is not taken for a broken database. pg_isready only asks whether the server accepts connections.
+    # start_interval needs Docker Engine 25 or newer.
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-finance} -d ${POSTGRES_DB:-finance}"]
-      interval: 1s
+      interval: 30s
+      start_interval: 1s
       timeout: 5s
       retries: 10
       start_period: 30s
