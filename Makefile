@@ -170,10 +170,10 @@ php-cs-fixer:
 
 .PHONY: symfony
 symfony:
-	$(MAKE) build      # zbuduj i uruchom kontenery
-	$(MAKE) install    # composer install + klucze JWT
-	$(MAKE) migrate    # migracje bazy
-	$(MAKE) fixtures   # dane demo
-	$(MAKE) test       # phpunit + phpstan + cs-fixer + front
-	$(MAKE) user       # załóż konto demo
-	$(MAKE) token      # pokaż token JWT
+	$(MAKE) build      # build and start the containers (up -d --build)
+	$(MAKE) install    # composer install
+	$(MAKE) migrate    # run the migrations
+	$(MAKE) fixtures   # load the fixtures
+	$(MAKE) test       # full test suite (lint:twig, phpunit, phpstan, php-cs-fixer) on a clean database
+	$(MAKE) user       # create default user $(APP_USER_EMAIL)/$(APP_USER_PASSWORD)
+	$(MAKE) token      # generate a JWT for the API for default user $(APP_USER_EMAIL)/$(APP_USER_PASSWORD)
